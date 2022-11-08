@@ -3,13 +3,12 @@
 steps:
 
  # Build the container image
- - name: 'gcr.io/cloud-builders/docker_ccc'
+ - name: 'gcr.io/cloud-builders/docker'
    args: ['build','-t', 'gcr.io/nih-nci-dceg-connect-prod-6d04/ccc-module-metrics:$COMMIT_SHA', '.']
-   dir: 'stage'
    timeout: 1200s
    
  # Push the container image to Container Registry
- - name: 'gcr.io/cloud-builders/docker_ccc'
+ - name: 'gcr.io/cloud-builders/docker'
    args: ['push', 'gcr.io/nih-nci-dceg-connect-prod-6d04/ccc-module-metrics:$COMMIT_SHA']
    
  # Deploy container image to Cloud Run
