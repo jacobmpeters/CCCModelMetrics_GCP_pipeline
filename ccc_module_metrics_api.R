@@ -1,4 +1,4 @@
-# File:       ccc_model_metrics_api.R
+# File:       ccc_module_metrics_api.R
 # Decription: This script generates a plumber api that runs/renders Kelsey's 
 #             Rmarkdown file.
 # Author:     Jake Peters
@@ -22,7 +22,7 @@ function(){
     
     # Define parameters 
     rmd_file_name    <- "ccc_model_metrics.Rmd"
-    report_file_name <- "CCC_Model_Metrics.pdf"
+    report_file_name <- "ccc_model_metrics.pdf"
     bucket           <- "gs://analytics_team_reports"
     
     # Add time stamp to report name
