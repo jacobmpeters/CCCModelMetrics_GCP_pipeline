@@ -3,6 +3,8 @@ title: "Weekly CCC Metrics for Modules 1-4"
 output:
   pdf_document: default
   word_document: default
+  html_document:
+    df_print: paged
 ---
 
 
@@ -22,8 +24,12 @@ library(gtsummary)
 library(tidyr)
 #install_tinytex()
 library(tinytex)
+
+options(width = 80)
+
+
 bq_auth()
-#1
+
 ```
 
 
@@ -80,6 +86,10 @@ active_c_before <- data_ccc_before %>% filter(d_512820379==486306141)
 dim(active_c_before)
 passive_c_before <- data_ccc_before %>% filter(d_512820379==854703046)
 dim(passive_c_before)
+
+
+
+knitr::opts_chunk$set(comment = NA)
 ```
 
 
@@ -96,6 +106,36 @@ cat("Date all modules available in prod: July 5, 2022")
 cat("Verified participants prior to 7/5/22:", dim(data_ccc_before)[[1]])
 cat("Verified participants on or after 7/5/22:", dim(data_ccc_after)[[1]])
 ```
+
+
+```{r, include=FALSE}
+# <!-- ```{css, echo=FALSE} -->
+# <!-- pre { -->
+# <!--   max-width: 100px; -->
+# <!--   overflow-y: auto; -->
+# <!-- } -->
+# 
+# <!-- pre[class] { -->
+# <!--   max-width: 100px; -->
+# <!-- } -->
+# <!-- ``` -->
+# 
+# # ```{r kable, results = "asis"}
+# # Num2_M1 %>%
+# #   kable(format = "pdf") %>%
+# #   kable_styling() %>%
+# #   kableExtra::scroll_box(width = "100%", height = "100px")
+# # ```
+# 
+# 
+# 
+# <!-- ```{css} -->
+# <!--     .chart-shim { -->
+# <!--       overflow: auto; -->
+# <!--     } -->
+# <!-- ``` -->
+```
+
 
 
 # 1.	% Submission of surveys by verified participants (including impossible scenarios)
@@ -397,7 +437,8 @@ gt_print2A <- gt(ccc2b_summary)
 gt_print2A
 ```
 
-```{r, echo=FALSE, warning=FALSE}
+
+```{r, warning=FALSE, echo=FALSE,  max.width='80px'}
 
 
 ccc2b_summary %>%  gt() %>%  
@@ -465,9 +506,13 @@ ccc2b_summary %>%  gt() %>%
 
 #kable(Num2_M1, format="latex", booktabs=T) %>%  kable_styling(latex_option="scale down")
 
+#Num2_M1 %>%  kable_styling() %>% kableExtra::scroll_box(width = "100%", height = "100px")
+
 
 ```
-# 
+
+
+
 ### On or after all modules available 
 
 ```{r, include=FALSE}
