@@ -23,7 +23,7 @@ library(tidyr)
 #install_tinytex()
 library(tinytex)
 bq_auth()
-#1
+
 ```
 
 
@@ -80,6 +80,10 @@ active_c_before <- data_ccc_before %>% filter(d_512820379==486306141)
 dim(active_c_before)
 passive_c_before <- data_ccc_before %>% filter(d_512820379==854703046)
 dim(passive_c_before)
+
+
+
+knitr::opts_chunk$set(comment = NA)
 ```
 
 
@@ -397,7 +401,7 @@ gt_print2A <- gt(ccc2b_summary)
 gt_print2A
 ```
 
-```{r, echo=FALSE, warning=FALSE}
+```{r, warning=FALSE, echo=FALSE}
 
 
 ccc2b_summary %>%  gt() %>%  

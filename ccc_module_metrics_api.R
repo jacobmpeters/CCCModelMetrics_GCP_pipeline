@@ -21,8 +21,8 @@ function(){return("alive")}
 function(){
     
     # Define parameters 
-    rmd_file_name    <- "ccc_model_metrics.Rmd"
-    report_file_name <- "ccc_model_metrics.pdf"
+    rmd_file_name    <- "ccc_module_metrics.rmd"
+    report_file_name <- "ccc_module_metrics.pdf"
     bucket           <- "gs://analytics_team_reports"
     
     # Add time stamp to report name
@@ -38,8 +38,10 @@ function(){
       stop("Report file extension is invalid. Script did not execute.")}
     
     # Render the rmarkdown file
-    rmarkdown::render(rmd_file, output_format = output_format,
-                      output_file = report_fid, clean = TRUE)
+    rmarkdown::render(rmd_file_name, 
+                      output_format = output_format,
+                      output_file = report_fid, 
+                      clean = TRUE)
     
     # Authenticate with Google Storage and write report file to bucket
     scope <- c("https://www.googleapis.com/auth/cloud-platform")

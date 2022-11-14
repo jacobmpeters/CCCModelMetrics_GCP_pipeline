@@ -1,7 +1,24 @@
 # Dockerfile
 
 FROM rocker/tidyverse:latest
-RUN install2.r plumber gridExtra scales boxr bigrquery dplyr gmodels epiDisplay lubridate tidyverse gt kableExtra knitr gtsummary tidyr tinytex
+RUN install2.r --error \
+               plumber \
+               gridExtra \
+               scales \
+               boxr \
+               bigrquery \
+               dplyr \
+               gmodels \
+               epiDisplay \
+               lubridate \
+               tidyverse \
+               kableExtra \
+               knitr \
+               gtsummary \
+               tidyr \
+               tinytex
+
+RUN R -e "install.packages(c('gt', 'kableExtra'), dependencies=TRUE, repos='http://cran.rstudio.com/')"
 
 # Copy R code to directory in instance
 COPY ["./ccc_module_metrics_api.R", "./ccc_module_metrics_api.R"]
