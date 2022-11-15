@@ -27,7 +27,7 @@ function(){
     
     # Add time stamp to report name
     report_fid <- paste0(file_path_sans_ext(report_file_name), 
-                         format(Sys.time(), "_%m_%d_%Y_%H_%M"),
+                         format(Sys.time(), "_%m_%d_%Y"),
                          ".", file_ext(report_file_name))
     
     # Select document type given the extension of the report file name
