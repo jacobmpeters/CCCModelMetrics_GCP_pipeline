@@ -21,26 +21,23 @@ RUN install2.r --error \
                scales \
                boxr \
                bigrquery \
+               dplyr \
                gmodels \
                epiDisplay \
+               lubridate \
                tidyverse \
                kableExtra \
                knitr \
                gtsummary \
+               tidyr \
                tinytex \
-               gargle \
-               gt \
-               googleCloudStorageR \
-               tools
-               # lubridate \ already in tinyverse
-               # dplyr \ already in tinyverse
-               # tidyr \
+	       vtable
 
-# RUN R -e "install.packages(c('gt', 'kableExtra'), dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages(c('gt', 'kableExtra'), dependencies=TRUE, repos='http://cran.rstudio.com/')"
 
 # Copy R code to directory in instance
 COPY ["./ccc_module_metrics_api.R", "./ccc_module_metrics_api.R"]
-COPY ["./ccc_module_metrics.rmd", "./ccc_module_metrics.rmd"]
+COPY ["./ccc_module_metrics.Rmd", "./ccc_module_metrics.Rmd"]
 
 # Run R code
 ENTRYPOINT ["R", "-e","pr <- plumber::plumb('ccc_module_metrics_api.R'); pr$run(host='0.0.0.0', port=as.numeric(Sys.getenv('PORT')))"]
