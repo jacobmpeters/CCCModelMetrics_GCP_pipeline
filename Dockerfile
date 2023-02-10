@@ -8,14 +8,15 @@ RUN apt-get update \
     wget \
     graphviz \
     perl && \
-    /rocker_scripts/install_pandoc.sh && \
-    install2.r rmarkdown
+    /rocker_scripts/install_pandoc.sh \
+    # && install2.r rmarkdown
 
 # Install tinytex
 RUN Rscript -e 'tinytex::install_tinytex()'
 
 # Install R libraries
 RUN install2.r --error \
+               rmarkdown \
                plumber \
                gridExtra \
                scales \
@@ -30,9 +31,13 @@ RUN install2.r --error \
                knitr \
                gtsummary \
                tidyr \
-               tinytex
+               tinytex \
+               gargle \
+               gt \
+               googleCloudStorageR \
+               tools
 
-RUN R -e "install.packages(c('gt', 'kableExtra'), dependencies=TRUE, repos='http://cran.rstudio.com/')"
+# RUN R -e "install.packages(c('gt', 'kableExtra'), dependencies=TRUE, repos='http://cran.rstudio.com/')"
 
 # Copy R code to directory in instance
 COPY ["./ccc_module_metrics_api.R", "./ccc_module_metrics_api.R"]
