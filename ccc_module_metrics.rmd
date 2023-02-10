@@ -55,7 +55,7 @@ billing_cc= "nih-nci-dceg-connect-prod-6d04"
 queryreccc <- "SELECT  Connect_ID, d_512820379, d_821247024, d_914594314, d_832139544, 
 d_949302066 , d_205553981, d_536735468 , d_976570371, d_663265240, d_265193023, d_222161762, d_770257102, d_264644252, d_265193023, d_541836531, d_386488297, 
 d_452942800, d_517311251 , d_822499427
-FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IS NOT NULL"
+FROM `nih-nci-dceg-connect-prod-6d04.recruitment.recruitment1_WL` where Connect_ID IS NOT NULL"
 
 rec_table_cc <- bq_project_query(project_cc, queryreccc)
 data_c <- bq_table_download(rec_table_cc, bigint = "integer64")
@@ -113,26 +113,23 @@ cat("Verified participants prior to 7/5/22:", dim(data_ccc_before)[[1]])
 cat("Verified participants on or after 7/5/22:", dim(data_ccc_after)[[1]])
 ```
 
-```{r, include=FALSE}
 
-#```{css, echo=FALSE}
-# <!-- pre { -->
-# <!-- max-width: 70px; -->
-# <!-- overflow-y: auto;  -->
-# <!-- }  -->
-# 
-# <!--  pre[class] { -->
-# <!-- max-width: 70px;  -->
-# <!-- }  -->
-# 
-# <!-- .chart-shim {  -->
-# <!-- overflow: auto;  -->
-# <!-- }  -->
 
-#```
+<!-- #```{css, echo=FALSE} -->
+<!-- <!-- pre { --> -->
+<!-- <!-- max-width: 70px; --> -->
+<!-- <!-- overflow-y: auto;  --> -->
+<!-- <!-- }  --> -->
 
-```
+<!-- <!--  pre[class] { --> -->
+<!-- <!-- max-width: 70px;  --> -->
+<!-- <!-- }  --> -->
 
+<!-- <!-- .chart-shim {  --> -->
+<!-- <!-- overflow: auto;  --> -->
+<!-- <!-- }  --> -->
+
+<!-- #``` -->
 
 
 
@@ -140,7 +137,7 @@ cat("Verified participants on or after 7/5/22:", dim(data_ccc_after)[[1]])
 # 
 ### Before all modules available
 
-```{r, include=FALSE}
+```{r, include=FALSE, warning=FALSE}
 ####### ALL MODULES ########
 
 #1. Survey status of verified participants: None Completed, Some Completed (Combinations), All completed. This includes impossible selections for QC check
@@ -195,10 +192,9 @@ tab1(modules1$process, decimal=2,sort.group = "decreasing", cum.percent = TRUE)$
 # modules1 <-as_gt(modules1) ##THIS WAS WORKING BEFORE!! WHY NOT ANYMORE?!
 # head(modules1)
 
+#ccc1= modules1 %>%  mutate(freq=rep(1, dim(modules1)[[1]]))
+# ccc1= modules1 %>%  mutate(freq=if(modules1$Connect_ID!=0) {1})
 ccc1=modules1 %>% mutate(freq=rep(1, dim(modules1)[[1]]))
-head(ccc1)
-dim(ccc1)[[1]]
-
 ccc1$percentage= (ccc1$freq/dim(ccc1)[[1]])*100 
 head(ccc1)
 
@@ -432,23 +428,21 @@ head(ccc2b)
 
 ccc2b_summary <- ccc2b %>%  group_by(status)  %>% summarize_at(c('freq', "percentage", 'freq.Active', "freq.Passive", "percentage.Active", "percentage.Passive"), sum, na.rm = TRUE) 
 gt_print2A <- gt(ccc2b_summary)                                                                              
-
+gt_print2A
 ```
 
 
+```{r, warning=FALSE, echo=FALSE,  max.width='80px'}
 
-```{r, warning=FALSE, echo=FALSE,  max.width='80px', inlcude=FALSE}
 
-
-#Num2_M1=
-  ccc2b_summary %>%  gt() %>%  
+Num2_M1=ccc2b_summary %>%  gt() %>%  
   fmt_number(columns = "percentage.Active", decimals = 2) %>% 
   fmt_number(columns = "percentage.Passive", decimals = 2) %>%
   fmt_number(columns = "percentage", decimals = 2) %>%
   tab_header(title = html("Module 1 Completion Status of Verified Participants (Before)")) %>% 
-  cols_label(status = md("**Completion Status**"), freq.Active = md("**Number of \nparticipants (n)**"), freq.Passive = md("**Number of \nparticipants (n)**"), 
-             freq = md("**Total Number \nof participants (N)**"), 
-             percentage.Active = md("**Percentage \nof Participants**"), percentage.Passive = md("**Percentage \nof Participants**"), percentage= md("**Percentage \nof Participants**")) %>% 
+  cols_label(status = md("**Completion Status**"), freq.Active = md("**Number of participants (n)**"), freq.Passive = md("**Number of participants (n)**"), 
+             freq = md("**Total Number of participants (N)**"), 
+             percentage.Active = md("**Percentage of Participants**"), percentage.Passive = md("**Percentage of Participants**"), percentage= md("**Percentage of Participants**")) %>% 
                tab_footnote(
                  footnote = "Verification completed prior to July 5,2022 when all modules became available in prod") %>%
                tab_spanner(
@@ -504,17 +498,9 @@ gt_print2A <- gt(ccc2b_summary)
                  locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
                ) %>%  opt_row_striping()
 
-#knitr::kable(as.data.frame(Num2_M1[,c(1:8)]),caption='Module 1 Completion Status of Verified Participants (Before)',align=c("l", "c", "c","c", "c","c","c"), booktabs = TRUE) %>% add_header_above(c(" "=2, "Total" = 2, "Active" = 2,"Passive"=2))
+#kable(Num2_M1, format="latex", booktabs=T) %>%  kable_styling(latex_option="scale down")
 
-#knitr::kable(Num2_M1) %>% kable_styling(latex_options = c("striped", "scale_down")) %>% landscape()
-
-
-# attempt= kable(Num2_M1)
-# attempt %>%  kable_styling(latex_options = "scale_down") %>% landscape()
-# 
-# kable(Num2_M1, format="latex", booktabs=T) %>%  kable_styling(latex_option="scale down")
-# 
-# Num2_M1 %>%  kable_styling() %>% kableExtra::scroll_box(width = "100%", height = "100px")
+#Num2_M1 %>%  kable_styling() %>% kableExtra::scroll_box(width = "100%", height = "100px")
 
 
 # ```{r kable, results = "asis"}
@@ -668,7 +654,7 @@ ccc2a_summary %>%  gt() %>%
 ```
 
 
-
+# 
 ## Module 2
 
 ### Before all modules available 
@@ -2339,7 +2325,7 @@ head(Ttmp2b)
 ccc4_b2= Ttmp2b %>%  mutate(Passive= ifelse((d_512820379 == 854703046), 1, 0))
 head(ccc4_b2)
 
-ccc4_b2= ccc4_b2 %>%  mutate(freq=rep(1, dim(ccc4_b2)[[1]]))
+ccc4_b2= ccc4_b2 %>% mutate(freq=rep(1, dim(ccc4_b2)[[1]]))
 head(ccc4_b2)
 dim(ccc4_b2)[[1]]
 
@@ -3342,7 +3328,7 @@ head(Ttmp.4A)
 ccc4_a4= Ttmp.4A %>%  mutate(Passive= ifelse((d_512820379 == 854703046), 1, 0))
 head(ccc4_a4)
 
-ccc4_a4= ccc4_a4 %>%  mutate(freq=rep(1, dim(ccc4_a4)[[1]]))
+ccc4_a4= ccc4_a4 %>% mutate(freq=rep(1, dim(ccc4_a4)[[1]]))
 head(ccc4_a4)
 dim(ccc4_a4)[[1]]
 
@@ -3746,27 +3732,24 @@ cat("\t",if(bum_cf!=bum_sts | bum_cts!=bum_sts | bum_cf!=bum_cts){"Not equal!!"}
 ```{r, include=FALSE}
 #8. Connect_IDs of those who completed the menstrual cycle survey---need to convert to SQL code since d_459098666 and D_299215535.D_112151599 are in participants table and aren't flattened
 
-mens_ccc <- "SELECT Connect_ID, D_112151599
- FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.bioSurvey_v1_JP`"
-prts_ccc <- "SELECT Connect_ID,  d_265193023,  d_459098666 from `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP`"
-
+mens_ccc <- "SELECT Connect_ID,  d_265193023,  d_459098666
+ FROM `nih-nci-dceg-connect-prod-6d04.Connect.participants` 
+ where D_299215535.D_112151599='353358909' and
+ d_265193023=231311385 "
 
 mens_table_cc <- bq_project_query(project_cc, mens_ccc)
-prts_table_cc <- bq_project_query(project_cc, prts_ccc)
-
 mens_data_ccc <- bq_table_download(mens_table_cc, bigint = "integer64")
-prts_data_ccc <- bq_table_download(prts_table_cc, bigint = "integer64")
 
-table7 <- left_join(mens_data_ccc, prts_data_ccc , by="Connect_ID")
-
-menstrual <- table7 %>% filter(D_112151599=='353358909' & d_265193023==231311385 )
+menstrual <- mens_data_ccc
 dim(menstrual)
 
-mens_complete <- table7  %>%  filter(d_459098666==231311385 )
+mens_complete <- mens_data_ccc  %>%  filter(d_459098666==231311385 )
 dim(mens_complete)
+mens_complete
 
 round(100*(dim(mens_complete)[[1]]/dim(menstrual)[[1]]), digits=2)
 
+mens_complete$Connect_ID
 
 ```
 
