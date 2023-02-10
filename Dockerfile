@@ -8,34 +8,33 @@ RUN apt-get update \
     wget \
     graphviz \
     perl && \
-    /rocker_scripts/install_pandoc.sh \
-    # && install2.r rmarkdown
+    /rocker_scripts/install_pandoc.sh && \
+    install2.r rmarkdown
 
 # Install tinytex
 RUN Rscript -e 'tinytex::install_tinytex()'
 
 # Install R libraries
 RUN install2.r --error \
-               rmarkdown \
                plumber \
                gridExtra \
                scales \
                boxr \
                bigrquery \
-               dplyr \
                gmodels \
                epiDisplay \
-               lubridate \
                tidyverse \
                kableExtra \
                knitr \
                gtsummary \
-               tidyr \
                tinytex \
                gargle \
                gt \
                googleCloudStorageR \
                tools
+               # lubridate \ already in tinyverse
+               # dplyr \ already in tinyverse
+               # tidyr \
 
 # RUN R -e "install.packages(c('gt', 'kableExtra'), dependencies=TRUE, repos='http://cran.rstudio.com/')"
 
