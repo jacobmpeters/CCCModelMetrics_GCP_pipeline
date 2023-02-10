@@ -49,7 +49,7 @@ function(){
     gcs_auth(token=token)
     gcs_upload(report_fid, bucket=bucket, name=report_fid) 
 
-    #TODO write report_fid to Box
+    #TODO write report_fid to Box using boxr::box_auth_service()
     
     # Return a string for for API testing purposes
     ret_str <- paste("All done. Check", bucket, "for", report_fid)
