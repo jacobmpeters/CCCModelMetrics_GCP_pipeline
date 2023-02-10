@@ -30,10 +30,9 @@ RUN install2.r --error \
                knitr \
                gtsummary \
                tidyr \
-               tinytex \
-	       vtable
+               tinytex
 
-RUN R -e "install.packages(c('gt', 'kableExtra'), dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages(c('gt', 'kableExtra','vtable'), dependencies=TRUE, repos='http://cran.rstudio.com/')"
 
 # Copy R code to directory in instance
 COPY ["./ccc_module_metrics_api.R", "./ccc_module_metrics_api.R"]
