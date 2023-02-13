@@ -21,7 +21,7 @@ function(){return("alive")}
 function(){
     
     # Define parameters 
-    rmd_file_name    <- "ccc_module_metrics.rmd"
+    rmd_file_name    <- "ccc_module_metrics.Rmd"
     report_file_name <- "ccc_module_metrics.pdf"
     bucket           <- "gs://analytics_team_reports"
     
