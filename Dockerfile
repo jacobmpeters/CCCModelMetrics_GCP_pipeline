@@ -30,7 +30,9 @@ RUN install2.r --error \
                knitr \
                gtsummary \
                tidyr \
-               tinytex
+               tinytex \
+               googleCloudStorageR \
+               vtable
 
 RUN R -e "install.packages(c('gt', 'kableExtra','vtable'), dependencies=TRUE, repos='http://cran.rstudio.com/')"
 
