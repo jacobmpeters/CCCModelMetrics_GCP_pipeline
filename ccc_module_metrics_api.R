@@ -16,18 +16,19 @@ library(tools)
 function(){return("alive")}
 
 #* Runs Kelsey's markdown file 
-#* @get /ccc_api
-#* @post /ccc_api
+#* @get /run_ccc_module_metrics
+#* @post /run_ccc_module_metrics
 function(){
     
     # Define parameters 
-    rmd_file_name    <- "ccc_module_metrics.Rmd"
+    rmd_file_name    <- "CCC Weekly Module Metrics_RMD.Rmd"
     report_file_name <- "ccc_module_metrics.pdf"
     bucket           <- "gs://analytics_team_reports"
     
     # Add time stamp to report name
     report_fid <- paste0(file_path_sans_ext(report_file_name), 
                          format(Sys.time(), "_%m_%d_%Y"),
+                         "_boxfolder_192564458995",
                          ".", file_ext(report_file_name))
     
     # Select document type given the extension of the report file name
@@ -48,8 +49,6 @@ function(){
     token <- token_fetch(scopes=scope)
     gcs_auth(token=token)
     gcs_upload(report_fid, bucket=bucket, name=report_fid) 
-
-    #TODO write report_fid to Box using boxr::box_auth_service()
     
     # Return a string for for API testing purposes
     ret_str <- paste("All done. Check", bucket, "for", report_fid)
