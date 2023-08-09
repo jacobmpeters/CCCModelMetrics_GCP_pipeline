@@ -16,8 +16,8 @@ library(tools)
 function(){return("alive")}
 
 #* Runs Kelsey's markdown file 
-#* @get /run_ccc_module_metrics
-#* @post /run_ccc_module_metrics
+#* @get /run-ccc-module-metrics
+#* @post /run-ccc-module-metrics
 function(){
     
     # Define parameters 
