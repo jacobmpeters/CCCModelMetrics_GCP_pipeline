@@ -22,13 +22,13 @@ function(){
     
     # Define parameters 
     rmd_file_name    <- "CCC Weekly Module Metrics_RMD.Rmd"
-    report_file_name <- "ccc_module_metrics.pdf"
+    report_file_name <- "CCC-Weekly-Module-Metrics.pdf"
     bucket           <- "gs://ccc_weekly_metrics_report"
     
     # Add time stamp to report name
     report_fid <- paste0(file_path_sans_ext(report_file_name), 
                          format(Sys.time(), "_%m_%d_%Y"),
-                         "_boxfolder_192564458995",
+                         "_boxfolder_141543281606",
                          ".", file_ext(report_file_name))
     
     # Select document type given the extension of the report file name
