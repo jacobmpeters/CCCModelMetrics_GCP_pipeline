@@ -23,7 +23,7 @@ function(){
     # Define parameters 
     rmd_file_name    <- "CCC Weekly Module Metrics_RMD.Rmd"
     report_file_name <- "ccc_module_metrics.pdf"
-    bucket           <- "gs://analytics_team_reports"
+    bucket           <- "gs://ccc_weekly_metrics_report"
     
     # Add time stamp to report name
     report_fid <- paste0(file_path_sans_ext(report_file_name), 
