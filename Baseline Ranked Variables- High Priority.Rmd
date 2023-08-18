@@ -4524,7 +4524,7 @@ ca_base <- ggplot(data = states, mapping = aes(x = long, y = lat, group = group)
  #https://www.sharpsightlabs.com/blog/how-to-create-a-crime-heatmap-in-r/
  #https://rpubs.com/jcraggy/841199
  
- 
+ zip_to_lat_lon_North America.csv
  #Attemp1 10 
  zip_to_lat_lon_North.America <- read.csv("C:/Users/dowlingk2/Downloads/zip_to_lat_lon_North_America.csv")
  all_zips <- zip_to_lat_lon_North.America %>%  filter(Country=="United States" & (postal.code %in%  ZP_HT_US$zip)) 
