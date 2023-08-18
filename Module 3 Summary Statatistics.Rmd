@@ -1,0 +1,4008 @@
+---
+title: "Module 3 Summary Statatistics"
+author: "Kelsey Dowling"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+This report analysis the responses of all Module 3 questions and visualizes the distributions of answers through graphs or tables.
+All libraries are listed up top; authentication for BQ will be necessary
+Functions used in the code are included before the start of the analysis
+The data is currently filtered by gender, and will eventually be done by age groups as well
+
+
+```{r, include=FALSE}
+#rm(list = ls())
+
+
+#update.packages("tinytex")
+#require(devtools)
+#install_version("ggplot2", version = "0.9.1", repos = "http://cran.us.r-project.org")
+#tinytex::install_tinytex(version = "2020.10")
+#tinytex::reinstall_tinytex(repository = "illinois")
+
+
+
+library(bigrquery)
+library(foreach)
+library(stringr)
+#library(plyr)
+library(expss) ###to add labels
+library(epiDisplay) ##recommended applied here crosstable, tab1
+library(summarytools) ##recommended
+library(gmodels) ##recommended
+library(magrittr)
+library(arsenal)
+library(gtsummary)
+library(rio)
+
+
+
+library(ggplot2)
+library(gridExtra)
+library(scales)
+library(gt)
+#install(tinytex)
+library(tinytex)
+library(data.table) ###to write or read and data management 
+library(boxr) ###read or write data from/to box
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(reshape)  ###to work on transition from long to wide or wide to long data
+library(listr) ###to work on a list of vector, files or..
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(stringr) ###to work on patterns, characters
+
+options(tinytex.verbose = TRUE)
+
+bq_auth()
+```
+
+
+```{r, include=FALSE, warning=FALSE}
+
+dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
+dd <- dplyr::bind_rows(dictionary,.id="CID")
+dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
+dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name')
+
+dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
+dd$CID <- rownames(dd)
+#https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
+devtools::install_github("tidyverse/reprex")
+
+project <- "nih-nci-dceg-connect-prod-6d04"
+billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be consistent
+##517311251 Date/time Status of Completion of Background and Overall Health                         SrvBOH_TmComplete_v1r0
+##949302066 Flag for Baseline Module Background and Overall Health                        SrvBOH_BaseStatus_v1r0
+recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
+                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935'")
+recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
+cnames <- names(recr_m1)
+# Check that it doesn't match any non-number
+numbers_only <- function(x) !grepl("\\D", x)
+# to check variables in recr_noinact_wl1
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(recr_m1,varname)
+  recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+sql_M1_1 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
+sql_M1_2 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
+
+
+M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64") #1436 #1436 vars: 1507 01112023 
+M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64") #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
+
+mod1_v1 <- M1_V1
+cnames <- names(M1_V1)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v1,varname)
+  mod1_v1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+mod1_v2 <- M1_V2
+cnames <- names(M1_V2)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v2,varname)
+  mod1_v2[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+M1_V1.var <- colnames(M1_V1)
+M1_V2.var <- colnames(M1_V2)
+var.matched <- M1_V1.var[which(M1_V1.var %in% M1_V2.var)]
+length(var.matched)  #1275 #1278 vars 01112023 #1348 vars 05022023
+
+V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched] #232 #229 01112023 #159 05022023
+V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched] #253 #253 01112023 #545 05022023
+
+length(M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID])
+#[1] 59 with the completion of two versions of Module1 
+#[1] 62 with completing both versions of M1 ###double checked 03/28/2023
+#68 double checked 05/02/2023
+
+common.IDs <- M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID]
+M1_V1_common <- mod1_v1[,var.matched]
+
+M1_V2_common <- mod1_v2[,var.matched]
+M1_V1_common$version <- 1
+M1_V2_common$version <- 2
+
+##to check the completion of M1 among these duplicates
+partM1_dups <- recr_m1[which(recr_m1$Connect_ID %in% common.IDs),]
+table(partM1_dups$d_949302066)
+
+M1_common  <- rbind(M1_V1_common, M1_V2_common) #including 136 duplicates (version 1 and version 2) from 68 participants 05022023
+#M1_response <- matrix(data=NA, nrow=118, ncol=967)
+
+m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)] #230 vars 03282023 #160 vars 05/02/2023
+m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] #255 vars 03282023 #546 vars 05/02/2023
+m1_v1_only$version <- 1
+m1_v2_only$version <- 2
+#for (i in 1:length)
+##to check the completion in each version
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #1364 03282023 # 1370 05022023
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #4870 03282023 # 5731 05022023
+
+#library(janitor)
+
+m1_common <- rbind(M1_V1_common,M1_V2_common)
+m1_common_v1 <- merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
+m1_combined_v1v2 <- merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
+m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] #7289 including duplicates 05022023
+
+m1_complete <- m1_complete %>% arrange(desc(version)) 
+
+
+m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),] 
+table(m1_complete_nodup$version)
+
+
+parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
+D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
+D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, 
+d_663265240, d_878865966, d_684635302, d_167958071,d_371067537,
+d_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_914639140, d_311580100 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
+where Connect_ID IS NOT NULL"
+parts_table <- bq_project_query(project, parts)
+parts_data <- bq_table_download(parts_table, bigint = "integer64")
+
+parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID)
+
+
+merged= left_join(m1_complete_nodup, parts_data, by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
+dim(merged)
+
+
+
+```
+
+```{r, warning=FALSE, echo=FALSE,  message=FALSE}
+#Has a recruitment flag
+merged <- merged %>% filter(D_512820379==486306141 | D_512820379==854703046)
+
+
+#User consent submitted
+merged <- merged %>% filter(D_919254129==353358909)
+
+
+#User profile submitted
+merged <- merged %>% filter(D_699625233==353358909)
+
+
+#Verified by site
+#cat("Verified by site:", sum(merged$D_821247024==197316935, na.rm=TRUE))
+merged <- merged %>% filter(D_821247024==197316935)
+
+
+#Mod1 completed 
+base_vars <- merged %>% filter(d_949302066==231311385) # & d_976570371==231311385 & d_536735468==231311385 & d_663265240 ==231311385)
+#cat("Module 1 completed:", dim(base_vars)[[1]])
+
+
+data_tib_base <- as_tibble(base_vars)
+
+data_tib_merged <- as_tibble(merged)
+#dim(base_vars)
+
+knitr::opts_chunk$set(comment = NA)
+#knitr::opts_chunk$set(message = NA)
+#knitr::opts_chunk$set(warning = NA)
+
+```
+
+
+
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+querymod3 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module3_v1_JP` where Connect_ID IS NOT NULL"
+mod3_table <- bq_project_query(project, querymod3)
+mod3_data <- bq_table_download(mod3_table, bigint = "integer64")
+mod3_data$Connect_ID <- as.numeric(mod3_data$Connect_ID)
+
+
+merge_m3P= left_join(merged, mod3_data, by="Connect_ID")
+
+
+#Has a recruitment flag
+merge_m3 <- merge_m3P %>% filter(D_512820379==486306141 | D_512820379==854703046)
+
+
+
+active3 <- merge_m3 %>% filter(D_512820379==486306141)
+#dim(active3)
+passive3 <- merge_m3 %>% filter(D_512820379==854703046)
+#dim(passive3)
+
+#User consent submitted
+merge_m3 <- merge_m3 %>% filter(D_919254129==353358909)
+
+
+
+#User profile submitted
+merge_m3 <- merge_m3 %>% filter(D_699625233==353358909)
+
+
+
+#Mod1 completed
+merge_m3 <- merge_m3 %>% filter(d_949302066==231311385)
+
+
+
+
+#Mod3 completed
+
+module3 <- merge_m3 %>% filter(d_976570371==231311385)
+cat("Module 3 Completed by : ", dim(module3)[[1]], " Participants")
+
+data_tib_all3 <- as_tibble(module3)
+
+
+
+```
+
+```{r, warning=FALSE, message=FALSE, include=FALSE}
+#Created Functions for this code
+
+#Histogram 
+hist_funct <- function(CID,Title, Xlab, Ylab) {
+  CID_SYM <- rlang::ensym(CID)
+  module3 %>% mutate(!!CID_SYM:=as.numeric(!!CID_SYM)) %>%
+    filter(!is.na(!!CID_SYM)) %>%
+    ggplot(aes(x=!!CID_SYM)) + #, fill=as.factor(D_407056417)))+
+    xlab(Xlab) + ylab(Ylab) +  ggtitle(Title)+
+    geom_histogram(color="black")+ scale_y_continuous(breaks=pretty_breaks()) +
+    #scale_fill_discrete(name = "Sex at Birth", labels=c("Female", "Male"))+
+    geom_vline(aes(xintercept=mean(!!CID_SYM, na.rm=T)), colour="red", linetype="solid")
+  
+}
+
+
+#Boxplot
+boxp_funct <- function(CID,Title, Xlab) {
+  CID_SYM <- rlang::ensym(CID)
+  module3 %>% mutate(!!CID_SYM:=as.numeric(!!CID_SYM)) %>%
+    filter(!is.na(!!CID_SYM)) %>%
+    ggplot(aes(x=!!CID_SYM)) + #, fill=as.factor(D_407056417)))+
+    xlab(Xlab) + geom_boxplot()+  ggtitle(Title)
+    theme(axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()  #remove y axis ticks
+        )
+}
+
+
+
+dict <- list("104430631"="No", "353358909"="Yes", "265550580"="Didn't Drink ", "950039557"="A few times per Year","402048066"="A few times per Month","522395860"="Once per Week",
+             "756073829"="A few times per Week","858624942"="Once per day","424768954"="2-3 times per Day","687445652"="4-5 times per Day","333682419"="6+ times per Day", 
+             "595249233"="Less Than once per Month ", "637900673"="Once a month","207952166"="2-3 times per Month","198347104"="1-2 times per week","471294296"="3-4 times per Week",
+             "594557208"="5-6 times per Week","647504893"="Every Day", "428999623"="0-14 minutes", "248303092"="16-30 min.", "998679771"="31-59 min.","638092100"="1 hr","127455035"="2+ hrs",
+             "419415087"="No, not at all", "299561721"="Yes, but rarely","716761013"="Yes, but some days","804785430"="Yes, every day", "151488193"="10 or less",
+             "805449318"="11-49","486319890"="50-99","132232896"="100+", "317567178"="In the past month", "484055234"="In the past year", "802197176"="More than a year", "169225725"="Within 5 minutes",
+             "967681778"="6-30 min.", "122802180"="Almost All the Time", "950591599"="Most of the Time","167208049"="Half the Time", "793320798"="Sometimes","216450786"="Almost Never", 
+             "647504893"="Every Day", "417208949"="Most Days of the Week","797736697"="A Few Days per week","480609810"="One Day per Week","485011582"="A Few Days per Month",
+             "865134801"="One Day per Month","667010122"="A Few days per Year","648960871"="Never", "174968750"="Less Than One Hour", "738454194"="1-2 Hours","229540444"="3-5 Hours", 
+             "838981994"="6-9 Hours",  "464169461"="10-15 Hours", "683466918"="15+ Hours", "162693263"="Everyday, at least 2 hrs","924926068"="Everday, 0-2 Hours", "417208949"="Most Days", 
+             "797736697"="A Few Days per Week",  "480609810"="1 day per Week", "485011582"="A Few Days per Month", "865134801"="One Day per Month", "667010122"="A Few Days per Year", 
+             "648960871"="Never", "503218834"="0",   "759356722"="1",  "668407984"="2", "448069154"="3",  "485163252"="4", "160036380"="5+", "648665281"="1",   "420091116"="2", "412554346"="3",
+             "475454159"="4", "312200270"="5","411022152"="6+", "249485680"="Blistering Sunburn",  "646918928"="Sunburn w/o Blisters", "692155653"="Mild Sunburn, Eventual Tan", 
+             "899670578"="A Tan wWithout Sunburn", "455468743"="No Skin Color Change", "503218834"="None",  "961021302"="1-2", "953684708"="3-4", "922737557"="5-9", "945387130"="10+",
+             "178420302"="Unknown", "648960871"="Never",  "235613392"="Rarely",  "132099255"="Sometimes", "211590917"="Often",  "907579123"="Always", "905073380"="All exposed Areas", 
+             "223461539"="Some Exposed Areas", "901521065"="Face or Head Only", "445549128"="Less Than 15","995736452"="15-20",  "120045322"="21-35", "190125431"="36-50",  "133730190"="51+",
+             "102445389"="1-9 Times", "388196732"="10-49 Times", "649327523"="50-99 Times","587052987"="100-249", "838336013"="250+", "676516297"="Everyday", "511873578"="A few Days per Week",
+             "522395860"="Once a Week", "756470750"="A few Days per Month", "402335383"="Less than 12x perYear", "317312221"="Blue",  "858866416"="Green","696181630"="Hazel", "248624772"="Light Brown", 
+             "777809207"="Dark Brown", "181769837"="Other", "230748315"="Blond",  "379848047"="Red", "224120697"="Reddish Brown", "270559240"="Medium Brown",  "469115418"="Black", "300633065"="Very Light",
+             "834817071"="Light", "385246065"="Medium", "189414295"="Dark", "482157734"="Very dark", "259218831"="No Freckles",  "519761171"="A few", "800179850"="Some", "455684772"="A lot",
+             "425604618"="1",  "914302382"="2", "835682347"="3", "562508684"="4", "180306463"="5", "413495952"="6+", "332226274"="1",  "549638643"="2", "939235325"="3", "473673527"="4",
+             "290010251"="5","355205294"="6+", "968093023"="1",   "545630587"="2","526602834"="3", "905402667"="4", "900343645"="5","554549266"="6+", "437269318"="Recreation", "838317013"="As Medicine",
+             "585672584"="Both", "807835037"="Other", "746038746"="Prefer Not to Answer")
+
+
+
+##GT TABLE: PRODUCT8C
+funct_8c <- function(PRODUCT8C_CID, PRODUCT5_CID, Product1_CID, Title){  
+  CID_SYM_P1 <- rlang::ensym(Product1_CID)
+  CID_SYM_P8C <- rlang::ensym(PRODUCT8C_CID)
+  CID_SYM_P5 <- rlang::ensym(PRODUCT5_CID)
+  #dt_prod8C <- data_tib_all3[ , c("Connect_ID", !!CID_SYM_P8C, !!CID_SYM_P5, !!CID_SYM_P1)]
+  
+  dt_prod8C <- data_tib_all3 %>%  select(Connect_ID, !!CID_SYM_P8C, !!CID_SYM_P5, !!CID_SYM_P1)
+  gt_prod8C <- dt_prod8C %>% filter((!!CID_SYM_P1==486319890 | !!CID_SYM_P1==132232896) & !!CID_SYM_P5!=317567178) %>% group_by(!!CID_SYM_P8C) %>% 
+    summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% mutate(answer=recode(!!CID_SYM_P8C, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
+  
+  gt_prod8C %>%  gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n, percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+}
+
+
+
+##GT TABLE: PRODUCT9B
+funct_9b <- function(PRODUCT1_CID, PRODUCT4_CID, PRODUCT5_CID, PRODUCT8C_CID, PRODUCT9B_CID, Title){ 
+  CID_SYM_P1 <- rlang::ensym(PRODUCT1_CID)
+  CID_SYM_P4 <- rlang::ensym(PRODUCT4_CID)
+  CID_SYM_P5 <- rlang::ensym(PRODUCT5_CID)
+  CID_SYM_P8C <- rlang::ensym(PRODUCT8C_CID)
+  CID_SYM_P9B <- rlang::ensym(PRODUCT9B_CID)
+
+  dt_prod9b <- data_tib_all3 %>%  select(Connect_ID, !!CID_SYM_P8C, !!CID_SYM_P4, !!CID_SYM_P5, !!CID_SYM_P1, !!CID_SYM_P9B)
+  gt_prod9b <- dt_prod9b %>% filter((!!CID_SYM_P1==486319890 | !!CID_SYM_P1==132232896) & !(!!CID_SYM_P4== 804785430|
+           ((!is.na(!!CID_SYM_P4) | !!CID_SYM_P4!=419415087) & !!CID_SYM_P5==484055234 & !!CID_SYM_P8C== 353358909) | 
+           ((!is.na(!!CID_SYM_P4) |  !!CID_SYM_P4!=419415087) & !!CID_SYM_P5==802197176 & !!CID_SYM_P8C== 353358909))) %>% 
+    group_by(!!CID_SYM_P9B) %>% 
+    summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% mutate(answer=recode(!!CID_SYM_P9B, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
+
+  gt_prod9b %>%  gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n, percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+}
+
+
+#GT table for questions asked to all (no skip logic)
+simple_funct3 <- function(CID, Title){  
+  CID_SYM <- rlang::ensym(CID)
+  dt_select <- data_tib_all3 %>%  select(Connect_ID, !!CID_SYM)
+  gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% mutate(answer=recode(!!CID_SYM, !!!dict)) %>% 
+    replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
+  
+  gt_yn %>%  gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+}
+
+#GT table with one filter/skip logic
+funct_5 <- function(CID, CID_4, Title){  
+  CID_SYM <- rlang::ensym(CID)
+  CID_SYM_P4 <- rlang::ensym(CID_4)
+  dt_select <- data_tib_all3 %>%  filter(!!CID_SYM_P4 != 804785430) %>% select(Connect_ID, !!CID_SYM)
+  gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% mutate(answer=recode(!!CID_SYM, !!!dict)) %>% 
+    replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
+  
+  gt_yn %>%  gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+}
+
+
+
+
+#GT table with one filter/skip logic
+one_logic_funct3 <- function(CID, CID_prev, Prev_Answer, Title){  
+  CID_SYM <- rlang::ensym(CID)
+  CID_SYM_P <- rlang::ensym(CID_prev)
+  dt_select <- data_tib_all3 %>%  filter(!!CID_SYM_P == Prev_Answer) %>%  select(Connect_ID, !!CID_SYM) 
+  gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% mutate(answer=recode(!!CID_SYM, !!!dict)) %>% 
+    replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
+  
+  gt_yn %>%  gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+}
+
+
+# ALCLLIFE functions
+alclife2_funct <- function(CID, Title){  
+
+  dt_alcl= data_tib_all3  %>%   filter(D_429228540==132232896 & !is.na(D_556837046_D_141874857) & (D_338467033==353358909 | (D_338467033==104430631 & !is.na(D_480426504))))
+
+alcl= dt_alcl  %>%  mutate(oth_age= case_when(CID==265550580 ~"Didn't Drink", 
+                                                CID==950039557 ~"A few times per Year",
+                                                CID==402048066 ~"A few times per Month",
+                                                CID==522395860 ~"Once per Week",
+                                                CID==756073829 ~"A few times per Week",
+                                                CID==858624942 ~"Once per day",
+                                                CID==424768954 ~"2-3 times per Day",
+                                                CID==687445652 ~"4-5 times per Day",
+                                                CID==333682419 ~"6+ times per Day",
+                                              TRUE ~ "Skipped this question"))
+alcl$oth_age <- factor(alcl$oth_age,levels=c("Didn't Drink","A few times per Year","A few times per Month","Once per Week", "A few times per Week","Once per day","2-3 times per Day","4-5 times per Day","6+ times per Day","Skipped this question"))
+
+dt_alcl_summary <- alcl %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
+
+dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+}
+
+
+
+#GT table with two filters/skip logics----this one is having issues
+funct_2_3_4 <- function(CID, CID_prev, Title){
+  CID_SYM <- rlang::ensym(CID)
+  CID_SYM_P <- rlang::ensym(CID_prev)
+  dt_select <- data_tib_all3 %>%  filter((!!CID_SYM_P == 486319890) | (!!CID_SYM_P == 132232896)) %>%  select(Connect_ID, !!CID_SYM)
+  gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% mutate(answer=recode(!!CID_SYM, !!!dict)) %>%
+    replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
+
+  gt_yn %>%  gt(rowname_col = "row_lab")  %>%
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md(Title)) %>%
+  cols_label(answer = md("**Answer**"), n = md("**Number of Participants**"), percentage = md("**Percentage of Participants**")) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+}
+
+
+
+#GT table with 3 filters/skip logic
+funct_10_11 <- function(CID, CID_prev1, CID_prev9b, Title){
+  CID_SYM <- rlang::ensym(CID)
+  CID_SYM_P1 <- rlang::ensym(CID_prev1)
+  CID_SYM_P9b <- rlang::ensym(CID_prev9b)
+  dt_select <- data_tib_all3 %>%  filter((!!CID_SYM_P1 == 486319890) | (!!CID_SYM_P1 == 132232896) | (!!CID_SYM_P9b == 353358909)) %>%  select(Connect_ID, !!CID_SYM)
+  gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% mutate(answer=recode(!!CID_SYM, !!!dict)) %>%
+    replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
+
+  gt_yn %>%  gt(rowname_col = "row_lab")  %>%
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md(Title)) %>%
+  cols_label(answer = md("**Answer**"), n = md("**Number of Participants**"), percentage = md("**Percentage of Participants**")) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+}
+
+
+# two_logic_funct(D_790436165_D_79043616, D_763164658, 486319890, 132232896, "CIG3_never: Smoking on a Regular Basis")
+# 
+# data_tib_all3_CIG <- data_tib_all3 %>%  filter(data_tib_all3$D_763164658==486319890| data_tib_all3$D_763164658==132232896)
+# 
+# dt_cig3 <- data_tib_all3_CIG[ , c("Connect_ID", "D_790436165_D_790436165_D_648960871")] 
+# 
+# dtCIG3= dt_cig3 %>%  mutate(participants=rep(1, dim(dt_cig3)[[1]]))
+# 
+# dtCIG3$percentage= (dtCIG3$participants/dim(dtCIG3)[[1]])*100 
+# #dtCIG3= dtCIG3 %>%  mutate(percentage=(dtCIG3$participants/dim(dtCIG3)[[1]])*100) <--- doesn't work to avoid error message
+# 
+# 
+# cig3_ans= dtCIG3 %>%  mutate(answer= case_when(D_790436165_D_790436165_D_648960871=="[]" ~ "Answered with age",
+#                                              D_790436165_D_790436165_D_648960871=="[648960871]" ~ "Never smoked on a regular basis",
+#                                              is.na(D_790436165_D_790436165_D_648960871) ~ "Skipped this question"))
+# 
+# dtCIG3_summary <- cig3_ans %>% group_by(answer) %>%   summarize_at(c("participants","percentage"), sum, na.rm = TRUE) 
+# gtm3_print <- gt(dtCIG3_summary)
+# #gtm3_print
+# 
+# dtCIG3_summary %>%  gt(rowname_col = "row_lab") %>%  
+#   fmt_number(columns = "percentage", decimals = 2) %>% 
+#   tab_header(title = md("CIG3_never: Smoking on a Regular Basis")) %>% 
+#   cols_label(answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+#   summary_rows(
+#     column = c(participants,percentage),
+#     fns= list(
+#       Sum= ~sum(.)
+#     ), decimals=0) %>%
+#   tab_options(
+#       stub.font.weight = "bold"
+#     ) %>%
+#   tab_style(
+#     style = list(
+#       cell_text(weight = "bold")
+#     ),
+#     locations = cells_body(
+#       columns = answer,
+#     )
+#   ) %>% opt_row_striping()
+
+```
+
+
+
+
+
+
+
+# General Take Aways from Module 3 Survey Responses
+```{r, echo=FALSE, message=FALSE, warning=FALSE, collapse=TRUE}
+data_tib_all3_CIG <- data_tib_all3 %>%  filter(data_tib_all3$D_763164658==486319890| data_tib_all3$D_763164658==132232896)
+data_tib_all3_SMMAR <- data_tib_all3 %>%  filter(data_tib_all3$D_319397722==486319890| data_tib_all3$D_319397722==132232896)
+data_tib_all3_tanbed3 <- data_tib_all3 %>%  filter(data_tib_all3$D_662762705==649327523| data_tib_all3$D_662762705==587052987 | data_tib_all3$D_662762705==838336013)
+dttan <- data_tib_all3 %>%  filter(data_tib_all3$D_662762705!=648960871)
+tb= data_tib_all3 %>%  mutate(products= case_when(D_947205597_D_712653855==1 ~ "Cigarettes",
+                                             D_947205597_D_706254326==1 ~ "Electronic Cigarettes",
+                                             D_947205597_D_198133418==1 ~ "Cigars",
+                                             D_947205597_D_817381897==1 ~ "Smokeless Tobacco",
+                                             D_947205597_D_539648641==1 ~ "Hookah",
+                                             D_947205597_D_686310465==1 ~ "Tobacco Pipe",
+                                             D_947205597_D_535003378==1 ~ "None of the Above",
+                                             TRUE  ~ "Skipped this question"))
+MJ_prod= data_tib_all3 %>%  mutate(products= case_when(D_830608495_D_760521319==1 ~ "Smoking",
+                                             D_830608495_D_158841370==1 ~ "Smoking combined with Tobacco",
+                                             D_830608495_D_349034127==1 ~ "Electronic Vaping",
+                                             D_830608495_D_713594719==1 ~ "Consuming through Food or Drink",
+                                             D_830608495_D_675129470==1 ~ "THC Dabbing",
+                                             D_830608495_D_535003378==1 ~ "None of the Above",
+                                            TRUE ~ "Skipped this question"))
+ta1= round((sum(tb$products!="None of the Above")/dim(module3)[[1]])*100, digits=2)
+ta2=round((dim(data_tib_all3_CIG)[[1]]/dim(module3)[[1]])*100, digits=2)
+ta3=round((sum(MJ_prod$products!="None of the Above")/dim(module3)[[1]])*100, digits=2)
+ta4=round((dim(data_tib_all3_SMMAR)[[1]]/dim(module3)[[1]])*100, digits=2)
+ta5=round((dim(dttan)[[1]]/dim(module3)[[1]])*100, digits=2)
+ta6=round((dim(data_tib_all3_tanbed3)[[1]]/dim(module3)[[1]])*100, digits=2)
+cat(ta1,"% of participants reported having used a Tobacco or Nitcotine product.")
+cat(ta2, "% of participants reported having smoked cigarettes more than 50 times in their lifetime.")
+cat(ta3, "% of participants reported having used a Marijuana product.")
+cat(ta4, "% of participants reported having smoked marijuana more than 50 times in their lifetime.")
+cat(ta5, "% of participants reported having used a tanning bed.")
+cat(ta6, "% of participants reported having used a tanning bed more than 50 times in their lifetime.")
+```
+
+\newpage
+
+# Section 1: Tobacco and Nicotine
+## All Products
+
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+
+tob_pd= data_tib_all3 %>%  mutate(products= case_when(D_947205597_D_712653855==1 ~ "Cigarettes",
+                                             D_947205597_D_706254326==1 ~ "Electronic Cigarettes",
+                                             D_947205597_D_198133418==1 ~ "Cigars",
+                                             D_947205597_D_817381897==1 ~ "Smokeless Tobacco",
+                                             D_947205597_D_539648641==1 ~ "Hookah",
+                                             D_947205597_D_686310465==1 ~ "Tobacco Pipe",
+                                             D_947205597_D_535003378==1 ~ "None of the Above",
+                                             TRUE  ~ "Skipped this question"))
+
+ 
+tmp_1<- tob_pd[, grepl("947205597", colnames(tob_pd))]
+tmp1 <- tmp_1[, c(6,5,1,7,3,4,2)]
+tobac_dx <- NULL
+for (i in 1:7){
+  dt <- as.data.frame(tab1(tmp1[,i])$output.table)
+  dt$tobac_dx <- colnames(tmp1)[i]
+  tobac_dx <- rbind(tobac_dx,dt[2,])
+  
+}
+tobac_dx$tobac_dx ### how are their race variables being assigned here?? wrong variable matching. Flattening issue?
+
+tobac_dx$tobac_dx <- c("Cigarettes","Electronic Cigarettes","Cigars","Smokeless Tobacco","Hookah","Tobacco Pipe","None of the Above")
+```
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+# colnames(tobac_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
+# testt2_1 <- tobac_dx[, c(4,1,2)]
+# 
+# colnames(tobac_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
+# testt2_2 <- tobac_dx[, c(4,1,2)]
+
+colnames(tobac_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
+tobac <- tobac_dx[, c(4,1,2)]
+
+skipped_mhg1 <- sum(table(tob_pd$products=="Skipped this question")[2])
+tobac[as.numeric(dim(tobac)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(tob_pd)[[1]])*100,2))
+
+
+dt_tobac <- tobac %>%  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>%
+  tab_header(title = md("Tobacco and Nicotine Products Used")) %>%
+  cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"),  Condition = md("**Condition**")) %>%
+  # summary_rows( groups=F,
+  #   column = c(Frequency,Percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  #grand_summary_rows(columns=c(Frequency, Percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Condition,
+    )
+  )
+tab_footnote(
+  dt_tobac,
+  md("As this is a select all question, participants may select multiple responses."),
+  locations = cells_column_labels(columns = Percentage),
+  placement = c("left")
+)
+
+
+
+
+```
+
+
+
+## Cigarettes
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+#CIG1 
+one_logic_funct3(D_763164658,D_947205597_D_712653855,1,"CIG1: Total Cigarettes in a Lifetime")
+
+
+#CIG2
+boxp_funct(D_194557808, "CIG2: Age at First Cigarette", "Age")
+
+
+#CIG3_AGE
+boxp_funct(D_790436165_D_408696162, "CIG3_age: Age Smoking Cigarettes on a Regular Basis", "Age")
+
+#cig3never
+
+data_tib_all3_CIG <- data_tib_all3 %>%  filter((data_tib_all3$D_763164658==486319890| data_tib_all3$D_763164658==132232896) & is.na(data_tib_all3$D_790436165_D_408696162))
+
+
+cig3_ans= data_tib_all3_CIG %>%  mutate(answer= case_when(D_790436165_D_790436165_D_648960871==1 ~ "Never smoked on a regular basis",
+                                             TRUE ~ "Skipped this question"))
+
+dtCIG3_summary <- cig3_ans %>% group_by(answer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtCIG3_summary %>%  gt() %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("CIG3: Smoking on a Regular Basis (Didn't Answer with Age)")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+
+
+
+#CIG4
+funct_2_3_4(D_639684251,D_763164658, "CIG4: Smoking Cigarettes Now")
+
+#CIG5
+funct_5(D_798549704,D_639684251,"CIG5: Last Time Cigarettes Smoked")
+
+#grid.arrange(cigt4, cigt5, nrow=2)
+
+
+
+#CIG6
+cigt6=hist_funct(D_227439141, "CIG6: Cigarette Smoked in the past 30 days", "Cigarettes", "Frequency")
+
+
+#CIG7A
+cigt7=hist_funct(D_318569032, "CIG7: Months Ago Cigarette Last Smoked", "Months", "Frequency")
+
+grid.arrange(cigt6, cigt7, nrow=2)
+
+
+
+#CIG8
+boxp_funct(D_204884007, "CIG8: Age at Last Cigarette", "Age")
+
+
+#CIG8C
+funct_8c(D_400969127, D_798549704, D_763164658, "CIG8C: Ever Smoke Every Day at that time")
+
+
+#CIG8D
+hist_funct(D_820220019, "CIG8D: Days per Month Cigarette Smoked", "Days", "Frequency")
+
+
+#CIG9A
+hist_funct(D_304657762, "CIG9A: Cigarette Smoked per Day", "Cigarettes", "Frequency")
+
+
+#CIG9B
+funct_9b(D_763164658, D_639684251, D_798549704, D_400969127, D_815776236, "CIG9B: Ever Smoke Cigarettes Everyday")
+
+
+#CIG9D
+boxp_funct(D_560293868, "CIG9D: Age You Stopped Smoking Cigarettes Every Day", "Age")
+
+#CIG9C
+hist_funct(D_399659169, "CIG9C: Cigarette Smoked per Day", "Cigarettes", "Frequency")
+
+
+
+
+#CIG10
+
+funct_10_11(D_667002790, D_763164658, D_815776236, "CIG10: Timeframe for First Cigarette of the Day")
+
+
+
+#CIG11
+
+funct_10_11(D_534351312, D_763164658, D_815776236, "CIG11: Smoking before First Meal of the Day")
+
+
+#CIGLIFEA
+cglifeA=hist_funct(D_594608533, "CIGLIFEA: Cigarette Smoked per Day at Ages 0-17", "Cigarettes", "Frequency")
+
+#CIGLIFEB
+cglifeB=hist_funct(D_923371868, "CIGLIFEB: Cigarette Smoked per Day at Ages 18-24", "Cigarettes", "Frequency")
+grid.arrange(cglifeA, cglifeB, nrow=2)
+
+
+#CIGLIFEC
+cglifeC=hist_funct(D_445537380, "CIGLIFEC: Cigarette Smoked per Day at Ages 25-29", "Cigarettes", "Frequency")
+
+#CIGLIFED
+cglifeD=hist_funct(D_387489930, "CIGLIFED: Cigarette Smoked per Day at Ages 30-39", "Cigarettes", "Frequency")
+grid.arrange(cglifeC, cglifeD, nrow=2)
+
+
+#CIGLIFEE
+cglifeE=hist_funct(D_493642768, "CIGLIFEE: Cigarette Smoked per Day at Ages 40-49", "Cigarettes", "Frequency")
+
+#CIGLIFEF
+cglifeF=hist_funct(D_821629868, "CIGLIFEF: Cigarette Smoked per Day at Ages 50-59", "Cigarettes", "Frequency")
+grid.arrange(cglifeE, cglifeF, nrow=2)
+
+
+#CIGLIFEG
+hist_funct(D_434034366, "CIGLIFEG: Cigarette Smoked per Day at Ages 60-69", "Cigarettes", "Frequency")
+
+#CIGLIFEH
+#hist_funct(D_842088582, "CIGLIFEH: Cigarette Smoked per Day at Ages 70+", "Cigarettes", "Frequency") #no one yet
+#grid.arrange(cglifeA, cglifeB, nrow=2)
+
+```
+
+
+## Electronic Cigarettes
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+#ECIG1
+one_logic_funct3(D_624111331,D_947205597_D_706254326,1,"ECIG1: Total Days of Smoking E-Cigs/Vaping Devises in a Lifetime")
+
+#ECIG2
+boxp_funct(D_761037053, "ECIG2: Age at First E-Cig/Vaping Usage", "Age")
+
+
+#ECIG3_AGE
+boxp_funct(D_550244580_D_517801904, "ECIG3: Age Using E-Cigs/Vaping Devises on a Regular Basis", "Age")
+
+## Make automatic table
+
+data_tib_all3_ECIG <- data_tib_all3 %>%  filter((data_tib_all3$D_624111331==486319890| data_tib_all3$D_624111331==132232896) & is.na(data_tib_all3$D_550244580_D_517801904))
+
+
+ECIG_ans= data_tib_all3_ECIG %>%  mutate(answer= case_when(D_550244580_D_550244580_D_648960871==1 ~ "Never smoked on a regular basis",
+                                             TRUE ~ "Skipped this question"))
+
+dtECIG_summary <- ECIG_ans %>% group_by(answer) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtECIG_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ECIG3: Vaping on a Regular Basis (Didn't Answer with Age)")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+
+
+#ECIG4
+funct_2_3_4(D_751046675,D_624111331,"ECIG4: Using E-Cigs/Vaping Devises Now")
+
+#ECIG5
+funct_5(D_238422161,D_751046675,"ECIG5: Last Time E-Cigs/Vaping Devises Used")
+
+
+#ECIG6
+ecigt6=hist_funct(D_716554850, "ECIG6: Total Days E-Cigs/Vaping Devises Used in the past 30 days", "Days", "Frequency") 
+
+#ECIG7A
+ecigt7=hist_funct(D_716554850, "ECIG7: Months Ago E-Cigs/Vaping Devises Last Used", "Months", "Frequency") 
+grid.arrange(ecigt6, ecigt7, nrow=2)
+
+
+#ECIG8
+boxp_funct(D_360277949, "ECIG8: Age at Last Used E-Cigs/Vaping Devises", "Age")
+
+
+#ECIG8C
+funct_8c(D_242276545, D_238422161, D_624111331, "ECIG8C: Ever Vape Every Day at that time")
+
+
+#ECIG8D
+hist_funct(D_183546626, "ECIG8D: Days per Month E-Cigs/Vaping Devises Used", "Days", "Frequency") 
+
+
+#ECIG9A
+funct_2_3_4(D_982470672,D_624111331,"ECIG9A: Total Time E-Cigs/Vaping Devises Used per Day")
+
+
+#ECIG9B
+funct_9b(D_624111331, D_751046675, D_238422161, D_242276545, D_333072838, "ECIG9B: Ever Vape Everyday")
+
+
+#ECIG9D
+boxp_funct(D_388614168, "ECIG9D: Age You Stopped Using E-Cigs/Vaping Devises Every Day", "Age")
+
+#ECIG9C
+one_logic_funct3(D_656911826,D_333072838,353358909,"ECIG9C: Total Time E-Cigs/Vaping Devises Used per Day")
+
+
+
+#ECIG10
+
+ecig10_list= module3 %>%  select(D_370901901) %>% filter(!is.na(D_370901901))
+cat(dim(ecig10_list)[[1]], "provided the 'other' Ecigarette product they used.") #, (as.numeric(dim(data_tib_all3_ECIG)[[1]])- as.numeric(dim(ecig10_list)[[1]])), "skipped this question.")
+
+#ECIGLIFEA
+#hist_funct(D_240089798,"ECIGLIFEA: Time E-Cigs/Vaping Devises Used per Day at Ages 0-17", "Time", "Frequency") #no one yet
+
+
+#ECIGLIFEB
+#hist_funct(D_536216847,"ECIGLIFEB: Time E-Cigs/Vaping Devises Used per Day at Ages 18-24", "Time", "Frequency") #no one yet
+
+
+#ECIGLIFEC
+#hist_funct(D_622394149,"ECIGLIFEC: Time E-Cigs/Vaping Devises Used per Day at Ages 25-29", "Time", "Frequency") #no one yet
+
+
+#ECIGLIFED
+data_tib_all3$DOB <- paste0(str_sub(module3$d_371067537,1,4), "-", str_sub(module3$d_371067537,5,6), "-", str_sub(module3$d_371067537,7,8)) 
+data_tib_all3$DOB <- as.Date(data_tib_all3$DOB) #, format='%y-%m-%d')
+currentDate <- as.Date(Sys.Date(), format='%y/%m/%d')
+
+
+data_tib_all3$AGEGRID <- time_length(difftime(currentDate, data_tib_all3$DOB), "years")
+
+
+
+
+mhgroup9= data_tib_all3 %>%  filter(D_624111331==132232896 & !is.na(D_550244580_D_517801904) & (D_751046675==804785430 | D_242276545==353358909) & 
+                                      as.numeric(data_tib_all3$D_550244580_D_517801904)<40  & !(as.numeric(data_tib_all3$D_360277949)<40)) %>% 
+  mutate(surgery= case_when(D_442002787==428999623 ~ "15 minutes or less",
+                                             D_442002787==248303092 ~ "16 to 30 minutes",
+                                             D_442002787==998679771 ~ "31 to 59 minutes",
+                                             D_442002787==638092100 ~ "1 hour",
+                                             D_442002787==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+mhgroup9$surgery <- factor(mhgroup9$surgery,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_surgery_summary <- mhgroup9 %>% dplyr::group_by(surgery) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(surgery, n, percentage)
+
+dt_surgery_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ECIGLIFED: Time E-Cigs/Vaping Devises Used per Day at Ages 30-39")) %>% 
+  cols_label(n= md("**Number of Participants**"),surgery = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = surgery,
+    )
+  ) 
+
+
+#ECIGLIFEE
+mhgroup9= data_tib_all3 %>%  filter(D_624111331==132232896 & !is.na(D_550244580_D_517801904) & (D_751046675==804785430 | D_242276545==353358909) & 
+                                      as.numeric(data_tib_all3$D_550244580_D_517801904)<50   & !(as.numeric(data_tib_all3$D_360277949)<50)) %>% 
+  mutate(surgery= case_when(D_208578552==428999623 ~ "15 minutes or less",
+                                             D_208578552==248303092 ~ "16 to 30 minutes",
+                                             D_208578552==998679771 ~ "31 to 59 minutes",
+                                             D_208578552==638092100 ~ "1 hour",
+                                             D_208578552==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+mhgroup9$surgery <- factor(mhgroup9$surgery,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_surgery_summary <- mhgroup9 %>% dplyr::group_by(surgery) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(surgery, n, percentage)
+
+dt_surgery_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ECIGLIFEE: Time E-Cigs/Vaping Devises Used per Day at Ages 40-49")) %>% 
+  cols_label(n= md("**Number of Participants**"),surgery = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = surgery,
+    )
+  ) 
+
+
+#ECIGLIFEF
+mhgroup9= data_tib_all3 %>%  filter(D_624111331==132232896 & !is.na(D_550244580_D_517801904) & (D_751046675==804785430 | D_242276545==353358909) & 
+                                      as.numeric(data_tib_all3$D_550244580_D_517801904)<60   & as.numeric(data_tib_all3$AGEGRID)>49) %>% #& !(as.numeric(data_tib_all3$D_360277949)<60)
+  mutate(surgery= case_when(D_480155628==428999623 ~ "15 minutes or less",
+                                             D_480155628==248303092 ~ "16 to 30 minutes",
+                                             D_480155628==998679771 ~ "31 to 59 minutes",
+                                             D_480155628==638092100 ~ "1 hour",
+                                             D_480155628==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+mhgroup9$surgery <- factor(mhgroup9$surgery,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_surgery_summary <- mhgroup9 %>% dplyr::group_by(surgery) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(surgery, n, percentage)
+
+dt_surgery_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ECIGLIFEF: Time E-Cigs/Vaping Devises Used per Day at Ages 50-59")) %>% 
+  cols_label(n= md("**Number of Participants**"),surgery = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = surgery,
+    )
+  ) 
+
+
+
+#ECIGLIFEG
+mhgroup9= data_tib_all3 %>%  filter(D_624111331==132232896 & !is.na(D_550244580_D_517801904) & (D_751046675==804785430 | D_242276545==353358909) & 
+                                      as.numeric(data_tib_all3$D_550244580_D_517801904)<70  & as.numeric(data_tib_all3$AGEGRID)>59) %>% # & !(as.numeric(data_tib_all3$D_360277949)<70) 
+  mutate(surgery= case_when(D_640944113==428999623 ~ "15 minutes or less",
+                                             D_640944113==248303092 ~ "16 to 30 minutes",
+                                             D_640944113==998679771 ~ "31 to 59 minutes",
+                                             D_640944113==638092100 ~ "1 hour",
+                                             D_640944113==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+mhgroup9$surgery <- factor(mhgroup9$surgery,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_surgery_summary <- mhgroup9 %>% dplyr::group_by(surgery) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(surgery, n, percentage)
+
+dt_surgery_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ECIGLIFEG: Time E-Cigs/Vaping Devises Used per Day at Ages 60-69")) %>% 
+  cols_label(n= md("**Number of Participants**"),surgery = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = surgery,
+    )
+  ) 
+
+
+
+#ECIGLIFEH
+#hist_funct(D_866159532,"ECIGLIFEH: Time E-Cigs/Vaping Devises Used per Day at Ages 70+", "Time", "Frequency") #no one yet
+
+```
+
+
+## Cigars
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+#CIGAR1
+one_logic_funct3(D_182431332,D_947205597_D_198133418 ,1,"CIGAR1: Total Cigars in a Lifetime")
+
+#CIGAR2
+boxp_funct(D_241771440, "CIGAR2: Age at First Cigar", "Age")
+
+
+#CIGAR3_AGE
+boxp_funct(D_814115676_D_851145096, "CIGAR3_AGE: Age Smoking Cigars on a Regular Basis", "Age")
+
+## Make automatic table
+
+data_tib_all3_CIGAR <- data_tib_all3 %>%  filter((data_tib_all3$D_182431332==486319890| data_tib_all3$D_182431332==132232896) & is.na(data_tib_all3$D_814115676_D_851145096))
+
+
+CIGAR_ans= data_tib_all3_CIGAR %>%  mutate(answer= case_when(D_814115676_D_814115676_D_648960871==1 ~ "Never smoked on a regular basis",
+                                             TRUE ~ "Skipped this question"))
+
+dtCIGAR_summary <- CIGAR_ans %>% group_by(answer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtCIGAR_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("CIGAR3: Smoking Cigars on a Regular Basis (Didn't Answer with Age)")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+
+
+#CIGAR4
+funct_2_3_4(D_564438246,D_182431332,"CIGAR4: Smoking Cigars Now")
+
+#CIGAR5
+funct_5(D_789271762,D_564438246,"CIGAR5: Last Time Cigars Smoked")
+
+
+#CIGAR6
+cigr6=hist_funct(D_622210148, "CIGAR6: Cigars Smoked in the past 30 days", "Cigars", "Frequency") 
+
+#CIGAR7A
+cigr7=hist_funct(D_457290610, "CIGAR7: Months Ago Cigar Last Smoked", "Months", "Frequency")
+grid.arrange(cigr6, cigr7, nrow=2)
+
+
+#CIGAR8
+boxp_funct(D_997412869, "CIGAR8: Age at Last Cigar", "Age")
+
+
+#CIGAR8C
+funct_8c(D_395480458, D_789271762, D_182431332, "CIGAR8C: Ever Smoke Every Day at that time")
+
+
+#CIGAR8D
+hist_funct(D_674378360, "CIGAR8D: Days per Month Cigars Smoked", "Days", "Frequency")
+
+
+#CIGAR9A
+hist_funct(D_780721084, "CIGAR9A: Cigars Smoked per Day", "Cigars", "Frequency")
+
+
+#CIGAR9B
+funct_9b(D_182431332, D_564438246, D_789271762, D_395480458, D_287715042, "CIGAR9B: Ever Smoke Cigars Everyday")
+
+
+#CIGAR9D
+boxp_funct(D_145078867, "CIGAR9D: Age You Stopped Smoking Cigars Every Day", "Age")
+
+#CIGAR9C
+hist_funct(D_598954337, "CIGAR9C: Cigars Smoked per Day", "Cigars", "Frequency")
+
+
+
+
+#CIGAR10
+
+cigar_kind= data_tib_all3_CIGAR %>%  filter(D_763164658==486319890 | D_763164658==132232896 | D_815776236==353358909) %>% mutate(kind= case_when(D_103566006_D_103566006_D_123926260 ==1 ~ "Cigar",
+                                             D_103566006_D_103566006_D_741643840==1 ~ "Cigarello",
+                                             D_103566006_D_103566006_D_959535900==1 ~ "Little Finger Cigar",
+                                             D_103566006_D_103566006_D_807835037==1 ~ "Other",
+                                             TRUE ~ "Skipped This Question"))
+
+dtCIGAR10_summary <- cigar_kind %>% group_by(kind) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(kind, n, percentage)
+
+dtCIGAR10_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("CIGAR10: Kind of Cigar Smoked")) %>% 
+  cols_label(n= md("**Number of Participants**"), kind = md("**Kind of Cigar**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+    # column = c(n,percentage),
+    # fns= list(
+    #   Sum= ~sum(.)
+    # ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = kind,
+    )
+  ) %>% opt_row_striping()
+
+#CIGARLIFEA
+#hist_funct(D_254689566, "CIGARLIFEA: Cigars Smoked per Day at Ages 0-17", "Cigars", "Frequency") #no one yet
+
+#CIGARLIFEB
+cigrlfB=hist_funct(D_951151270, "CIGARLIFEB: Cigars Smoked per Day at Ages 18-24", "Cigars", "Frequency") 
+
+#CIGARLIFEC
+cigrlfC=hist_funct(D_237415094, "CIGARLIFEC: Cigars Smoked per Day at Ages 25-29", "Cigars", "Frequency") 
+grid.arrange(cigrlfB, cigrlfC, nrow=2)
+
+
+#CIGARLIFED
+cigrlfD=hist_funct(D_868868325, "CIGARLIFED: Cigars Smoked per Day at Ages 30-39", "Cigars", "Frequency")
+
+#CIGARLIFEE
+cigrlfE=hist_funct(D_243519559, "CIGARLIFEE: Cigars Smoked per Day at Ages 40-49", "Cigars", "Frequency")
+grid.arrange(cigrlfD, cigrlfE, nrow=2)
+
+
+#CIGARLIFEF
+cigrlfF=hist_funct(D_365370279, "CIGARLIFEF: Cigars Smoked per Day at Ages 50-59", "Cigars", "Frequency")
+
+#CIGARLIFEG
+cigrlfG=hist_funct(D_645681293, "CIGARLIFEG: Cigars Smoked per Day at Ages 60-69", "Cigars", "Frequency")
+grid.arrange(cigrlfF, cigrlfG, nrow=2)
+
+#CIGARLIFEH
+#hist_funct(D_440364083, "CIGARLIFEH: Cigars Smoked per Day at Ages 70+", "Cigars", "Frequency") #no one yet 
+
+```
+
+
+## Chewing Tobacco 
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+#CHEW1
+one_logic_funct3(D_306320432,D_947205597_D_817381897 ,1,"CHEW1: Total Days of Using Chewing Tobacco/Dip in a Lifetime")
+
+
+#CHEW2
+boxp_funct(D_213679054, "CHEW2: Age at First Chewing Tobacco/Dip Usage", "Age")
+
+#CHEW3
+boxp_funct(D_257300783_D_424527685, "CHEW3_AGE: Age at Using Chewing Tobacco/Dip on a Regular Basis", "Age")
+
+
+#CHEW_NEVER
+data_tib_all3_CHEW <- data_tib_all3 %>%  filter((data_tib_all3$D_306320432==486319890| data_tib_all3$D_306320432==132232896) & is.na(data_tib_all3$D_257300783_D_424527685))
+
+
+CHEW_ans= data_tib_all3_CHEW  %>%  mutate(answer= case_when(D_257300783_D_257300783_D_648960871==1 ~ "Never smoked on a regular basis",
+                                             TRUE ~ "Skipped this question"))
+
+dtCHEW_summary <- CHEW_ans %>% group_by(answer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtCHEW_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("CHEW3: Using Chewing Tobacco on a Regular Basis (Didn't Answer with Age)")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+
+#CHEW4
+funct_2_3_4(D_101710639,D_306320432,"CHEW4: Using Chewing Tobacco/Dip Now")
+
+#CHEW5
+funct_5(D_344631681,D_306320432,"CHEW5: Last Time Using Chewing Tobacco/Dip")
+
+
+
+#CHEW6
+chw6=hist_funct(D_872821562, "CHEW6: Total Days Chewing Tobacco/Dip Used in the past 30 days", "Days", "Frequency")
+
+#CHEW7A
+chw7=hist_funct(D_344583659, "CHEW7: Months Ago Chewing Tobacco/Dip Last Used", "Months", "Frequency")
+grid.arrange(chw6, chw7, nrow=2)
+
+
+#CHEW8
+boxp_funct(D_671380198, "CHEW8: Age at Last Used Chewing Tobacco/Dip", "Age")
+
+#CHEW8C
+funct_8c(D_785139115, D_344631681, D_306320432, "CHEW8c: Ever Use Smokeless Tobacco Every Day at that time")
+
+
+#CHEW8D
+hist_funct(D_549400618, "CHEW8D: Days per Month Chewing Tobacco/Dip Used", "Days", "Frequency")
+
+
+#CHEW9A
+funct_2_3_4(D_394049992,D_306320432,"CHEW9A: Total Time Chewing Tobacco/Dip Used per Day")
+
+#CHEW9B
+funct_9b(D_306320432, D_101710639, D_344631681, D_785139115, D_673842048, "CHEW9B: Ever Use Smokeless Tobacco Everyday")
+
+
+#CHEW9D
+boxp_funct(D_568113091, "CHEW9D: Age You Stopped Using Chewing Tobacco/Dip Every Day", "Age")
+
+#CHEW9C
+one_logic_funct3(D_537807075,D_673842048,353358909,"CHEW9C: Total Time Chewing Tobacco/Dip Used per Day")
+
+
+
+#CHEW10
+chew10_list= module3 %>%  select(D_960332453) %>% filter(!is.na(D_960332453))
+cat(dim(chew10_list)[[1]], "provided the 'other' Ecigarette product they used.")
+
+
+#CHEWLIFEA
+lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & (D_101710639==804785430 | D_785139115==353358909) & 
+                                      as.numeric(data_tib_all3$D_257300783_D_424527685)<17 & !(as.numeric(data_tib_all3$D_671380198)<17)) %>% 
+  mutate(timespan= case_when(D_495592561==428999623 ~ "15 minutes or less",
+                                             D_495592561==248303092 ~ "16 to 30 minutes",
+                                             D_495592561==998679771 ~ "31 to 59 minutes",
+                                             D_495592561==638092100 ~ "1 hour",
+                                             D_495592561==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
+
+dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("CHEWLIFEA: Time Chewing Tobacco/Dip Used per Day at Ages 0-17")) %>% 
+  cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = timespan,
+    )
+  ) 
+
+
+#CHEWLIFEB
+lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & (D_101710639==804785430 | D_785139115==353358909) & 
+                                      as.numeric(data_tib_all3$D_257300783_D_424527685)<25 & !(as.numeric(data_tib_all3$D_671380198)<25)) %>% 
+  mutate(timespan= case_when(D_705282587==428999623 ~ "15 minutes or less",
+                                             D_705282587==248303092 ~ "16 to 30 minutes",
+                                             D_705282587==998679771 ~ "31 to 59 minutes",
+                                             D_705282587==638092100 ~ "1 hour",
+                                             D_705282587==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
+
+dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("CHEWLIFEB: Time Chewing Tobacco/Dip Used per Day at Ages 18-24")) %>% 
+  cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = timespan,
+    )
+  ) 
+
+
+
+#CHEWLIFEC
+
+lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & (D_101710639==804785430 | D_785139115==353358909) & 
+                                      as.numeric(data_tib_all3$D_257300783_D_424527685)<30 & !(as.numeric(data_tib_all3$D_671380198)<30)) %>% 
+  mutate(timespan= case_when(D_133396976==428999623 ~ "15 minutes or less",
+                                             D_133396976==248303092 ~ "16 to 30 minutes",
+                                             D_133396976==998679771 ~ "31 to 59 minutes",
+                                             D_133396976==638092100 ~ "1 hour",
+                                             D_133396976==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
+
+dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("CHEWLIFEC: Time Chewing Tobacco/Dip Used per Day at Ages 25-29")) %>% 
+  cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = timespan,
+    )
+  ) 
+
+
+#CHEWLIFED
+lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & (D_101710639==804785430 | D_785139115==353358909) & 
+                                      as.numeric(data_tib_all3$D_257300783_D_424527685)<40 & !(as.numeric(data_tib_all3$D_671380198)<40)) %>% 
+  mutate(timespan= case_when(D_628770824==428999623 ~ "15 minutes or less",
+                                             D_628770824==248303092 ~ "16 to 30 minutes",
+                                             D_628770824==998679771 ~ "31 to 59 minutes",
+                                             D_628770824==638092100 ~ "1 hour",
+                                             D_628770824==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
+
+dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("CHEWLIFED: Time Chewing Tobacco/Dip Used per Day at Ages 30-39")) %>% 
+  cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = timespan,
+    )
+  ) 
+
+
+#CHEWLIFEE
+lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & (D_101710639==804785430 | D_785139115==353358909) & 
+                                      as.numeric(data_tib_all3$D_257300783_D_424527685)<50 & !(as.numeric(data_tib_all3$D_671380198)<50)) %>% 
+  mutate(timespan= case_when(D_558707243==428999623 ~ "15 minutes or less",
+                                             D_558707243==248303092 ~ "16 to 30 minutes",
+                                             D_558707243==998679771 ~ "31 to 59 minutes",
+                                             D_558707243==638092100 ~ "1 hour",
+                                             D_558707243==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
+
+dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("CHEWLIFEE: Time Chewing Tobacco/Dip Used per Day at Ages 40-49")) %>% 
+  cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = timespan,
+    )
+  ) 
+
+
+
+#CHEWLIFEF
+lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & (D_101710639==804785430 | D_785139115==353358909) & 
+                                      as.numeric(data_tib_all3$D_257300783_D_424527685)<60 & !(as.numeric(data_tib_all3$D_671380198)<50) & as.numeric(data_tib_all3$AGEGRID)>49) %>% 
+  mutate(timespan= case_when(D_929034795==428999623 ~ "15 minutes or less",
+                                             D_929034795==248303092 ~ "16 to 30 minutes",
+                                             D_929034795==998679771 ~ "31 to 59 minutes",
+                                             D_929034795==638092100 ~ "1 hour",
+                                             D_929034795==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
+
+dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("CHEWLIFEF: Time Chewing Tobacco/Dip Used per Day at Ages 50-59")) %>% 
+  cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = timespan,
+    )
+  ) 
+
+
+#CHEWLIFEG
+#simple_funct3(D_995220236,"CHEWLIFEG: Time Chewing Tobacco/Dip Used per Day at Ages 60-69") #no one yet 
+
+#CHEWLIFEH
+#simple_funct3(D_551301510,"CHEWLIFEH: Time Chewing Tobacco/Dip Used per Day at Ages 70+") #no one yet 
+
+```
+
+
+## Hookah 
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+#HOOKAH1
+one_logic_funct3(D_981755099,D_947205597_D_539648641 ,1,"HOOKAH1: Total Days of Smoking Hookah in a Lifetime")
+
+
+#HOOKAH2
+boxp_funct(D_127871793, "HOOKAH2: Age at First Hookah Smoke", "Age")
+
+
+#HOOKAH3_AGE
+boxp_funct(D_154603497_D_234430294, "HOOKAH3_AGE: Age Smoking Hookah on a Regular Basis", "Age")
+
+#HOOKAH3 (never)
+data_tib_all3_HOOKAH <- data_tib_all3 %>%  filter((data_tib_all3$D_981755099==486319890| data_tib_all3$D_981755099==132232896) & is.na(data_tib_all3$D_154603497_D_234430294))
+
+
+HOOKAH_ans= data_tib_all3_HOOKAH %>%  mutate(answer= case_when(D_154603497_D_154603497_D_648960871==1 ~ "Never smoked on a regular basis",
+                                             TRUE ~ "Skipped this question"))
+
+dtHOOKAH_summary <- HOOKAH_ans %>% group_by(answer) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtHOOKAH_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("HOOKAH3: Smoking Hookah on a Regular Basis (Didn't Answer with Age)")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+
+
+
+#HOOKAH4
+funct_2_3_4(D_472007171,D_981755099,"HOOKAH4: Smoking Hookah Now")
+
+#HOOKAH5
+funct_5(D_787047261,D_472007171,"HOOKAH5: Last Time Hookah Smoked")
+
+
+#HOOKAH6
+hist_funct(D_915293401, "HOOKAH6: Total Days Hookah Smoked in the past 30 days", "Days", "Frequency") 
+
+#HOOKAH7A
+#hist_funct(D_268407776, "HOOKAH7: Months Ago Hookah Last Used", "Months", "Frequency") #unanswered
+
+#HOOKAH8
+boxp_funct(D_938333920, "HOOKAH8: Age at Last Smoked Hookah", "Age")
+
+
+
+
+#HOOKAH8C
+funct_8c(D_585702271, D_787047261, D_981755099, "HOOKAH8C: Ever Smoke Hookah Every Day at that time")
+
+
+#HOOKAH8D
+hist_funct(D_827661413, "HOOKAH8D: Days per Month Hookah Smoked", "Days", "Frequency")
+
+
+
+#HOOKAH9A
+funct_2_3_4(D_356470028,D_981755099,"HOOKAH9A: Total Time Hookah Smoked per Day")
+
+
+##HOOKAH9B
+funct_9b(D_981755099, D_472007171, D_787047261, D_585702271, D_720305356, "HOOKAH9B: Ever Smoke Hoookah Everyday")
+
+
+#HOOKAH9D
+#boxp_funct(D_951901114, "HOOKAH9D: Age You Stopped Smoking Hookah Every Day", "Age")
+
+
+#HOOKAH9C
+#one_logic_funct3(D_471435289,D_720305356,353358909,"HOOKAH9C: Total Time Hookah Smoked per Day")
+
+
+
+#HOOKAHLIFEA
+#simple_funct3(D_445712879,"HOOKAHLIFEA: Time Hookah Smoked per Day at Ages 0-17") #no one yet 
+
+
+#HOOKAHLIFEB
+#simple_funct3(D_620425840,"HOOKAHLIFEB: Time Hookah Smoked per Day at Ages 18-24")#no one yet
+
+
+#HOOKAHLIFEC
+#simple_funct3(D_798627028,"HOOKAHLIFEC: Time Hookah Smoked per Day at Ages 25-29") #no one yet
+
+
+#HOOKAHLIFED
+#simple_funct3(D_584608368,"HOOKAHLIFED: Time Hookah Smoked per Day at Ages 30-39") #no one yet
+
+
+#HOOKAHLIFEE
+#simple_funct3(D_921623945,"HOOKAHLIFEE: Time Hookah Smoked per Day at Ages 40-49") #no one yet
+
+
+#HOOKAHLIFEF
+#simple_funct3(D_370253256,"HOOKAHLIFEF: Time Hookah Smoked per Day at Ages 50-59") #no one yet
+
+
+#HOOKAHLIFEG
+#simple_funct3(D_470096941,"HOOKAHLIFEG: Time Hookah Smoked per Day at Ages 60-69") #no one yet
+
+
+#HOOKAHLIFEH
+#simple_funct3(D_544356746,"HOOKAHLIFEH: Time Hookah Smoked per Day at Ages 70+") #no one yet
+
+
+```
+
+
+## Tobacco Pipe
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+
+#PIPE1
+one_logic_funct3(D_559388168,D_947205597_D_686310465 ,1,"PIPE1: Total Days of Smoking Tobacco Pipes in a Lifetime")
+
+
+#PIPE2
+boxp_funct(D_450151555, "PIPE2: Age at First Tobacco Pipe Smoking", "Age")
+
+
+
+#PIPE3_AGE
+boxp_funct(D_546410473_D_663551714, "PIPE3_AGE: Age Smoking Tobacco Pipes on a Regular Basis", "Age")
+
+
+#Make automated table
+data_tib_all3_PIPE <- data_tib_all3 %>%  filter((data_tib_all3$D_559388168==486319890| data_tib_all3$D_559388168==132232896) & is.na(data_tib_all3$D_546410473_D_663551714))
+
+
+PIPE_ans= data_tib_all3_PIPE %>%  mutate(answer= case_when(D_546410473_D_546410473_D_648960871==1 ~ "Never smoked on a regular basis",
+                                             TRUE ~ "Skipped this question"))
+
+dtPIPE_summary <- PIPE_ans %>% group_by(answer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtPIPE_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("PIPE3: Smoking Tobacco Pipes on a Regular Basis (Didn't Answer with Age)")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+
+
+
+#PIPE4
+funct_2_3_4(D_458395129,D_559388168,"PIPE4: Smoking Tobacco Pipes Now")
+
+#PIPE5
+funct_5(D_845122623,D_458395129,"PIPE5: Last Time Tobacco Pipes Smoked")
+
+
+
+#PIPE6
+pp6=hist_funct(D_679300202, "PIPE6: Total Days Tobacco Pipes Smoked in the past 30 days", "Days", "Frequency")
+
+#PIPE7A
+pp7=hist_funct(D_146877593, "PIPE7: Months Ago Tobacco Pipes Last Smoked", "Months", "Frequency")
+grid.arrange(pp6, pp7, nrow=2)
+
+
+
+#PIPE8
+boxp_funct(D_780685299, "PIPE8: Age at Last Tobacco Pipes Last Smoked", "Age")
+
+
+#PIPE8C
+funct_8c(D_311569789, D_845122623, D_559388168, "PIPE8C: Ever Smoke Pipes Every Day at that time")
+
+
+#PIPE8D
+hist_funct(D_652477674, "PIPE8D: Days per Month Tobacco Pipes Smoked", "Days", "Frequency")
+
+#PIPE9A
+hist_funct(D_780767323, "PIPE9A: Tobacco Pipes Smoked per Day", "Pipes", "Frequency")
+
+
+#PIPE9B
+funct_9b(D_559388168, D_458395129, D_845122623, D_311569789, D_385490512, "PIPE9B: Ever Smoke Tobacco Pipes Everyday")
+
+
+#PIPE9C
+hist_funct(D_286598574, "PIPE9C: Tobacco Pipes Smoked per Day", "Pipes", "Frequency")
+
+
+
+#PIPE9D
+boxp_funct(D_119378795, "PIPE9D: Age You Stopped Smoking Tobacco Pipes Every Day", "Age")
+
+
+
+#PIPELIFEA
+#hist_funct(D_689339933, "PIPELIFEA: Tobacco Pipes Smoked per Day at Ages 0-17", "Pipes", "Frequency") #no one yet 
+
+
+#PIPELIFEB
+pplfB=hist_funct(D_812430894, "PIPELIFEB: Tobacco Pipes Smoked per Day at Ages 18-24", "Pipes", "Frequency")
+
+
+#PIPELIFEC
+pplfC=hist_funct(D_178242940, "PIPELIFEC: Tobacco Pipes Smoked per Day at Ages 25-29", "Pipes", "Frequency")
+grid.arrange(pplfB, pplfC, nrow=2)
+
+
+#PIPELIFED
+pplfD=hist_funct(D_501545129, "PIPELIFED: Tobacco Pipes Smoked per Day at Ages 30-39", "Pipes", "Frequency")
+
+
+#PIPELIFEE
+pplfE=hist_funct(D_197309242, "PIPELIFEE: Tobacco Pipes Smoked per Day at Ages 40-49", "Pipes", "Frequency") 
+grid.arrange(pplfD, pplfE, nrow=2)
+
+
+#PIPELIFEF
+hist_funct(D_550850568, "PIPELIFEF: Tobacco Pipes Smoked per Day at Ages 50-59", "Pipes", "Frequency") #no one yet
+
+#PIPELIFEG
+#hist_funct(D_277284423, "PIPELIFEG: Tobacco Pipes Smoked per Day at Ages 60-69", "Pipes", "Frequency") #no one yet
+
+
+#PIPELIFEH
+#hist_funct(D_127038003, "PIPELIFEH: Tobacco Pipes Smoked per Day at Ages 70+", "Pipes", "Frequency") #no one yet
+
+```
+
+## Secondhand Smoking
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+#CURRSM
+simple_funct3(D_337810964, "CURRSM: Frequency of Being Around Smokers in the Past Year")
+
+
+
+#CURRSM2
+one_logic_funct3(D_334292580, D_337810964,647504893,"CURRSM2: Hours per Day Around Smokers in the Past Year")
+
+
+
+
+#SECSMLF2A
+simple_funct3(D_738219521_D_666840938, "SECSMLF2A: Frequency of Being Around Smokers from Age 0-17")
+
+
+
+#SECSMLF2B
+simple_funct3(D_738219521_D_575237218, "SECSMLF2B: Frequency of Being Around Smokers from Age 18-24")
+
+
+
+#SECSMLF2C
+simple_funct3(D_738219521_D_976863738, "SECSMLF2C: Frequency of Being Around Smokers from Age 25-29")
+
+
+#SECSMLF2D
+simple_funct3(D_738219521_D_392301875, "SECSMLF2D: Frequency of Being Around Smokers from Age 30-39")
+
+
+
+#SECSMLF2E
+simple_funct3(D_738219521_D_576358766, "SECSMLF2E: Frequency of Being Around Smokers from Age 40-49")
+
+
+
+#SECSMLF2F
+simple_funct3(D_738219521_D_767711152, "SECSMLF2F: Frequency of Being Around Smokers from Age 50-59")
+
+
+
+
+#SECSMLF2G
+simple_funct3(D_738219521_D_888898065, "SECSMLF2G: Frequency of Being Around Smokers from Age 60-69" )
+
+
+
+
+
+#SECSMA
+simple_funct3(D_252017075_D_359443374, "SECSMA: Number of People in the Household Smoking Around You:Ages 0-5")
+
+#SECSMB
+simple_funct3(D_252017075_D_257564920, "SECSMB: Number of People in the Household Smoking Around You:Ages 6-10")
+
+
+#SECSMC
+simple_funct3(D_252017075_D_670036093, "SECSMC: Number of People in the Household Smoking Around You:Ages 11-14")
+
+
+#SECSMD
+simple_funct3(D_252017075_D_106272739, "SECSMD: Number of People in the Household Smoking Around You:Ages 15-17")
+
+
+```
+
+\newpage
+
+# Section 2: Marijuana
+## All products 
+
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+
+MJ_pd= data_tib_all3 %>%  mutate(products= case_when(D_830608495_D_760521319==1 ~ "Smoking",
+                                             D_830608495_D_158841370==1 ~ "Smoking combined with Tobacco",
+                                             D_830608495_D_349034127==1 ~ "Electronic Vaping",
+                                             D_830608495_D_713594719==1 ~ "Consuming through Food or Drink",
+                                             D_830608495_D_675129470==1 ~ "THC Dabbing",
+                                             D_830608495_D_535003378==1 ~ "None of the Above", 
+                                            TRUE ~ "Skipped this question"))
+
+ 
+tmp_1<- MJ_pd[, grepl("830608495", colnames(MJ_pd))]
+tmp1 <- tmp_1[, c(6,1,2,5,4,3)]
+tobac_dx <- NULL
+for (i in 1:6){
+  dt <- as.data.frame(tab1(tmp1[,i])$output.table)
+  dt$tobac_dx <- colnames(tmp1)[i]
+  tobac_dx <- rbind(tobac_dx,dt[2,])
+  
+}
+tobac_dx$tobac_dx ### how are their race variables being assigned here?? wrong variable matching. Flattening issue?
+
+tobac_dx$tobac_dx <- c("Smoking","Smoking combined with Tobacco","Electronic Vaping","Consuming through Food or Drink", "THC Dabbing","None of the Above")
+```
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+# colnames(tobac_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
+# testt2_1 <- tobac_dx[, c(4,1,2)]
+# 
+# colnames(tobac_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
+# testt2_2 <- tobac_dx[, c(4,1,2)]
+
+colnames(tobac_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
+tobac <- tobac_dx[, c(4,1,2)]
+
+skipped_mhg1 <- sum(table(MJ_pd$products=="Skipped this question")[2])
+tobac[as.numeric(dim(tobac)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(MJ_pd)[[1]])*100,2))
+
+
+dt_tobac <- tobac %>%  gt() %>%  
+  fmt_number(columns = "Percentage", decimals = 2) %>% 
+  tab_header(title = md("Method of Consuming Marijuana")) %>% 
+  cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"),  Condition = md("**Condition**")) %>% 
+  # summary_rows( groups=F,
+  #   column = c(Frequency,Percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  #grand_summary_rows(columns=c(Frequency, Percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Condition,
+    )
+  )
+tab_footnote(
+  dt_tobac,
+  md("As this is a select all question, participants may select multiple responses."),
+  locations = cells_column_labels(columns = Percentage),
+  placement = c("left")
+)
+
+
+
+
+```
+
+
+
+## Smoking Marijuana
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+#SMMAR1
+one_logic_funct3(D_319397722,D_830608495_D_760521319 ,1,"SMMAR1: Total Days of Smoking Marijuana in a Lifetime")
+
+
+#SMMAR2
+boxp_funct(D_210016366, "SMMAR2: Age at First Marijuana Usage", "Age")
+
+
+#SMMAR3_AGE
+boxp_funct(D_116080663_D_889949861, "SMMAR3_AGE: Age Smoking Marijuana on a Regular Basis", "Age")
+
+
+#Make automated table
+data_tib_all3_SMMAR <- data_tib_all3 %>%  filter((data_tib_all3$D_319397722==486319890| data_tib_all3$D_319397722==132232896) & is.na(data_tib_all3$D_116080663_D_889949861))
+
+
+SMMAR_ans= data_tib_all3_SMMAR %>%  mutate(answer= case_when(D_116080663_D_116080663_D_648960871==1 ~ "Never smoked on a regular basis",
+                                             TRUE ~ "Skipped this question"))
+
+dtSMMAR_summary <- SMMAR_ans %>% group_by(answer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtSMMAR_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("SMMAR3: Smoking Marijuana on a Regular Basis (Didn't Answer with Age)")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+
+
+
+#SMMAR4
+funct_2_3_4(D_503058092,D_319397722,"SMMAR4: Smoking Marijuana Now")
+
+#SMMAR5
+funct_5(D_180308733,D_503058092,"SMMAR5: Last Time Marijuana Smoked")
+
+
+#SMMAR6
+smmr6=hist_funct(D_831873859, "SMMAR6: Total Days Smoking Marijuana in the past 30 days", "Days", "Frequency")
+
+#SMMAR7A
+smmr7=hist_funct(D_594280517, "SMMAR7: Months Ago Marijuana Last Smoked", "Months", "Frequency")
+grid.arrange(smmr6, smmr7, nrow=2)
+
+
+#SMMAR8
+boxp_funct(D_863664828, "SMMAR8: Age Marijuana Last Smoked", "Age")
+
+#SMMAR8C
+funct_8c(D_129677435, D_180308733, D_319397722, "SMMAR8C: Ever Smoke Marijuana Every Day at that time")
+
+#SMMAR8D
+hist_funct(D_930208825, "SMMAR8D: Days per Month Marijuana Smoked", "Days", "Frequency")
+
+
+#SMMAR9A
+funct_2_3_4(D_719293094,D_319397722,"SMMAR9A: Total Time Marijuana Smoked per Day")
+
+#SMMAR9B
+funct_9b(D_319397722, D_503058092, D_180308733, D_129677435, D_722122662, "SMMAR9B: Ever Smoke Marijuana Everyday")
+
+
+#SMMAR9D
+boxp_funct(D_556963634, "SMMAR9D: Age You Stopped Smoking Marijuana Every Day", "Age")
+
+#SMMAR9C
+one_logic_funct3(D_492742957,D_722122662,353358909,"SMMAR9C: Total Time Marijuana Smoked per Day")
+
+
+
+
+#SMMAR10  
+funct_10_11(D_377064836_D_377064836, D_319397722, D_722122662, "SMMAR10: Why Do You Smoke Marijuana")
+
+SMMAR10_other= module3 %>%  filter(!is.na(module3$D_377064836_D_779642303))
+smar_10 <-  module3 %>%  filter(D_377064836_D_377064836==807835037)
+#cat(( dim(SMMAR10_other)[[1]]- dim(smar_10)[[1]]), "answered the other reason they smoke marijuana.")
+
+
+#SMMARLIFEA
+
+lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & (D_503058092==804785430 | D_129677435==353358909) & 
+                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<17  & !(as.numeric(data_tib_all3$D_863664828)<17)) %>% 
+  mutate(timespan= case_when(D_258291510==428999623 ~ "15 minutes or less",
+                                             D_258291510==248303092 ~ "16 to 30 minutes",
+                                             D_258291510==998679771 ~ "31 to 59 minutes",
+                                             D_258291510==638092100 ~ "1 hour",
+                                             D_258291510==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
+
+dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("SMMARLIFEA: Time Spent per Day Smoking Marijuana Ages 0-17")) %>% 
+  cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = timespan,
+    )
+  ) 
+
+
+#SMMARLIFEB
+lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & (D_503058092==804785430 | D_129677435==353358909) & 
+                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<24  & !(as.numeric(data_tib_all3$D_863664828)<24)) %>% 
+  mutate(timespan= case_when(D_175995366==428999623 ~ "15 minutes or less",
+                                             D_175995366==248303092 ~ "16 to 30 minutes",
+                                             D_175995366==998679771 ~ "31 to 59 minutes",
+                                             D_175995366==638092100 ~ "1 hour",
+                                             D_175995366==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
+
+dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("SMMARLIFEB: Time Spent per Day Smoking Marijuana Ages 18-24")) %>% 
+  cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = timespan,
+    )
+  ) 
+
+
+
+#SMMARLIFEC
+lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & (D_503058092==804785430 | D_129677435==353358909) & 
+                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<30  & !(as.numeric(data_tib_all3$D_863664828)<30)) %>% 
+  mutate(timespan= case_when(D_643099118==428999623 ~ "15 minutes or less",
+                                             D_643099118==248303092 ~ "16 to 30 minutes",
+                                             D_643099118==998679771 ~ "31 to 59 minutes",
+                                             D_643099118==638092100 ~ "1 hour",
+                                             D_643099118==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
+
+dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("SMMARLIFEC: Time Spent per Day Smoking Marijuana Ages 25-29")) %>% 
+  cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = timespan,
+    )
+  ) 
+
+
+#SMMARLIFED
+lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & (D_503058092==804785430 | D_129677435==353358909) & 
+                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<40  & !(as.numeric(data_tib_all3$D_863664828)<40)) %>% 
+  mutate(timespan= case_when(D_864290328==428999623 ~ "15 minutes or less",
+                                             D_864290328==248303092 ~ "16 to 30 minutes",
+                                             D_864290328==998679771 ~ "31 to 59 minutes",
+                                             D_864290328==638092100 ~ "1 hour",
+                                             D_864290328==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
+
+dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("SMMARLIFED: Time Spent per Day Smoking Marijuana Ages 30-39")) %>% 
+  cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = timespan,
+    )
+  ) 
+
+
+
+#SMMARLIFEE
+lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & (D_503058092==804785430 | D_129677435==353358909) & 
+                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<50  & !(as.numeric(data_tib_all3$D_863664828)<50) & as.numeric(data_tib_all3$AGEGRID)>39) %>% 
+  mutate(timespan= case_when(D_386950237==428999623 ~ "15 minutes or less",
+                                             D_386950237==248303092 ~ "16 to 30 minutes",
+                                             D_386950237==998679771 ~ "31 to 59 minutes",
+                                             D_386950237==638092100 ~ "1 hour",
+                                             D_386950237==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
+
+dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("SMMARLIFEE: Time Spent per Day Smoking Marijuana Ages 40-49")) %>% 
+  cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = timespan,
+    )
+  ) 
+
+#SMMARLIFEF
+lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & (D_503058092==804785430 | D_129677435==353358909) & 
+                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<60  & !(as.numeric(data_tib_all3$D_863664828)<60) & as.numeric(data_tib_all3$AGEGRID)>49) %>% 
+  mutate(timespan= case_when(D_480217113==428999623 ~ "15 minutes or less",
+                                             D_480217113==248303092 ~ "16 to 30 minutes",
+                                             D_480217113==998679771 ~ "31 to 59 minutes",
+                                             D_480217113==638092100 ~ "1 hour",
+                                             D_480217113==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
+
+dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("SMMARLIFEF: Time Spent per Day Smoking Marijuana Ages 50-59")) %>% 
+  cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = timespan,
+    )
+  )
+
+
+#SMMARLIFEG
+lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & (D_503058092==804785430 | D_129677435==353358909) & 
+                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<70 & as.numeric(data_tib_all3$AGEGRID)>59 ) %>% #& !(as.numeric(data_tib_all3$D_863664828)<70) 
+  mutate(timespan= case_when(D_645361463==428999623 ~ "15 minutes or less",
+                                             D_645361463==248303092 ~ "16 to 30 minutes",
+                                             D_645361463==998679771 ~ "31 to 59 minutes",
+                                             D_645361463==638092100 ~ "1 hour",
+                                             D_645361463==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
+
+dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("SMMARLIFEG: Time Spent per Day Smoking Marijuana Ages 60-69")) %>% 
+  cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = timespan,
+    )
+  )
+
+#SMMARLIFEH
+#simple_funct3(D_882838859,"SMMARLIFEH: Time Spent per Day Smoking Marijuana Ages 70+") #no one yet 
+
+```
+
+## Smoking Combination of Marijuana with Tobacco 
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+#TOMAR1
+one_logic_funct3(D_524914900,D_830608495_D_158841370 ,1,"TOMAR1: Total Majiuana & Tobacco Combined Products Smoked in a Lifetime")
+
+
+#TOMAR2
+boxp_funct(D_140848765, "TOMAR2: Age First Smoked a Majiuana & Tobacco Combined Product", "Age")
+
+
+#TOMAR3
+boxp_funct(D_378254382_D_628818510, "TOMAR3: Age Smoking Majiuana & Tobacco Combined Products on a Regular Basis", "Age")
+
+
+#Make automated table
+data_tib_all3_TOMAR <- data_tib_all3 %>%  filter((data_tib_all3$D_524914900==486319890| data_tib_all3$D_524914900==132232896) & is.na(data_tib_all3$D_378254382_D_628818510))
+
+
+TOMAR_ans= data_tib_all3_TOMAR %>%  mutate(answer= case_when(D_378254382_D_378254382_D_648960871==1 ~ "Never smoked on a regular basis",
+                                             TRUE ~ "Skipped this question"))
+
+dtTOMAR_summary <- TOMAR_ans %>% group_by(answer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtTOMAR_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("TOMAR3: Smoking Marijuana Combined with Tobacco on a Regular Basis (Didn't Answer with Age)")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+
+
+
+#TOMAR4
+funct_2_3_4(D_891825638,D_524914900,"TOMAR4: Smoking Marijuana & Tobacco Combined Products Now")
+
+#TOMAR5
+funct_5(D_444759994,D_891825638,"TOMAR5: Last Time Majiuana & Tobacco Combined Products Smoked")
+
+
+#TOMAR6
+tomr6=hist_funct(D_746817928, "TOMAR6: Majiuana & Tobacco Combined Products Smoked in the past 30 days", "Products", "Frequency")
+
+#TOMAR7A
+tomr7=hist_funct(D_992757226, "TOMAR7: Months Ago Majiuana & Tobacco Combined Products Last Smoked", "Months", "Frequency")
+grid.arrange(tomr6, tomr7, nrow=2)
+
+
+#TOMAR8
+boxp_funct(D_405178123, "TOMAR8: Age at Last Majiuana & Tobacco Combined Product", "Age")
+
+
+#TOMAR8C
+funct_8c(D_698314386, D_444759994, D_524914900, "TOMAR8C: Ever Smoke Marijuana Combined with Tobacco Every Day at that time")
+
+
+#TOMAR8D
+hist_funct(D_363377579, "TOMAR8D: Days per Month Last Majiuana & Tobacco Combined Products Smoked", "Days", "Frequency")
+
+#TOMAR9A
+hist_funct(D_964154290, "TOMAR9A: Majiuana & Tobacco Combined Products Smoked per Day", "Products", "Frequency")
+
+
+#TOMAR9B
+funct_9b(D_524914900, D_891825638, D_444759994, D_698314386, D_171050898, "TOMAR9B: Ever Smoke Marijuana Combined with Tobacco Everyday")
+
+#TOMAR9D
+boxp_funct(D_606675249, "TOMAR9D: Age You Stopped Smoking Majiuana & Tobacco Combined Products Every Day", "Age")
+
+#TOMAR9C
+hist_funct(D_411960217, "TOMAR9C: Times per Day Majiuana & Tobacco Combined Products Smoked", "Times", "Frequency")
+
+
+
+
+#TOMAR10  
+funct_10_11(D_755923078_D_755923078, D_524914900, D_171050898, "SMMAR10: Why Do You Smoke Marijuana")
+
+#cat("Other Reason for Smoking Marijuana Combined with Tobacco")
+#table(module3$D_755923078_D_459020144) #other -- no one yet 
+
+#TOMARLIFEA
+#hist_funct(D_381268397, "TOMARLIFEA: Smoking Marijuana&Tobacco Combined Products: Ages 0-17", "Times per Day", "Frequency") #no one yet 
+
+
+#TOMARLIFEB
+tomrlfB=hist_funct(D_723763329, "TOMARLIFEB: Smoking Marijuana&Tobacco Combined Products: Ages 18-24", "Times per Day", "Frequency")
+
+
+#TOMARLIFEC
+tomrlfC=hist_funct(D_724990284, "TOMARLIFEC: Smoking Marijuana&Tobacco Combined Products: Ages 25-29", "Times per Day", "Frequency")
+grid.arrange(tomrlfB, tomrlfC, nrow=2)
+
+
+#TOMARLIFED
+tomrlfD=hist_funct(D_383748300, "TOMARLIFED: Smoking Marijuana&Tobacco Combined Products: Ages 30-39", "Times per Day", "Frequency")
+
+
+#TOMARLIFEE
+tomrlfE=hist_funct(D_199612020, "TOMARLIFEE: Smoking Marijuana&Tobacco Combined Products: Ages 40-49", "Times per Day", "Frequency")
+grid.arrange(tomrlfD, tomrlfE, nrow=2)
+
+
+#TOMARLIFEF
+#hist_funct(D_755298453, "TOMARLIFEF: Smoking Marijuana&Tobacco Combined Products: Ages 50-59", "Times per Day", "Frequency") #no one yet 
+
+
+#TOMARLIFEG
+#hist_funct(D_777877159, "TOMARLIFEG: Smoking Marijuana&Tobacco Combined Products: Ages 60-69", "Times per Day", "Frequency") #no one yet 
+
+
+#TOMARLIFEH
+#hist_funct(D_680697711, "TOMARLIFEH: Smoking Marijuana&Tobacco Combined Products: Ages 70+", "Times per Day", "Frequency")#no one yet 
+
+```
+
+
+## Electronic Delivery Devices
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+#ELMAR1
+one_logic_funct3(D_325229459,D_830608495_D_349034127 ,1,"ELMAR1: Total Days of Vaping Marijuana in a Lifetime")
+
+
+#ELMAR2
+boxp_funct(D_116510981, "ELMAR2: Age When Marijuana Vaping Started", "Age")
+
+
+#ELMAR3
+boxp_funct(D_942945860_D_742716427, "ELMAR3_AGE: Age Vaping Marijuana on a Regular Basis", "Age")
+
+
+#Make automated table
+data_tib_all3_ELMAR <- data_tib_all3 %>%  filter((data_tib_all3$D_325229459==486319890| data_tib_all3$D_325229459==132232896) & is.na(data_tib_all3$D_942945860_D_742716427))
+
+
+ELMAR_ans= data_tib_all3_ELMAR %>%  mutate(answer= case_when(D_942945860_D_942945860_D_648960871==1 ~ "Never smoked on a regular basis",
+                                             TRUE ~ "Skipped this question"))
+
+dtELMAR_summary <- ELMAR_ans %>% group_by(answer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtELMAR_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ELMAR3: Vaping Marijuana on a Regular Basis (Didn't Answer Age)")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+
+
+
+#ELMAR4
+funct_2_3_4(D_521073718,D_325229459,"ELMAR4: Vaping Marijuana Now")
+
+#ELMAR5
+funct_5(D_859228803,D_521073718,"ELMAR5: Last Time Marijuana Vaped")
+
+
+
+#ELMAR6
+elm6=hist_funct(D_589885595, "ELMAR6: Total Days Vaping Marijuana in the past 30 days", "Days", "Frequency")
+
+#ELMAR7A
+elm7=hist_funct(D_659140794, "ELMAR7: Months Ago Marijuana Last Vaped", "Months", "Frequency")
+grid.arrange(elm6, elm7, nrow=2)
+
+
+#ELMAR8
+boxp_funct(D_445187084 , "ELMAR8: Age Marijuana Last Vaped", "Age")
+
+
+#ELMAR8C
+funct_8c(D_142164107, D_859228803, D_325229459, "ELMAR8C: Ever Vape Marijuana Every Day at that time")
+
+
+#ELMAR8D
+hist_funct(D_695423703, "ELMAR8D: Days per Month Marijuana Vaped", "Days", "Frequency")
+
+
+#ELMAR9A
+funct_2_3_4(D_816891201,D_325229459,"ELMAR9A: Total Time Marijuana Vaped per Day")
+
+
+
+#ELMAR9B
+funct_9b(D_325229459, D_521073718, D_859228803, D_142164107, D_177252178, "ELMAR9B: Ever Vape Marijuana Everyday")
+
+
+#ELMAR9D
+boxp_funct(D_116014097, "ELMAR9D: Age You Stopped Vaping Marijuana Every Day", "Age")
+
+#ELMAR9C
+one_logic_funct3(D_562595294,D_177252178,353358909,"ELMAR9C: Total Time Marijuana Vaped per Day")
+
+
+
+
+#ELMAR10
+funct_10_11(D_268240612_D_268240612, D_325229459, D_177252178, "SMMAR10: Why Do You Smoke Marijuana")
+
+cat("Other Reason for Vaping Marijuana")
+table(module3$D_268240612_D_531654334) #other text 
+
+
+#ELMARLIFEA
+#simple_funct3(D_446121108,"ELMARLIFEA: Time Spent per Day Vaping Marijuana: Ages 0-17") #no one yet
+
+
+#ELMARLIFEB
+#simple_funct3(D_319252189,"ELMARLIFEB: Time Spent per Day Vaping Marijuana: Ages 18-24") #no one yet 
+
+
+#ELMARLIFEC
+#simple_funct3(D_822964046,"ELMARLIFEC: Time Spent per Day Vaping Marijuana: Ages 25-29") #no one yet 
+
+
+#ELMARLIFED
+lifetime= data_tib_all3 %>%  filter(D_325229459==132232896 & !is.na(D_942945860_D_742716427) & (D_521073718==804785430 | D_142164107==353358909) & 
+                                      as.numeric(data_tib_all3$D_942945860_D_742716427)<40  & !(as.numeric(data_tib_all3$D_445187084)<40)) %>% 
+  mutate(timespan= case_when(D_878281875==428999623 ~ "15 minutes or less",
+                                             D_878281875==248303092 ~ "16 to 30 minutes",
+                                             D_878281875==998679771 ~ "31 to 59 minutes",
+                                             D_878281875==638092100 ~ "1 hour",
+                                             D_878281875==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
+
+dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ELMARLIFED: Time Spent per Day Vaping Marijuana: Ages 30-39")) %>% 
+  cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = timespan,
+    )
+  ) 
+
+
+#ELMARLIFE
+lifetime= data_tib_all3 %>%  filter(D_325229459==132232896 & !is.na(D_942945860_D_742716427) & (D_521073718==804785430 | D_142164107==353358909) & 
+                                      as.numeric(data_tib_all3$D_942945860_D_742716427)<50  & !(as.numeric(data_tib_all3$D_445187084)<50) & as.numeric(data_tib_all3$AGEGRID)>39) %>% 
+  mutate(timespan= case_when(D_989594002==428999623 ~ "15 minutes or less",
+                                             D_989594002==248303092 ~ "16 to 30 minutes",
+                                             D_989594002==998679771 ~ "31 to 59 minutes",
+                                             D_989594002==638092100 ~ "1 hour",
+                                             D_989594002==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
+
+dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ELMARLIFEE: Time Spent per Day Vaping Marijuana: Ages 40-49")) %>% 
+  cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = timespan,
+    )
+  ) 
+
+
+
+#ELMARLIFEF--no one yet
+lifetime= data_tib_all3 %>%  filter(D_325229459==132232896 & !is.na(D_942945860_D_742716427) & (D_521073718==804785430 | D_142164107==353358909) & 
+                                      as.numeric(data_tib_all3$D_942945860_D_742716427)<60  & !(as.numeric(data_tib_all3$D_445187084)<60) & as.numeric(data_tib_all3$AGEGRID)>49) %>% 
+  mutate(timespan= case_when(D_596004621==428999623 ~ "15 minutes or less",
+                                             D_596004621==248303092 ~ "16 to 30 minutes",
+                                             D_596004621==998679771 ~ "31 to 59 minutes",
+                                             D_596004621==638092100 ~ "1 hour",
+                                             D_596004621==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
+
+# dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
+#   fmt_number(columns = "percentage", decimals = 2) %>% 
+#   tab_header(title = md("ELMARLIFEF: Time Spent per Day Vaping Marijuana: Ages 50-59")) %>% 
+#   cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+#   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+#   tab_options(
+#       stub.font.weight = "bold"
+#     ) %>%
+#   tab_style(
+#     style = list(
+#       cell_text(weight = "bold")
+#     ),
+#     locations = cells_body(
+#       columns = timespan,
+#     )
+#   ) 
+
+
+
+#ELMARLIFEG--no one yet
+lifetime= data_tib_all3 %>%  filter(D_325229459==132232896 & !is.na(D_942945860_D_742716427) & (D_521073718==804785430 | D_142164107==353358909) & 
+                                      as.numeric(data_tib_all3$D_942945860_D_742716427)<70  & !(as.numeric(data_tib_all3$D_445187084)<70) & as.numeric(data_tib_all3$AGEGRID)>59) %>% 
+  mutate(timespan= case_when(D_459096272==428999623 ~ "15 minutes or less",
+                                             D_459096272==248303092 ~ "16 to 30 minutes",
+                                             D_459096272==998679771 ~ "31 to 59 minutes",
+                                             D_459096272==638092100 ~ "1 hour",
+                                             D_459096272==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
+
+# dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
+#   fmt_number(columns = "percentage", decimals = 2) %>% 
+#   tab_header(title = md("ELMARLIFEG: Time Spent per Day Vaping Marijuana: Ages 60-69")) %>% 
+#   cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+#   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+#   tab_options(
+#       stub.font.weight = "bold"
+#     ) %>%
+#   tab_style(
+#     style = list(
+#       cell_text(weight = "bold")
+#     ),
+#     locations = cells_body(
+#       columns = timespan,
+#     )
+#   ) 
+
+
+#ELMARLIFEH
+#simple_funct3(D_586306068,"ELMARLIFEH: Time Spent per Day Vaping Marijuana: Ages 70+")#no one yet 
+
+
+```
+
+## Eating or Drinking
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+##Consuming 
+#EAMAR1
+one_logic_funct3(D_101170268,D_830608495_D_713594719,1,"EAMAR1: Total Days of Consuming Marijuana in Food/Drinks in a Lifetime")
+
+#EAMAR2
+boxp_funct(D_908399883, "EAMAR2: Age First Consuming Marijuana in Food/Drinks", "Age")
+
+#EAMAR3
+boxp_funct(D_653198444_D_622843252, "EAMAR3_AGE: Age Consuming Marijuana in Food/Drinks on a Regular Basis", "Age")
+
+
+#Make automated table
+data_tib_all3_EAMAR <- data_tib_all3 %>%  filter((data_tib_all3$D_101170268==486319890| data_tib_all3$D_101170268==132232896) & is.na(data_tib_all3$D_653198444_D_622843252)) 
+
+
+EAMAR_ans= data_tib_all3_EAMAR %>%  mutate(answer= case_when(D_653198444_D_653198444_D_648960871==1 ~ "Never smoked on a regular basis",
+                                             TRUE ~ "Skipped this question"))
+
+dtEAMAR_summary <- EAMAR_ans %>% group_by(answer) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtEAMAR_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("EAMAR3: Consuming Marijuana on a Regular Basis (Didn't Answer with Age)")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+#EAMAR4
+funct_2_3_4(D_742544044,D_101170268,"EAMAR4: Consuming Marijuana in Food/Drinks Now")
+
+#EAMAR5
+funct_5(D_921663542,D_742544044,"EAMAR5: Last Time Marijuana Consumed in Food/Drinks")
+
+
+#EAMAR6
+eam6=hist_funct(D_818380721, "EAMAR6: Total Days Consuming Marijuana in Food/Drinks in the past 30 days", "Days", "Frequency")
+
+#EAMAR7A
+eam7=hist_funct(D_179510070, "EAMAR7: Months Ago Marijuana in Food/Drinks Last Consumed", "Months", "Frequency")
+grid.arrange(eam6, eam7, nrow=2)
+
+
+#EAMAR8
+boxp_funct(D_700173707, "EAMAR8: Age Marijuana in Food/Drinks Last Consumed", "Age")
+
+
+#EAMAR8C 
+funct_8c(D_259481608, D_921663542, D_101170268, "EAMAR8C: Ever Consume Marijuana Every Day at that time")
+
+
+#EAMAR8D
+hist_funct(D_786517174, "EAMAR8D: Days per Month Marijuana in Food/Drinks Consumed", "Days", "Frequency")
+
+
+#EAMAR9A
+hist_funct(D_276575533_D_810608313, "EAMAR9A: Servings of Marijuana in Food/Drinks Consumed per Day", "Servings", "Frequency")
+
+
+#EAMAR9A don't know
+
+
+EAMAR9A_ans= data_tib_all3_EAMAR %>%  mutate(answer= case_when(D_276575533_D_276575533=="[]" ~ "Answered with Number of Servings",
+                                             D_276575533_D_276575533=="[178420302]" ~ "Answered Don't Know",
+                                             is.na(D_276575533_D_276575533) ~ "Skipped this question"))
+
+dtEAMAR9A_summary <- EAMAR9A_ans %>% group_by(answer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtEAMAR9A_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("EAMAR9A: Don't Know Servings of Marijuana")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+
+
+
+#EAMAR9B
+funct_9b(D_101170268, D_742544044, D_921663542, D_259481608, D_891996278, "EAMAR9B: Ever Consume Marijuana Everyday")
+
+
+#EAMAR9D
+boxp_funct(D_238953261, "EAMAR9D: Age You Stopped Consuming Marijuana in Food/Drinks Every Day", "Age")
+
+
+#EAMAR9C 
+hist_funct(D_517100968_D_810608313, "EAMAR9C: Servings of Marijuana in Food/Drinks per Day", "Servings", "Frequency")
+
+
+
+#EAMAR10 
+funct_10_11(D_810324917_D_810324917, D_101170268, D_891996278, "EAMAR10: Why Do You Consume Marijuana in Food/Drinks")
+
+cat("Other Reason for Consuming Marijuana")
+EAMAR10_other= module3$D_810324917_D_479400169[!is.na(module3$D_810324917_D_479400169)]
+list(EAMAR10_other) #other
+
+
+#EAMARLIFEA
+#hist_funct(D_922708844, "EAMARLIFEA: # Servings/Day of Marijuana Food/Drinks: Ages 0-17", "Servings", "Frequency") #no one yet 
+
+#EAMARLIFEB
+#hist_funct(D_336810811, "EAMARLIFEB: # Servings/Day of Marijuana Food/Drinks: Ages 18-24", "Servings", "Frequency") #no one yet 
+
+
+#EAMARLIFEC
+#hist_funct(D_925215135, "EAMARLIFEC: # Servings/Day of Marijuana Food/Drinks: Ages 25-29", "Servings", "Frequency")#no one yet 
+
+#EAMARLIFED
+eamlfD=hist_funct(D_402300898, "EAMARLIFED: # Servings/Day of Marijuana Food/Drinks: Ages 30-39", "Servings", "Frequency")
+
+
+#EAMARLIFEE
+eamlfE=hist_funct(D_677733128, "EAMARLIFEE: # Servings/Day of Marijuana Food/Drinks: Ages 40-49", "Servings", "Frequency")
+grid.arrange(eamlfD, eamlfE, nrow=2)
+
+
+#EAMARLIFEF
+eamlfF=hist_funct(D_702729897, "EAMARLIFEF: # Servings/Day of Marijuana Food/Drinks: Ages 50-59", "Servings", "Frequency")
+
+
+#EAMARLIFEG
+eamlfG=hist_funct(D_795265404, "EAMARLIFEG: # Servings/Day of Marijuana Food/Drinks: Ages 60-69", "Servings", "Frequency")
+grid.arrange(eamlfF, eamlfG, nrow=2)
+
+
+#EAMARLIFEH
+#hist_funct(D_432310123, "EAMARLIFEH: # Servings/Day of Marijuana Food/Drinks: Ages 70+", "Servings", "Frequency")#no one yet 
+
+```
+
+## THC Concentrates 
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+#THMAR1
+one_logic_funct3(D_355689185,D_830608495_D_675129470 ,1,"THMAR1: Total Days of THC Dabbing in a Lifetime")
+
+
+#THMAR2
+boxp_funct(D_766791333, "THMAR2: Age at First THC Dabbing Usage", "Age")
+
+
+#THMAR3
+boxp_funct(D_742254559_D_185168695, "THMAR3_AGE: Age at First THC Dabbing Usage", "Age")
+
+
+#Make automated table
+data_tib_all3_THMAR <- data_tib_all3 %>%  filter((data_tib_all3$D_355689185==486319890| data_tib_all3$D_355689185==132232896) & is.na(data_tib_all3$D_742254559_D_185168695))
+
+THMAR_ans= data_tib_all3_THMAR %>%  mutate(answer= case_when(D_742254559_D_742254559_D_648960871=="1" ~ "Never smoked on a regular basis",
+                                             TRUE ~ "Skipped this question"))
+
+dtTHMAR_summary <- THMAR_ans %>% group_by(answer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtTHMAR_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("THMAR3: THC Dabbing on a Regular Basis (Didn't Answer with Age)")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+
+
+
+#THMAR4
+funct_2_3_4(D_420155119,D_355689185,"THMAR4: Using THC Dabbing Now")
+
+#THMAR5
+funct_5(D_532755074,D_420155119,"THMAR5: Last Time THC Dabbing Used")
+
+
+#THMAR6
+hist_funct(D_681586194, "THMAR6: Total Days Using THC Dabbing in the past 30 days", "Days", "Frequency")
+
+
+#THMAR7A
+#hist_funct(D_370352501, "THMAR7: Months Ago Last Used THC Dabbing", "Months", "Frequency")
+
+
+#THMAR8
+boxp_funct(D_970325871, "THMAR8: Age at Last THC Dabbing Use", "Age")
+
+
+#THMAR8C
+funct_8c(D_536166591, D_532755074, D_355689185, "THMAR8C: Ever Dab Every Day at that time")
+
+
+#THMAR8D
+hist_funct(D_119257304, "THMAR8D: Days per Month THC Dabbing Used", "Days", "Frequency")
+
+
+#THMAR9A
+hist_funct(D_933417196_D_810608313, "THMAR9A: Servings of THC Dabbing per Day", "Servings", "Frequency")
+
+#THMAR9A- don't know
+
+
+THMAR9A_ans= data_tib_all3_THMAR %>%  mutate(answer= case_when(D_933417196_D_933417196=="[]" ~ "Answered with Number of Servings",
+                                             D_933417196_D_933417196=="[178420302]" ~ "Answered Don't Know",
+                                             is.na(D_933417196_D_933417196) ~ "Skipped this question"))
+
+dtTHMAR9A_summary <- THMAR9A_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtTHMAR9A_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("THMAR9A: Don't Know Servings of Marijuana")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+
+
+
+#THMAR9B
+funct_9b(D_355689185, D_420155119, D_532755074, D_536166591, D_937550939, "THMAR9B: Ever Dab THC Everyday")
+
+
+#THMAR9D
+boxp_funct(D_258703325, "THMAR9D: Age You Stopped THC Dabbing Every Day", "Age")
+
+#THMAR9C
+hist_funct(D_585819411_D_810608313, "THMAR9C: Servings of THC Dabbing per Day When Using Daily", "Servings", "Frequency")
+
+
+# print("THMAR9C: Don't Know")
+# table(module3$D_585819411_D_585819411) #DK--- unanswered yet 
+
+#THMAR10-- no answers yet?
+funct_10_11(D_265469878_D_265469878, D_355689185, D_937550939, "THMAR10: Why Do You Use THC Concentrates via Dabbing")
+
+cat("Other Reason for Dabbing Marijuana")
+table(module3$D_265469878_D_781650542) #OTH
+
+
+#THMARLIFEA
+#hist_funct(D_349510816, "THMARLIFEA: Servings per Day of THC Concetrates via Dabbing: Ages 0-17", "Servings", "Frequency") # no one yet 
+
+
+#THMARLIFEB
+thmlfB=hist_funct(D_375227733, "THMARLIFEB: Servings per Day of THC Concetrates via Dabbing: Ages 18-24", "Servings", "Frequency")
+
+#THMARLIFEC
+thmlfC=hist_funct(D_752795304, "THMARLIFEC: Servings per Day of THC Concetrates via Dabbing: Ages 25-29", "Servings", "Frequency")
+grid.arrange(thmlfB, thmlfC, nrow=2)
+
+#THMARLIFED
+thmlfD=hist_funct(D_417552256, "THMARLIFED: Servings per Day of THC Concetrates via Dabbing: Ages 30-39", "Servings", "Frequency")
+
+#THMARLIFEE
+thmlfE=hist_funct(D_963040791, "THMARLIFEE: Servings per Day of THC Concetrates via Dabbing: Ages 40-49", "Servings", "Frequency")
+grid.arrange(thmlfD, thmlfE, nrow=2)
+
+#THMARLIFEF
+thmlfF=hist_funct(D_685659661, "THMARLIFEF: Servings per Day of THC Concetrates via Dabbing: Ages 50-59", "Servings", "Frequency")
+
+#THMARLIFEG
+thmlfG=hist_funct(D_511145980, "THMARLIFEG: Servings per Day of THC Concetrates via Dabbing: Ages 60-69", "Servings", "Frequency")
+grid.arrange(thmlfF, thmlfG, nrow=2)
+
+#THMARLIFEH
+#hist_funct(D_227784207, "THMARLIFEH: Servings per Day of THC Concetrates via Dabbing: Ages 70+", "Servings", "Frequency")
+
+```
+
+\newpage
+
+# Section 3: Alcohol 
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+#ALCOHOL1
+simple_funct3(D_448968121, "ALCOHOL1: Ever Consumed an Alcoholic Beverage")
+
+#ALCOHOL2
+one_logic_funct3(D_429228540,D_448968121,353358909,"ALCOHOL2: Alcoholic Beverages in a Lifetime")
+
+
+#ALCOHOL3
+boxp_funct(D_250456537, "ALCOHOL3_AGE: Age at First Alcoholic Beverage", "Age")
+
+#ALCOHOL4
+boxp_funct(D_556837046_D_141874857, "ALCOHOL4_AGE: Age Drinking Alcohol on a Regular Basis", "Age")
+  #Alcohol4_never
+data_tib_all3_ALC4 <- data_tib_all3 %>%  filter(data_tib_all3$D_429228540==486319890| data_tib_all3$D_429228540==132232896)
+
+
+ALC4_ans= data_tib_all3_ALC4 %>%  mutate(answer= case_when(D_556837046_D_556837046_D_648960871==1 ~ "Never drank on a regular basis",
+                                             TRUE ~ "Skipped this question"))
+
+dtALC4_summary <- ALC4_ans %>% group_by(answer) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtALC4_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ALCOHOL4: Drinking on a Regular Basis (Didn't Answer with Age)")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+
+
+
+#ALCOHOL5
+dt_ALC5= data_tib_all3  %>% filter(data_tib_all3$D_429228540==486319890| data_tib_all3$D_429228540==132232896) 
+
+ALC5_ans= dt_ALC5 %>%  mutate(answer= case_when(D_338467033==104430631 ~ "No",
+                                             D_338467033==353358909 ~ "Yes",
+                                             is.na(D_338467033) ~ "Skipped this question"))
+
+dtALC5_summary <- ALC5_ans %>% group_by(answer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtALC5_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ALCOHOL5: Consumed an Alcoholic Beverage in the Last 12 Months")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+
+#ALCOHOL6
+boxp_funct(D_480426504, "ALCOHOL6: Age at Last Alcoholic Beverage", "Age")
+
+#ALCOHOL7   
+
+dtALC7= data_tib_all3 %>% filter(D_338467033==104430631 | is.na(D_338467033))
+
+
+alc_stop= dtALC7 %>%  mutate(answers= case_when(D_789159346_D_789159346_D_895826652 ==1 ~ "Personal Choice",
+                                             D_789159346_D_789159346_D_572260608==1 ~ "Health/Medical Reasons",
+                                             D_789159346_D_789159346_D_732465277==1 ~ "Interactions with Medications",
+                                             D_789159346_D_789159346_D_807835037==1 ~ "Other",
+                                             TRUE ~ "Skipped this question"))
+
+dtALC7_summary <- alc_stop %>% group_by(answers) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answers, n, percentage)
+
+dtALC7_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ALCOHOL7: Reason You stopped Drinking")) %>% 
+  cols_label(n= md("**Number of Participants**"), answers = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   columns = c(n, percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answers,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+```
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+
+dtALC8= data_tib_all3 %>% filter(D_338467033==353358909)
+
+
+alc_stop= dtALC8 %>%  mutate(answers= case_when(D_447720598_D_549079588 ==1 ~ "Beer",
+                                             D_447720598_D_896953195==1 ~ "Liquor",
+                                             D_447720598_D_889023234==1 ~ "Wine",
+                                             D_447720598_D_181769837==1 ~ "Other",
+                                             TRUE~"Skipped this question"))
+
+ 
+tmp_1<- dtALC8[, grepl("447720598", colnames(dtALC8))]
+tmp1 <- tmp_1[, c(2,4,3,1)]
+tobac_dx <- NULL
+for (i in 1:4){
+  dt <- as.data.frame(tab1(tmp1[,i])$output.table)
+  dt$tobac_dx <- colnames(tmp1)[i]
+  tobac_dx <- rbind(tobac_dx,dt[2,])
+  
+}
+tobac_dx$tobac_dx ### how are their race variables being assigned here?? wrong variable matching. Flattening issue?
+
+tobac_dx$tobac_dx <- c("Beer", "Liquor", "Wine", "Other")
+```
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+# colnames(tobac_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
+# testt2_1 <- tobac_dx[, c(4,1,2)]
+# 
+# colnames(tobac_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
+# testt2_2 <- tobac_dx[, c(4,1,2)]
+
+colnames(tobac_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
+tobac <- tobac_dx[, c(4,1,2)]
+
+skipped_mhg1 <- sum(table(alc_stop$answers=="Skipped this question")[2])
+tobac[as.numeric(dim(tobac)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dtALC8)[[1]])*100,2))
+
+
+dt_tobac <- tobac %>%  gt() %>%  
+  fmt_number(columns = "Percentage", decimals = 2) %>% 
+  tab_header(title = md("ALCOHOL8: Beverages Drank over the Last 12 Months")) %>% 
+  cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"),  Condition = md("**Condition**")) %>% 
+  # summary_rows( groups=F,
+  #   column = c(Frequency,Percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  #grand_summary_rows(columns=c(Frequency, Percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Condition,
+    )
+  )
+tab_footnote(
+  dt_tobac,
+  md("As this is a select all question, participants may select multiple responses."),
+  locations = cells_column_labels(columns = Percentage),
+  placement = c("left")
+)
+
+
+
+
+```
+
+
+## Beer and Hard Cider
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+one_logic_funct3(D_726847824,D_447720598_D_549079588,1,"BEER1: Frequency of Drinking Beer/Hard Cider in the Last Year")
+one_logic_funct3(D_481662464,D_447720598_D_549079588,1,"BEER2: Beers or Hard Ciders per Day")
+
+
+```
+
+
+## Liquor and Mixed Drinks
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+
+one_logic_funct3(D_411088265,D_447720598_D_896953195,1,"LIQUOR1: Frequency of Drinking Liquor or Mixed Drinks in the Last Year")
+one_logic_funct3(D_880067330,D_447720598_D_896953195,1,"LIQUOR2: Liquor or Mixed Drinks per Day")
+
+```
+
+## Wine
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+
+one_logic_funct3(D_178665310,D_447720598_D_889023234,1,"WINE1: Frequency of Drinking Wine in the Last Year")
+one_logic_funct3(D_242987943,D_447720598_D_889023234,1,"WINE2: Glasses of Wine per Day")
+```
+
+
+## OTHERALC
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+one_logic_funct3(D_228752045,D_447720598_D_181769837,1,"OTHERALC1: Frequency of Drinking Other Alcoholic Beverages in the Last Year")
+one_logic_funct3(D_103045461,D_447720598_D_181769837,1,"OTHERALC2: Servings of Other Alcoholic Beverages per Day")
+
+```
+
+
+## Frequency of Drinking 
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+#ALCOHOL9
+alc9 <- data_tib_all3 %>%  filter(D_429228540==132232896 & (!is.na(D_556837046_D_141874857)| D_556837046_D_556837046_D_648960871!=1) & (D_338467033==353358909 | (D_338467033==104430631 & !is.na(D_480426504))))
+edu= alc9  %>%  mutate(edlevel= case_when(D_254739443==648960871 ~ "Never",
+                                                  D_254739443==351028096 ~ "1 to 5 times per year",
+                                                  D_254739443==690077051 ~ "6 to 11 times per year",
+                                                  D_254739443==637900673 ~ "Once per month",
+                                                  D_254739443==207952166 ~ "2 to 3 times per month",
+                                                  D_254739443==522395860 ~ "Once per week",
+                                                  D_254739443==418361985 ~ "Twice per week",
+                                                  D_254739443==471294296 ~ "3 to 4 times per week",
+                                                  D_254739443==594557208 ~ "5 to 6 times per week",
+                                                 D_254739443==647504893 ~ "Every Day",
+                                                  TRUE ~ "Skipped This Question"))
+
+edu$edlevel <- factor(edu$edlevel,levels=c("Never", "1 to 5 times per year", "6 to 11 times per year","Once per month","2 to 3 times per month","Once per week","Twice per week","3 to 4 times per week", "5 to 6 times per week", "Every Day","Skipped This Question"))
+
+dt_edu_summary <- edu %>% dplyr::group_by(edlevel) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(edlevel, n, percentage)
+
+dt_edu_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ALCOHOL9: Frequency of Drinking 4-5 Alcoholic Beverages in One Sitting/Ocassion")) %>% 
+  cols_label(n= md("**Number of Participants**"), edlevel = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+    #summary_rows( groups=F,column = c(n,percentage), fns= list( Sum= ~sum(.)), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = edlevel,)) %>% opt_row_striping()
+
+```
+
+
+
+
+## ALCLIFEA-H
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+##ALCLIFE2 GRID
+#ALCLIFE2A
+#alclife2_funct(D_633553324_D_294629316,"ALCLIFE2A: Frequency of Drinking: Ages 0-17")
+
+
+#### COMPLICATED SKIP LOGIC
+  # DERIVED AGE VARIABLE PUSHED TO PROD AFTER MOD3 RELEASE, SO WE CAN'T USE IT-- needed to create one below
+# ALC2=3, ALC4 IS NOT NA, & (ALC5=1 OR (ALC5=0 & ALC6 IS NOT NA)) AND (ALC4<ALCLIFEAGE & (ALCLIFEAGE<ALC6 | AGE>ALCLIFEAGE))
+                                                                        # IF THEY NEVER STOPPED DRINKING, THEN AGE STARTED<ALCLIFE, IF STOPPED TEHN STARTED<ALCLIFE AND ALCLIFE<AGESTOPPED
+
+
+data_tib_all3$DOB <- paste0(str_sub(module3$D_371067537,1,4), "-", str_sub(module3$D_371067537,5,6), "-", str_sub(module3$D_371067537,7,8)) 
+data_tib_all3$DOB <- as.Date(data_tib_all3$DOB) #, format='%y-%m-%d')
+currentDate <- as.Date(Sys.Date(), format='%y/%m/%d')
+
+
+data_tib_all3$AGEGRID <- time_length(difftime(currentDate, data_tib_all3$DOB), "years")
+
+
+
+dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
+                                       (data_tib_all3$D_338467033==353358909 | (data_tib_all3$D_338467033==104430631 & !is.na(data_tib_all3$D_480426504))) & 
+                                       ((is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<17) | 
+                                          (!is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<17 & as.numeric(data_tib_all3$D_480426504)>17)))
+                                          # (as.numeric(data_tib_all3$D_480426504)>17 | (is.na(data_tib_all3$D_48042650) & (data_tib_all3$state_d_934298480==124276120 |data_tib_all3$state_d_934298480==450985724 |
+                                          #                                                                                   data_tib_all3$state_d_934298480==363147933 | 
+                                          #                                                                                   data_tib_all3$state_d_934298480==636706443 |data_tib_all3$state_d_934298480==771230670))) ))
+
+alcl= dt_alcl  %>%  mutate(oth_age= case_when(D_633553324_D_294629316==265550580 ~"Didn't Drink", 
+                                                D_633553324_D_294629316==950039557 ~"A few times per Year",
+                                                D_633553324_D_294629316==402048066 ~"A few times per Month",
+                                                D_633553324_D_294629316==522395860 ~"Once per Week",
+                                                D_633553324_D_294629316==756073829 ~"A few times per Week",
+                                                D_633553324_D_294629316==858624942 ~"Once per day",
+                                                D_633553324_D_294629316==424768954 ~"2-3 times per Day",
+                                                D_633553324_D_294629316==687445652 ~"4-5 times per Day",
+                                                D_633553324_D_294629316==333682419 ~"6+ times per Day",
+                                              TRUE ~ "Skipped this question"))
+alcl$oth_age <- factor(alcl$oth_age,levels=c("Didn't Drink","A few times per Year","A few times per Month","Once per Week", "A few times per Week","Once per day","2-3 times per Day","4-5 times per Day","6+ times per Day","Skipped this question"))
+
+dt_alcl_summary <- alcl %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
+
+dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ALCLIFE2A: Frequency of Drinking: Ages 0-17")) %>% 
+  cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+
+#ALCLIFE2B
+#alclife2_funct(D_633553324_D_164707243,"ALCLIFE2B: Frequency of Drinking: Ages 18-24")
+#grid.arrange(alclf2A, alclf2B, nrow=2)
+
+
+dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
+                                       (data_tib_all3$D_338467033==353358909 | (data_tib_all3$D_338467033==104430631 & !is.na(data_tib_all3$D_480426504))) & 
+                                       ((is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<24) | 
+                                          (!is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<24 & as.numeric(data_tib_all3$D_480426504)>24)))
+                                          # (as.numeric(data_tib_all3$D_480426504)>17 | (is.na(data_tib_all3$D_48042650) & (data_tib_all3$state_d_934298480==124276120 |data_tib_all3$state_d_934298480==450985724 |
+                                          #                                                                                   data_tib_all3$state_d_934298480==363147933 | 
+                                          #                                                                                   data_tib_all3$state_d_934298480==636706443 |data_tib_all3$state_d_934298480==771230670))) ))
+
+alcl= dt_alcl  %>%  mutate(oth_age= case_when(D_633553324_D_164707243==265550580 ~"Didn't Drink", 
+                                                D_633553324_D_164707243==950039557 ~"A few times per Year",
+                                                D_633553324_D_164707243==402048066 ~"A few times per Month",
+                                                D_633553324_D_164707243==522395860 ~"Once per Week",
+                                                D_633553324_D_164707243==756073829 ~"A few times per Week",
+                                                D_633553324_D_164707243==858624942 ~"Once per day",
+                                                D_633553324_D_164707243==424768954 ~"2-3 times per Day",
+                                                D_633553324_D_164707243==687445652 ~"4-5 times per Day",
+                                                D_633553324_D_164707243==333682419 ~"6+ times per Day",
+                                              TRUE ~ "Skipped this question"))
+alcl$oth_age <- factor(alcl$oth_age,levels=c("Didn't Drink","A few times per Year","A few times per Month","Once per Week", "A few times per Week","Once per day","2-3 times per Day","4-5 times per Day","6+ times per Day","Skipped this question"))
+
+dt_alcl_summary <- alcl %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
+
+dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ALCLIFE2B: Frequency of Drinking: Ages 18-24")) %>% 
+  cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+
+
+#ALCLIFE2C
+#alclife2_funct(D_633553324_D_771426895,"ALCLIFE2C: Frequency of Drinking: Ages 25-29")
+dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
+                                       (data_tib_all3$D_338467033==353358909 | (data_tib_all3$D_338467033==104430631 & !is.na(data_tib_all3$D_480426504))) & 
+                                       ((is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<29) | 
+                                          (!is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<29 & as.numeric(data_tib_all3$D_480426504)>29)))
+                                          # (as.numeric(data_tib_all3$D_480426504)>17 | (is.na(data_tib_all3$D_48042650) & (data_tib_all3$state_d_934298480==124276120 |data_tib_all3$state_d_934298480==450985724 |
+                                          #                                                                                   data_tib_all3$state_d_934298480==363147933 | 
+                                          #                                                                                   data_tib_all3$state_d_934298480==636706443 |data_tib_all3$state_d_934298480==771230670))) ))
+
+alcl= dt_alcl  %>%  mutate(oth_age= case_when(D_633553324_D_771426895==265550580 ~"Didn't Drink", 
+                                                D_633553324_D_771426895==950039557 ~"A few times per Year",
+                                                D_633553324_D_771426895==402048066 ~"A few times per Month",
+                                                D_633553324_D_771426895==522395860 ~"Once per Week",
+                                                D_633553324_D_771426895==756073829 ~"A few times per Week",
+                                                D_633553324_D_771426895==858624942 ~"Once per day",
+                                                D_633553324_D_771426895==424768954 ~"2-3 times per Day",
+                                                D_633553324_D_771426895==687445652 ~"4-5 times per Day",
+                                                D_633553324_D_771426895==333682419 ~"6+ times per Day",
+                                              TRUE ~ "Skipped this question"))
+alcl$oth_age <- factor(alcl$oth_age,levels=c("Didn't Drink","A few times per Year","A few times per Month","Once per Week", "A few times per Week","Once per day","2-3 times per Day","4-5 times per Day","6+ times per Day","Skipped this question"))
+
+dt_alcl_summary <- alcl %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
+
+dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ALCLIFE2C: Frequency of Drinking: Ages 25-29")) %>% 
+  cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+
+#ALCLIFE2D
+#alclife2_funct(D_633553324_D_818310825,"ALCLIFE2D: Frequency of Drinking: Ages 30-39")
+dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
+                                       (data_tib_all3$D_338467033==353358909 | (data_tib_all3$D_338467033==104430631 & !is.na(data_tib_all3$D_480426504))) & 
+                                       ((is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<39) | 
+                                          (!is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<39 & as.numeric(data_tib_all3$D_480426504)>39)))
+                                          # (as.numeric(data_tib_all3$D_480426504)>17 | (is.na(data_tib_all3$D_48042650) & (data_tib_all3$state_d_934298480==124276120 |data_tib_all3$state_d_934298480==450985724 |
+                                          #                                                                                   data_tib_all3$state_d_934298480==363147933 | 
+                                          #                                                                                   data_tib_all3$state_d_934298480==636706443 |data_tib_all3$state_d_934298480==771230670))) ))
+
+alcl= dt_alcl  %>%  mutate(oth_age= case_when(D_633553324_D_818310825==265550580 ~"Didn't Drink", 
+                                                D_633553324_D_818310825==950039557 ~"A few times per Year",
+                                                D_633553324_D_818310825==402048066 ~"A few times per Month",
+                                                D_633553324_D_818310825==522395860 ~"Once per Week",
+                                                D_633553324_D_818310825==756073829 ~"A few times per Week",
+                                                D_633553324_D_818310825==858624942 ~"Once per day",
+                                                D_633553324_D_818310825==424768954 ~"2-3 times per Day",
+                                                D_633553324_D_818310825==687445652 ~"4-5 times per Day",
+                                                D_633553324_D_818310825==333682419 ~"6+ times per Day",
+                                              TRUE ~ "Skipped this question"))
+alcl$oth_age <- factor(alcl$oth_age,levels=c("Didn't Drink","A few times per Year","A few times per Month","Once per Week", "A few times per Week","Once per day","2-3 times per Day","4-5 times per Day","6+ times per Day","Skipped this question"))
+
+dt_alcl_summary <- alcl %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
+
+dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ALCLIFE2D: Frequency of Drinking: Ages 30-39")) %>% 
+  cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+
+
+
+
+#ALCLIFE2E
+#alclife2_funct(D_633553324_D_843593800,"ALCLIFE2E: Frequency of Drinking: Ages 40-49")
+dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$AGEGRID>40 & data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
+                                       (data_tib_all3$D_338467033==353358909 | (data_tib_all3$D_338467033==104430631 & !is.na(data_tib_all3$D_480426504))) & 
+                                       ((is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<49) | 
+                                          (!is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<49 & as.numeric(data_tib_all3$D_480426504)>49)))
+                                          # (as.numeric(data_tib_all3$D_480426504)>17 | (is.na(data_tib_all3$D_48042650) & (data_tib_all3$state_d_934298480==124276120 |data_tib_all3$state_d_934298480==450985724 |
+                                          #                                                                                   data_tib_all3$state_d_934298480==363147933 | 
+                                          #                                                                                   data_tib_all3$state_d_934298480==636706443 |data_tib_all3$state_d_934298480==771230670))) ))
+
+alcl= dt_alcl  %>%  mutate(oth_age= case_when(D_633553324_D_843593800==265550580 ~"Didn't Drink", 
+                                                D_633553324_D_843593800==950039557 ~"A few times per Year",
+                                                D_633553324_D_843593800==402048066 ~"A few times per Month",
+                                                D_633553324_D_843593800==522395860 ~"Once per Week",
+                                                D_633553324_D_843593800==756073829 ~"A few times per Week",
+                                                D_633553324_D_843593800==858624942 ~"Once per day",
+                                                D_633553324_D_843593800==424768954 ~"2-3 times per Day",
+                                                D_633553324_D_843593800==687445652 ~"4-5 times per Day",
+                                                D_633553324_D_843593800==333682419 ~"6+ times per Day",
+                                              TRUE ~ "Skipped this question"))
+alcl$oth_age <- factor(alcl$oth_age,levels=c("Didn't Drink","A few times per Year","A few times per Month","Once per Week", "A few times per Week","Once per day","2-3 times per Day","4-5 times per Day","6+ times per Day","Skipped this question"))
+
+dt_alcl_summary <- alcl %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
+
+dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ALCLIFE2E: Frequency of Drinking: Ages 40-49")) %>% 
+  cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+
+#ALCLIFE2F
+#alclife2_funct(D_633553324_D_175385712,"ALCLIFE2F: Frequency of Drinking: Ages 50-59")
+dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$AGEGRID>50 & data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
+                                       (data_tib_all3$D_338467033==353358909 | (data_tib_all3$D_338467033==104430631 & !is.na(data_tib_all3$D_480426504))) & 
+                                       ((is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<59) | 
+                                          (!is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<59 & as.numeric(data_tib_all3$D_480426504)>59)))
+                                          # (as.numeric(data_tib_all3$D_480426504)>17 | (is.na(data_tib_all3$D_48042650) & (data_tib_all3$state_d_934298480==124276120 |data_tib_all3$state_d_934298480==450985724 |
+                                          #                                                                                   data_tib_all3$state_d_934298480==363147933 | 
+                                          #                                                                                   data_tib_all3$state_d_934298480==636706443 |data_tib_all3$state_d_934298480==771230670))) ))
+
+alcl= dt_alcl  %>%  mutate(oth_age= case_when(D_633553324_D_175385712==265550580 ~"Didn't Drink", 
+                                                D_633553324_D_175385712==950039557 ~"A few times per Year",
+                                                D_633553324_D_175385712==402048066 ~"A few times per Month",
+                                                D_633553324_D_175385712==522395860 ~"Once per Week",
+                                                D_633553324_D_175385712==756073829 ~"A few times per Week",
+                                                D_633553324_D_175385712==858624942 ~"Once per day",
+                                                D_633553324_D_175385712==424768954 ~"2-3 times per Day",
+                                                D_633553324_D_175385712==687445652 ~"4-5 times per Day",
+                                                D_633553324_D_175385712==333682419 ~"6+ times per Day",
+                                              TRUE ~ "Skipped this question"))
+alcl$oth_age <- factor(alcl$oth_age,levels=c("Didn't Drink","A few times per Year","A few times per Month","Once per Week", "A few times per Week","Once per day","2-3 times per Day","4-5 times per Day","6+ times per Day","Skipped this question"))
+
+dt_alcl_summary <- alcl %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
+
+dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ALCLIFE2F: Frequency of Drinking: Ages 50-59")) %>% 
+  cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+
+
+#ALCLIFE2G
+#alclife2_funct(D_633553324_D_772143730,"ALCLIFE2G: Frequency of Drinking: Ages 60-69")
+dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$AGEGRID>60 & data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
+                                       (data_tib_all3$D_338467033==353358909 | (data_tib_all3$D_338467033==104430631 & !is.na(data_tib_all3$D_480426504))) & 
+                                       ((is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<69) | 
+                                          (!is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<69 & as.numeric(data_tib_all3$D_480426504)>69)))
+                                          # (as.numeric(data_tib_all3$D_480426504)>17 | (is.na(data_tib_all3$D_48042650) & (data_tib_all3$state_d_934298480==124276120 |data_tib_all3$state_d_934298480==450985724 |
+                                          #                                                                                   data_tib_all3$state_d_934298480==363147933 | 
+                                          #                                                                                   data_tib_all3$state_d_934298480==636706443 |data_tib_all3$state_d_934298480==771230670))) ))
+
+alcl= dt_alcl  %>%  mutate(oth_age= case_when(D_633553324_D_772143730==265550580 ~"Didn't Drink", 
+                                                D_633553324_D_772143730==950039557 ~"A few times per Year",
+                                                D_633553324_D_772143730==402048066 ~"A few times per Month",
+                                                D_633553324_D_772143730==522395860 ~"Once per Week",
+                                                D_633553324_D_772143730==756073829 ~"A few times per Week",
+                                                D_633553324_D_772143730==858624942 ~"Once per day",
+                                                D_633553324_D_772143730==424768954 ~"2-3 times per Day",
+                                                D_633553324_D_772143730==687445652 ~"4-5 times per Day",
+                                                D_633553324_D_772143730==333682419 ~"6+ times per Day",
+                                              TRUE ~ "Skipped this question"))
+alcl$oth_age <- factor(alcl$oth_age,levels=c("Didn't Drink","A few times per Year","A few times per Month","Once per Week", "A few times per Week","Once per day","2-3 times per Day","4-5 times per Day","6+ times per Day","Skipped this question"))
+
+dt_alcl_summary <- alcl %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
+
+dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ALCLIFE2G: Frequency of Drinking: Ages 60-69")) %>% 
+  cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+
+#ALCLIFE2H-- no one yet
+# alclife2_funct(D_633553324_D_602102163,"ALCLIFE2A: Frequency of Drinking: Ages 70+")
+
+
+```
+
+
+### ALCLIFE4A: Beverages Drank from Ages 0-17
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+###ALCLIFE4 GRID
+
+    ##ALCLLIFE2 variables won't go into tibble for some reason so can't turn into a function 
+
+#ALCLIFE4A 
+dt_alcl <- module3 %>% filter(module3$D_429228540==132232896 & !is.na(module3$D_556837046_D_141874857) & 
+                                       (module3$D_338467033==353358909 | (module3$D_338467033==104430631 & !is.na(module3$D_480426504))) & 
+                                       ((is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17) | 
+                                          (!is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17 &       
+                                             as.numeric(module3$D_480426504)>17)))
+
+
+
+alcl4= dt_alcl  %>%  mutate(oth_age= case_when(D_470862706_D_912659087_D_789689151=="1"~"Drank Beer",
+                                              D_470862706_D_912659087_D_663253668=="1"~"Drank Liquor",
+                                              D_470862706_D_912659087_D_104676242=="1"~"Drank Wine",
+                                              D_470862706_D_912659087_D_137733407=="1"~"Drank Other Beverages",
+                                              TRUE ~ "Skipped this question"))
+alcl4$oth_age <- factor(alcl4$oth_age,levels=c("Drank Beer","Drank Liquor","Drank Wine","Drank Other Beverages", "Skipped this question"))
+
+dt_alcl_summary <- alcl4 %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
+
+dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ALCLIFE4A: Beverages Drank from Ages 0-17")) %>% 
+  cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+
+
+```
+
+### ALCLIFE4B: Beverages Drank from Ages 18-24
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+#ALCLIFE4B
+
+
+dt_alcl <- module3 %>% filter(module3$D_429228540==132232896 & !is.na(module3$D_556837046_D_141874857) & 
+                                       (module3$D_338467033==353358909 | (module3$D_338467033==104430631 & !is.na(module3$D_480426504))) & 
+                                       ((is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17) | 
+                                          (!is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17 &       
+                                             as.numeric(module3$D_480426504)>17)))
+
+
+
+alcl4= dt_alcl  %>%  mutate(oth_age= case_when(D_470862706_D_643512687_D_789689151=="1"~"Drank Beer",
+                                              D_470862706_D_643512687_D_663253668=="1"~"Drank Liquor",
+                                              D_470862706_D_643512687_D_104676242=="1"~"Drank Wine",
+                                              D_470862706_D_643512687_D_137733407=="1"~"Drank Other Beverages",
+                                              TRUE ~ "Skipped this question"))
+alcl4$oth_age <- factor(alcl4$oth_age,levels=c("Drank Beer","Drank Liquor","Drank Wine","Drank Other Beverages", "Skipped this question"))
+
+dt_alcl_summary <- alcl4 %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
+
+dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ALCLIFE4B: Beverages Drank from Ages 18-24")) %>% 
+  cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+
+```
+
+### ALCLIFE4C: Beverages Drank from Ages 25-29
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+#ALCLIFE4C
+
+
+dt_alcl <- module3 %>% filter(module3$D_429228540==132232896 & !is.na(module3$D_556837046_D_141874857) & 
+                                       (module3$D_338467033==353358909 | (module3$D_338467033==104430631 & !is.na(module3$D_480426504))) & 
+                                       ((is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17) | 
+                                          (!is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17 &       
+                                             as.numeric(module3$D_480426504)>17)))
+
+
+
+alcl4= dt_alcl  %>%  mutate(oth_age= case_when(D_470862706_D_688123102_D_789689151=="1"~"Drank Beer",
+                                              D_470862706_D_688123102_D_663253668=="1"~"Drank Liquor",
+                                              D_470862706_D_688123102_D_104676242=="1"~"Drank Wine",
+                                              D_470862706_D_688123102_D_137733407=="1"~"Drank Other Beverages",
+                                              TRUE ~ "Skipped this question"))
+alcl4$oth_age <- factor(alcl4$oth_age,levels=c("Drank Beer","Drank Liquor","Drank Wine","Drank Other Beverages", "Skipped this question"))
+
+dt_alcl_summary <- alcl4 %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
+
+dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ALCLIFE4C: Beverages Drank from Ages 25-29")) %>% 
+  cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+
+```
+
+### ALCLIFE4D: Beverages Drank from Ages 30-39
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+#ALCLIFE4D
+
+
+dt_alcl <- module3 %>% filter(module3$D_429228540==132232896 & !is.na(module3$D_556837046_D_141874857) & 
+                                       (module3$D_338467033==353358909 | (module3$D_338467033==104430631 & !is.na(module3$D_480426504))) & 
+                                       ((is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17) | 
+                                          (!is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17 &       
+                                             as.numeric(module3$D_480426504)>17)))
+
+
+
+alcl4= dt_alcl  %>%  mutate(oth_age= case_when(D_470862706_D_356133766_D_789689151=="1"~"Drank Beer",
+                                              D_470862706_D_356133766_D_663253668=="1"~"Drank Liquor",
+                                              D_470862706_D_356133766_D_104676242=="1"~"Drank Wine",
+                                              D_470862706_D_356133766_D_137733407=="1"~"Drank Other Beverages",
+                                              TRUE ~ "Skipped this question"))
+alcl4$oth_age <- factor(alcl4$oth_age,levels=c("Drank Beer","Drank Liquor","Drank Wine","Drank Other Beverages", "Skipped this question"))
+
+dt_alcl_summary <- alcl4 %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
+
+dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ALCLIFE4D: Beverages Drank from Ages 30-39")) %>% 
+  cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+
+
+```
+
+### ALCLIFE4E: Beverages Drank from Ages 40-49
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+#ALCLIFE4E
+
+
+dt_alcl <- module3 %>% filter(module3$D_429228540==132232896 & !is.na(module3$D_556837046_D_141874857) & 
+                                       (module3$D_338467033==353358909 | (module3$D_338467033==104430631 & !is.na(module3$D_480426504))) & 
+                                       ((is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17) | 
+                                          (!is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17 &       
+                                             as.numeric(module3$D_480426504)>17)))
+
+
+
+alcl4= dt_alcl  %>%  mutate(oth_age= case_when(D_470862706_D_690918725_D_789689151=="1"~"Drank Beer",
+                                              D_470862706_D_690918725_D_663253668=="1"~"Drank Liquor",
+                                              D_470862706_D_690918725_D_104676242=="1"~"Drank Wine",
+                                              D_470862706_D_690918725_D_137733407=="1"~"Drank Other Beverages",
+                                              TRUE ~ "Skipped this question"))
+alcl4$oth_age <- factor(alcl4$oth_age,levels=c("Drank Beer","Drank Liquor","Drank Wine","Drank Other Beverages", "Skipped this question"))
+
+dt_alcl_summary <- alcl4 %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
+
+dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ALCLIFE4E: Beverages Drank from Ages 40-49")) %>% 
+  cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+
+```
+
+### ALCLIFE4F: Beverages Drank from Ages 50-59
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+#ALCLIFE4F
+
+
+dt_alcl <- module3 %>% filter(module3$D_429228540==132232896 & !is.na(module3$D_556837046_D_141874857) & 
+                                       (module3$D_338467033==353358909 | (module3$D_338467033==104430631 & !is.na(module3$D_480426504))) & 
+                                       ((is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17) | 
+                                          (!is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17 &       
+                                             as.numeric(module3$D_480426504)>17)))
+
+
+
+alcl4= dt_alcl  %>%  mutate(oth_age= case_when(D_470862706_D_178609656_D_789689151=="1"~"Drank Beer",
+                                              D_470862706_D_178609656_D_663253668=="1"~"Drank Liquor",
+                                              D_470862706_D_178609656_D_104676242=="1"~"Drank Wine",
+                                              D_470862706_D_178609656_D_137733407=="1"~"Drank Other Beverages",
+                                              TRUE ~ "Skipped this question"))
+alcl4$oth_age <- factor(alcl4$oth_age,levels=c("Drank Beer","Drank Liquor","Drank Wine","Drank Other Beverages", "Skipped this question"))
+
+dt_alcl_summary <- alcl4 %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
+
+dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ALCLIFE4F: Beverages Drank from Ages 50-59")) %>% 
+  cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+
+
+```
+
+### ALCLIFE4G: Beverages Drank from Ages 60-69 
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+#ALCLIFE4G
+
+dt_alcl <- module3 %>% filter(module3$D_429228540==132232896 & !is.na(module3$D_556837046_D_141874857) & 
+                                       (module3$D_338467033==353358909 | (module3$D_338467033==104430631 & !is.na(module3$D_480426504))) & 
+                                       ((is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17) | 
+                                          (!is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17 &       
+                                             as.numeric(module3$D_480426504)>17)))
+
+
+
+alcl4= dt_alcl  %>%  mutate(oth_age= case_when(D_470862706_D_261957180_D_789689151=="1"~"Drank Beer",
+                                              D_470862706_D_261957180_D_663253668=="1"~"Drank Liquor",
+                                              D_470862706_D_261957180_D_104676242=="1"~"Drank Wine",
+                                              D_470862706_D_261957180_D_137733407=="1"~"Drank Other Beverages",
+                                              TRUE ~ "Skipped this question"))
+alcl4$oth_age <- factor(alcl4$oth_age,levels=c("Drank Beer","Drank Liquor","Drank Wine","Drank Other Beverages", "Skipped this question"))
+
+dt_alcl_summary <- alcl4 %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
+
+dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ALCLIFE4G: Beverages Drank from Ages 60-69 ")) %>% 
+  cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+
+
+
+#ALCLIFE4H
+#cat("\n","\n")
+#cat('**ALCLIFE4H: Beverages Drank from Ages 70+**')
+#cat("\n", "Beer:")
+# table(module3$D_470862706_D_715827646_D_789689151) #beer
+#cat("\n", "Liquor:")
+# table(module3$D_470862706_D_715827646_D_663253668) #liquor
+#cat("\n", "Wine")
+# table(module3$D_470862706_D_715827646_D_104676242) #wine
+#cat("\n", "Other")
+# table(module3$D_470862706_D_715827646_D_137733407) #other
+
+```
+
+
+\newpage
+
+# Section 4: Sun Exposure 
+## Sun Screen, Burning, Tanning 
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+
+#SKINSUN   
+simple_funct3(D_863593410, "SKINSUN: Skin Reaction of Being in the Sun for an Hour Without Sunscreen")
+
+
+#BLISTERING
+simple_funct3(D_525152373, "BLISTERING: Number of Blistering Sunburns over Lifetime")
+
+
+#TANOUT12
+simple_funct3(D_146319128, "TANOUT12: Frequency of Sunbathing to Get a Tan in the past Year")
+
+
+#TANOUTADU]
+simple_funct3(D_910501158, "TANOUTADU: Frequency of Sunbathing to Get a Tan During Your Adult Life")
+
+
+
+#SUNCREEN1
+simple_funct3(D_345457702, "SUNCREEN1: Frequency of Applying Sunscreen When Out in the Sun for an Hour")
+
+
+#SUNCREEN2
+sscreen= data_tib_all3 %>% filter(D_345457702==235613392 | D_345457702==235613392 | D_345457702==235613392) 
+sscreen2 <- sscreen %>%  mutate(oth_age= case_when(D_711858159==905073380~"All sun exposed areas",
+                                              D_711858159==223461539~"Some sun exposed areas",
+                                              D_711858159==901521065~"Face/Head only",
+                                              TRUE ~ "Skipped this question"))
+sscreen2$oth_age <- factor(sscreen2$oth_age,levels=c("All sun exposed areas","Some sun exposed areas","Face/Head only", "Skipped this question"))
+
+dt_sscreen2 <- sscreen2 %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
+
+dt_sscreen2 %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("SUNCREEN2: Body Parts Sunscreen Applied To")) %>% 
+  cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+
+
+#SUNCREEN3
+sscreen3 <- sscreen %>%  mutate(oth_age= case_when(D_467751479==648960871~"Never",
+                                              D_467751479==235613392~"Rarely",
+                                              D_467751479==132099255~"Sometimes",
+                                               D_467751479==211590917~"Often",
+                                              D_467751479==907579123~"Always",
+                                              TRUE ~ "Skipped this question"))
+sscreen3$oth_age <- factor(sscreen3$oth_age,levels=c("Never","Rarely","Sometimes", "Often","Always","Skipped this question"))
+
+dt_sscreen3 <- sscreen3 %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
+
+dt_sscreen3 %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("SUNCREEN3: Frequency of Re-applying Sunscreen When Out in the Sun")) %>% 
+  cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+
+
+#SUNCREEN4
+sscreen4 <- sscreen %>%  mutate(oth_age= case_when(D_858858333==445549128~"Less than 15",
+                                              D_858858333==995736452~"15 to 20",
+                                              D_858858333==120045322~"21 to 35",
+                                              D_858858333==190125431~"36 to 50",
+                                              D_858858333==133730190~"Higher than 50",
+                                              D_858858333==178420302~"Unknown",
+                                              TRUE ~ "Skipped this question"))
+sscreen4$oth_age <- factor(sscreen4$oth_age,levels=c("Less than 15","15 to 20","21 to 35", "36 to 50","Unknown","Skipped this question"))
+
+dt_sscreen4 <- sscreen4 %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
+
+dt_sscreen4 %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("SUNCREEN4: Highest SPF Used Most Often")) %>% 
+  cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+
+
+
+#COVERSKIN
+simple_funct3(D_795761911, "COVERSKIN: Frequency of Wearing Clothes/Hats to Cover Skin in the Sun")
+
+
+
+```
+
+
+## Tanning Beds
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+
+#TANBED1
+simple_funct3(D_662762705, "TANBED1: Times Indoor Tanning Bed Used")
+
+
+
+#TANBED2
+boxp_funct(D_463908980, "TANBED2: Age Tanning Beds First Used", "Age")
+
+
+
+#TANBED3
+dttanbed3 <- data_tib_all3 %>%  filter(data_tib_all3$D_662762705==649327523| data_tib_all3$D_662762705==587052987 | data_tib_all3$D_662762705==838336013)
+
+
+tanbed3_ans= dttanbed3 %>%  mutate(answer= case_when(D_605063358==104430631 ~ "No",
+                                             D_605063358==353358909 ~ "Yes",
+                                             is.na(D_605063358) ~ "Skipped this question"))
+
+dttanbed3_summary <- tanbed3_ans %>% group_by(answer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dttanbed3_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("TANBED3: Used a Tanning Bed in the Past 12 Months")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+
+
+#TANBED4
+boxp_funct(D_648216681, "TANBED4: Age Tanning Beds Last Used", "Age")
+
+
+
+#TANBED5
+dttanbed5 <- data_tib_all3 %>%  filter(data_tib_all3$D_662762705==649327523| data_tib_all3$D_662762705==587052987 | data_tib_all3$D_662762705==838336013)
+
+
+tanbed5_ans= dttanbed5 %>%  mutate(answer= case_when(D_466473224==676516297 ~ "20 to 31 days per month",
+                                                     D_466473224==511873578 ~ "5 to 19 days per month",
+                                                     D_466473224==522395860 ~ "Once per week",
+                                                     D_466473224==756470750 ~ "1 to 4 days per month",
+                                                     D_466473224==402335383 ~ "0 to 11 days per year",
+                                                     is.na(D_466473224) ~ "Skipped this question"))
+tanbed5_ans$answer <- factor(tanbed5_ans$answer,levels=c("20 to 31 days per month","5 to 19 days per month","Once per week", "1 to 4 days per month","0 to 11 days per year","Skipped this question"))
+
+dttanbed5_summary <- tanbed5_ans %>% group_by(answer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dttanbed5_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("tanbed5: Used a Tanning Bed in the Past 12 Months")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+
+```
+
+
+## Eye Color, Hair Color, Skin Colors, Freckles 
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+#EYECOLOR
+simple_funct3(D_857219333, "EYECOLOR: Natural Color of your Eyes")
+
+
+#HAIRCOLOR
+simple_funct3(D_384562783, "HAIRCOLOR: Natural Hair Color at Age 20")
+
+
+
+#SKINCOLOR
+simple_funct3(D_394410256, "SKINCOLOR: Natural Skin Color (Not exposed to Sun or Tanning Beds)")
+
+
+#FRECKCHLD
+simple_funct3(D_524971659, "FRECKCHLD: Had freckles as a Child")
+
+
+#FRECKLING
+simple_funct3(D_352986465, "FRECKLING: Amount of Freckles on Back and Shoulders")
+
+
+
+
+```
+
