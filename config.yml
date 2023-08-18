@@ -1,0 +1,56 @@
+default:
+  report_maintainer: "Kelsey Dowling"
+  pipeline_maintainer: "Jake Peters"
+  bucket: "gs://ccc_weekly_metrics_report"
+  test_box_folders: 
+    - "123456789012"
+
+weekly_module_metrics:
+  rmd_file_name: "CCC Weekly Module Metrics_RMD.Rmd"
+  report_file_name: "CCC_Weekly_Module_Metrics.pdf"
+  box_folders:
+    - "183922736204" # internal
+    - "141543281606" # sites can view this one
+  cadence: "every Monday"
+
+mod1_stats:
+  rmd_file_name: "Merged Module 1 Summary Statistics.Rmd"
+  report_file_name: "Merged_Module_1_Summary_Statistics.pdf"
+  box_folders:
+    - "208053733985"
+  cadence: "1st of the month"
+
+mod2_stats:
+  rmd_file_name: "Merged Module 2 Summary Statistics.Rmd"
+  report_file_name: "Merged_Module_2_Summary_Statistics.pdf"
+  box_folders:
+    - "208055378225"
+  cadence: "1st of the month"
+
+mod3_stats:
+  rmd_file_name: "Module 3 Summary Statatistics.Rmd"
+  report_file_name: "Module_3_Summary_Statatistics.pdf"
+  box_folders:
+    - "208062917930"
+  cadence: "1st of the month"
+
+mod4_stats:
+  rmd_file_name: "Module 4 Missingness Analysis.Rmd"
+  report_file_name: "Module_4_Missingness_Analysis.pdf"
+  box_folders:
+    - "208060974530"
+  cadence: "1st of the month"
+
+baseline_high_priority:
+  rmd_file_name: "Baseline Ranked Variables- High Priority.Rmd"
+  report_file_name: "Baseline_Ranked_Varialbes_High_Priority.pdf"
+  box_folders:
+    - "219595986209"
+  cadence: "1st of the month"
+
+baseline_low_priority:
+  rmd_file_name: "Module 4 Missingness Analysis.Rmd"
+  report_file_name: "Module_4_Missingness_Analysis.pdf"
+  box_folders:
+    - "219761433401"
+  cadence: "1st of the month"
