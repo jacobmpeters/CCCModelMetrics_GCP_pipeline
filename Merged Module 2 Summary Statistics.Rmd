@@ -43,7 +43,7 @@ library(gt)
 #install(tinytex)
 library(tinytex)
 library(data.table) ###to write or read and data management 
-library(boxr) ###read or write data from/to box
+# library(boxr) ###read or write data from/to box
 library(tidyverse) ###for data management
 library(dplyr) ###data management
 library(reshape)  ###to work on transition from long to wide or wide to long data
@@ -2503,7 +2503,7 @@ dt_regt_summary %>%  gt() %>%
   fmt_number(columns = "percentage", decimals = 2) %>%
   fmt_number(columns = "n", decimals = 0) %>%
   tab_header(title = md("MENSHIS2: Length of Time Unitl Menstrual Cycle Regular")) %>% 
-  cols_label(n= md("**Number of Participants**"), howlong = md(**Answer**), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"), howlong = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows(
   #   column = c(n,percentage),
   #   fns= list(
@@ -2821,7 +2821,7 @@ dt_out_preg1_summary %>%  gt() %>%
   fmt_number(columns = "percentage", decimals = 2) %>%
   fmt_number(columns = "n", decimals = 0) %>%
   tab_header(title = md("PREG5_1: Outcome of First Pregnancy")) %>% 
-  cols_label(n= md("**Number of Participants**"), outcome = md(**Answer**), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"), outcome = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows(
   #   column = c(n,percentage),
   #   fns= list(
@@ -2862,7 +2862,7 @@ dt_out_preg2_summary %>%  gt() %>%
   fmt_number(columns = "percentage", decimals = 2) %>%
   fmt_number(columns = "n", decimals = 0) %>%
   tab_header(title = md("PREG5_2: Outcome of Second Pregnancy")) %>% 
-  cols_label(n= md("**Number of Participants**"), outcome = md(**Answer**), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"), outcome = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows(
   #   column = c(n,percentage),
   #   fns= list(
@@ -2904,7 +2904,7 @@ dt_out_preg3_summary %>%  gt() %>%
   fmt_number(columns = "percentage", decimals = 2) %>%
   fmt_number(columns = "n", decimals = 0) %>%
   tab_header(title = md("PREG5_3: Outcome of Third Pregnancy")) %>% 
-  cols_label(n= md("**Number of Participants**"), outcome = md(**Answer**), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"), outcome = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows(
   #   column = c(n,percentage),
   #   fns= list(
@@ -2945,7 +2945,7 @@ dt_out_preg4_summary %>%  gt() %>%
   fmt_number(columns = "percentage", decimals = 2) %>%
   fmt_number(columns = "n", decimals = 0) %>%
   tab_header(title = md("PREG5_4: Outcome of Fourth Pregnancy")) %>% 
-  cols_label(n= md("**Number of Participants**"), outcome = md(**Answer**), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"), outcome = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows(
   #   column = c(n,percentage),
   #   fns= list(
