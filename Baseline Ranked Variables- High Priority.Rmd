@@ -4526,7 +4526,7 @@ ca_base <- ggplot(data = states, mapping = aes(x = long, y = lat, group = group)
  
  
  #Attemp1 10 
- zip_to_lat_lon_North.America <- read.csv("C:/Users/dowlingk2/Downloads/zip_to_lat_lon_North America.csv")
+ zip_to_lat_lon_North.America <- read.csv("C:/Users/dowlingk2/Downloads/zip_to_lat_lon_North_America.csv")
  all_zips <- zip_to_lat_lon_North.America %>%  filter(Country=="United States" & (postal.code %in%  ZP_HT_US$zip)) 
  all_zips$ZIP <- all_zips$postal.code
 us_zip <- left_join(ZP_HT, all_zips, by="ZIP")
