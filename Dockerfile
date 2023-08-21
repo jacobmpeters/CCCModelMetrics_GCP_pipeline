@@ -45,6 +45,7 @@ RUN R -e "devtools::install_github('kupietz/kableExtra')"
 
 # Copy R code to directory in instance
 COPY ["./ccc_module_metrics_api.R", "./ccc_module_metrics_api.R"]
+COPY ["./config.yml", "./config.yml"]
 COPY ["./CCC Weekly Module Metrics_RMD.Rmd", "./CCC Weekly Module Metrics_RMD.Rmd"]
 COPY ["./Baseline Ranked Variables- High Priority.Rmd", "./Baseline Ranked Variables- High Priority.Rmd"]
 COPY ["./Baseline Ranked Variables- Low Priority.Rmd", "./Baseline Ranked Variables- Low Priority.Rmd"]
