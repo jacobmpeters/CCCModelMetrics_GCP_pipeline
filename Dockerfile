@@ -18,10 +18,9 @@ RUN apt-get update \
     install2.r rmarkdown 
     
 # Install summarytools dependencies
-RUN apt-get install \
-    tcl-dev \
-    tk-dev \
-    libmagic-dev 
+RUN apt-get update && \
+    apt-get install -y tcl tk libmagic
+
   
 # Install tinytex
 # RUN Rscript -e 'tinytex::install_tinytex()'
