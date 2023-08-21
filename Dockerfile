@@ -17,21 +17,22 @@ RUN apt-get update \
     /rocker_scripts/install_pandoc.sh && \
     install2.r rmarkdown 
 
+# Install imagemagick
+RUN add-apt-repository -y ppa:cran/imagemagick \ 
+  && apt-get update \
+  && apt-get install libmagick++-dev
+  
 # Install tinytex
 # RUN Rscript -e 'tinytex::install_tinytex()'
 RUN Rscript -e 'tinytex::install_tinytex(repository = "illinois")'
 
-# Having trouble installing magick using other methods...
-RUN R -e "devtools::install_github('ropensci/magick')"
-
 # Install R libraries
 RUN install2.r --error plumber bigrquery dplyr googleCloudStorageR gargle \
                tools epiDisplay lubridate tidyverse knitr gtsummary tidyr \
-               googleCloudStorageR reshape gmodels lubridate config \
+               googleCloudStorageR reshape gmodels lubridate config magick \
                foreach arsenal rio gridExtra scales data.table listr sqldf \
                expss summarytools gmodels magrittr naniar UpSetR RColorBrewer \
                ggrepel ggmap maps mapdata sf zipcodeR viridis ggthemes usmap
-               
               
 # These libraries might not be available from install2.R so use CRAN
 RUN R -e "install.packages(c('gt', 'vtable', 'pdftools'), dependencies=TRUE, repos='http://cran.rstudio.com/')"
