@@ -9,26 +9,36 @@ library(rmarkdown)
 library(googleCloudStorageR)
 library(gargle)
 library(tools)
+library(config)
 
 #* heartbeat...for testing purposes only. Not required to run analysis.
 #* @get /
 #* @post /
 function(){return("alive")}
 
-#* Runs Kelsey's markdown file 
-#* @get /run-ccc-module-metrics
-#* @post /run-ccc-module-metrics
-function(){
-    
-    # Define parameters 
-    rmd_file_name    <- "CCC Weekly Module Metrics_RMD.Rmd"
-    report_file_name <- "CCC-Weekly-Module-Metrics.pdf"
-    bucket           <- "gs://ccc_weekly_metrics_report"
+#* Runs Kelsey's markdown file
+#* @param report:str Which report to run 
+#* @param testing:bool Whether we're testing or not
+#* @get /run-module-metrics
+#* @post /run-module-metrics
+function(report, testing=FALSE){
+  
+  Sys.setenv(R_CONFIG_ACTIVE = report) # Determines which config from config.yml to use
+  
+  # Set parameters using arguments and config.yml file
+  rmd_file_name    <- config::get(value="rmd_file_name")
+  report_file_name <- config::get(value="report_file_name")
+  bucket           <- config::get(value="bucket")
+  if (testing) {
+    box_folders <- config::get(value="test_box_folders")
+  } else {
+    box_folders <- config::get(value="box_folders")
+  }
     
     # Add time stamp to report name
     report_fid <- paste0(file_path_sans_ext(report_file_name), 
                          format(Sys.time(), "_%m_%d_%Y"),
-                         "_boxfolder_141543281606",
+                         "_boxfolder_",box_folders,
                          ".", file_ext(report_file_name))
     
     # Select document type given the extension of the report file name

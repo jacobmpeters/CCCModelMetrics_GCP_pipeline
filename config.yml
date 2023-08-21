@@ -3,7 +3,7 @@ default:
   pipeline_maintainer: "Jake Peters"
   bucket: "gs://ccc_weekly_metrics_report"
   test_box_folders: 
-    - "123456789012"
+    - "222593912729"
 
 weekly_module_metrics:
   rmd_file_name: "CCC Weekly Module Metrics_RMD.Rmd"
@@ -49,8 +49,8 @@ baseline_high_priority:
   cadence: "1st of the month"
 
 baseline_low_priority:
-  rmd_file_name: "Module 4 Missingness Analysis.Rmd"
-  report_file_name: "Module_4_Missingness_Analysis.pdf"
+  rmd_file_name: "Baseline Ranked Variables- Low Priority.Rmd"
+  report_file_name: "Baseline_Ranked_Variables_Low_Priority.pdf"
   box_folders:
     - "219761433401"
   cadence: "1st of the month"
