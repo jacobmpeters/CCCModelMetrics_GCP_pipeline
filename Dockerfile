@@ -20,6 +20,7 @@ RUN apt-get update \
 # Install summarytools dependencies
 RUN apt-get update && \
     apt-get install -y tcl tk libmagic
+
   
 # Install tinytex
 # RUN Rscript -e 'tinytex::install_tinytex()'
