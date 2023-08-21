@@ -13,14 +13,10 @@ RUN apt-get update \
     wget \
     graphviz \ 
     imagemagick \
+    libmagick++-dev \
     perl && \
     /rocker_scripts/install_pandoc.sh && \
     install2.r rmarkdown 
-
-# Install imagemagick
-RUN add-apt-repository -y ppa:cran/imagemagick \ 
-  && apt-get update \
-  && apt-get install libmagick++-dev
   
 # Install tinytex
 # RUN Rscript -e 'tinytex::install_tinytex()'
