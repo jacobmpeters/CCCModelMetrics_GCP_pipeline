@@ -21,10 +21,13 @@ RUN apt-get update \
 # RUN Rscript -e 'tinytex::install_tinytex()'
 RUN Rscript -e 'tinytex::install_tinytex(repository = "illinois")'
 
+# Having trouble installing magick using other methods...
+RUN R -e "devtools::install_github('ropensci/magick')"
+
 # Install R libraries
 RUN install2.r --error plumber bigrquery dplyr googleCloudStorageR gargle \
                tools epiDisplay lubridate tidyverse knitr gtsummary tidyr \
-               googleCloudStorageR reshape gmodels lubridate magick config \
+               googleCloudStorageR reshape gmodels lubridate config \
                foreach arsenal rio gridExtra scales data.table listr sqldf \
                expss summarytools gmodels magrittr naniar UpSetR RColorBrewer \
                ggrepel ggmap maps mapdata sf zipcodeR viridis ggthemes usmap
