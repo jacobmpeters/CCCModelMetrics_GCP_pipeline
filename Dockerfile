@@ -10,9 +10,6 @@ ENV PATH="$PATH:/root/bin:/usr/local/lib"
 # Reference: https://github.com/csdaw/rmarkdown-tinytex/blob/master/Dockerfile
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-    tcl-dev \
-    tk-dev \
-    libmagic-dev \
     wget \
     graphviz \ 
     imagemagick \
@@ -21,7 +18,7 @@ RUN apt-get update \
     install2.r rmarkdown 
     
 # Install summarytools dependencies
-RUN apt-get install -y --no-install-recommends \
+RUN apt-get install \
     tcl-dev \
     tk-dev \
     libmagick-dev 
