@@ -21,7 +21,7 @@ RUN apt-get update \
 RUN apt-get install \
     tcl-dev \
     tk-dev \
-    libmagick-dev 
+    libmagic-dev 
   
 # Install tinytex
 # RUN Rscript -e 'tinytex::install_tinytex()'
