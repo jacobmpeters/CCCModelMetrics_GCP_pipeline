@@ -14,7 +14,7 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     tcl-dev \
     tk-dev \
-    libmagick++-dev \
+    libmagic-dev \
     wget \
     graphviz \ 
     imagemagick \
