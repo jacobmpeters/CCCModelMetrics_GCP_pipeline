@@ -8,15 +8,21 @@ ENV PATH="$PATH:/root/bin:/usr/local/lib"
 
 # Install tinytex linux dependencies, pandoc, and rmarkdown
 # Reference: https://github.com/csdaw/rmarkdown-tinytex/blob/master/Dockerfile
+
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     wget \
     graphviz \ 
     imagemagick \
-    libmagick++-dev \
     perl && \
     /rocker_scripts/install_pandoc.sh && \
     install2.r rmarkdown 
+    
+# Install summarytools dependencies
+RUN apt-get install -y --no-install-recommends \
+    tcl-dev \
+    tk-dev \
+    libmagick++-dev 
   
 # Install tinytex
 # RUN Rscript -e 'tinytex::install_tinytex()'
