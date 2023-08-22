@@ -40,7 +40,7 @@ function(report, testing=FALSE){
       box_folders <- configuration$box_folders
     }
     
-    # Get "_boxfolder_xxxxxx" tag
+    # Create "_boxfolder_123456789012" tag
     box_str <- ""
     for (folder in box_folders) {
       box_str <- paste0(box_str, "_boxfolder_", folder)
@@ -51,7 +51,8 @@ function(report, testing=FALSE){
     report_fid <- paste0(file_path_sans_ext(report_file_name), 
                          format(Sys.time(), "_%m_%d_%Y"), box_str,
                          ".", file_ext(report_file_name))
-    
+    Sys.setenv(REPORT_FID = report_fid)
+               
     # Select document type given the extension of the report file name
     output_format <- switch(file_ext(report_file_name),  
                             "pdf"  = "pdf_document",
@@ -65,9 +66,12 @@ function(report, testing=FALSE){
                       output_file = report_fid, 
                       clean = TRUE)
     
+    # Retrieve variables relevant to gcs upload 
+    # They do not persist after rmarkdown::render for some reports, including mod1_stats
+    bucket     <- config::get(value="bucket")
+    report_fid <- Sys.getenv("REPORT_FID")
+    
     # Authenticate with Google Storage and write report file to bucket
-    #bucket <- config::get(value="bucket")
-    print(paste0("bucket: ", bucket))
     scope <- c("https://www.googleapis.com/auth/cloud-platform")
     token <- token_fetch(scopes=scope)
     gcs_auth(token=token)
