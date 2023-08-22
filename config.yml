@@ -1,7 +1,7 @@
 default:
   report_maintainer: "Kelsey Dowling"
   pipeline_maintainer: "Jake Peters"
-  bucket: "gs://ccc_weekly_metrics_report"
+  bucket: "ccc_weekly_metrics_report"
   test_box_folders: 
     - "222593912729"
   gcp_info:

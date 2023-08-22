@@ -17,23 +17,23 @@ library(config)
 function(){return("alive")}
 
 #* Runs Kelsey's markdown file
-#* @param report:str Which report to run 
-#* @param testing:bool Whether we're testing or not
+#* @param report:string Which report to run 
+#* @param testing:boolean Whether we're testing or not
 #* @get /run-module-metrics
 #* @post /run-module-metrics
 function(report, testing=FALSE){
   
-  Sys.setenv(R_CONFIG_ACTIVE = report) # Determines which config from config.yml to use
-  
-  # Set parameters using arguments and config.yml file
-  rmd_file_name    <- config::get(value="rmd_file_name")
-  report_file_name <- config::get(value="report_file_name")
-  bucket           <- config::get(value="bucket")
-  if (testing) {
-    box_folders <- config::get(value="test_box_folders")
-  } else {
-    box_folders <- config::get(value="box_folders")
-  }
+    Sys.setenv(R_CONFIG_ACTIVE = report) # Determines which config from config.yml to use
+    
+    # Set parameters using arguments and config.yml file
+    rmd_file_name    <- config::get(value="rmd_file_name")
+    report_file_name <- config::get(value="report_file_name")
+    bucket           <- config::get(value="bucket")
+    if (testing) {
+      box_folders <- config::get(value="test_box_folders")
+    } else {
+      box_folders <- config::get(value="box_folders")
+    }
     
     # Add time stamp to report name
     report_fid <- paste0(file_path_sans_ext(report_file_name), 
@@ -58,7 +58,8 @@ function(report, testing=FALSE){
     scope <- c("https://www.googleapis.com/auth/cloud-platform")
     token <- token_fetch(scopes=scope)
     gcs_auth(token=token)
-    gcs_upload(report_fid, bucket=bucket, name=report_fid) 
+    gcs_global_bucket(bucket)
+    gcs_upload(report_fid, name=report_fid) 
     
     # Return a string for for API testing purposes
     ret_str <- paste("All done. Check", bucket, "for", report_fid)
