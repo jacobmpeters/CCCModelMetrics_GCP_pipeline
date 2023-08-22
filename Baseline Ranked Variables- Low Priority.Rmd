@@ -24,7 +24,6 @@ library(stringr)
 #library(plyr)
 library(expss) ###to add labels
 library(epiDisplay) ##recommended applied here crosstable, tab1
-library(summarytools) ##recommended
 library(gmodels) ##recommended
 library(magrittr)
 library(arsenal)
