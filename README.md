@@ -38,56 +38,79 @@ The ccc_module_metrics_api.R script provides a Plumber API to run and render Kel
 The configuration for the API and reports is stored in the [`config.yml`](config.yml) file. The `config.yml` file contains various parameters for different reports, including RMD file names, report file names, box folders, and cadence.
 
 ```yaml
+default:
+  report_maintainer: "Kelsey Dowling"
+  pipeline_maintainer: "Jake Peters"
+  bucket: "gs://ccc_weekly_metrics_report"
+  test_box_folders: 
+    - "222593912729"
+  gcp_info:
+    cloud_build_trigger: ccc-module-metrics
+    cloud_run: ccc-module-metrics-api
+
 weekly_module_metrics:
   rmd_file_name: "CCC Weekly Module Metrics_RMD.Rmd"
   report_file_name: "CCC_Weekly_Module_Metrics.pdf"
   box_folders:
     - "183922736204" # internal
     - "141543281606" # sites can view this one
-  cadence: "every Monday"
+  gcp_info:
+    cloud_scheduler: ccc-weekly-module-metrics
+    frequency: "0 11 * * 1" # every Monday at 11 AM"
 
 mod1_stats:
   rmd_file_name: "Merged Module 1 Summary Statistics.Rmd"
   report_file_name: "Merged_Module_1_Summary_Statistics.pdf"
   box_folders:
     - "208053733985"
-  cadence: "1st of the month"
+  gcp_info:
+    cloud_scheduler: ccc-module1-statistics
+    frequency: "30 11 1 * *" # first of the month at 11:30 AM
 
 mod2_stats:
   rmd_file_name: "Merged Module 2 Summary Statistics.Rmd"
   report_file_name: "Merged_Module_2_Summary_Statistics.pdf"
   box_folders:
     - "208055378225"
-  cadence: "1st of the month"
+  gcp_info:
+    cloud_scheduler: ccc-module2-statistics
+    frequency: "0 12 1 * *" # first of the month at 12 PM
 
 mod3_stats:
   rmd_file_name: "Module 3 Summary Statatistics.Rmd"
   report_file_name: "Module_3_Summary_Statatistics.pdf"
   box_folders:
     - "208062917930"
-  cadence: "1st of the month"
+  gcp_info:
+    cloud_scheduler: ccc-module3-statistics
+    frequency: "30 12 1 * *" # first of the month at 12:30 PM
 
 mod4_stats:
   rmd_file_name: "Module 4 Missingness Analysis.Rmd"
   report_file_name: "Module_4_Missingness_Analysis.pdf"
   box_folders:
     - "208060974530"
-  cadence: "1st of the month"
+  gcp_info:
+    cloud_scheduler: ccc-module4-statistics
+    frequency: "0 13 1 * *" # first of the month at 1 PM
 
 baseline_high_priority:
   rmd_file_name: "Baseline Ranked Variables- High Priority.Rmd"
   report_file_name: "Baseline_Ranked_Varialbes_High_Priority.pdf"
   box_folders:
     - "219595986209"
-  cadence: "1st of the month"
+  gcp_info:
+    cloud_scheduler: ccc-baseline-ranked-variables-high-priority
+    frequency: "30 13 1 * *" # first of the month at 1:30 PM
 
 baseline_low_priority:
   rmd_file_name: "Baseline Ranked Variables- Low Priority.Rmd"
   report_file_name: "Baseline_Ranked_Variables_Low_Priority.pdf"
   box_folders:
     - "219761433401"
-  cadence: "1st of the month"
-
+  gcp_info:
+    cloud_scheduler: ccc-baseline-ranked-variables-low-priority
+    frequency: "30 14 1 * *" # first of the month at 2:30 PM
 ```
 
 ## Running the API with Google Cloud Run and Cloud Scheduler

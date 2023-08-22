@@ -18,11 +18,11 @@ RUN apt-get update \
     install2.r rmarkdown 
     
 # Install summarytools dependencies
-RUN apt-get install \
-    tcl-dev \
-    tk-dev \
-    libmagic-dev 
-  
+# RUN apt-get install \
+#     tcl-dev \
+#     tk-dev \
+#     libmagic-dev 
+
 # Install tinytex
 # RUN Rscript -e 'tinytex::install_tinytex()'
 RUN Rscript -e 'tinytex::install_tinytex(repository = "illinois")'
@@ -47,6 +47,7 @@ RUN R -e "install.packages(c('gt', 'vtable', 'pdftools'), dependencies=TRUE, rep
 # The solution is to install a patched version from github
 # https://github.com/haozhu233/kableExtra/issues/750
 RUN R -e "devtools::install_github('kupietz/kableExtra')"
+RUN R -e "devtools::install_github('dcomtois/summarytools')"
 
 # Copy R code to directory in instance
 COPY ["./ccc_module_metrics_api.R", "./ccc_module_metrics_api.R"]
