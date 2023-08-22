@@ -4478,6 +4478,8 @@ dtPREWORKRES_summary %>%  gt(rowname_col = "row_lab") %>%
 library(ggmap)
 library(maps)
 library(mapdata)
+library(Rcpp)
+library(rgdal)
 library(sf)
 library(zipcodeR)
 library(viridis)
