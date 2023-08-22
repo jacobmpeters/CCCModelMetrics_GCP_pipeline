@@ -47,7 +47,6 @@ library(gt)
 #install(tinytex)
 library(tinytex)
 library(data.table) ###to write or read and data management 
-library(boxr) ###read or write data from/to box
 library(tidyverse) ###for data management
 library(dplyr) ###data management
 library(reshape)  ###to work on transition from long to wide or wide to long data
