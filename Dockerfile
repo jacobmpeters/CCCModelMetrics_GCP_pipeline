@@ -16,6 +16,14 @@ RUN apt-get update \
     perl && \
     /rocker_scripts/install_pandoc.sh && \
     install2.r rmarkdown 
+    
+# Install dependencies for sf (used for Kelsey's mapping)
+RUN apt-get -y update \
+  && apt-get install -y  \
+  libudunits2-dev \
+  libgdal-dev \
+  libgeos-dev \
+  libproj-dev
 
 # Install tinytex
 # RUN Rscript -e 'tinytex::install_tinytex()'
