@@ -22,23 +22,34 @@ function(){return("alive")}
 #* @get /run-module-metrics
 #* @post /run-module-metrics
 function(report, testing=FALSE){
-  
-    Sys.setenv(R_CONFIG_ACTIVE = report) # Determines which config from config.yml to use
+    testing <- as.logical(testing)
+    report  <- as.character(report)
+    
+    # Determines which config from config.yml to use
+    Sys.setenv(R_CONFIG_ACTIVE = report) 
     
     # Set parameters using arguments and config.yml file
-    rmd_file_name    <- config::get(value="rmd_file_name")
-    report_file_name <- config::get(value="report_file_name")
-    bucket           <- config::get(value="bucket")
+    configuration    <- config::get(config=report)
+    rmd_file_name    <- configuration$rmd_file_name
+    report_file_name <- configuration$report_file_name
+    bucket           <- configuration$bucket
+    print(paste0("bucket: ", bucket))
     if (testing) {
-      box_folders <- config::get(value="test_box_folders")
+      box_folders <- configuration$test_box_folders
     } else {
-      box_folders <- config::get(value="box_folders")
+      box_folders <- configuration$box_folders
     }
     
-    # Add time stamp to report name
+    # Get "_boxfolder_xxxxxx" tag
+    box_str <- ""
+    for (folder in box_folders) {
+      box_str <- paste0(box_str, "_boxfolder_", folder)
+    }
+    print(paste0("box_str: ", box_str))
+    
+    # Add time stamp and box folder tag to to report name
     report_fid <- paste0(file_path_sans_ext(report_file_name), 
-                         format(Sys.time(), "_%m_%d_%Y"),
-                         "_boxfolder_",box_folders,
+                         format(Sys.time(), "_%m_%d_%Y"), box_str,
                          ".", file_ext(report_file_name))
     
     # Select document type given the extension of the report file name
@@ -55,6 +66,8 @@ function(report, testing=FALSE){
                       clean = TRUE)
     
     # Authenticate with Google Storage and write report file to bucket
+    #bucket <- config::get(value="bucket")
+    print(paste0("bucket: ", bucket))
     scope <- c("https://www.googleapis.com/auth/cloud-platform")
     token <- token_fetch(scopes=scope)
     gcs_auth(token=token)
