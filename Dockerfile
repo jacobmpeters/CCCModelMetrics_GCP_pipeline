@@ -32,7 +32,7 @@ RUN install2.r --error plumber bigrquery dplyr googleCloudStorageR gargle \
                tools epiDisplay lubridate tidyverse knitr gtsummary tidyr \
                googleCloudStorageR reshape gmodels lubridate config magick \
                foreach arsenal rio gridExtra scales data.table listr sqldf \
-               expss summarytools gmodels magrittr naniar UpSetR RColorBrewer \
+               expss gmodels magrittr naniar UpSetR RColorBrewer \
                ggrepel ggmap maps mapdata sf zipcodeR viridis ggthemes usmap
               
 # These libraries might not be available from install2.R so use CRAN
@@ -47,6 +47,9 @@ RUN R -e "install.packages(c('gt', 'vtable', 'pdftools'), dependencies=TRUE, rep
 # The solution is to install a patched version from github
 # https://github.com/haozhu233/kableExtra/issues/750
 RUN R -e "devtools::install_github('kupietz/kableExtra')"
+
+# Make sure that tcltk is available & install summarytools from github
+RUN R -e "capabilities()['tcltk']"
 RUN R -e "devtools::install_github('dcomtois/summarytools')"
 
 # Copy R code to directory in instance
