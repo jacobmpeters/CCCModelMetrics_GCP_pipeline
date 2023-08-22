@@ -47,6 +47,18 @@ library(sqldf) ##sql
 library(lubridate) ###date time
 library(stringr) ###to work on patterns, charaters
 
+# Libraries for Map of US
+library(ggmap)
+library(maps)
+library(mapdata)
+# library(Rcpp)
+# library(rgdal)
+library(sf)
+library(zipcodeR)
+library(viridis)
+library(ggthemes)
+#library(albersusa)
+
 options(tinytex.verbose = TRUE)
 
 bq_auth()
@@ -4474,17 +4486,6 @@ dtPREWORKRES_summary %>%  gt(rowname_col = "row_lab") %>%
 
 ## Map of Current Addresses
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-
-library(ggmap)
-library(maps)
-library(mapdata)
-library(Rcpp)
-library(rgdal)
-library(sf)
-library(zipcodeR)
-library(viridis)
-library(ggthemes)
-#library(albersusa)
 
 states <- map_data("state")
 us_base <- ggplot(data = states) +

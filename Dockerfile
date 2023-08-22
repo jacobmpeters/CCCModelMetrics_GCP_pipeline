@@ -30,7 +30,7 @@ RUN install2.r --error plumber bigrquery dplyr googleCloudStorageR gargle \
                ggmap maps mapdata Rcpp rgdal sf zipcodeR viridis ggthemes usmap
               
 # These libraries might not be available from install2.R so use CRAN
-RUN R -e "install.packages(c('gt', 'vtable', 'pdftools'), dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages(c('gt', 'vtable', 'pdftools', 'sf'), dependencies=TRUE, repos='http://cran.rstudio.com/')"
 
 # When I try to use kable extra with a normal installation from CRAN or install2.r
 # I get the error:
