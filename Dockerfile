@@ -26,7 +26,7 @@ RUN apt-get update \
 #  libgdal-dev \
 #  libgeos-dev \
 #  libproj-dev
-#RUN install.r --error ggmap maps mapdata Rcpp rgdal zipcodeR viridis ggthemes usmap
+RUN install.r --error ggmap maps mapdata rgdal zipcodeR viridis ggthemes usmap #Rcpp
 RUN R -e "install.packages(c('sf'), dependencies=TRUE, repos='http://cran.rstudio.com/')"
 
 
@@ -41,8 +41,7 @@ RUN install2.r --error plumber bigrquery dplyr googleCloudStorageR gargle \
                tools epiDisplay lubridate tidyverse knitr gtsummary tidyr \
                googleCloudStorageR reshape gmodels lubridate config magick \
                foreach arsenal rio gridExtra scales data.table listr sqldf \
-               expss gmodels magrittr naniar UpSetR RColorBrewer ggrepel \
-               ggmap maps mapdata
+               expss gmodels magrittr naniar UpSetR RColorBrewer ggrepel 
                
 # These libraries might not be available from install2.R so use CRAN
 RUN R -e "install.packages(c('gt', 'vtable', 'pdftools'), dependencies=TRUE, repos='http://cran.rstudio.com/')"
