@@ -53,7 +53,6 @@ weekly_module_metrics:
   report_file_name: "CCC_Weekly_Module_Metrics.pdf"
   box_folders:
     - "183922736204" # internal
-    - "141543281606" # sites can view this one
   gcp_info:
     cloud_scheduler: ccc-weekly-module-metrics
     frequency: "0 11 * * 1" # every Monday at 11 AM"
