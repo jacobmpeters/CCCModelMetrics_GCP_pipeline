@@ -26,10 +26,8 @@ RUN apt-get update \
 #  libgdal-dev \
 #  libgeos-dev \
 #  libproj-dev
-RUN install.r --error ggmap maps mapdata rgdal zipcodeR viridis ggthemes usmap #Rcpp
+RUN install.r --error maps mapdata zipcodeR viridis ggthemes usmap #Rcpp
 RUN R -e "install.packages(c('sf'), dependencies=TRUE, repos='http://cran.rstudio.com/')"
-
-
 
               
 # Install tinytex

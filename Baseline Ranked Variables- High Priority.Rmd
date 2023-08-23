@@ -48,11 +48,11 @@ library(lubridate) ###date time
 library(stringr) ###to work on patterns, charaters
 
 # Libraries for Map of US
-library(ggmap)
+#library(ggmap) This package is deprecated! https://r-spatial.org/r/2023/05/15/evolution4.html
 library(maps)
 library(mapdata)
 # library(Rcpp)
-# library(rgdal)
+# library(rgdal) This package is deprecated! https://r-spatial.org/r/2023/05/15/evolution4.html
 library(sf)
 library(zipcodeR)
 library(viridis)
