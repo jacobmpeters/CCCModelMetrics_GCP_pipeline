@@ -9,28 +9,50 @@ library(rmarkdown)
 library(googleCloudStorageR)
 library(gargle)
 library(tools)
+library(config)
 
 #* heartbeat...for testing purposes only. Not required to run analysis.
 #* @get /
 #* @post /
 function(){return("alive")}
 
-#* Runs Kelsey's markdown file 
-#* @get /run-ccc-module-metrics
-#* @post /run-ccc-module-metrics
-function(){
+#* Runs Kelsey's markdown file
+#* @param report:string Which report to run 
+#* @param testing:boolean Whether we're testing or not
+#* @get /run-module-metrics
+#* @post /run-module-metrics
+function(report, testing=FALSE){
+    testing <- as.logical(testing)
+    report  <- as.character(report)
     
-    # Define parameters 
-    rmd_file_name    <- "CCC Weekly Module Metrics_RMD.Rmd"
-    report_file_name <- "CCC-Weekly-Module-Metrics.pdf"
-    bucket           <- "gs://ccc_weekly_metrics_report"
+    # Determines which config from config.yml to use
+    Sys.setenv(R_CONFIG_ACTIVE = report) 
     
-    # Add time stamp to report name
+    # Set parameters using arguments and config.yml file
+    configuration    <- config::get(config=report)
+    rmd_file_name    <- configuration$rmd_file_name
+    report_file_name <- configuration$report_file_name
+    bucket           <- configuration$bucket
+    print(paste0("bucket: ", bucket))
+    if (testing) {
+      box_folders <- configuration$test_box_folders
+    } else {
+      box_folders <- configuration$box_folders
+    }
+    
+    # Create "_boxfolder_123456789012" tag
+    box_str <- ""
+    for (folder in box_folders) {
+      box_str <- paste0(box_str, "_boxfolder_", folder)
+    }
+    print(paste0("box_str: ", box_str))
+    
+    # Add time stamp and box folder tag to to report name
     report_fid <- paste0(file_path_sans_ext(report_file_name), 
-                         format(Sys.time(), "_%m_%d_%Y"),
-                         "_boxfolder_141543281606",
+                         format(Sys.time(), "_%m_%d_%Y"), box_str,
                          ".", file_ext(report_file_name))
-    
+    Sys.setenv(REPORT_FID = report_fid)
+               
     # Select document type given the extension of the report file name
     output_format <- switch(file_ext(report_file_name),  
                             "pdf"  = "pdf_document",
@@ -44,11 +66,17 @@ function(){
                       output_file = report_fid, 
                       clean = TRUE)
     
+    # Retrieve variables relevant to gcs upload 
+    # They do not persist after rmarkdown::render for some reports, including mod1_stats
+    bucket     <- config::get(value="bucket")
+    report_fid <- Sys.getenv("REPORT_FID")
+    
     # Authenticate with Google Storage and write report file to bucket
     scope <- c("https://www.googleapis.com/auth/cloud-platform")
     token <- token_fetch(scopes=scope)
     gcs_auth(token=token)
-    gcs_upload(report_fid, bucket=bucket, name=report_fid) 
+    gcs_global_bucket(bucket)
+    gcs_upload(report_fid, name=report_fid) 
     
     # Return a string for for API testing purposes
     ret_str <- paste("All done. Check", bucket, "for", report_fid)

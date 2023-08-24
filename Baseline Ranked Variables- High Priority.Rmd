@@ -38,7 +38,6 @@ library(tidyverse) ###for data management
 library(dplyr) ###data management
 library(lubridate) ###date time
 library(stringr) ###to work on patterns, charaters
-
 options(tinytex.verbose = TRUE)
 
 bq_auth()
@@ -48,6 +47,7 @@ bq_auth()
 ```{r, include=FALSE, warning=FALSE}
 
 ## MERGE MOD1V1, MOD1V2
+
 
 dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
 dd <- dplyr::bind_rows(dictionary,.id="CID")
@@ -139,8 +139,8 @@ length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & 
 #library(janitor)
 
 m1_common <- rbind(M1_V1_common,M1_V2_common)
-m1_common_v1 <- merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
-m1_combined_v1v2 <- merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
+m1_common_v1 <- base::merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
+m1_combined_v1v2 <- base::merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
 m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] #7289 including duplicates 05022023
 
 m1_complete <- m1_complete %>% arrange(desc(version)) 
@@ -2934,8 +2934,8 @@ length(recr_m2$Connect_ID[which(recr_m2$Connect_ID %in% M2_v2_only$Connect_ID & 
 #library(janitor)
 
 M2_common <- rbind(M2_V1_common,M2_V2_common)
-M2_common_v1 <- merge(M2_common, M2_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
-M2_combined_v1v2 <- merge(M2_common_v1,M2_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
+M2_common_v1 <- base::merge(M2_common, M2_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
+M2_combined_v1v2 <- base::merge(M2_common_v1,M2_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
 M2_complete <- M2_combined_v1v2[which(M2_combined_v1v2$Connect_ID %in% recr_m2$Connect_ID[which(recr_m2$d_536735468 ==231311385 )]),] #7289 including duplicates 05022023
 
 M2_complete <- M2_complete %>% arrange(desc(version)) 
@@ -3273,6 +3273,7 @@ funct_8c <- function(PRODUCT8C_CID, PRODUCT5_CID, Product1_CID, Title){
   dt_prod8C <- data_tib_all3 %>%  select(Connect_ID, !!CID_SYM_P8C, !!CID_SYM_P5, !!CID_SYM_P1)
   gt_prod8C <- dt_prod8C %>% filter((!!CID_SYM_P1==486319890 | !!CID_SYM_P1==132232896) & !!CID_SYM_P5!=317567178) %>% group_by(!!CID_SYM_P8C) %>% 
     summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM_P8C, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
+
   
   gt_prod8C %>%  gt::gt(rowname_col = "row_lab")  %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
@@ -3314,6 +3315,7 @@ funct_9b <- function(PRODUCT1_CID, PRODUCT4_CID, PRODUCT5_CID, PRODUCT8C_CID, PR
     group_by(!!CID_SYM_P9B) %>% 
     summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM_P9B, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
 
+
   gt_prod9b %>%  gt::gt(rowname_col = "row_lab")  %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md(Title)) %>% 
@@ -3343,6 +3345,7 @@ simple_funct3 <- function(CID, Title){
   CID_SYM <- rlang::ensym(CID)
   dt_select <- data_tib_all3 %>%  select(Connect_ID, !!CID_SYM)
   gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% 
+
     replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
   
   gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
@@ -4464,7 +4467,6 @@ dtPREWORKRES_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 
-
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 ## Map of Current Addresses-- currently removing as it breaks the automation 
 
@@ -4531,6 +4533,7 @@ dtPREWORKRES_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 # state_group$state <- state_group$region
 # 
 # usa_zip <- left_join(us_zip, state_group, by="state")
+
 # 
 # 
 # 
@@ -4545,6 +4548,7 @@ dtPREWORKRES_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 #  
 # elbow_room1 <- ca_base + 
 #       geom_polygon(data = usa_zip, aes(fill = Freq), color = "white") +
+
 #       geom_polygon(color = "black", fill = NA) +
 #       theme_bw() +
 #       ditch_the_axes
@@ -4562,9 +4566,7 @@ dtPREWORKRES_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 #  
 #  
 #  #Attempt 8
-#  library(usmap)
 
- 
 ```
 
 
