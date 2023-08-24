@@ -4468,6 +4468,7 @@ dtPREWORKRES_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 ## Map of Current Addresses-- currently removing as it breaks the automation 
 
+
 # library(ggmap)
 # library(maps)
 # library(mapdata)
@@ -4515,7 +4516,7 @@ dtPREWORKRES_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 #  #https://www.sharpsightlabs.com/blog/how-to-create-a-crime-heatmap-in-r/
 #  #https://rpubs.com/jcraggy/841199
 #  
-# 
+#  zip_to_lat_lon_North America.csv
 #  #Attemp1 10 
 #  zip_to_lat_lon_North.America <- read.csv("C:/Users/dowlingk2/Downloads/zip_to_lat_lon_North_America.csv")
 #  all_zips <- zip_to_lat_lon_North.America %>%  filter(Country=="United States" & (postal.code %in%  ZP_HT_US$zip)) 
@@ -4557,9 +4558,12 @@ dtPREWORKRES_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 # eb2 + xlim(-125, -67.1) + ylim(25,50)
 # 
 #  
+# 
+#  
 #  
 #  #Attempt 8
 #  library(usmap)
+
  
 ```
 
