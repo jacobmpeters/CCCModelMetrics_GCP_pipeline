@@ -32,7 +32,6 @@ library(stringr)
 #library(plyr)
 library(expss) ###to add labels
 library(epiDisplay) ##recommended applied here crosstable, tab1
-library(summarytools) ##recommended
 library(gmodels) ##recommended
 library(magrittr)
 library(arsenal)
@@ -768,11 +767,6 @@ dtCIG3_summary %>%  gt() %>%
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("CIG3: Smoking on a Regular Basis (Didn't Answer with Age)")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
