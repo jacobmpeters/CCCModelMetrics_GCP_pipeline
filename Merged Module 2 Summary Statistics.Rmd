@@ -3574,7 +3574,7 @@ dtpreg11_2_summary <- preg11_2_ans %>% group_by(answer) %>%  dplyr::summarize(n=
 gtm3_print <- gt::gt(dtpreg11_2_summary)
 #gtm3_print
 
-dtpreg11_2_summary %>%  gt() %>%  
+dtpreg11_2_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Preg11_2: Diagnosed with eclampsia or pre-eclampsia during second pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -3612,7 +3612,7 @@ dtpreg11_3_summary <- preg11_3_ans %>% group_by(answer) %>%  dplyr::summarize(n=
 gtm3_print <- gt::gt(dtpreg11_3_summary)
 #gtm3_print
 
-dtpreg11_3_summary %>%  gt() %>%  
+dtpreg11_3_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Preg11_3: Diagnosed with eclampsia or pre-eclampsia during third pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 

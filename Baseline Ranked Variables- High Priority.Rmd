@@ -19,13 +19,8 @@ output:
 #tinytex::install_tinytex()
 
 library(bigrquery)
-library(foreach)
-library(stringr)
-#library(plyr)
-#library(expss) ###to add labels
 library(epiDisplay) ##recommended applied here crosstable, tab1
 library(gmodels) ##recommended
-library(magrittr)
 library(arsenal)
 library(gtsummary)
 library(rio)
@@ -36,29 +31,13 @@ library(ggplot2)
 library(gridExtra)
 library(scales)
 library(gt)
-#install(tinytex)
 library(tinytex)
 library(data.table) ###to write or read and data management 
+library(boxr) ###read or write data from/to box
 library(tidyverse) ###for data management
 library(dplyr) ###data management
-library(reshape)  ###to work on transition from long to wide or wide to long data
-library(listr) ###to work on a list of vector, files or..
-library(sqldf) ##sql
 library(lubridate) ###date time
 library(stringr) ###to work on patterns, charaters
-
-# Libraries for Map of US
-#library(ggmap) This package is deprecated! https://r-spatial.org/r/2023/05/15/evolution4.html
-library(maps)
-library(mapdata)
-# library(Rcpp)
-# library(rgdal) This package is deprecated! https://r-spatial.org/r/2023/05/15/evolution4.html
-library(sf)
-library(zipcodeR)
-library(viridis)
-library(ggthemes)
-#library(albersusa)
-
 options(tinytex.verbose = TRUE)
 
 bq_auth()
@@ -67,7 +46,8 @@ bq_auth()
 
 ```{r, include=FALSE, warning=FALSE}
 
-##  MOD1V1, MOD1V2
+## MERGE MOD1V1, MOD1V2
+
 
 dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
 dd <- dplyr::bind_rows(dictionary,.id="CID")
@@ -3292,7 +3272,8 @@ funct_8c <- function(PRODUCT8C_CID, PRODUCT5_CID, Product1_CID, Title){
   
   dt_prod8C <- data_tib_all3 %>%  select(Connect_ID, !!CID_SYM_P8C, !!CID_SYM_P5, !!CID_SYM_P1)
   gt_prod8C <- dt_prod8C %>% filter((!!CID_SYM_P1==486319890 | !!CID_SYM_P1==132232896) & !!CID_SYM_P5!=317567178) %>% group_by(!!CID_SYM_P8C) %>% 
-    summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% mutate(answer=recode(!!CID_SYM_P8C, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
+    summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM_P8C, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
+
   
   gt_prod8C %>%  gt::gt(rowname_col = "row_lab")  %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
@@ -3332,7 +3313,8 @@ funct_9b <- function(PRODUCT1_CID, PRODUCT4_CID, PRODUCT5_CID, PRODUCT8C_CID, PR
            ((!is.na(!!CID_SYM_P4) | !!CID_SYM_P4!=419415087) & !!CID_SYM_P5==484055234 & !!CID_SYM_P8C== 353358909) | 
            ((!is.na(!!CID_SYM_P4) |  !!CID_SYM_P4!=419415087) & !!CID_SYM_P5==802197176 & !!CID_SYM_P8C== 353358909))) %>% 
     group_by(!!CID_SYM_P9B) %>% 
-    summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% mutate(answer=recode(!!CID_SYM_P9B, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
+    summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM_P9B, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
+
 
   gt_prod9b %>%  gt::gt(rowname_col = "row_lab")  %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
@@ -3362,7 +3344,8 @@ funct_9b <- function(PRODUCT1_CID, PRODUCT4_CID, PRODUCT5_CID, PRODUCT8C_CID, PR
 simple_funct3 <- function(CID, Title){  
   CID_SYM <- rlang::ensym(CID)
   dt_select <- data_tib_all3 %>%  select(Connect_ID, !!CID_SYM)
-  gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% mutate(answer=recode(!!CID_SYM, !!!dict)) %>% 
+  gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% 
+
     replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
   
   gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
@@ -3393,7 +3376,7 @@ one_logic_funct3 <- function(CID, CID_prev, Prev_Answer, Title){
   CID_SYM <- rlang::ensym(CID)
   CID_SYM_P <- rlang::ensym(CID_prev)
   dt_select <- data_tib_all3 %>%  filter(!!CID_SYM_P == Prev_Answer) %>%  select(Connect_ID, !!CID_SYM) 
-  gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% mutate(answer=recode(!!CID_SYM, !!!dict)) %>% 
+  gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% 
     replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
   
   gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
@@ -3459,7 +3442,7 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 #   CID_SYM <- rlang::ensym(CID)
 #   CID_SYM_P <- rlang::ensym(CID_prev)
 #   dt_select <- data_tib_m3 %>%  filter((!!CID_SYM_P == Prev_Answer) | (!!CID_SYM_P == Prev_Answer_two)) %>%  select(Connect_ID, !!CID_SYM) 
-#   gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% mutate(answer=recode(!!CID_SYM, !!!dict)) %>% 
+#   gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% 
 #     replace_na(list(answer="Skipped this Question")) %>%  select(answer, percentage)
 #   
 #   gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
@@ -4484,215 +4467,73 @@ dtPREWORKRES_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 
-## Map of Current Addresses
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-
-states <- map_data("state")
-us_base <- ggplot(data = states) +
-  geom_polygon(aes(x = long, y = lat, fill = region, group = group), color = "white") +
-  coord_fixed(1.3) +
-  guides(fill=FALSE)  # do this to leave off the color legend
+## Map of Current Addresses-- currently removing as it breaks the automation 
 
 
-ca_base <- ggplot(data = states, mapping = aes(x = long, y = lat, group = group)) + 
-  coord_fixed(1.3) + 
-  geom_polygon(color = "black", fill = "gray")
-#ca_base + theme_nothing()
-
-
-# Example with zip codes : https://stackoverflow.com/questions/59801437/is-there-an-r-package-that-can-take-zipcodes-and-create-a-heat-map-of-the-united
-
-
-#Attempt 1
- zipc_heat <- data_tib_all4 %>% mutate(ZIP= str_sub(data_tib_all4$D_121490150_D_202784871,1,5),
-                                       State= D_121490150_D_195068098)
-
- zipc_heat <- zipc_heat %>%  select(ZIP) %>%  filter(!is.na(ZIP) & ZIP!="Gfchh" & str_sub(ZIP,1,1)!=" " & str_sub(ZIP,1,2)!="  " & str_sub(ZIP,5,5)!=" " & str_sub(ZIP,4,5)!="  ") ## need to remove the 4 digit zip code and random letter zip code
-
- #zipc_heat$ZIP <- as.numeric(zipc_heat$ZIP)
-
- ZP_HT <- as.data.frame(table(zipc_heat))
-
-
- #ZP_HT$ZIP<- clean.zipcodes(ZP_HT$ZIP)
- ZP_HT_US<-aggregate(data.frame(count=ZP_HT$Freq),list(zip=ZP_HT$ZIP),length)
-
-
- 
-# EXAMPLE OF PER COUNTY GRAPH OF JUST CA- have to figure out how to add counties of all countries and populations equal to our participant population 
-   # https://eriqande.github.io/rep-res-web/lectures/making-maps-with-R.html
-  #https://jtr13.github.io/cc19/different-ways-of-plotting-u-s-map-in-r.html
- #https://www.sharpsightlabs.com/blog/how-to-create-a-crime-heatmap-in-r/
- #https://rpubs.com/jcraggy/841199
- 
- #Attemp1 10 
- zip_to_lat_lon_North.America <- read.csv("zip_to_lat_lon_North_America.csv")
- all_zips <- zip_to_lat_lon_North.America %>%  filter(Country=="United States" & (postal.code %in%  ZP_HT_US$zip)) 
- all_zips$ZIP <- all_zips$postal.code
-us_zip <- left_join(ZP_HT, all_zips, by="ZIP")
-us_zip$lat <- us_zip$latitude
-us_zip$long <- us_zip$longitude
-us_zip <- us_zip %>% filter(!is.na(state))
-us_zip$state <- tolower(us_zip$state)
-
-state_group <- states %>% select(group, region)
-state_group$state <- state_group$region
-
-usa_zip <- left_join(us_zip, state_group, by="state")
-
-
-
-ditch_the_axes <- theme(
-  axis.text = element_blank(),
-  axis.line = element_blank(),
-  axis.ticks = element_blank(),
-  panel.border = element_blank(),
-  panel.grid = element_blank(),
-  axis.title = element_blank()
-  )
- 
-elbow_room1 <- ca_base + 
-      geom_polygon(data = usa_zip, aes(fill = Freq), color = "white") +
-      geom_polygon(color = "black", fill = NA) +
-      theme_bw() +
-      ditch_the_axes
-
-eb2 <- elbow_room1 + 
-    scale_fill_gradientn(colours = rev(rainbow(7)),
-                         breaks = c(2, 4, 10, 100, 1000, 10000),
-                         trans = "log10")
-
-
-eb2 + xlim(-125, -67.1) + ylim(25,50)
-
- 
- # 
- # #Attempt 2-7
- # us<-map_data('state')
- # 
- # 
- # ggplot(ZP_HT_US) + #, aes(x=zip, y=count)) + #,aes(longitude,latitude)
- #   geom_polygon(data=us,aes(x=long,y=lat,group=group),color='gray',fill=NA,alpha=.35)+
- #   geom_point(aes(color = count,size=.15,alpha=.25))  +    # <- why can't I get this to run?  #need x and y aesthetic but x=zip, y=count, causes: Error: Discrete value supplied to continuous scale
- #   xlim(-125,-65)+ylim(20,50)
- # 
- # 
- # ggplot(ZP_HT_US, aes(x=zip, y=count)) + #, aes(x=zip, y=count)) + #,aes(longitude,latitude)
- #   geom_polygon(data=us,aes(x=long,y=lat,group=group),color='gray',fill=NA)+ #,alpha=.35
- #   geom_point() #aes(color = count) +  #,size=.15,alpha=.25  # <- why can't I get this to run?  #need x and y aesthetic but x=zip, y=count, causes: Error: Discrete value supplied to continuous scale
- #   #xlim(-125,-65)+ylim(20,50)
- # 
- # 
- # zipus <- ggplot(ZP_HT_US) + #, aes(x=zip, y=count)) + #,aes(longitude,latitude)
- #   geom_polygon(data=us,aes(x=long,y=lat,group=group),color='gray',fill=NA,alpha=.35)+
- #   #geom_point(aes(color = count,size=.15,alpha=.25))  +    # <- why can't I get this to run?  #need x and y aesthetic but x=zip, y=count, causes: Error: Discrete value supplied to continuous scale
- #   xlim(-125,-65)+ylim(20,50)
- # 
- # 
- # zipus <- ggplot(ZP_HT_US) + #, aes(x=zip, y=count)) + #,aes(longitude,latitude)
- #   geom_polygon(data=us,aes(x=long,y=lat,group=group),color='gray',fill=NA,alpha=.35)+
- #   geom_point(aes(color = count,size=.15,alpha=.25))  +  #missing x and y aesthetic
- #   scale_x_discrete(limits=c(1,150)) +
- #   xlim(-125,-65)+ylim(20,50)
- # 
- # 
- # zipus <- ggplot(ZP_HT_US) + #, aes(x=zip, y=count)) + #,aes(longitude,latitude)
- #   geom_polygon(data=us,aes(x=long,y=lat,group=group),color='gray',fill=NA,alpha=.35)+
- #   geom_point(aes(x=count, y=zip, color = count,size=.15,alpha=.25))  +   # Error: Discrete value supplied to continuous scale
- #   scale_x_discrete(limits=c(1,150)) +
- #   xlim(-125,-65)+ylim(20,50)
- # 
- # 
- # zipus <- ggplot(ZP_HT_US) + #, aes(x=zip, y=count)) + #,aes(longitude,latitude)
- #   geom_polygon(data=us,aes(x=long,y=lat,group=group),color='gray',fill=NA,alpha=.35)+
- #   geom_point(aes(x=count, y=zip, color = count,size=.15,alpha=.25))  +   # Error: Discrete value supplied to continuous scale
- #   scale_x_continuous(limits=c(1,150)) +
- #   xlim(-125,-65)+ylim(20,50)
- # 
- # zipus + geom_point(aes(color = count,size=.15,alpha=.25))  #requires and x and y aesthetic
- # zipus + geom_point() # aes(color = count,size=.15,alpha=.25) inculding these or not, requires and x and y aesthetic
- # zipus + geom_point(aes(x=zip, y=count, color = count,size=.15,alpha=.25))  ##Error: Discrete value supplied to continuous scale
- # zipus + geom_point(aes(x=zip, y=count, color = count,size=.15,alpha=.25)) + scale_x_discrete(limits=c(1,150)) ###Error: Discrete value supplied to continuous scale
- # 
- # 
- 
- 
- 
- #Attempt 8
- library(usmap)
- #plot_usmap(regions = "states", color= "black") + theme(panel.background=element_blank()) + geom_point(ZP_HT_US, aes(x=count, y=zip, color = count,size=.15,alpha=.25)) 
- #plot_usmap(data = ZP_HT_US, values = "count", regions = "states", color= "black") + scale_fill_continuous(low = "white", high = "blue", name = "Population Estimates", label = scales::comma) + labs(title = "Participant Addresses") + theme(legend.position = "right")   #Error in map_with_data(data, values = values, include = include, exclude = exclude) : `data` must be a data.frame containing either a `state` or `fips` column.
- 
- 
- 
- 
- # Attempt 9
- 
- 
- 
- #Attempt 10
- ##us_base + ggplot(ZP_HT_US, aes(x=count, y=zip)) + geom_point(color = count) --- can't add ggplot to a ggplot. But can add to geom_polygons? Also can't run even removing us +
- #ggplot(ZP_HT_US, aes(x=count, y=zip)) + scale_x_discrete(limits=c(1,150)) + geom_polygon(data=us,aes(x=long,y=lat,group=group),color='gray',fill=NA,alpha=.35)+ geom_point(color = count) #Error: Discrete value supplied to continuous scale
-
- 
- 
- 
- 
- 
- 
-
- 
- 
-#     # # make a data frame
-#     # x <- readLines("data/ca-counties-wikipedia.txt")
-#     # pop_and_area <- str_match(x, "^([a-zA-Z ]+)County\t.*\t([0-9,]{2,10})\t([0-9,]{2,10}) sq mi$")[, -1] %>%
-#     #   na.omit() %>%
-#     #   str_replace_all(",", "") %>% 
-#     #   str_trim() %>%
-#     #   tolower() %>%
-#     #   as.data.frame(stringsAsFactors = FALSE)
-#     #   
-#     # # give names and make population and area numeric
-#     # names(pop_and_area) <- c("subregion", "population", "area")
-#     # pop_and_area$population <- as.numeric(pop_and_area$population)
-#     # pop_and_area$area <- as.numeric(pop_and_area$area)
+# library(ggmap)
+# library(maps)
+# library(mapdata)
+# library(sf)
+# library(zipcodeR)
+# library(viridis)
+# library(ggthemes)
+# #library(albersusa)
 # 
-# # cacopa <- inner_join(ca_county, pop_and_area, by = "subregion")
-# # cacopa$people_per_mile <- cacopa$population / cacopa$area
-# # 
-# # # prepare to drop the axes and ticks but leave the guides and legends
-# # # We can't just throw down a theme_nothing()!
-# # ditch_the_axes <- theme(
-# #   axis.text = element_blank(),
-# #   axis.line = element_blank(),
-# #   axis.ticks = element_blank(),
-# #   panel.border = element_blank(),
-# #   panel.grid = element_blank(),
-# #   axis.title = element_blank()
-# #   )
-# # 
-# # elbow_room1 <- ca_base + 
-# #       geom_polygon(data = cacopa, aes(fill = people_per_mile), color = "white") +
-# #       geom_polygon(color = "black", fill = NA) +
-# #       theme_bw() +
-# #       ditch_the_axes
-# # 
-# # elbow_room1 
-# # 
-# # 
-# # 
-# # eb2 <- elbow_room1 + 
-# #     scale_fill_gradientn(colours = rev(rainbow(7)),
-# #                          breaks = c(2, 4, 10, 100, 1000, 10000),
-# #                          trans = "log10")
-# # eb2
+# states <- map_data("state")
+# us_base <- ggplot(data = states) +
+#   geom_polygon(aes(x = long, y = lat, fill = region, group = group), color = "white") +
+#   coord_fixed(1.3) +
+#   guides(fill=FALSE)  # do this to leave off the color legend
 # 
 # 
-# ZP_HT_US$x<-log(ZP_HT_US$count)
+# ca_base <- ggplot(data = states, mapping = aes(x = long, y = lat, group = group)) + 
+#   coord_fixed(1.3) + 
+#   geom_polygon(color = "black", fill = "gray")
+# #ca_base + theme_nothing()
 # 
-# ZP_HT_US %>% ggplot(aes(fill=x, color=x)) + geom_sf()  + 
-#   scale_fill_viridis(option = "B",direction=-1) + 
-#   scale_color_viridis(option = "B",direction=-1) + theme_map(base_size=11)
+# 
+# # Example with zip codes : https://stackoverflow.com/questions/59801437/is-there-an-r-package-that-can-take-zipcodes-and-create-a-heat-map-of-the-united
+# 
+# 
+# #Attempt 1
+#  zipc_heat <- data_tib_all4 %>% mutate(ZIP= str_sub(data_tib_all4$D_121490150_D_202784871,1,5),
+#                                        State= D_121490150_D_195068098)
+# 
+#  zipc_heat <- zipc_heat %>%  select(ZIP) %>%  filter(!is.na(ZIP) & ZIP!="Gfchh" & str_sub(ZIP,1,1)!=" " & str_sub(ZIP,1,2)!="  " & str_sub(ZIP,5,5)!=" " & str_sub(ZIP,4,5)!="  ") ## need to remove the 4 digit zip code and random letter zip code
+# 
+#  #zipc_heat$ZIP <- as.numeric(zipc_heat$ZIP)
+# 
+#  ZP_HT <- as.data.frame(table(zipc_heat))
+# 
+# 
+#  #ZP_HT$ZIP<- clean.zipcodes(ZP_HT$ZIP)
+#  ZP_HT_US<-aggregate(data.frame(count=ZP_HT$Freq),list(zip=ZP_HT$ZIP),length)
+# 
+# 
+#  
+# # EXAMPLE OF PER COUNTY GRAPH OF JUST CA- have to figure out how to add counties of all countries and populations equal to our participant population 
+#    # https://eriqande.github.io/rep-res-web/lectures/making-maps-with-R.html
+#   #https://jtr13.github.io/cc19/different-ways-of-plotting-u-s-map-in-r.html
+#  #https://www.sharpsightlabs.com/blog/how-to-create-a-crime-heatmap-in-r/
+#  #https://rpubs.com/jcraggy/841199
+#  
+#  zip_to_lat_lon_North America.csv
+#  #Attemp1 10 
+#  zip_to_lat_lon_North.America <- read.csv("C:/Users/dowlingk2/Downloads/zip_to_lat_lon_North_America.csv")
+#  all_zips <- zip_to_lat_lon_North.America %>%  filter(Country=="United States" & (postal.code %in%  ZP_HT_US$zip)) 
+#  all_zips$ZIP <- all_zips$postal.code
+# us_zip <- left_join(ZP_HT, all_zips, by="ZIP")
+# us_zip$lat <- us_zip$latitude
+# us_zip$long <- us_zip$longitude
+# us_zip <- us_zip %>% filter(!is.na(state))
+# us_zip$state <- tolower(us_zip$state)
+# 
+# state_group <- states %>% select(group, region)
+# state_group$state <- state_group$region
+# 
+# usa_zip <- left_join(us_zip, state_group, by="state")
+
 # 
 # 
 # 
@@ -4704,24 +4545,27 @@ eb2 + xlim(-125, -67.1) + ylim(25,50)
 #   panel.grid = element_blank(),
 #   axis.title = element_blank()
 #   )
-# 
-# elbow_room1 <- us_base + 
-#       geom_polygon(data = ZP_HT, aes(fill = Freq), color = "white") +
+#  
+# elbow_room1 <- ca_base + 
+#       geom_polygon(data = usa_zip, aes(fill = Freq), color = "white") +
+
 #       geom_polygon(color = "black", fill = NA) +
 #       theme_bw() +
 #       ditch_the_axes
 # 
-# elbow_room1
-# 
-# 
-# 
 # eb2 <- elbow_room1 + 
 #     scale_fill_gradientn(colours = rev(rainbow(7)),
-#                          breaks = c(10, 25, 50, 75, 100),
+#                          breaks = c(2, 4, 10, 100, 1000, 10000),
 #                          trans = "log10")
-# eb2
 # 
 # 
+# eb2 + xlim(-125, -67.1) + ylim(25,50)
+# 
+#  
+# 
+#  
+#  
+#  #Attempt 8
 
 ```
 
@@ -4769,7 +4613,7 @@ dt_home1skip_summary[6,1] <- "Skipped Country"
 dt_home1skip_summary[6,2] <- sum(is.na(home1skip$Country))
 dt_home1skip_summary[6,3] <- (sum(is.na(home1skip$Country))/dim(home1skip)[[1]])*100
 
-dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Address 1 Components Skipped")) %>% 
   cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
