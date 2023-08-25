@@ -33,7 +33,6 @@ library(scales)
 library(gt)
 library(tinytex)
 library(data.table) ###to write or read and data management 
-library(boxr) ###read or write data from/to box
 library(tidyverse) ###for data management
 library(dplyr) ###data management
 library(lubridate) ###date time
