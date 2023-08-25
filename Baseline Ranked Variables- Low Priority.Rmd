@@ -135,8 +135,8 @@ length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & 
 #library(janitor)
 
 m1_common <- rbind(M1_V1_common,M1_V2_common)
-m1_common_v1 <- merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
-m1_combined_v1v2 <- merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
+m1_common_v1 <- base::merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
+m1_combined_v1v2 <- base::merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
 m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] #7289 including duplicates 05022023
 
 m1_complete <- m1_complete %>% arrange(desc(version)) 
@@ -2016,8 +2016,8 @@ length(recr_m2$Connect_ID[which(recr_m2$Connect_ID %in% M2_v2_only$Connect_ID & 
 #library(janitor)
 
 M2_common <- rbind(M2_V1_common,M2_V2_common)
-M2_common_v1 <- merge(M2_common, M2_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
-M2_combined_v1v2 <- merge(M2_common_v1,M2_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
+M2_common_v1 <- base::merge(M2_common, M2_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
+M2_combined_v1v2 <- base::merge(M2_common_v1,M2_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
 M2_complete <- M2_combined_v1v2[which(M2_combined_v1v2$Connect_ID %in% recr_m2$Connect_ID[which(recr_m2$d_536735468 ==231311385 )]),] #7289 including duplicates 05022023
 
 M2_complete <- M2_complete %>% arrange(desc(version)) 
