@@ -3462,8 +3462,7 @@ dt_PREWORK_summary %>%  gt() %>%
     )
   )
 
-PREWORKRES= Mod4 %>%filter(Mod4$D_995620555==353358909) %>%  mutate(Address1= case_when(is.na(D_980007418) ~"Skipped PREWORKRES"))
-
+PREWORKRES= Mod4 %>%  filter(Mod4$D_995620555==353358909) %>%  mutate(Address1= case_when(is.na(D_980007418) ~"Skipped PREWORKRES"))
 
 
 dt_PREWORKRES_summary <- PREWORKRES %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
