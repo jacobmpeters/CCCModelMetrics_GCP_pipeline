@@ -1003,7 +1003,7 @@ style= data_tib_base  %>%  mutate(descr= case_when(D_987107433==220083334 ~ "Ver
                                                D_987107433==510148951 ~ "Somewhat Masculine",
                                                TRUE ~ "Skipped this question"))
 
-style$descr <- factor(style$descr,levels=c("Very Feminine", "Mostly Feminine", "Somewhat Feminine", "Equally feminine and masculine", "Very masculine", "Mostly Masculine", "Somewhat Masculine", "Skipped this question"))
+style$descr <- factor(style$descr,levels=c("Very Feminine", "Mostly Feminine", "Somewhat Feminine", "Equally Feminine and Masculine", "Very masculine", "Mostly Masculine", "Somewhat Masculine", "Skipped this question"))
 
 dt_appearence_summary <- style  %>% dplyr::group_by(descr) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(descr, n, percentage) 
 
@@ -2948,7 +2948,7 @@ table(M2_complete_nodup$version)
 M2_complete_nodup$Connect_ID <- as.numeric(M2_complete_nodup$Connect_ID)
 
 
-merge_m2= left_join(merged, M2_complete_nodup, by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
+merge_m2= left_join(base_vars, M2_complete_nodup, by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
 
 ```
 
@@ -3150,7 +3150,7 @@ mod3_data <- bq_table_download(mod3_table, bigint = "integer64")
 mod3_data$Connect_ID <- as.numeric(mod3_data$Connect_ID)
 
 
-merge_m3P= left_join(merged, mod3_data, by="Connect_ID")
+merge_m3P= left_join(base_vars, mod3_data, by="Connect_ID")
 
 data_all3 <- merge_m3P %>% filter(d_976570371==231311385)
 
@@ -4242,7 +4242,7 @@ mod4_table <- bq_project_query(project, querymod4)
 mod4_data <- bq_table_download(mod4_table, bigint = "integer64")
 mod4_data$Connect_ID <- as.numeric(mod4_data$Connect_ID)
 
-merge_m4P= left_join(merged, mod4_data, by="Connect_ID") 
+merge_m4P= left_join(base_vars, mod4_data, by="Connect_ID") 
 
 data_all4 <- merge_m4P %>% filter(d_663265240==231311385)
 
@@ -4419,7 +4419,7 @@ dtPREWORK_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 dt_PREWORKRES= data_tib_all4 %>%  filter(D_995620555==353358909)
 
-PREWORKRES= data_tib_all4 %>%  mutate(meds= case_when(D_980007418==353358909 ~ "Yes",
+PREWORKRES= dt_PREWORKRES %>%  mutate(meds= case_when(D_980007418==353358909 ~ "Yes",
                                                D_980007418==104430631 ~ "No",
                                                TRUE  ~ "Skipped this question"))
 

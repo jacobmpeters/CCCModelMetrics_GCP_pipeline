@@ -6,8 +6,13 @@ output: pdf_document
 ---
 
 
+```{r, include=FALSE}
 
-This report analysis the responses of all Module 1 questions and visualizes the distributions of responses.
+# This report analysis the responses of all Module 1 questions and visualizes the distributions of answers (ex: age at diagnosis)
+# All libraries are listed up top; authentication for BQ will be necessary
+# Functions used included before the start of the analysis 
+```
+
 
 ```{r, include=FALSE}
 # ##Recruitment Table variables added for merge:
@@ -271,7 +276,8 @@ boxp_funct <- function(CID,Title, Xlab) {
 
 
 ##GT TABLE: Questions that all participants asked, update dictionary as new answer options come up
-dict <- list("104430631"="No", "353358909"="Yes", "589959753"="A little shorter", "623310018"="A lot shorter", "978204320"= "Grade School(Grades 1-8)", "935502060"="Some High School, No Diploma", "404564707"= "High School Graduate or GED", "432193665"="Some College, No Degree", "890756124"="Technical or Trade School After High School", "766964355"="Associate's Degree", "875342283"="Bachelor's Degree", "598242454"="Advanced Degree", "709650750"="Biological Child", "810290359"="Adopted Child", "509607548"="Step Child", "288105839"=" Yes, fraternal twins", "626558982"="Yes, triplets or higher multiple birth", "178420302"="Do not Know", "536341288"="Female", "576796184"="Intersex or Other", "654207589"="Male","555374628"="Full Sibling", "871673221"="Half Sibling, Same Mother",  "198654048"="Half Sibling, Same Father", "807835037"="Other", "274062548"="More than 3 months ago", "958538953"="In the past 3 months", "317567178"="In the past month", "484055234"="In the past year",  "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago","958538953"="In the past 3 months",  "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible", "764708931"="Very flexible","0"="No", "1"="Yes", "536341288"="Female", "218837028"="Woman (New Response)", "983318667"="Man (New Response)"  , "654207589"="Male","746038746"="Prefer Not to Answer", "805712793"="Genderqueer","486192236"="Non-Binary", "807835037"="Other","873138103"="Transgender Woman","405267600"="Transgender Man", "220083334"="Very Feminine","541300533"="Mostly Feminine","878286618"="Somewhat Feminine","910745276"="Equally feminine and masculine","915528806"="Very masculine","265452386"="Mostly Masculine","510148951"="Somewhat Masculine","271882746"="Straight or heterosexual", "903084185"="Lesbian, gay, or homosexual", "999994434"="Bisexual")
+dict <- list("104430631"="No", "353358909"="Yes", "589959753"="A little shorter", "623310018"="A lot shorter", "978204320"= "Grade School(Grades 1-8)", "935502060"="Some High School, No Diploma", "404564707"= "High School Graduate or GED", "432193665"="Some College, No Degree", "890756124"="Technical or Trade School After High School", "766964355"="Associate's Degree", "875342283"="Bachelor's Degree", "598242454"="Advanced Degree", "709650750"="Biological Child", "810290359"="Adopted Child", "509607548"="Step Child", "784922042"="Related to me in some other way", "288105839"=" Yes, fraternal twins", "626558982"="Yes, triplets or higher multiple birth", "178420302"="Do not Know", "536341288"="Female", "576796184"="Intersex or Other", "654207589"="Male","555374628"="Full Sibling", "871673221"="Half Sibling, Same Mother",  "198654048"="Half Sibling, Same Father", "807835037"="Other", "274062548"="More than 3 months ago", "958538953"="In the past 3 months", "317567178"="In the past month", "484055234"="In the past year",  "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago","958538953"="In the past 3 months",  "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible", "764708931"="Very flexible","0"="No", "1"="Yes", "536341288"="Female", "218837028"="Woman (New Response)", "983318667"="Man (New Response)"  , "654207589"="Male","746038746"="Prefer Not to Answer", "805712793"="Genderqueer","486192236"="Non-Binary", "807835037"="Other","873138103"="Transgender Woman","405267600"="Transgender Man", "220083334"="Very Feminine","541300533"="Mostly Feminine","878286618"="Somewhat Feminine","910745276"="Equally feminine and masculine","915528806"="Very masculine","265452386"="Mostly Masculine","510148951"="Somewhat Masculine","271882746"="Straight or heterosexual", "903084185"="Lesbian, gay, or homosexual", "999994434"="Bisexual", "584368278"="Retired", "475665841"="Homemaker", "656816477"="Unemployed", "756948639"="Unble to Work (Disabled)", "181769837"="Other Employment Status","551525967"="Yes, Full-Time Student", "738284740"="Yes, Part Time Student" )
+
 
 simple_funct <- function(CID, Title){  
   CID_SYM <- rlang::ensym(CID)
@@ -373,11 +379,6 @@ child_logic_funct <- function(CID, Child_Num, Title){
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md(Title)) %>% 
   cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows( groups=F,
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
     grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -4228,6 +4229,265 @@ sib_logic_funct(D_807431780_7_7, 7, "MULT2_7: Sibling 7 a Twin or Multiple")
 sib_logic_funct(D_807431780_8_8, 8, "MULT2_8: Sibling 8 a Twin or Multiple")
 
 
+#MULT2
+sibmult2= data_tib_m1  %>%  filter(as.numeric(D_694265648) >0 & (D_992987417==353358909 | D_992987417==288105839 | D_992987417==626558982))  
+
+
+sibmult2_1  = sibmult2 %>% mutate(status=case_when(D_807431780_1_1==353358909~ "Yes",
+                          D_807431780_1_1==104430631~ "No",
+                          TRUE ~ "Skipped this Question"))
+
+dt_sibcanc1_summary <- sibmult2_1 %>% dplyr::group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
+
+
+dt_sibcanc1_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not a proper gt_tbl??
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("MULT2_1: Sibling 1 a Twin or Multiple")) %>%
+  cols_label(status = md("**Diagnosed**"), n = md("**Number of Participants**"), percentage = md("**Percentage of Participants**")) %>%
+    # summary_rows(
+    # column = c(n,percentage),
+    # fns= list(
+    #   Sum= ~sum(.)
+    # ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = status,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+sibmult2_2  = sibmult2 %>%  filter(as.numeric(D_694265648) >1) %>%   mutate(status=case_when(D_807431780_2_2==353358909~ "Yes",
+                          D_807431780_2_2==104430631~ "No",
+                          TRUE ~ "Skipped this Question"))
+
+dt_sibmult2_2_summary <- sibmult2_2 %>% dplyr::group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
+
+
+dt_sibmult2_2_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not a proper gt_tbl??
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("MULT2_2: Sibling 1 a Twin or Multiple")) %>%
+  cols_label(status = md("**Diagnosed**"), n = md("**Number of Participants**"), percentage = md("**Percentage of Participants**")) %>%
+    # summary_rows(
+    # column = c(n,percentage),
+    # fns= list(
+    #   Sum= ~sum(.)
+    # ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = status,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+sibmult2_3  = sibmult2 %>% filter(as.numeric(D_694265648) >2) %>%   mutate(status=case_when(D_807431780_3_3==353358909~ "Yes",
+                          D_807431780_3_3==104430631~ "No",
+                          TRUE ~ "Skipped this Question"))
+
+dt_sibmult2_3_summary <- sibmult2_3 %>% dplyr::group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
+
+
+dt_sibmult2_3_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not a proper gt_tbl??
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("MULT2_3: Sibling 1 a Twin or Multiple")) %>%
+  cols_label(status = md("**Diagnosed**"), n = md("**Number of Participants**"), percentage = md("**Percentage of Participants**")) %>%
+    # summary_rows(
+    # column = c(n,percentage),
+    # fns= list(
+    #   Sum= ~sum(.)
+    # ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = status,
+    )
+  ) %>% opt_row_striping()
+
+
+
+ 
+sibmult2_4  = sibmult2 %>% filter(as.numeric(D_694265648) >3) %>% mutate(status=case_when(D_807431780_4_4==353358909~ "Yes",
+                          D_807431780_4_4==104430631~ "No",
+                          TRUE ~ "Skipped this Question"))
+
+dt_sibmult2_4_summary <- sibmult2_4 %>% dplyr::group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
+
+
+dt_sibmult2_4_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not a proper gt_tbl??
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("MULT2_4: Sibling 1 a Twin or Multiple")) %>%
+  cols_label(status = md("**Diagnosed**"), n = md("**Number of Participants**"), percentage = md("**Percentage of Participants**")) %>%
+    # summary_rows(
+    # column = c(n,percentage),
+    # fns= list(
+    #   Sum= ~sum(.)
+    # ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = status,
+    )
+  ) %>% opt_row_striping()
+
+
+
+ 
+sibmult2_5  = sibmult2 %>%filter(as.numeric(D_694265648) >4) %>%   mutate(status=case_when(D_807431780_5_5==353358909~ "Yes",
+                          D_807431780_5_5==104430631~ "No",
+                          TRUE ~ "Skipped this Question"))
+
+dt_sibmult2_5_summary <- sibmult2_5 %>% dplyr::group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
+
+
+dt_sibmult2_5_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not a proper gt_tbl??
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("MULT2_5: Sibling 1 a Twin or Multiple")) %>%
+  cols_label(status = md("**Diagnosed**"), n = md("**Number of Participants**"), percentage = md("**Percentage of Participants**")) %>%
+    # summary_rows(
+    # column = c(n,percentage),
+    # fns= list(
+    #   Sum= ~sum(.)
+    # ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = status,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+sibmult2_6  = sibmult2 %>%  filter(as.numeric(D_694265648) >5) %>%  mutate(status=case_when(D_807431780_6_6==353358909~ "Yes",
+                          D_807431780_6_6==104430631~ "No",
+                          TRUE ~ "Skipped this Question"))
+
+dt_sibmult2_6_summary <- sibmult2_6 %>% dplyr::group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
+
+
+dt_sibmult2_6_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not a proper gt_tbl??
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("MULT2_6: Sibling 1 a Twin or Multiple")) %>%
+  cols_label(status = md("**Diagnosed**"), n = md("**Number of Participants**"), percentage = md("**Percentage of Participants**")) %>%
+    # summary_rows(
+    # column = c(n,percentage),
+    # fns= list(
+    #   Sum= ~sum(.)
+    # ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = status,
+    )
+  ) %>% opt_row_striping()
+
+
+
+ 
+sibmult2_7  = sibmult2 %>%  filter(as.numeric(D_694265648) >6) %>%  mutate(status=case_when(D_807431780_7_7==353358909~ "Yes",
+                          D_807431780_7_7==104430631~ "No",
+                          TRUE ~ "Skipped this Question"))
+
+dt_sibmult2_6_summary <- sibmult2_7 %>% dplyr::group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
+
+
+dt_sibmult2_6_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not a proper gt_tbl??
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("MULT2_7: Sibling 1 a Twin or Multiple")) %>%
+  cols_label(status = md("**Diagnosed**"), n = md("**Number of Participants**"), percentage = md("**Percentage of Participants**")) %>%
+    # summary_rows(
+    # column = c(n,percentage),
+    # fns= list(
+    #   Sum= ~sum(.)
+    # ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = status,
+    )
+  ) %>% opt_row_striping()
+
+
+
+  
+sibmult2_8  = sibmult2 %>%  filter(as.numeric(D_694265648) >7) %>%  mutate(status=case_when(D_807431780_8_8==353358909~ "Yes",
+                          D_807431780_8_8==104430631~ "No",
+                          TRUE ~ "Skipped this Question"))
+
+dt_sibmult2_6_summary <- sibmult2_8 %>% dplyr::group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
+
+
+dt_sibmult2_6_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not a proper gt_tbl??
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("MULT2_8: Sibling 8 a Twin or Multiple")) %>%
+  cols_label(status = md("**Diagnosed**"), n = md("**Number of Participants**"), percentage = md("**Percentage of Participants**")) %>%
+    # summary_rows(
+    # column = c(n,percentage),
+    # fns= list(
+    #   Sum= ~sum(.)
+    # ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = status,
+    )
+  ) %>% opt_row_striping()
+
+
+
 
 sib_logic_funct(D_589588769_1_1, 1, "SIB3_1: Sibling 1 a Full or Half Sibling")
 sib_logic_funct(D_589588769_2_2, 2, "SIB3_2: Sibling 2 a Full or Half Sibling")
@@ -4251,7 +4511,7 @@ sib_logic_funct(D_890637099_8_8, 8, "SIB4_8: Sibling 8 Still Living")
 
 
 
-
+  
 sib1_age=boxp_funct(D_869387390_1_1_D_478706011_1,"SIBAGE1: Age of Sibling 1 Today", "Age")
 sib2_age=boxp_funct(D_869387390_2_2_D_478706011_2,"SIBAGE2: Age of Sibling 2 Today", "Age")
 sib3_age=boxp_funct(D_869387390_3_3_D_478706011_3,"SIBAGE3: Age of Sibling 3 Today", "Age")
@@ -4267,14 +4527,14 @@ grid.arrange(sib5_age,sib6_age,sib7_age, sib8_age, nrow=2)
 
 
 
-simple_funct(D_869387390_1_1_D_869387390_1_1, "Answer for Age of Sibling 1 Today")
-simple_funct(D_869387390_2_2_D_869387390_2_2, "Answer for Age of Sibling 2 Today")
-simple_funct(D_869387390_3_3_D_869387390_3_3, "Answer for Age of Sibling 3 Today")
-simple_funct(D_869387390_4_4_D_869387390_4_4, "Answer for Age of Sibling 4 Today")
-simple_funct(D_869387390_5_5_D_869387390_5_5, "Answer for Age of Sibling 5 Today")
-simple_funct(D_869387390_6_6_D_869387390_6_6, "Answer for Age of Sibling 6 Today")
-simple_funct(D_869387390_7_7_D_869387390_7_7, "Answer for Age of Sibling 7 Today")
-simple_funct(D_869387390_8_8_D_869387390_8_8, "Answer for Age of Sibling 8 Today")
+# simple_funct(D_869387390_1_1_D_869387390_1_1, "Answer for Age of Sibling 1 Today")
+# simple_funct(D_869387390_2_2_D_869387390_2_2, "Answer for Age of Sibling 2 Today")
+# simple_funct(D_869387390_3_3_D_869387390_3_3, "Answer for Age of Sibling 3 Today")
+# simple_funct(D_869387390_4_4_D_869387390_4_4, "Answer for Age of Sibling 4 Today")
+# simple_funct(D_869387390_5_5_D_869387390_5_5, "Answer for Age of Sibling 5 Today")
+# simple_funct(D_869387390_6_6_D_869387390_6_6, "Answer for Age of Sibling 6 Today")
+# simple_funct(D_869387390_7_7_D_869387390_7_7, "Answer for Age of Sibling 7 Today")
+# simple_funct(D_869387390_8_8_D_869387390_8_8, "Answer for Age of Sibling 8 Today")
 
 
 
@@ -5537,19 +5797,17 @@ dt_edu_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(columns = edlevel,)) %>% opt_row_striping()
 
 #In school now?
-dict <- c(dict, "551525967"="Yes, Full-Time Student", "738284740"="Yes, Part Time Student")
 simple_funct(D_784967158, "STUDENT: Currently Enrolled in School")
 
 #do you currently work?
 simple_funct(D_613744428, "WORK: Currently Work for Pay")
 
 #work status
-dict <- c(dict, "584368278"="Retired", "475665841"="Homemaker", "656816477"="Unemployed", "756948639"="Unble to Work (Disabled)", "181769837"="Other Employment Status", "746038746"="Prefer Not to Answer")
-simple_funct(D_114529380, "WORK2: Employment Status")
+one_logic_funct(D_114529380, D_613744428,104430631,"WORK2: Employment Status")
 
 #current title
 #table(module1$D_627122657)-- potentially pii and VERY long with all individual responses 
-home1skip <- data_tib_m1 %>% select(D_761310265)
+home1skip <- data_tib_m1 %>% select(D_761310265)  %>%  filter(data_tib_m1$D_613744428==353358909)
 home1skip= home1skip %>%  mutate(Address1= case_when(is.na(D_761310265)~"Skipped this Question",
                                                      TRUE ~ "Provided a Response"))
   
@@ -5609,7 +5867,7 @@ dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 #name of current employer
 #table(module1$D_434316600)-- potentially identifying? And Very long with individual reponses
-home1skip <- data_tib_m1 %>% select(D_434316600)
+home1skip <- data_tib_m1 %>% select(D_434316600)  %>%  filter(data_tib_m1$D_613744428==353358909)
 home1skip= home1skip %>%  mutate(Address1= case_when(is.na(D_434316600)~"Skipped this Question",
                                                      TRUE ~ "Provided a Response"))
   
@@ -5640,7 +5898,7 @@ dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 #type of business for current employer
-dt_curr_bus= data_tib_m1 %>% filter(D_613744428=="353358909")
+dt_curr_bus= data_tib_m1 %>% filter(D_613744428=="353358909")  %>%  filter(data_tib_m1$D_613744428==353358909)
 
 dt_curr_bus= dt_curr_bus  %>%  mutate(multb1 = ifelse(D_700374192_D_700374192_D_641572847==1, 1, 0) + ifelse(D_700374192_D_700374192_D_592592455==1, 1, 0) + ifelse(D_700374192_D_700374192_D_711138281==1, 1, 0) + ifelse(D_700374192_D_700374192_D_596792238==1, 1, 0) + ifelse(D_700374192_D_700374192_D_133362151==1, 1, 0) + ifelse(D_700374192_D_700374192_D_372993567==1, 1, 0) + ifelse(D_700374192_D_700374192_D_620577362==1, 1, 0) + ifelse(D_700374192_D_700374192_D_580409149==1, 1, 0) + ifelse(D_700374192_D_700374192_D_867237640==1, 1, 0) + ifelse(D_700374192_D_700374192_D_698814077==1, 1, 0) + ifelse(D_700374192_D_700374192_D_751475124==1, 1, 0) + ifelse(D_700374192_D_700374192_D_308286913==1, 1, 0) + ifelse(D_700374192_D_700374192_D_807835037==1, 1, 0) + ifelse(D_700374192_D_700374192_D_178420302==1, 1, 0))
 
@@ -5696,7 +5954,7 @@ dt_curr_bus_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 #products made/services provided from current employer
 #table(module1$D_868232409) -- potentially identifying? And VERY LONG with individual reponses
-home1skip <- data_tib_m1 %>% select(D_868232409)
+home1skip <- data_tib_m1 %>% select(D_868232409) %>%  filter(data_tib_m1$D_613744428==353358909)
 home1skip= home1skip %>%  mutate(Address1= case_when(is.na(D_868232409)~"Skipped this Question",
                                                      TRUE ~ "Provided a Response"))
   
@@ -5736,11 +5994,35 @@ module1 %>% mutate(D_739294356=as.numeric(as.character(D_739294356))) %>%
 
 
 #this current position your longest held position?
-simple_funct(D_847533056, "WORK5: Current Job the Longest Held Job")
+work5 <- data_tib_merged  %>%  filter(!is.na(D_868232409))
+
+
+work5_ans= work5 %>%  mutate(answer= case_when(D_847533056==353358909 ~ "Yes",
+                                             D_847533056==104430631 ~ "No",
+                                             TRUE ~ "Skipped this question"))
+
+dtwork5_summary <- work5_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtwork5_summary %>%  gt() %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("WORK5: Current Job the Longest Held Job")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) 
 
 
 #ever worked for pay?
-simple_funct(D_403258164, "WORK6: Ever Work")
+one_logic_funct(D_403258164, D_613744428,104430631,"WORK6: Ever Work")
 
 
 #longest held job title --work7
