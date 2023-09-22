@@ -148,7 +148,7 @@ table(m1_complete_nodup$version)
 
 
 
-parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
+parts <- "SELECT Connect_ID, token, d_512820379, D_471593703, state_d_934298480, D_230663853,
 D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
 D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, 
 d_663265240, d_878865966, d_684635302, d_167958071,
@@ -169,7 +169,7 @@ dim(merged)
 
 ```{r, warning=FALSE, echo=FALSE,  message=FALSE}
 #Has a recruitment flag
-merged <- merged %>% filter(D_512820379==486306141 | D_512820379==854703046)
+merged <- merged %>% filter(d_512820379==486306141 | d_512820379==854703046)
 
 
 #User consent submitted
@@ -182,7 +182,7 @@ merged <- merged %>% filter(D_699625233==353358909)
 
 #Verified by site
 #cat("Verified by site:", sum(merged$D_821247024==197316935, na.rm=TRUE))
-merged <- merged %>% filter(D_821247024==197316935)
+#merged <- merged %>% filter(D_821247024==197316935)
 
 
 #Mod1 completed and M3 completed- this way N throughout stays the same 
@@ -323,34 +323,34 @@ one_logic_funct1 <- function(CID, CID_prev, Prev_Answer, Title){
 # }
 # 
 # 
-# #GT table for children
-# child_logic_funct <- function(CID, Child_Num, Title){  
-#   CID_SYM <- rlang::ensym(CID)
-#   data_tib_base$D_446999144 <- as.numeric(data_tib_base$D_446999144)
-#   dt_select <- data_tib_base %>%  filter(D_446999144 >= Child_Num) %>%  select(Connect_ID, !!CID_SYM) 
-#   gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
-#   
-#   gt_yn %>%  gt::gt()  %>%  
-#   fmt_number(columns = "percentage", decimals = 2) %>% 
-#   tab_header(title = md(Title)) %>% 
-#   cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-#   summary_rows( groups=F,
-#     column = c(n,percentage),
-#     fns= list(
-#       Sum= ~sum(.)
-#     ), decimals=0) %>%
-#   tab_options(
-#       stub.font.weight = "bold"
-#     ) %>%
-#   tab_style(
-#     style = list(
-#       cell_text(weight = "bold")
-#     ),
-#     locations = cells_body(
-#       columns = answer,
-#     )
-#   ) 
-# }
+#GT table for children
+child_logic_funct <- function(CID, Child_Num, Title){
+  CID_SYM <- rlang::ensym(CID)
+  data_tib_base$D_446999144 <- as.numeric(data_tib_base$D_446999144)
+  dt_select <- data_tib_base %>%  filter(D_446999144 >= Child_Num) %>%  select(Connect_ID, !!CID_SYM)
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+
+  gt_yn %>%  gt::gt()  %>%
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md(Title)) %>%
+  cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
+  summary_rows( groups=F,
+    column = c(n,percentage),
+    fns= list(
+      Sum= ~sum(.)
+    ), decimals=0) %>%
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  )
+}
 
 
 
@@ -1398,9 +1398,9 @@ CHILD2_1_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #full/half
-##child_logic_funct(D_873968217_1_1, 1, "CHILD3_1: Child 1 Family Relation")
+#child_logic_funct(D_873968217_1_1, 1, "CHILD3_1: Child 1 Family Relation")
 
-dtCHILD3_1= data_tib_merged  %>%   filter(D_694265648!=0 & !is.na(D_694265648))
+dtCHILD3_1= data_tib_merged  %>%   filter(as.numeric(D_446999144) >=1)
 
 
 cld3= dtCHILD3_1 %>%  mutate(relation= case_when(D_873968217_1_1==709650750 ~ "Your biological child",
@@ -1414,10 +1414,10 @@ cld3$relation <- factor(cld3$relation,levels=c("Your biological child","Adopted"
 dtCHILD3_1_summary <- cld3 %>% group_by(relation) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(relation, n, percentage)
 
 
-dtCHILD3_1_summary %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("CHILD3_1: Child 1 Relation")) %>% 
-  cols_label(n= md("**Number of Participants**"), relation = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+dtCHILD3_1_summary %>%  gt(rowname_col = "row_lab") %>%
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("CHILD3_1: Child 1 Relation")) %>%
+  cols_label(n= md("**Number of Participants**"), relation = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -1429,7 +1429,7 @@ dtCHILD3_1_summary %>%  gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = relation,
     )
-  ) 
+  )
 
 ```
 
@@ -1548,6 +1548,33 @@ simple_funct1(D_613744428, "WORK: Currently Work for Pay")
 simple_funct1(D_114529380, "WORK2: Employment Status")
 
 
+#current job title
+work3 <- data_tib_merged %>% select(D_627122657) %>%  filter(data_tib_merged$D_613744428==353358909)
+work3= work3 %>%  mutate(Address1= case_when(is.na(D_627122657)~"Skipped this Question",
+                                                     TRUE ~ "Provided a Response"))
+  
+dt_work3_summary <- work3 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+  
+  
+dt_work3_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("WORK3: Title of Current Job")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) 
+
+
+
 
 ```
 
@@ -1556,7 +1583,7 @@ simple_funct1(D_114529380, "WORK2: Employment Status")
 
 #current ocupational category
 
-home1skip <- data_tib_merged %>% select(D_761310265)
+home1skip <- data_tib_merged %>% select(D_761310265) %>%  filter(data_tib_merged$D_613744428==353358909)
 home1skip= home1skip %>%  mutate(Address1= case_when(is.na(D_761310265)~"Skipped this Question",
                                                      TRUE ~ "Provided a Response"))
   
@@ -1589,7 +1616,7 @@ dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%
 ##table(base_vars$D_434316600) #-- potentially identifying? And Very long with individual reponses
 
 
-home1skip <- data_tib_merged %>% select(D_434316600)
+home1skip <- data_tib_merged %>% select(D_434316600) %>%  filter(data_tib_merged$D_613744428==353358909)
 home1skip= home1skip %>%  mutate(Address1= case_when(is.na(D_434316600)~"Skipped this Question",
                                                      TRUE ~ "Provided a Response"))
   
@@ -1617,7 +1644,7 @@ dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%
 #products made/services provided from current employer
 
 
-home1skip <- data_tib_merged %>% select(D_868232409)
+home1skip <- data_tib_merged %>% select(D_868232409)  %>%  filter(data_tib_merged$D_613744428==353358909)
 home1skip= home1skip %>%  mutate(Address1= case_when(is.na(D_868232409)~"Skipped this Question",
                                                      TRUE ~ "Provided a Response"))
   
@@ -1648,7 +1675,7 @@ dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #data_tib_merged$D_739294356=as.numeric(as.character(data_tib_merged$D_739294356))
-WORK4= data_tib_merged %>%  filter(D_613744428==353358909) %>% mutate(answer= case_when(as.numeric(D_739294356)==0 ~ "0",
+WORK4= data_tib_merged %>%  filter(data_tib_merged$D_613744428==353358909) %>% mutate(answer= case_when(as.numeric(D_739294356)==0 ~ "0",
                                          as.numeric(D_739294356)<11 & as.numeric(D_739294356)>0 ~ "1-10",
                                          as.numeric(D_739294356)<21 & as.numeric(D_739294356)>10 ~ "11-20",
                                          as.numeric(D_739294356)<30 & as.numeric(D_739294356)>20 ~ "21-30",
@@ -1681,7 +1708,32 @@ WORK4_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #this current position your longest held position?
-simple_funct1(D_847533056, "WORK5: Current Job the Longest Held Job")
+
+work5 <- data_tib_merged  %>%  filter(!is.na(D_868232409))
+
+
+work5_ans= work5 %>%  mutate(answer= case_when(D_847533056==353358909 ~ "Yes",
+                                             D_847533056==104430631 ~ "No",
+                                             TRUE ~ "Skipped this question"))
+
+dtwork5_summary <- work5_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtwork5_summary %>%  gt() %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("WORK5: Current Job the Longest Held Job")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) 
 
 
 
@@ -1875,7 +1927,7 @@ dt_altcont1_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 
-altcont2= data_tib_merged %>%  filter(!(is.na(D_986275155_D_661719912) & is.na(D_986275155_D_801653230))) %>%  mutate(Contact= case_when(!is.na(D_285718391_D_286149234) | !is.na(D_285718391_D_318130543) | !is.na(D_285718391_D_750097000)~"Gave Alternative Contact Info",
+altcont2= data_tib_merged %>%  mutate(Contact= case_when(!is.na(D_285718391_D_286149234) | !is.na(D_285718391_D_318130543) | !is.na(D_285718391_D_750097000)~"Gave Alternative Contact Info",
                                                        TRUE~"Skipped Alternative Contact Info"))
 dt_altcont2_summary <- altcont2 %>% dplyr::group_by(Contact) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Contact, n, percentage)
 
@@ -2030,7 +2082,7 @@ table(M2_complete_nodup$version)
 M2_complete_nodup$Connect_ID <- as.numeric(M2_complete_nodup$Connect_ID)
 
 
-merge_m2= left_join(merged, M2_complete_nodup, by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
+merge_m2= left_join(base_vars, M2_complete_nodup, by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
 
 ```
 
@@ -3615,14 +3667,14 @@ dt_out_preg1_summary %>%  gt() %>%
 
 ##2
 out_preg2=fem_birth %>% filter(as.numeric(D_405571048)>1)
-out_preg2= out_preg2 %>%  mutate(outcome= case_when(D_391951010_3_3=="223216393"~"Single Live Infant",
-                                                     D_391951010_3_3=="628445697"~"Multiple Live Infants",
-                                                     D_391951010_3_3=="419220239"~"Still birth",
-                                                     D_391951010_3_3=="306890578"~"Live Birth and Still Birth",
-                                                     D_391951010_3_3=="858244199"~"Miscariage",
-                                                     D_391951010_3_3=="434041171"~"Termination", 
-                                                     D_391951010_3_3=="550615107"~"Ectopic or tubal pregnancy",
-                                                     D_391951010_3_3=="746038746"~"Prefer Not to Answer",
+out_preg2= out_preg2 %>%  mutate(outcome= case_when(D_391951010_2_2=="223216393"~"Single Live Infant",
+                                                     D_391951010_2_2=="628445697"~"Multiple Live Infants",
+                                                     D_391951010_2_2=="419220239"~"Still birth",
+                                                     D_391951010_2_2=="306890578"~"Live Birth and Still Birth",
+                                                     D_391951010_2_2=="858244199"~"Miscariage",
+                                                     D_391951010_2_2=="434041171"~"Termination", 
+                                                     D_391951010_2_2=="550615107"~"Ectopic or tubal pregnancy",
+                                                     D_391951010_2_2=="746038746"~"Prefer Not to Answer",
                                                      TRUE~ "Skipped this question"))
 
 
@@ -5297,15 +5349,17 @@ boxp_funct_F(D_797076693,"TESTTHER3: Age Testosterone First Used", "Age")
 
 #How often
 
-dtTESTTHER2 <- data_tib_all2 %>%  filter(D_111235606==353358909)
+dtTESTTHER2 <- data_tib_all2 %>%  filter(D_111235606==353358909 & !(D_946849196_D_729863969==104430631 &  D_946849196_D_108104748==104430631  &
+                                                                    D_946849196_D_717308596==104430631 &  D_946849196_D_746788766==104430631 &  
+                                                                    D_946849196_D_158214723==104430631 &  D_946849196_D_658810736==353358909))
 test_med= dtTESTTHER2 %>%  mutate(meds= case_when(D_984514646=="729363341"~"Daily(2+ times)",
                                               D_984514646=="181786871"~"Daily",
                                               D_984514646=="626911538"~"Every few days",
                                               D_984514646=="522395860"~"Once per Week",
-                                              D_984514646=="814242010"~"Few times per",
+                                              D_984514646=="814242010"~"Few times per Month",
                                               D_984514646=="235613392"~"Rarely",
                                              TRUE ~ "Skipped this question"))
-
+test_med$meds <- factor(test_med$meds,levels=c("Daily(2+ times)","Every few days","Once per Week","Few times per Month","Rarely","Skipped this question"))
 
 dtTESTTHER2_summary <- test_med %>% group_by(meds) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
 
@@ -5374,7 +5428,7 @@ hist_funct(D_305195766_D_970604592,"PRESHOR6: Total Years Other Testosterone Use
 
 #Work over last 12 months: sitting, arm movements
 #one_logic_funct2(D_392658845_D_699101535, D_613744428, 353358909, "WORKACTA: Work over last 12 months: Sitting with Arm Movements")
-fb_WORKACTA <- data_tib_all2 %>%  filter(D_613744428==353358909)
+fb_WORKACTA <- data_tib_all2 %>%  filter(data_tib_all2$D_613744428==353358909)
 
 
 WORKACTA_ans= fb_WORKACTA %>%  mutate(answer= case_when(D_392658845_D_699101535==503218834 ~ "None",
@@ -5414,7 +5468,7 @@ dtWORKACTA_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #one_logic_funct2(D_392658845_D_652561589, D_613744428, 353358909,"WORKACTB: Work over last 12 months: Standing with Walking")
-fb_WORKACTB <- data_tib_all2 %>%  filter(D_613744428==353358909)
+fb_WORKACTB <- data_tib_all2 %>%  filter(data_tib_all2$D_613744428==353358909)
 
 
 WORKACTB_ans= fb_WORKACTB %>%  mutate(answer= case_when(D_392658845_D_652561589==503218834 ~ "None",
@@ -5454,7 +5508,7 @@ dtWORKACTB_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #one_logic_funct2(D_392658845_D_589522790, D_613744428, 353358909,"WORKACTC: Work over last 12 months: Walking and Carrying Materials")
-fb_WORKACTC <- data_tib_all2 %>%  filter(D_613744428==353358909)
+fb_WORKACTC <- data_tib_all2 %>%  filter(data_tib_all2$D_613744428==353358909)
 
 
 WORKACTC_ans= fb_WORKACTC %>%  mutate(answer= case_when(D_392658845_D_652561589==503218834 ~ "None",
@@ -5492,7 +5546,7 @@ dtWORKACTC_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 ##one_logic_funct(D_392658845_D_239572239, D_613744428, 353358909,"WORKACTD: Work over last 12 months: Walking and Heavy Manual Labor")
-fb_WORKACTD <- data_tib_all2 %>%  filter(D_613744428==353358909)
+fb_WORKACTD <- data_tib_all2 %>%  filter(data_tib_all2$D_613744428==353358909)
 
 
 WORKACTD_ans= fb_WORKACTD %>%  mutate(answer= case_when(D_392658845_D_239572239==503218834 ~ "None",
@@ -6467,9 +6521,10 @@ simple_funct2(D_392629868, "SLEEP1K: Using an Alarm Clock on Most Days")
 ```{r, warning=FALSE, echo=FALSE, message=FALSE} 
 
  #Time you go to bed non-workdays 
- module2 %>% filter(D_591723682==353358909) %>% ggplot(aes(x=D_823919522, fill=D_407056417))+ ylab("Count") +  
-   xlab("Time (Military Time)") +geom_bar()+  ggtitle("SLEEP2A: Time you Go to Bed on Non-Workdays") +theme(axis.text.x = element_text(angle = 90))+  
-   scale_fill_discrete(name = "Gender",  labels=c("Female", "Male")) 
+ module2$hour_nw <- as.numeric(ifelse(as.numeric(str_sub(module2$D_823919522,1,2))>9, str_sub(module2$D_823919522,1,2), str_sub(module2$D_823919522,2,2))) #clock times, so 0=00, 1=01, ect.
+ module2 %>% filter(D_591723682==353358909) %>% ggplot(aes(x=hour_nw))+ ylab("Count") +  xlab("Time (Military Time)") +
+    #scale_x_discrete("Time (Military Time)", breaks=c(0:24), labels=c(0:24))+
+   geom_bar()+  ggtitle("SLEEP2A: Time you Go to Bed on Non-Workdays") +theme(axis.text.x = element_text(angle = 90)) 
 
 
  #Time to fall asleep non-workdays 
@@ -6481,11 +6536,11 @@ simple_funct2(D_392629868, "SLEEP1K: Using an Alarm Clock on Most Days")
 
 
  #Time you wake up non-workdays 
- module2 %>% filter(!is.na(module2$D_698673038)) %>% ggplot(aes(x=D_698673038, fill=D_407056417))+ ylab("Count") +  
-   xlab("Time (Military Time)") + geom_bar()+  ggtitle("SLEEP2F: Time you Wake Up on Non-Workdays")+  
-   scale_fill_discrete(name = "Gender",  labels=c("Female", "Male"))+ theme(axis.text.x = element_text(angle = 90))+ 
-   geom_vline(aes(xintercept=mean(D_698673038, na.rm=T)), colour="red", linetype="solid") 
-
+  module2$hour_nw <- as.numeric(ifelse(as.numeric(str_sub(module2$D_698673038,1,2))>9, str_sub(module2$D_698673038,1,2), str_sub(module2$D_698673038,2,2))) #clock times, so 0=00, 1=01, ect.
+ module2 %>% filter(D_591723682==353358909) %>% ggplot(aes(x=hour_nw))+ ylab("Count") +  xlab("Time (Military Time)") +
+    #scale_x_discrete("Time (Military Time)", breaks=c(0:24), labels=c(0:24))+
+   geom_bar()+  ggtitle("SLEEP2F: Time you Wake Up on Non-Workdays") +theme(axis.text.x = element_text(angle = 90))
+ 
 
  #How long do you lie in bed non-workdays 
  module2$D_711365027_D_707805344 <- as.numeric(module2$D_711365027_D_707805344) #hours  
@@ -7133,10 +7188,11 @@ SNORING5_ans= SNORING5 %>%  mutate(answer= case_when(D_756521698==718687985 ~ "A
                                                      D_756521698==198347104 ~ "1 to 2 times per week",
                                                      D_756521698==632512449 ~ "1 to 2 times per month",
                                                      D_756521698==520089841 ~ "Less than 1 to 2 times per month",
+                                                     D_756521698==648960871 ~ "Never",
                                                      D_756521698==178420302 ~ "Unknown",
                                                         TRUE ~ "Skipped this question"))
 
-SNORING5_ans$answer <- factor(SNORING5_ans$answer,levels=c("Almost every day", "3 to 4 times per week", "1 to 2 times per week", "1 to 2 times per month", "Less than 1 to 2 times per month","Unknown", "Skipped this question" ))
+SNORING5_ans$answer <- factor(SNORING5_ans$answer,levels=c("Almost every day", "3 to 4 times per week", "1 to 2 times per week", "1 to 2 times per month", "Less than 1 to 2 times per month","Never","Unknown", "Skipped this question" ))
 
 dtSNORING5_summary <- SNORING5_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
@@ -7303,7 +7359,7 @@ tab_footnote(
 #Ever
 #simple_funct2(D_674976924, "SHIFTWORK: Worked as a Shift Worker")
 shiftw1= data_tib_all2 %>%  mutate(meds= case_when(D_674976924== 958538953 ~ "Yes, in Last 3 months",
-                                                   D_674976924== 958538953 ~ "Yes, Over 3 months Ago",
+                                                   D_674976924== 274062548 ~ "Yes, Over 3 months Ago",
                                                      D_674976924== 104430631 ~ "No",
                                                      TRUE ~ "Skipped this question"))
 
@@ -7335,17 +7391,19 @@ shiftw1_summary %>%  gt(rowname_col = "row_lab") %>%
   ) 
 
 #Time started
-module2 %>% filter(!is.na(module2$D_195662769)) %>% ggplot(aes(x=D_195662769, fill=D_407056417))+ ylab("Count") + 
-  xlab("Time (Military Time)") + geom_bar()+  ggtitle("SHIFTWORK2: Time Usual Shift Started")+ 
-  scale_fill_discrete(name = "Gender",  labels=c("Female", "Male"))+ 
-  theme(axis.text.x = element_text(angle = 90))
+  module2$hour_nw <- as.numeric(ifelse(as.numeric(str_sub(module2$D_195662769,1,2))>9, str_sub(module2$D_195662769,1,2), str_sub(module2$D_195662769,2,2))) #clock times, so 0=00, 1=01, ect.
+ module2 %>% filter(D_674976924!= 104430631) %>% ggplot(aes(x=hour_nw))+ ylab("Count") +  xlab("Time (Military Time)") +
+    #scale_x_discrete("Time (Military Time)", breaks=c(0:24), labels=c(0:24))+
+   geom_bar()+  ggtitle("SHIFTWORK2: Time Usual Shift Started") +theme(axis.text.x = element_text(angle = 90))
 
 
 #Time ended
-module2 %>% filter(!is.na(module2$D_214870856)) %>% ggplot(aes(x=D_214870856, fill=D_407056417))+ ylab("Count") + 
-  xlab("Time (Military Time)") + geom_bar()+  ggtitle("SHIFTWORK5: Time Usual Shift Ended")+ 
-  scale_fill_discrete(name = "Gender",  labels=c("Female", "Male"))+ 
-  theme(axis.text.x = element_text(angle = 90))
+   module2$hour_nw <- as.numeric(ifelse(as.numeric(str_sub(module2$D_214870856,1,2))>9, str_sub(module2$D_214870856,1,2), str_sub(module2$D_214870856,2,2))) #clock times, so 0=00, 1=01, ect.
+ module2 %>% filter(D_674976924!= 104430631 & hour_nw<25) %>% #removd outlier, may have misunderstod the question
+   ggplot(aes(x=hour_nw))+ ylab("Count") +  xlab("Time (Military Time)") +
+    #scale_x_discrete("Time (Military Time)", breaks=c(0:24))+
+   geom_bar()+  ggtitle("SHIFTWORK5: Time Usual Shift Ended") +theme(axis.text.x = element_text(angle = 90))
+
 
 
 #Flexibility
@@ -7419,65 +7477,31 @@ hist_funct(D_199254974_D_120485458,"SHIFTWORK10: Year When You were Last a Shift
 ## MODULE 3
 
 
-parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
+parts3 <- "SELECT Connect_ID, token, d_512820379, D_471593703, state_d_934298480, D_230663853,
 D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
 D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, 
 D_949302066 , D_517311251, D_205553981, D_117249500, d_976570371 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
-where Connect_ID IS NOT NULL"
+where Connect_ID IS NOT NULL and d_976570371='231311385'"
 querymod3 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module3_v1_JP` where Connect_ID IS NOT NULL"
 
-parts_table <- bq_project_query(project, parts)
+parts3_table <- bq_project_query(project, parts3)
 mod3_table <- bq_project_query(project, querymod3)
 
-parts_data <- bq_table_download(parts_table, bigint = "integer64")
+parts3_data <- bq_table_download(parts3_table, bigint = "integer64")
 mod3_data <- bq_table_download(mod3_table, bigint = "integer64")
 
-parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID) ###need to convert type- m1... is double and parts is character
+parts3_data$Connect_ID <- as.numeric(parts3_data$Connect_ID) ###need to convert type- m1... is double and parts is character
 mod3_data$Connect_ID <- as.numeric(mod3_data$Connect_ID)
 
-merge_m3= left_join(m1_complete_nodup, mod3_data, by="Connect_ID") %>%  left_join(parts_data, by="Connect_ID")
-dim(merge_m3)
+module3= left_join(base_vars, mod3_data, by="Connect_ID") %>%  left_join(parts3_data, by="Connect_ID")
+dim(module3)
 
 knitr::opts_chunk$set(comment = NA)
 
-```
 
 
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
-#Has a recruitment flag
-merge_m3 <- merge_m3 %>% filter(D_512820379==486306141 | D_512820379==854703046)
-
-
-
-active3 <- merge_m3 %>% filter(D_512820379==486306141)
-#dim(active3)
-passive3 <- merge_m3 %>% filter(D_512820379==854703046)
-#dim(passive3)
-
-#User consent submitted
-merge_m3 <- merge_m3 %>% filter(D_919254129==353358909)
-
-
-
-#User profile submitted
-merge_m3 <- merge_m3 %>% filter(D_699625233==353358909)
-
-
-
-#Mod1 completed
-merge_m3 <- merge_m3 %>% filter(D_949302066==231311385)
-
-
-
-
-#Mod3 completed
-# which(is.na(merge_m3$d_536735468), arr.ind=TRUE) #all have a flag
-# sum(merge_m3$d_976570371==972455046, na.rm=TRUE) #not started
-# sum(merge_m3$d_976570371==615768760, na.rm=TRUE) #started
-# sum(merge_m3$d_976570371==231311385, na.rm=TRUE) #submitted
-
-module3 <- merge_m3 %>% filter(d_976570371==231311385)
+#module3 <- merge_m3 %>% filter(d_976570371==231311385)
 
 
 data_tib_all3 <- as_tibble(module3)
@@ -7753,11 +7777,11 @@ simple_funct3(D_795761911, "COVERSKIN: Frequency of Wearing Clothes/Hats to Cove
 
 
 
-parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
+parts <- "SELECT Connect_ID, token, d_512820379, D_471593703, state_d_934298480, D_230663853,
 D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
 D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_827220437,
 D_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_663265240, d_452942800 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
-where Connect_ID IS NOT NULL"
+where Connect_ID IS NOT NULL and d_663265240='231311385'"
 querymod4 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module4_v1_JP` where Connect_ID IS NOT NULL"
 
 parts_table <- bq_project_query(project, parts)
@@ -7769,41 +7793,18 @@ mod4_data <- bq_table_download(mod4_table, bigint = "integer64")
 parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID) ###need to convert type- m1... is double and parts is character
 mod4_data$Connect_ID <- as.numeric(mod4_data$Connect_ID)
 
-mergeall= left_join(m1_complete_nodup, mod4_data, by="Connect_ID") %>%  left_join(parts_data, by="Connect_ID")
-dim(mergeall)
+module4= left_join(base_vars, mod4_data, by="Connect_ID") %>%  left_join(parts_data, by="Connect_ID")
+dim(module4)
 
 knitr::opts_chunk$set(comment = NA)
 
 
-#Has a recruitment flag
-mergeall <- mergeall %>% filter(D_512820379==486306141 | D_512820379==854703046)
-dim(mergeall)
 
-active4 <- mergeall %>% filter(D_512820379==486306141)
-dim(active4)
-passive4 <- mergeall %>% filter(D_512820379==854703046)
-dim(passive4)
-
-#User consent submitted
-mergeall <- mergeall %>% filter(D_919254129==353358909)
-dim(mergeall)
-
-#User profile submitted
-mergeall <- mergeall %>% filter(D_699625233==353358909)
-dim(mergeall)
-
-#Verified by site
-sum(mergeall$d_821247024==197316935, na.rm=TRUE)
-#all who have started or completed survey are verified
-
-#Mod1 completed
-mergeall <- mergeall %>% filter(D_949302066==231311385)
-dim(mergeall)
 
 
 #Mod4 completed
-module4 <- mergeall %>% filter(d_663265240==231311385)
-dim(module4)
+#module4 <- mergeall %>% filter(d_663265240==231311385)
+#dim(module4)
 
 
 Mod4 <- as_tibble(module4)

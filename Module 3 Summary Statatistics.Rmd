@@ -8,10 +8,13 @@ output:
     df_print: paged
 ---
 
-This report analysis the responses of all Module 3 questions and visualizes the distributions of answers through graphs or tables.
-All libraries are listed up top; authentication for BQ will be necessary
-Functions used in the code are included before the start of the analysis
-The data is currently filtered by gender, and will eventually be done by age groups as well
+```{r, include=FALSE}
+# This report analysis the responses of all Module 3 questions and visualizes the distributions of answers through graphs or tables.
+# All libraries are listed up top; authentication for BQ will be necessary
+# Functions used in the code are included before the start of the analysis
+# The data is currently filtered by gender, and will eventually be done by age groups as well
+```
+
 
 
 ```{r, include=FALSE}
@@ -292,7 +295,7 @@ boxp_funct <- function(CID,Title, Xlab) {
   module3 %>% mutate(!!CID_SYM:=as.numeric(!!CID_SYM)) %>%
     filter(!is.na(!!CID_SYM)) %>%
     ggplot(aes(x=!!CID_SYM)) + #, fill=as.factor(D_407056417)))+
-    xlab(Xlab) + geom_boxplot()+  ggtitle(Title)
+    xlab(Xlab) + geom_boxplot()+  ggtitle(Title) +
     theme(axis.text.y=element_blank(),  #remove y axis labels
         axis.ticks.y=element_blank()  #remove y axis ticks
         )
@@ -341,11 +344,6 @@ funct_8c <- function(PRODUCT8C_CID, PRODUCT5_CID, Product1_CID, Title){
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md(Title)) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n, percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
     grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -381,11 +379,6 @@ funct_9b <- function(PRODUCT1_CID, PRODUCT4_CID, PRODUCT5_CID, PRODUCT8C_CID, PR
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md(Title)) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n, percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
     grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -412,11 +405,6 @@ simple_funct3 <- function(CID, Title){
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md(Title)) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
     grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -432,10 +420,11 @@ simple_funct3 <- function(CID, Title){
 }
 
 #GT table with one filter/skip logic
-funct_5 <- function(CID, CID_4, Title){  
+funct_5 <- function(CID, CID_1, CID_4, Title){  
   CID_SYM <- rlang::ensym(CID)
+  CID_SYM_P1 <- rlang::ensym(CID_1)
   CID_SYM_P4 <- rlang::ensym(CID_4)
-  dt_select <- data_tib_all3 %>%  filter(!!CID_SYM_P4 != 804785430) %>% select(Connect_ID, !!CID_SYM)
+  dt_select <- data_tib_all3 %>%  filter(!!CID_SYM_P4 != 804785430 & (!!CID_SYM_P1==486319890 | !!CID_SYM_P1==132232896)) %>% select(Connect_ID, !!CID_SYM)
   gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% mutate(answer=recode(!!CID_SYM, !!!dict)) %>% 
     replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
   
@@ -552,7 +541,7 @@ funct_10_11 <- function(CID, CID_prev1, CID_prev9b, Title){
   CID_SYM <- rlang::ensym(CID)
   CID_SYM_P1 <- rlang::ensym(CID_prev1)
   CID_SYM_P9b <- rlang::ensym(CID_prev9b)
-  dt_select <- data_tib_all3 %>%  filter((!!CID_SYM_P1 == 486319890) | (!!CID_SYM_P1 == 132232896) | (!!CID_SYM_P9b == 353358909)) %>%  select(Connect_ID, !!CID_SYM)
+  dt_select <- data_tib_all3 %>%  filter((!!CID_SYM_P9b == 353358909) |(!!CID_SYM_P1 == 486319890) | (!!CID_SYM_P1 == 132232896)) %>%  select(Connect_ID, !!CID_SYM)
   gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% mutate(answer=recode(!!CID_SYM, !!!dict)) %>%
     replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
 
@@ -785,7 +774,7 @@ dtCIG3_summary %>%  gt() %>%
 funct_2_3_4(D_639684251,D_763164658, "CIG4: Smoking Cigarettes Now")
 
 #CIG5
-funct_5(D_798549704,D_639684251,"CIG5: Last Time Cigarettes Smoked")
+funct_5(D_798549704,D_763164658,D_639684251,"CIG5: Last Time Cigarettes Smoked")
 
 #grid.arrange(cigt4, cigt5, nrow=2)
 
@@ -834,6 +823,36 @@ hist_funct(D_399659169, "CIG9C: Cigarette Smoked per Day", "Cigarettes", "Freque
 #CIG10
 
 funct_10_11(D_667002790, D_763164658, D_815776236, "CIG10: Timeframe for First Cigarette of the Day")
+
+data_tib_all3_ECIG <- data_tib_all3 %>%  filter(D_639684251==804785430 | ((D_639684251==419415087 | D_639684251==299561721 | D_639684251==716761013) & D_400969127==353358909 & (D_798549704==484055234 | D_798549704==802197176)))
+
+
+ECIG_ans= data_tib_all3_ECIG %>%  mutate(answer= case_when(D_667002790==169225725 ~ "0-5 minutes",
+                                                           D_667002790==967681778 ~ "6-30 minutes",
+                                                           D_667002790==998679771 ~ "31-59 minutes",
+                                                           D_667002790==638092100 ~ "1 hour",
+                                                           D_667002790==1127455035 ~ "2 hours+",
+                                             TRUE ~ "Skipped this question"))
+
+dtECIG_summary <- ECIG_ans %>% group_by(answer) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtECIG_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("CIG10: Timeframe for First Cigarette of the Day")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+
 
 
 
@@ -925,7 +944,7 @@ dtECIG_summary %>%  gt(rowname_col = "row_lab") %>%
 funct_2_3_4(D_751046675,D_624111331,"ECIG4: Using E-Cigs/Vaping Devises Now")
 
 #ECIG5
-funct_5(D_238422161,D_751046675,"ECIG5: Last Time E-Cigs/Vaping Devises Used")
+funct_5(D_238422161,D_624111331,D_751046675,"ECIG5: Last Time E-Cigs/Vaping Devises Used")
 
 
 #ECIG6
@@ -1024,7 +1043,7 @@ dt_surgery_summary %>%  gt(rowname_col = "row_lab") %>%
 
 #ECIGLIFEE
 mhgroup9= data_tib_all3 %>%  filter(D_624111331==132232896 & !is.na(D_550244580_D_517801904) & (D_751046675==804785430 | D_242276545==353358909) & 
-                                      as.numeric(data_tib_all3$D_550244580_D_517801904)<50   & !(as.numeric(data_tib_all3$D_360277949)<50)) %>% 
+                                      as.numeric(data_tib_all3$D_550244580_D_517801904)<50   & !(as.numeric(data_tib_all3$D_360277949)<50) & as.numeric(data_tib_all3$AGEGRID)>39) %>% 
   mutate(surgery= case_when(D_208578552==428999623 ~ "15 minutes or less",
                                              D_208578552==248303092 ~ "16 to 30 minutes",
                                              D_208578552==998679771 ~ "31 to 59 minutes",
@@ -1055,7 +1074,7 @@ dt_surgery_summary %>%  gt(rowname_col = "row_lab") %>%
 
 #ECIGLIFEF
 mhgroup9= data_tib_all3 %>%  filter(D_624111331==132232896 & !is.na(D_550244580_D_517801904) & (D_751046675==804785430 | D_242276545==353358909) & 
-                                      as.numeric(data_tib_all3$D_550244580_D_517801904)<60   & as.numeric(data_tib_all3$AGEGRID)>49) %>% #& !(as.numeric(data_tib_all3$D_360277949)<60)
+                                      as.numeric(data_tib_all3$D_550244580_D_517801904)<60  & as.numeric(data_tib_all3$AGEGRID)>49) %>% # & !(as.numeric(data_tib_all3$D_360277949)<60)) %>%
   mutate(surgery= case_when(D_480155628==428999623 ~ "15 minutes or less",
                                              D_480155628==248303092 ~ "16 to 30 minutes",
                                              D_480155628==998679771 ~ "31 to 59 minutes",
@@ -1085,9 +1104,10 @@ dt_surgery_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 
+
 #ECIGLIFEG
 mhgroup9= data_tib_all3 %>%  filter(D_624111331==132232896 & !is.na(D_550244580_D_517801904) & (D_751046675==804785430 | D_242276545==353358909) & 
-                                      as.numeric(data_tib_all3$D_550244580_D_517801904)<70  & as.numeric(data_tib_all3$AGEGRID)>59) %>% # & !(as.numeric(data_tib_all3$D_360277949)<70) 
+                                      as.numeric(data_tib_all3$D_550244580_D_517801904)<70 & as.numeric(data_tib_all3$AGEGRID)>59) %>%  # & !(as.numeric(data_tib_all3$D_360277949)<70)) %>%  #everyone stopped before 70 
   mutate(surgery= case_when(D_640944113==428999623 ~ "15 minutes or less",
                                              D_640944113==248303092 ~ "16 to 30 minutes",
                                              D_640944113==998679771 ~ "31 to 59 minutes",
@@ -1137,10 +1157,10 @@ boxp_funct(D_814115676_D_851145096, "CIGAR3_AGE: Age Smoking Cigars on a Regular
 
 ## Make automatic table
 
-data_tib_all3_CIGAR <- data_tib_all3 %>%  filter((data_tib_all3$D_182431332==486319890| data_tib_all3$D_182431332==132232896) & is.na(data_tib_all3$D_814115676_D_851145096))
+data_tib_all3_CIGAR <- data_tib_all3 %>%  filter((data_tib_all3$D_182431332==486319890| data_tib_all3$D_182431332==132232896))
 
 
-CIGAR_ans= data_tib_all3_CIGAR %>%  mutate(answer= case_when(D_814115676_D_814115676_D_648960871==1 ~ "Never smoked on a regular basis",
+CIGAR_ans= data_tib_all3_CIGAR %>% filter(is.na(D_814115676_D_851145096)) %>%  mutate(answer= case_when(D_814115676_D_814115676_D_648960871==1 ~ "Never smoked on a regular basis",
                                              TRUE ~ "Skipped this question"))
 
 dtCIGAR_summary <- CIGAR_ans %>% group_by(answer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
@@ -1172,7 +1192,7 @@ dtCIGAR_summary %>%  gt(rowname_col = "row_lab") %>%
 funct_2_3_4(D_564438246,D_182431332,"CIGAR4: Smoking Cigars Now")
 
 #CIGAR5
-funct_5(D_789271762,D_564438246,"CIGAR5: Last Time Cigars Smoked")
+funct_5(D_789271762,D_182431332,D_564438246,"CIGAR5: Last Time Cigars Smoked")
 
 
 #CIGAR6
@@ -1214,10 +1234,11 @@ hist_funct(D_598954337, "CIGAR9C: Cigars Smoked per Day", "Cigars", "Frequency")
 
 #CIGAR10
 
-cigar_kind= data_tib_all3_CIGAR %>%  filter(D_763164658==486319890 | D_763164658==132232896 | D_815776236==353358909) %>% mutate(kind= case_when(D_103566006_D_103566006_D_123926260 ==1 ~ "Cigar",
+cigar_kind= data_tib_all3 %>%  filter(D_287715042==353358909 | (D_182431332==486319890 | D_182431332==132232896)) %>% 
+  mutate(kind= case_when(D_103566006_D_103566006_D_123926260 ==1 ~ "Cigar",
                                              D_103566006_D_103566006_D_741643840==1 ~ "Cigarello",
                                              D_103566006_D_103566006_D_959535900==1 ~ "Little Finger Cigar",
-                                             D_103566006_D_103566006_D_807835037==1 ~ "Other",
+                                             (D_103566006_D_103566006_D_807835037==1 | !is.na(D_103566006_D_325879966) )~ "Other",
                                              TRUE ~ "Skipped This Question"))
 
 dtCIGAR10_summary <- cigar_kind %>% group_by(kind) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(kind, n, percentage)
@@ -1324,7 +1345,7 @@ dtCHEW_summary %>%  gt(rowname_col = "row_lab") %>%
 funct_2_3_4(D_101710639,D_306320432,"CHEW4: Using Chewing Tobacco/Dip Now")
 
 #CHEW5
-funct_5(D_344631681,D_306320432,"CHEW5: Last Time Using Chewing Tobacco/Dip")
+funct_5(D_344631681,D_306320432,D_101710639,"CHEW5: Last Time Using Chewing Tobacco/Dip")
 
 
 
@@ -1615,7 +1636,7 @@ dtHOOKAH_summary %>%  gt(rowname_col = "row_lab") %>%
 funct_2_3_4(D_472007171,D_981755099,"HOOKAH4: Smoking Hookah Now")
 
 #HOOKAH5
-funct_5(D_787047261,D_472007171,"HOOKAH5: Last Time Hookah Smoked")
+funct_5(D_787047261,D_981755099,D_472007171,"HOOKAH5: Last Time Hookah Smoked")
 
 
 #HOOKAH6
@@ -1744,7 +1765,7 @@ dtPIPE_summary %>%  gt(rowname_col = "row_lab") %>%
 funct_2_3_4(D_458395129,D_559388168,"PIPE4: Smoking Tobacco Pipes Now")
 
 #PIPE5
-funct_5(D_845122623,D_458395129,"PIPE5: Last Time Tobacco Pipes Smoked")
+funct_5(D_845122623,D_559388168,D_458395129,"PIPE5: Last Time Tobacco Pipes Smoked")
 
 
 
@@ -2017,7 +2038,7 @@ dtSMMAR_summary %>%  gt(rowname_col = "row_lab") %>%
 funct_2_3_4(D_503058092,D_319397722,"SMMAR4: Smoking Marijuana Now")
 
 #SMMAR5
-funct_5(D_180308733,D_503058092,"SMMAR5: Last Time Marijuana Smoked")
+funct_5(D_180308733,D_319397722,D_503058092,"SMMAR5: Last Time Marijuana Smoked")
 
 
 #SMMAR6
@@ -2336,7 +2357,7 @@ dtTOMAR_summary %>%  gt(rowname_col = "row_lab") %>%
 funct_2_3_4(D_891825638,D_524914900,"TOMAR4: Smoking Marijuana & Tobacco Combined Products Now")
 
 #TOMAR5
-funct_5(D_444759994,D_891825638,"TOMAR5: Last Time Majiuana & Tobacco Combined Products Smoked")
+funct_5(D_444759994,D_524914900,D_891825638,"TOMAR5: Last Time Majiuana & Tobacco Combined Products Smoked")
 
 
 #TOMAR6
@@ -2467,7 +2488,7 @@ dtELMAR_summary %>%  gt(rowname_col = "row_lab") %>%
 funct_2_3_4(D_521073718,D_325229459,"ELMAR4: Vaping Marijuana Now")
 
 #ELMAR5
-funct_5(D_859228803,D_521073718,"ELMAR5: Last Time Marijuana Vaped")
+funct_5(D_859228803,D_325229459,D_521073718,"ELMAR5: Last Time Marijuana Vaped")
 
 
 
@@ -2711,7 +2732,7 @@ dtEAMAR_summary %>%  gt(rowname_col = "row_lab") %>%
 funct_2_3_4(D_742544044,D_101170268,"EAMAR4: Consuming Marijuana in Food/Drinks Now")
 
 #EAMAR5
-funct_5(D_921663542,D_742544044,"EAMAR5: Last Time Marijuana Consumed in Food/Drinks")
+funct_5(D_921663542,D_101170268,D_742544044,"EAMAR5: Last Time Marijuana Consumed in Food/Drinks")
 
 
 #EAMAR6
@@ -2875,7 +2896,7 @@ dtTHMAR_summary %>%  gt(rowname_col = "row_lab") %>%
 funct_2_3_4(D_420155119,D_355689185,"THMAR4: Using THC Dabbing Now")
 
 #THMAR5
-funct_5(D_532755074,D_420155119,"THMAR5: Last Time THC Dabbing Used")
+funct_5(D_532755074,D_355689185,D_420155119,"THMAR5: Last Time THC Dabbing Used")
 
 
 #THMAR6
@@ -3002,7 +3023,7 @@ boxp_funct(D_250456537, "ALCOHOL3_AGE: Age at First Alcoholic Beverage", "Age")
 #ALCOHOL4
 boxp_funct(D_556837046_D_141874857, "ALCOHOL4_AGE: Age Drinking Alcohol on a Regular Basis", "Age")
   #Alcohol4_never
-data_tib_all3_ALC4 <- data_tib_all3 %>%  filter(data_tib_all3$D_429228540==486319890| data_tib_all3$D_429228540==132232896)
+data_tib_all3_ALC4 <- data_tib_all3 %>%  filter((data_tib_all3$D_429228540==486319890| data_tib_all3$D_429228540==132232896) & is.na(data_tib_all3$D_556837046_D_141874857))
 
 
 ALC4_ans= data_tib_all3_ALC4 %>%  mutate(answer= case_when(D_556837046_D_556837046_D_648960871==1 ~ "Never drank on a regular basis",
@@ -3076,7 +3097,7 @@ dtALC7= data_tib_all3 %>% filter(D_338467033==104430631 | is.na(D_338467033))
 alc_stop= dtALC7 %>%  mutate(answers= case_when(D_789159346_D_789159346_D_895826652 ==1 ~ "Personal Choice",
                                              D_789159346_D_789159346_D_572260608==1 ~ "Health/Medical Reasons",
                                              D_789159346_D_789159346_D_732465277==1 ~ "Interactions with Medications",
-                                             D_789159346_D_789159346_D_807835037==1 ~ "Other",
+                                             (D_789159346_D_789159346_D_807835037==1 | !is.na(D_789159346_D_214983579)) ~ "Other",
                                              TRUE ~ "Skipped this question"))
 
 dtALC7_summary <- alc_stop %>% group_by(answers) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answers, n, percentage)
@@ -3234,7 +3255,8 @@ edu= alc9  %>%  mutate(edlevel= case_when(D_254739443==648960871 ~ "Never",
                                                  D_254739443==647504893 ~ "Every Day",
                                                   TRUE ~ "Skipped This Question"))
 
-edu$edlevel <- factor(edu$edlevel,levels=c("Never", "1 to 5 times per year", "6 to 11 times per year","Once per month","2 to 3 times per month","Once per week","Twice per week","3 to 4 times per week", "5 to 6 times per week", "Every Day","Skipped This Question"))
+edu$edlevel <- factor(edu$edlevel,levels=c("Never", "1 to 5 times per year", "6 to 11 times per year","Once per month","2 to 3 times per month","Once per week","Twice per week","3 to 4 times per week", 
+                                           "5 to 6 times per week", "Every Day","Skipped This Question"))
 
 dt_edu_summary <- edu %>% dplyr::group_by(edlevel) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(edlevel, n, percentage)
 
@@ -3275,7 +3297,7 @@ data_tib_all3$AGEGRID <- time_length(difftime(currentDate, data_tib_all3$DOB), "
 
 
 
-dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
+dt_alclA= data_tib_all3  %>%   filter(data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
                                        (data_tib_all3$D_338467033==353358909 | (data_tib_all3$D_338467033==104430631 & !is.na(data_tib_all3$D_480426504))) & 
                                        ((is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<17) | 
                                           (!is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<17 & as.numeric(data_tib_all3$D_480426504)>17)))
@@ -3283,7 +3305,7 @@ dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$D_429228540==132232896 & !is.
                                           #                                                                                   data_tib_all3$state_d_934298480==363147933 | 
                                           #                                                                                   data_tib_all3$state_d_934298480==636706443 |data_tib_all3$state_d_934298480==771230670))) ))
 
-alcl= dt_alcl  %>%  mutate(oth_age= case_when(D_633553324_D_294629316==265550580 ~"Didn't Drink", 
+alcl= dt_alclA  %>%  mutate(oth_age= case_when(D_633553324_D_294629316==265550580 ~"Didn't Drink", 
                                                 D_633553324_D_294629316==950039557 ~"A few times per Year",
                                                 D_633553324_D_294629316==402048066 ~"A few times per Month",
                                                 D_633553324_D_294629316==522395860 ~"Once per Week",
@@ -3312,7 +3334,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 #grid.arrange(alclf2A, alclf2B, nrow=2)
 
 
-dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
+dt_alclB= data_tib_all3  %>%   filter(data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
                                        (data_tib_all3$D_338467033==353358909 | (data_tib_all3$D_338467033==104430631 & !is.na(data_tib_all3$D_480426504))) & 
                                        ((is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<24) | 
                                           (!is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<24 & as.numeric(data_tib_all3$D_480426504)>24)))
@@ -3320,7 +3342,7 @@ dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$D_429228540==132232896 & !is.
                                           #                                                                                   data_tib_all3$state_d_934298480==363147933 | 
                                           #                                                                                   data_tib_all3$state_d_934298480==636706443 |data_tib_all3$state_d_934298480==771230670))) ))
 
-alcl= dt_alcl  %>%  mutate(oth_age= case_when(D_633553324_D_164707243==265550580 ~"Didn't Drink", 
+alcl= dt_alclB  %>%  mutate(oth_age= case_when(D_633553324_D_164707243==265550580 ~"Didn't Drink", 
                                                 D_633553324_D_164707243==950039557 ~"A few times per Year",
                                                 D_633553324_D_164707243==402048066 ~"A few times per Month",
                                                 D_633553324_D_164707243==522395860 ~"Once per Week",
@@ -3347,7 +3369,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 
 #ALCLIFE2C
 #alclife2_funct(D_633553324_D_771426895,"ALCLIFE2C: Frequency of Drinking: Ages 25-29")
-dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
+dt_alclC= data_tib_all3  %>%   filter(data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
                                        (data_tib_all3$D_338467033==353358909 | (data_tib_all3$D_338467033==104430631 & !is.na(data_tib_all3$D_480426504))) & 
                                        ((is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<29) | 
                                           (!is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<29 & as.numeric(data_tib_all3$D_480426504)>29)))
@@ -3355,7 +3377,7 @@ dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$D_429228540==132232896 & !is.
                                           #                                                                                   data_tib_all3$state_d_934298480==363147933 | 
                                           #                                                                                   data_tib_all3$state_d_934298480==636706443 |data_tib_all3$state_d_934298480==771230670))) ))
 
-alcl= dt_alcl  %>%  mutate(oth_age= case_when(D_633553324_D_771426895==265550580 ~"Didn't Drink", 
+alcl= dt_alclC  %>%  mutate(oth_age= case_when(D_633553324_D_771426895==265550580 ~"Didn't Drink", 
                                                 D_633553324_D_771426895==950039557 ~"A few times per Year",
                                                 D_633553324_D_771426895==402048066 ~"A few times per Month",
                                                 D_633553324_D_771426895==522395860 ~"Once per Week",
@@ -3381,7 +3403,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 
 #ALCLIFE2D
 #alclife2_funct(D_633553324_D_818310825,"ALCLIFE2D: Frequency of Drinking: Ages 30-39")
-dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
+dt_alclD= data_tib_all3  %>%   filter(data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
                                        (data_tib_all3$D_338467033==353358909 | (data_tib_all3$D_338467033==104430631 & !is.na(data_tib_all3$D_480426504))) & 
                                        ((is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<39) | 
                                           (!is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<39 & as.numeric(data_tib_all3$D_480426504)>39)))
@@ -3389,7 +3411,7 @@ dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$D_429228540==132232896 & !is.
                                           #                                                                                   data_tib_all3$state_d_934298480==363147933 | 
                                           #                                                                                   data_tib_all3$state_d_934298480==636706443 |data_tib_all3$state_d_934298480==771230670))) ))
 
-alcl= dt_alcl  %>%  mutate(oth_age= case_when(D_633553324_D_818310825==265550580 ~"Didn't Drink", 
+alcl= dt_alclD  %>%  mutate(oth_age= case_when(D_633553324_D_818310825==265550580 ~"Didn't Drink", 
                                                 D_633553324_D_818310825==950039557 ~"A few times per Year",
                                                 D_633553324_D_818310825==402048066 ~"A few times per Month",
                                                 D_633553324_D_818310825==522395860 ~"Once per Week",
@@ -3418,7 +3440,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 
 #ALCLIFE2E
 #alclife2_funct(D_633553324_D_843593800,"ALCLIFE2E: Frequency of Drinking: Ages 40-49")
-dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$AGEGRID>40 & data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
+dt_alclE= data_tib_all3  %>%   filter(data_tib_all3$AGEGRID>40 & data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
                                        (data_tib_all3$D_338467033==353358909 | (data_tib_all3$D_338467033==104430631 & !is.na(data_tib_all3$D_480426504))) & 
                                        ((is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<49) | 
                                           (!is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<49 & as.numeric(data_tib_all3$D_480426504)>49)))
@@ -3426,7 +3448,7 @@ dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$AGEGRID>40 & data_tib_all3$D_
                                           #                                                                                   data_tib_all3$state_d_934298480==363147933 | 
                                           #                                                                                   data_tib_all3$state_d_934298480==636706443 |data_tib_all3$state_d_934298480==771230670))) ))
 
-alcl= dt_alcl  %>%  mutate(oth_age= case_when(D_633553324_D_843593800==265550580 ~"Didn't Drink", 
+alcl= dt_alclE  %>%  mutate(oth_age= case_when(D_633553324_D_843593800==265550580 ~"Didn't Drink", 
                                                 D_633553324_D_843593800==950039557 ~"A few times per Year",
                                                 D_633553324_D_843593800==402048066 ~"A few times per Month",
                                                 D_633553324_D_843593800==522395860 ~"Once per Week",
@@ -3452,7 +3474,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 
 #ALCLIFE2F
 #alclife2_funct(D_633553324_D_175385712,"ALCLIFE2F: Frequency of Drinking: Ages 50-59")
-dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$AGEGRID>50 & data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
+dt_alclF= data_tib_all3  %>%   filter(data_tib_all3$AGEGRID>50 & data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
                                        (data_tib_all3$D_338467033==353358909 | (data_tib_all3$D_338467033==104430631 & !is.na(data_tib_all3$D_480426504))) & 
                                        ((is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<59) | 
                                           (!is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<59 & as.numeric(data_tib_all3$D_480426504)>59)))
@@ -3460,7 +3482,7 @@ dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$AGEGRID>50 & data_tib_all3$D_
                                           #                                                                                   data_tib_all3$state_d_934298480==363147933 | 
                                           #                                                                                   data_tib_all3$state_d_934298480==636706443 |data_tib_all3$state_d_934298480==771230670))) ))
 
-alcl= dt_alcl  %>%  mutate(oth_age= case_when(D_633553324_D_175385712==265550580 ~"Didn't Drink", 
+alcl= dt_alclF  %>%  mutate(oth_age= case_when(D_633553324_D_175385712==265550580 ~"Didn't Drink", 
                                                 D_633553324_D_175385712==950039557 ~"A few times per Year",
                                                 D_633553324_D_175385712==402048066 ~"A few times per Month",
                                                 D_633553324_D_175385712==522395860 ~"Once per Week",
@@ -3487,7 +3509,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 
 #ALCLIFE2G
 #alclife2_funct(D_633553324_D_772143730,"ALCLIFE2G: Frequency of Drinking: Ages 60-69")
-dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$AGEGRID>60 & data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
+dt_alclG= data_tib_all3  %>%   filter(data_tib_all3$AGEGRID>60 & data_tib_all3$D_429228540==132232896 & !is.na(data_tib_all3$D_556837046_D_141874857) & 
                                        (data_tib_all3$D_338467033==353358909 | (data_tib_all3$D_338467033==104430631 & !is.na(data_tib_all3$D_480426504))) & 
                                        ((is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<69) | 
                                           (!is.na(data_tib_all3$D_480426504) & as.numeric(data_tib_all3$D_556837046_D_141874857)<69 & as.numeric(data_tib_all3$D_480426504)>69)))
@@ -3495,7 +3517,7 @@ dt_alcl= data_tib_all3  %>%   filter(data_tib_all3$AGEGRID>60 & data_tib_all3$D_
                                           #                                                                                   data_tib_all3$state_d_934298480==363147933 | 
                                           #                                                                                   data_tib_all3$state_d_934298480==636706443 |data_tib_all3$state_d_934298480==771230670))) ))
 
-alcl= dt_alcl  %>%  mutate(oth_age= case_when(D_633553324_D_772143730==265550580 ~"Didn't Drink", 
+alcl= dt_alclG  %>%  mutate(oth_age= case_when(D_633553324_D_772143730==265550580 ~"Didn't Drink", 
                                                 D_633553324_D_772143730==950039557 ~"A few times per Year",
                                                 D_633553324_D_772143730==402048066 ~"A few times per Month",
                                                 D_633553324_D_772143730==522395860 ~"Once per Week",
@@ -3533,15 +3555,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
     ##ALCLLIFE2 variables won't go into tibble for some reason so can't turn into a function 
 
 #ALCLIFE4A 
-dt_alcl <- module3 %>% filter(module3$D_429228540==132232896 & !is.na(module3$D_556837046_D_141874857) & 
-                                       (module3$D_338467033==353358909 | (module3$D_338467033==104430631 & !is.na(module3$D_480426504))) & 
-                                       ((is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17) | 
-                                          (!is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17 &       
-                                             as.numeric(module3$D_480426504)>17)))
-
-
-
-alcl4= dt_alcl  %>%  mutate(oth_age= case_when(D_470862706_D_912659087_D_789689151=="1"~"Drank Beer",
+alcl4= dt_alclA  %>%  mutate(oth_age= case_when(D_470862706_D_912659087_D_789689151=="1"~"Drank Beer",
                                               D_470862706_D_912659087_D_663253668=="1"~"Drank Liquor",
                                               D_470862706_D_912659087_D_104676242=="1"~"Drank Wine",
                                               D_470862706_D_912659087_D_137733407=="1"~"Drank Other Beverages",
@@ -3566,17 +3580,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 ### ALCLIFE4B: Beverages Drank from Ages 18-24
 ```{r, message=FALSE, warning=FALSE, echo=FALSE}
 #ALCLIFE4B
-
-
-dt_alcl <- module3 %>% filter(module3$D_429228540==132232896 & !is.na(module3$D_556837046_D_141874857) & 
-                                       (module3$D_338467033==353358909 | (module3$D_338467033==104430631 & !is.na(module3$D_480426504))) & 
-                                       ((is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17) | 
-                                          (!is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17 &       
-                                             as.numeric(module3$D_480426504)>17)))
-
-
-
-alcl4= dt_alcl  %>%  mutate(oth_age= case_when(D_470862706_D_643512687_D_789689151=="1"~"Drank Beer",
+alcl4= dt_alclB  %>%  mutate(oth_age= case_when(D_470862706_D_643512687_D_789689151=="1"~"Drank Beer",
                                               D_470862706_D_643512687_D_663253668=="1"~"Drank Liquor",
                                               D_470862706_D_643512687_D_104676242=="1"~"Drank Wine",
                                               D_470862706_D_643512687_D_137733407=="1"~"Drank Other Beverages",
@@ -3600,17 +3604,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 ### ALCLIFE4C: Beverages Drank from Ages 25-29
 ```{r, message=FALSE, echo=FALSE, warning=FALSE}
 #ALCLIFE4C
-
-
-dt_alcl <- module3 %>% filter(module3$D_429228540==132232896 & !is.na(module3$D_556837046_D_141874857) & 
-                                       (module3$D_338467033==353358909 | (module3$D_338467033==104430631 & !is.na(module3$D_480426504))) & 
-                                       ((is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17) | 
-                                          (!is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17 &       
-                                             as.numeric(module3$D_480426504)>17)))
-
-
-
-alcl4= dt_alcl  %>%  mutate(oth_age= case_when(D_470862706_D_688123102_D_789689151=="1"~"Drank Beer",
+alcl4= dt_alclC  %>%  mutate(oth_age= case_when(D_470862706_D_688123102_D_789689151=="1"~"Drank Beer",
                                               D_470862706_D_688123102_D_663253668=="1"~"Drank Liquor",
                                               D_470862706_D_688123102_D_104676242=="1"~"Drank Wine",
                                               D_470862706_D_688123102_D_137733407=="1"~"Drank Other Beverages",
@@ -3634,17 +3628,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 ### ALCLIFE4D: Beverages Drank from Ages 30-39
 ```{r, message=FALSE, echo=FALSE, warning=FALSE}
 #ALCLIFE4D
-
-
-dt_alcl <- module3 %>% filter(module3$D_429228540==132232896 & !is.na(module3$D_556837046_D_141874857) & 
-                                       (module3$D_338467033==353358909 | (module3$D_338467033==104430631 & !is.na(module3$D_480426504))) & 
-                                       ((is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17) | 
-                                          (!is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17 &       
-                                             as.numeric(module3$D_480426504)>17)))
-
-
-
-alcl4= dt_alcl  %>%  mutate(oth_age= case_when(D_470862706_D_356133766_D_789689151=="1"~"Drank Beer",
+alcl4= dt_alclD  %>%  mutate(oth_age= case_when(D_470862706_D_356133766_D_789689151=="1"~"Drank Beer",
                                               D_470862706_D_356133766_D_663253668=="1"~"Drank Liquor",
                                               D_470862706_D_356133766_D_104676242=="1"~"Drank Wine",
                                               D_470862706_D_356133766_D_137733407=="1"~"Drank Other Beverages",
@@ -3669,17 +3653,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 ### ALCLIFE4E: Beverages Drank from Ages 40-49
 ```{r, message=FALSE, echo=FALSE, warning=FALSE}
 #ALCLIFE4E
-
-
-dt_alcl <- module3 %>% filter(module3$D_429228540==132232896 & !is.na(module3$D_556837046_D_141874857) & 
-                                       (module3$D_338467033==353358909 | (module3$D_338467033==104430631 & !is.na(module3$D_480426504))) & 
-                                       ((is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17) | 
-                                          (!is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17 &       
-                                             as.numeric(module3$D_480426504)>17)))
-
-
-
-alcl4= dt_alcl  %>%  mutate(oth_age= case_when(D_470862706_D_690918725_D_789689151=="1"~"Drank Beer",
+alcl4= dt_alclE  %>%  mutate(oth_age= case_when(D_470862706_D_690918725_D_789689151=="1"~"Drank Beer",
                                               D_470862706_D_690918725_D_663253668=="1"~"Drank Liquor",
                                               D_470862706_D_690918725_D_104676242=="1"~"Drank Wine",
                                               D_470862706_D_690918725_D_137733407=="1"~"Drank Other Beverages",
@@ -3703,17 +3677,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 ### ALCLIFE4F: Beverages Drank from Ages 50-59
 ```{r, message=FALSE, echo=FALSE, warning=FALSE}
 #ALCLIFE4F
-
-
-dt_alcl <- module3 %>% filter(module3$D_429228540==132232896 & !is.na(module3$D_556837046_D_141874857) & 
-                                       (module3$D_338467033==353358909 | (module3$D_338467033==104430631 & !is.na(module3$D_480426504))) & 
-                                       ((is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17) | 
-                                          (!is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17 &       
-                                             as.numeric(module3$D_480426504)>17)))
-
-
-
-alcl4= dt_alcl  %>%  mutate(oth_age= case_when(D_470862706_D_178609656_D_789689151=="1"~"Drank Beer",
+alcl4= dt_alclF  %>%  mutate(oth_age= case_when(D_470862706_D_178609656_D_789689151=="1"~"Drank Beer",
                                               D_470862706_D_178609656_D_663253668=="1"~"Drank Liquor",
                                               D_470862706_D_178609656_D_104676242=="1"~"Drank Wine",
                                               D_470862706_D_178609656_D_137733407=="1"~"Drank Other Beverages",
@@ -3738,16 +3702,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 ### ALCLIFE4G: Beverages Drank from Ages 60-69 
 ```{r, message=FALSE, echo=FALSE, warning=FALSE}
 #ALCLIFE4G
-
-dt_alcl <- module3 %>% filter(module3$D_429228540==132232896 & !is.na(module3$D_556837046_D_141874857) & 
-                                       (module3$D_338467033==353358909 | (module3$D_338467033==104430631 & !is.na(module3$D_480426504))) & 
-                                       ((is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17) | 
-                                          (!is.na(module3$D_480426504) & as.numeric(module3$D_556837046_D_141874857)<17 &       
-                                             as.numeric(module3$D_480426504)>17)))
-
-
-
-alcl4= dt_alcl  %>%  mutate(oth_age= case_when(D_470862706_D_261957180_D_789689151=="1"~"Drank Beer",
+alcl4= dt_alclG  %>%  mutate(oth_age= case_when(D_470862706_D_261957180_D_789689151=="1"~"Drank Beer",
                                               D_470862706_D_261957180_D_663253668=="1"~"Drank Liquor",
                                               D_470862706_D_261957180_D_104676242=="1"~"Drank Wine",
                                               D_470862706_D_261957180_D_137733407=="1"~"Drank Other Beverages",
@@ -3859,7 +3814,7 @@ sscreen4 <- sscreen %>%  mutate(oth_age= case_when(D_858858333==445549128~"Less 
                                               D_858858333==133730190~"Higher than 50",
                                               D_858858333==178420302~"Unknown",
                                               TRUE ~ "Skipped this question"))
-sscreen4$oth_age <- factor(sscreen4$oth_age,levels=c("Less than 15","15 to 20","21 to 35", "36 to 50","Unknown","Skipped this question"))
+sscreen4$oth_age <- factor(sscreen4$oth_age,levels=c("Less than 15","15 to 20","21 to 35", "36 to 50","Higher than 50","Unknown","Skipped this question"))
 
 dt_sscreen4 <- sscreen4 %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
 

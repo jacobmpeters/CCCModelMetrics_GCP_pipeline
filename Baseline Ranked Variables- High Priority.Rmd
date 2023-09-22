@@ -33,6 +33,7 @@ library(scales)
 library(gt)
 library(tinytex)
 library(data.table) ###to write or read and data management 
+library(boxr) ###read or write data from/to box
 library(tidyverse) ###for data management
 library(dplyr) ###data management
 library(lubridate) ###date time
@@ -1002,7 +1003,7 @@ style= data_tib_base  %>%  mutate(descr= case_when(D_987107433==220083334 ~ "Ver
                                                D_987107433==510148951 ~ "Somewhat Masculine",
                                                TRUE ~ "Skipped this question"))
 
-style$descr <- factor(style$descr,levels=c("Very Feminine", "Mostly Feminine", "Somewhat Feminine", "Equally feminine and masculine", "Very masculine", "Mostly Masculine", "Somewhat Masculine", "Skipped this question"))
+style$descr <- factor(style$descr,levels=c("Very Feminine", "Mostly Feminine", "Somewhat Feminine", "Equally Feminine and Masculine", "Very masculine", "Mostly Masculine", "Somewhat Masculine", "Skipped this question"))
 
 dt_appearence_summary <- style  %>% dplyr::group_by(descr) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(descr, n, percentage) 
 
@@ -2947,7 +2948,7 @@ table(M2_complete_nodup$version)
 M2_complete_nodup$Connect_ID <- as.numeric(M2_complete_nodup$Connect_ID)
 
 
-merge_m2= left_join(merged, M2_complete_nodup, by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
+merge_m2= left_join(base_vars, M2_complete_nodup, by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
 
 ```
 
@@ -3086,6 +3087,7 @@ hormn <- data_tib_all2 %>%  filter((D_407056417==654207589 | D_407056417==576796
 
 agep <- hormn %>%  mutate(age= case_when(D_798889867=="200323667"~"In the past yes",
                                       D_798889867=="249673703"~"Currently yes",
+                                      D_798889867=="104430631"~"No",
                                       TRUE ~ "Skipped this Question"))
 
 dt_agep_summary <- agep %>% group_by(age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(age, n, percentage)
@@ -3149,7 +3151,7 @@ mod3_data <- bq_table_download(mod3_table, bigint = "integer64")
 mod3_data$Connect_ID <- as.numeric(mod3_data$Connect_ID)
 
 
-merge_m3P= left_join(merged, mod3_data, by="Connect_ID")
+merge_m3P= left_join(base_vars, mod3_data, by="Connect_ID")
 
 data_all3 <- merge_m3P %>% filter(d_976570371==231311385)
 
@@ -4244,7 +4246,7 @@ mod4_table <- bq_project_query(project, querymod4)
 mod4_data <- bq_table_download(mod4_table, bigint = "integer64")
 mod4_data$Connect_ID <- as.numeric(mod4_data$Connect_ID)
 
-merge_m4P= left_join(merged, mod4_data, by="Connect_ID") 
+merge_m4P= left_join(base_vars, mod4_data, by="Connect_ID") 
 
 data_all4 <- merge_m4P %>% filter(d_663265240==231311385)
 
@@ -4421,7 +4423,7 @@ dtPREWORK_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 dt_PREWORKRES= data_tib_all4 %>%  filter(D_995620555==353358909)
 
-PREWORKRES= data_tib_all4 %>%  mutate(meds= case_when(D_980007418==353358909 ~ "Yes",
+PREWORKRES= dt_PREWORKRES %>%  mutate(meds= case_when(D_980007418==353358909 ~ "Yes",
                                                D_980007418==104430631 ~ "No",
                                                TRUE  ~ "Skipped this question"))
 
@@ -5059,24 +5061,26 @@ dt_curr_bus= dt_curr_bus  %>%  mutate(multb1 = ifelse(D_700374192_D_700374192_D_
 
 bsn= dt_curr_bus  %>%  mutate(category= case_when(as.numeric(multb1)>1 ~ "Multiple Business Types",
                                                   D_700374192_D_700374192_D_641572847==1 ~ "Manufacturing",
-                                             D_700374192_D_700374192_D_592592455==1 ~ "Retail Store",
-                                             D_700374192_D_700374192_D_711138281==1 ~ "Wholesale or Distributor",
-                                             #D_700374192_D_700374192_D_149230791 ==1 ~ "Transportation, warehousing, and utilities",
-                                             D_700374192_D_700374192_D_596792238==1 ~ "A Service Provider",
-                                             #D_700374192_D_700374192_D_439857718==1 ~ "Professional and business services",
-                                             D_700374192_D_700374192_D_133362151==1 ~ "Construction",
-                                             D_700374192_D_700374192_D_372993567==1 ~ "Mining",
-                                             D_700374192_D_700374192_D_620577362==1 ~ "Farming",
-                                             #D_700374192_D_700374192_D_709307391==1 ~ "Accommodation and food services",
-                                             D_700374192_D_700374192_D_580409149==1 ~ "Fishing",
-                                             D_700374192_D_700374192_D_867237640==1 ~ "Forestry",
-                                             #D_700374192_D_700374192_D_766533183==1 ~ "Healthcare or social assistance",
+                                             D_700374192_D_700374192_D_592592455==1 ~ "Retail or Wholesale Sales",
+                                             #D_700374192_D_700374192_D_711138281==1 ~ "Wholesale or Distributor",
+                                             D_700374192_D_700374192_D_711138281==1 | D_700374192_D_700374192_D_149230791 ==1 ~ "Transportation, warehousing, and utilities",
+                                             #D_700374192_D_700374192_D_596792238==1 ~ "A Service Provider",
+                                            D_700374192_D_700374192_D_596792238==1 | D_700374192_D_700374192_D_439857718==1 ~ "Professional and business services",
+                                             D_700374192_D_700374192_D_133362151==1 ~ "Construction or Equipment Repair",
+                                             D_700374192_D_700374192_D_372993567==1 ~ "Mining, quarrying, and oil annd gas extraction",
+                                             #D_700374192_D_700374192_D_620577362==1 ~ "Farming",
+                                             D_700374192_D_700374192_D_709307391==1 ~ "Accommodation and food services",
+                                             #D_700374192_D_700374192_D_580409149==1 ~ "Fishing",
+                                             #D_700374192_D_700374192_D_867237640==1 ~ "Forestry",
+                                             D_700374192_D_700374192_D_620577362==1 | D_700374192_D_700374192_D_580409149==1 |
+                                              D_700374192_D_700374192_D_867237640==1 | D_700374192_D_700374192_D_927863729==1 ~ "Farming, fishing, or forestry",
+                                             D_700374192_D_700374192_D_766533183==1 ~ "Healthcare or social assistance",
                                              D_700374192_D_700374192_D_698814077==1 ~ "Government",
-                                             D_700374192_D_700374192_D_751475124==1 ~ "Military",
-                                             #D_700374192_D_700374192_D_942545134==1 ~ "Military, police, firefighting, security services",
+                                             #D_700374192_D_700374192_D_751475124==1 ~ "Military",
+                                             D_700374192_D_700374192_D_751475124==1 | D_700374192_D_700374192_D_942545134==1 ~ "Military, police, firefighting, security services",
                                              D_700374192_D_700374192_D_308286913==1 ~ "Shipyard",
-                                             #D_700374192_D_700374192_D_924908599==1 ~ "Education",
-                                             #D_700374192_D_700374192_D_868510850==1 ~ "Arts, entertainment, and recreation",
+                                             D_700374192_D_700374192_D_924908599==1 ~ "Education",
+                                             D_700374192_D_700374192_D_868510850==1 ~ "Arts, entertainment, and recreation",
                                              (D_700374192_D_700374192_D_807835037==1 | !is.na(D_700374192_D_923333992)) ~ "Other", 
                                              D_700374192_D_700374192_D_178420302==1 ~ "Unknown",
                                              TRUE ~ "Skipped this question"))
@@ -5118,20 +5122,29 @@ dt_curr_bus2= dt_curr_bus2  %>%  mutate(multb2 = ifelse(D_530742915_D_530742915_
 
 bsn= dt_curr_bus2  %>%  mutate(category= case_when(as.numeric(multb2)>1 ~ "Multiple Business Types",
                                                   D_530742915_D_530742915_D_641572847==1 ~ "Manufacturing",
-                                                  D_530742915_D_530742915_D_592592455==1 ~ "Retail Store",
-                                             D_530742915_D_530742915_D_711138281==1 ~ "Wholesale or Distributor",
-                                             D_530742915_D_530742915_D_596792238==1 ~ "A Service Provider",
-                                             D_530742915_D_530742915_D_133362151==1 ~ "Construction",
-                                             D_530742915_D_530742915_D_372993567==1 ~ "Mining",
-                                             D_530742915_D_530742915_D_620577362==1 ~ "Farming",
-                                             D_530742915_D_530742915_D_580409149==1 ~ "Fishing",
-                                             D_530742915_D_530742915_D_867237640==1 ~ "Forestry",
+                                             D_530742915_D_530742915_D_592592455==1 ~ "Retail or Wholesale Sales",
+                                             #D_530742915_D_530742915_D_711138281==1 ~ "Wholesale or Distributor",
+                                             D_530742915_D_530742915_D_711138281==1 | D_530742915_D_530742915_D_149230791 ==1 ~ "Transportation, warehousing, and utilities",
+                                             #D_530742915_D_530742915_D_596792238==1 ~ "A Service Provider",
+                                            D_530742915_D_530742915_D_596792238==1 | D_530742915_D_530742915_D_439857718==1 ~ "Professional and business services",
+                                             D_530742915_D_530742915_D_133362151==1 ~ "Construction or Equipment Repair",
+                                             D_530742915_D_530742915_D_372993567==1 ~ "Mining, quarrying, and oil annd gas extraction",
+                                             #D_530742915_D_530742915_D_620577362==1 ~ "Farming",
+                                             D_530742915_D_530742915_D_709307391==1 ~ "Accommodation and food services",
+                                             #D_530742915_D_530742915_D_580409149==1 ~ "Fishing",
+                                             #D_530742915_D_530742915_D_867237640==1 ~ "Forestry",
+                                             D_530742915_D_530742915_D_620577362==1 | D_530742915_D_530742915_D_580409149==1 |
+                                              D_530742915_D_530742915_D_867237640==1 | D_530742915_D_530742915_D_927863729==1 ~ "Farming, fishing, or forestry",
+                                             D_530742915_D_530742915_D_766533183==1 ~ "Healthcare or social assistance",
                                              D_530742915_D_530742915_D_698814077==1 ~ "Government",
-                                             D_530742915_D_530742915_D_751475124==1 ~ "Military",
+                                             #D_530742915_D_530742915_D_751475124==1 ~ "Military",
+                                             D_530742915_D_530742915_D_751475124==1 | D_530742915_D_530742915_D_942545134==1 ~ "Military, police, firefighting, security services",
                                              D_530742915_D_530742915_D_308286913==1 ~ "Shipyard",
+                                             D_530742915_D_530742915_D_924908599==1 ~ "Education",
+                                             D_530742915_D_530742915_D_868510850==1 ~ "Arts, entertainment, and recreation",
                                              (D_530742915_D_530742915_D_807835037==1 | !is.na(D_530742915_D_739237614)) ~ "Other", 
                                              D_530742915_D_530742915_D_178420302==1 ~ "Unknown",
-                                             TRUE ~ "Skipped this question"))
+                                            TRUE ~"Skipped this Question"))
 
 dt_long_bus_summary <- bsn %>% group_by(category) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(category, n, percentage)
 
