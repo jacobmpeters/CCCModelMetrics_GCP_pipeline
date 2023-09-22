@@ -12,7 +12,7 @@ weekly_module_metrics:
   rmd_file_name: "CCC Weekly Module Metrics_RMD.Rmd"
   report_file_name: "CCC_Weekly_Module_Metrics.pdf"
   box_folders:
-    - "183922736204" # internal
+    - "141543281606" # internal
   gcp_info:
     cloud_scheduler: ccc-weekly-module-metrics
     frequency: "0 11 * * 1" # every Monday at 11 AM"
