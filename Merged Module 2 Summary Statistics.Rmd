@@ -1967,9 +1967,11 @@ hist_funct(D_991622246_D_101310722, "METFOR3: Milligrams per Day", "Pills", "Fre
 #one_logic_funct(D_991622246_D_991622246, D_112024853, 353358909, "METFOR3: Metformin Pills Per Day")
 
 
+
 #Yrs taken Metformin
 module2$D_450131058 <- round(as.numeric(module2$D_450131058), digits=0)
 hist_funct(D_450131058, "METFOR4: Years Metformin Taken", "Years", "Frequency")
+
 
 
   #Last time Metformin taken
@@ -2412,6 +2414,7 @@ hormn <- data_tib_m2 %>%  filter((D_407056417==654207589 | D_407056417==57679618
 
 agep <- hormn %>%  mutate(age= case_when(D_798889867=="200323667"~"In the past yes",
                                       D_798889867=="249673703"~"Currently yes",
+                                      D_798889867=="104430631"~"No",
                                       TRUE ~ "Skipped this Question"))
 
 dt_agep_summary <- agep %>% group_by(age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(age, n, percentage)
@@ -9973,7 +9976,7 @@ tab_footnote(
 #Ever
 #simple_funct(D_674976924, "SHIFTWORK: Worked as a Shift Worker")
 shiftw1= data_tib_m2 %>%  mutate(meds= case_when(D_674976924== 958538953 ~ "Yes, in Last 3 months",
-                                                   D_674976924== 958538953 ~ "Yes, Over 3 months Ago",
+                                                   D_674976924== 274062548 ~ "Yes, Over 3 months Ago",
                                                      D_674976924== 104430631 ~ "No",
                                                      TRUE ~ "Skipped this question"))
 

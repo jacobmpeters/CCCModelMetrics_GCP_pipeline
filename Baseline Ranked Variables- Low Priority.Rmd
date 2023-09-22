@@ -1549,7 +1549,7 @@ simple_funct1(D_114529380, "WORK2: Employment Status")
 
 
 #current job title
-work3 <- data_tib_merged %>% select(D_627122657) %>%  filter(D_613744428==353358909)
+work3 <- data_tib_merged %>% select(D_627122657) %>%  filter(data_tib_merged$D_613744428==353358909)
 work3= work3 %>%  mutate(Address1= case_when(is.na(D_627122657)~"Skipped this Question",
                                                      TRUE ~ "Provided a Response"))
   
@@ -1675,7 +1675,7 @@ dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #data_tib_merged$D_739294356=as.numeric(as.character(data_tib_merged$D_739294356))
-WORK4= data_tib_merged %>%  filter(D_613744428==353358909) %>% mutate(answer= case_when(as.numeric(D_739294356)==0 ~ "0",
+WORK4= data_tib_merged %>%  filter(data_tib_merged$D_613744428==353358909) %>% mutate(answer= case_when(as.numeric(D_739294356)==0 ~ "0",
                                          as.numeric(D_739294356)<11 & as.numeric(D_739294356)>0 ~ "1-10",
                                          as.numeric(D_739294356)<21 & as.numeric(D_739294356)>10 ~ "11-20",
                                          as.numeric(D_739294356)<30 & as.numeric(D_739294356)>20 ~ "21-30",
@@ -1927,7 +1927,7 @@ dt_altcont1_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 
-altcont2= data_tib_merged %>%  filter(!(is.na(D_986275155_D_661719912) & is.na(D_986275155_D_801653230))) %>%  mutate(Contact= case_when(!is.na(D_285718391_D_286149234) | !is.na(D_285718391_D_318130543) | !is.na(D_285718391_D_750097000)~"Gave Alternative Contact Info",
+altcont2= data_tib_merged %>%  mutate(Contact= case_when(!is.na(D_285718391_D_286149234) | !is.na(D_285718391_D_318130543) | !is.na(D_285718391_D_750097000)~"Gave Alternative Contact Info",
                                                        TRUE~"Skipped Alternative Contact Info"))
 dt_altcont2_summary <- altcont2 %>% dplyr::group_by(Contact) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Contact, n, percentage)
 
@@ -5356,10 +5356,10 @@ test_med= dtTESTTHER2 %>%  mutate(meds= case_when(D_984514646=="729363341"~"Dail
                                               D_984514646=="181786871"~"Daily",
                                               D_984514646=="626911538"~"Every few days",
                                               D_984514646=="522395860"~"Once per Week",
-                                              D_984514646=="814242010"~"Few times per",
+                                              D_984514646=="814242010"~"Few times per Month",
                                               D_984514646=="235613392"~"Rarely",
                                              TRUE ~ "Skipped this question"))
-
+test_med$meds <- factor(test_med$meds,levels=c("Daily(2+ times)","Every few days","Once per Week","Few times per Month","Rarely","Skipped this question"))
 
 dtTESTTHER2_summary <- test_med %>% group_by(meds) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
 
@@ -5428,7 +5428,7 @@ hist_funct(D_305195766_D_970604592,"PRESHOR6: Total Years Other Testosterone Use
 
 #Work over last 12 months: sitting, arm movements
 #one_logic_funct2(D_392658845_D_699101535, D_613744428, 353358909, "WORKACTA: Work over last 12 months: Sitting with Arm Movements")
-fb_WORKACTA <- data_tib_all2 %>%  filter(D_613744428==353358909)
+fb_WORKACTA <- data_tib_all2 %>%  filter(data_tib_all2$D_613744428==353358909)
 
 
 WORKACTA_ans= fb_WORKACTA %>%  mutate(answer= case_when(D_392658845_D_699101535==503218834 ~ "None",
@@ -5468,7 +5468,7 @@ dtWORKACTA_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #one_logic_funct2(D_392658845_D_652561589, D_613744428, 353358909,"WORKACTB: Work over last 12 months: Standing with Walking")
-fb_WORKACTB <- data_tib_all2 %>%  filter(D_613744428==353358909)
+fb_WORKACTB <- data_tib_all2 %>%  filter(data_tib_all2$D_613744428==353358909)
 
 
 WORKACTB_ans= fb_WORKACTB %>%  mutate(answer= case_when(D_392658845_D_652561589==503218834 ~ "None",
@@ -5508,7 +5508,7 @@ dtWORKACTB_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #one_logic_funct2(D_392658845_D_589522790, D_613744428, 353358909,"WORKACTC: Work over last 12 months: Walking and Carrying Materials")
-fb_WORKACTC <- data_tib_all2 %>%  filter(D_613744428==353358909)
+fb_WORKACTC <- data_tib_all2 %>%  filter(data_tib_all2$D_613744428==353358909)
 
 
 WORKACTC_ans= fb_WORKACTC %>%  mutate(answer= case_when(D_392658845_D_652561589==503218834 ~ "None",
@@ -5546,7 +5546,7 @@ dtWORKACTC_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 ##one_logic_funct(D_392658845_D_239572239, D_613744428, 353358909,"WORKACTD: Work over last 12 months: Walking and Heavy Manual Labor")
-fb_WORKACTD <- data_tib_all2 %>%  filter(D_613744428==353358909)
+fb_WORKACTD <- data_tib_all2 %>%  filter(data_tib_all2$D_613744428==353358909)
 
 
 WORKACTD_ans= fb_WORKACTD %>%  mutate(answer= case_when(D_392658845_D_239572239==503218834 ~ "None",
@@ -7188,10 +7188,11 @@ SNORING5_ans= SNORING5 %>%  mutate(answer= case_when(D_756521698==718687985 ~ "A
                                                      D_756521698==198347104 ~ "1 to 2 times per week",
                                                      D_756521698==632512449 ~ "1 to 2 times per month",
                                                      D_756521698==520089841 ~ "Less than 1 to 2 times per month",
+                                                     D_756521698==648960871 ~ "Never",
                                                      D_756521698==178420302 ~ "Unknown",
                                                         TRUE ~ "Skipped this question"))
 
-SNORING5_ans$answer <- factor(SNORING5_ans$answer,levels=c("Almost every day", "3 to 4 times per week", "1 to 2 times per week", "1 to 2 times per month", "Less than 1 to 2 times per month","Unknown", "Skipped this question" ))
+SNORING5_ans$answer <- factor(SNORING5_ans$answer,levels=c("Almost every day", "3 to 4 times per week", "1 to 2 times per week", "1 to 2 times per month", "Less than 1 to 2 times per month","Never","Unknown", "Skipped this question" ))
 
 dtSNORING5_summary <- SNORING5_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
@@ -7358,7 +7359,7 @@ tab_footnote(
 #Ever
 #simple_funct2(D_674976924, "SHIFTWORK: Worked as a Shift Worker")
 shiftw1= data_tib_all2 %>%  mutate(meds= case_when(D_674976924== 958538953 ~ "Yes, in Last 3 months",
-                                                   D_674976924== 958538953 ~ "Yes, Over 3 months Ago",
+                                                   D_674976924== 274062548 ~ "Yes, Over 3 months Ago",
                                                      D_674976924== 104430631 ~ "No",
                                                      TRUE ~ "Skipped this question"))
 
