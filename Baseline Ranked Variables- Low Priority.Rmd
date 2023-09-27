@@ -5336,6 +5336,7 @@ boxp_funct_F(D_797076693,"TESTTHER3: Age Testosterone First Used", "Age")
 
 #How often
 
+
 dtTESTTHER2= data_tib_all2  %>% filter(D_111235606==353358909 & !(D_946849196_D_729863969==104430631 &  D_946849196_D_108104748==104430631  &
                                                                     D_946849196_D_717308596==104430631 &  D_946849196_D_746788766==104430631 &  
                                                                     D_946849196_D_158214723==104430631 &  D_946849196_D_658810736==353358909))
@@ -5343,10 +5344,10 @@ test_med= dtTESTTHER2 %>%  mutate(meds= case_when(D_984514646=="729363341"~"Dail
                                               D_984514646=="181786871"~"Daily",
                                               D_984514646=="626911538"~"Every few days",
                                               D_984514646=="522395860"~"Once per Week",
-                                              D_984514646=="814242010"~"Few times per",
+                                              D_984514646=="814242010"~"Few times per Month",
                                               D_984514646=="235613392"~"Rarely",
                                              TRUE ~ "Skipped this question"))
-
+test_med$meds <- factor(test_med$meds,levels=c("Daily(2+ times)","Every few days","Once per Week","Few times per Month","Rarely","Skipped this question"))
 
 dtTESTTHER2_summary <- test_med %>% group_by(meds) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
 
@@ -7533,7 +7534,7 @@ knitr::opts_chunk$set(comment = NA)
 
 
 
-module3 <- merge_m3 %>% filter(d_976570371==231311385)
+#module3 <- merge_m3 %>% filter(d_976570371==231311385)
 
 
 data_tib_all3 <- as_tibble(module3)

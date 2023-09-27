@@ -867,6 +867,36 @@ hist_funct(D_399659169, "CIG9C: Cigarette Smoked per Day", "Cigarettes", "Freque
 funct_10_11(D_667002790, D_763164658, D_815776236, D_639684251, D_400969127, "CIG10: Timeframe for First Cigarette of the Day")
 
 
+data_tib_all3_ECIG <- data_tib_all3 %>%  filter(D_639684251==804785430 | ((D_639684251==419415087 | D_639684251==299561721 | D_639684251==716761013) & D_400969127==353358909 & (D_798549704==484055234 | D_798549704==802197176)))
+
+
+ECIG_ans= data_tib_all3_ECIG %>%  mutate(answer= case_when(D_667002790==169225725 ~ "0-5 minutes",
+                                                           D_667002790==967681778 ~ "6-30 minutes",
+                                                           D_667002790==998679771 ~ "31-59 minutes",
+                                                           D_667002790==638092100 ~ "1 hour",
+                                                           D_667002790==1127455035 ~ "2 hours+",
+                                             TRUE ~ "Skipped this question"))
+
+dtECIG_summary <- ECIG_ans %>% group_by(answer) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtECIG_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("CIG10: Timeframe for First Cigarette of the Day")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+
+
 
 
 #CIG11
@@ -1243,6 +1273,7 @@ hist_funct(D_598954337, "CIGAR9C: Cigars Smoked per Day", "Cigars", "Frequency")
 
 
 #CIGAR10
+
 #((D_763164658 == 486319890 | D_763164658== 132232896) & (D_815776236 == 353358909 | (D_639684251==804785430 | D_400969127==353358909)))
 cigar_kind= data_tib_all3 %>%  filter((D_182431332==486319890 | D_182431332==132232896) & (D_287715042==353358909 | (D_564438246==804785430 | D_395480458==353358909))) %>% 
   mutate(kind= case_when(D_103566006_D_103566006_D_123926260 ==1 ~ "Cigar",
