@@ -33,7 +33,6 @@ library(scales)
 library(gt)
 library(tinytex)
 library(data.table) ###to write or read and data management 
-library(boxr) ###read or write data from/to box
 library(tidyverse) ###for data management
 library(dplyr) ###data management
 library(lubridate) ###date time
@@ -57,7 +56,7 @@ dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name'
 dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
 dd$CID <- rownames(dd)
 #https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
-devtools::install_github("tidyverse/reprex")
+#devtools::install_github("tidyverse/reprex")
 
 project <- "nih-nci-dceg-connect-prod-6d04"
 billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be consistent
@@ -216,6 +215,20 @@ knitr::opts_chunk$set(comment = NA)
 ```
 
 
+```{r, warning=FALSE, echo=FALSE,  message=FALSE}
+
+base_vars1 <- merged %>% filter(d_949302066==231311385)
+base_vars2 <- merged %>% filter(d_536735468==231311385)
+base_vars3 <- merged %>% filter(d_976570371==231311385)
+base_vars4 <- merged %>% filter(d_663265240==231311385)
+
+cat("Particpants with Module 1 completion: ",dim(base_vars1)[[1]])
+cat("Particpants with Module 2 completion: ", dim(base_vars2)[[1]])
+cat("Particpants with Module 3 completion: ", dim(base_vars3)[[1]])
+cat("Particpants with Module 4 completion: ", dim(base_vars4)[[1]])
+
+
+```
 
 
 ```{r, warning=FALSE, include=FALSE}
@@ -2852,7 +2865,7 @@ dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name'
 dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
 dd$CID <- rownames(dd)
 #https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
-devtools::install_github("tidyverse/reprex")
+#devtools::install_github("tidyverse/reprex")
 
 project <- "nih-nci-dceg-connect-prod-6d04"
 billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be consistent

@@ -537,11 +537,13 @@ funct_2_3_4 <- function(CID, CID_prev, Title){
 
 
 #GT table with 3 filters/skip logic
-funct_10_11 <- function(CID, CID_prev1, CID_prev9b, Title){
+funct_10_11 <- function(CID, CID_prev1, CID_prev9b, CID_prev4, CID_prev8c, Title){
   CID_SYM <- rlang::ensym(CID)
   CID_SYM_P1 <- rlang::ensym(CID_prev1)
   CID_SYM_P9b <- rlang::ensym(CID_prev9b)
-  dt_select <- data_tib_all3 %>%  filter((!!CID_SYM_P9b == 353358909) |(!!CID_SYM_P1 == 486319890) | (!!CID_SYM_P1 == 132232896)) %>%  select(Connect_ID, !!CID_SYM)
+  CID_SYM_P4 <- rlang::ensym(CID_prev4)
+  CID_SYM_P8c <- rlang::ensym(CID_prev8c)
+  dt_select <- data_tib_all3 %>%  filter((!!CID_SYM_P1 == 486319890 | !!CID_SYM_P1 == 132232896) & (!!CID_SYM_P9b == 353358909 |(!!CID_SYM_P4==804785430 | !!CID_SYM_P8c==353358909))) %>%  select(Connect_ID, !!CID_SYM)
   gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% mutate(answer=recode(!!CID_SYM, !!!dict)) %>%
     replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
 
@@ -822,43 +824,14 @@ hist_funct(D_399659169, "CIG9C: Cigarette Smoked per Day", "Cigarettes", "Freque
 
 #CIG10
 
-funct_10_11(D_667002790, D_763164658, D_815776236, "CIG10: Timeframe for First Cigarette of the Day")
-
-data_tib_all3_ECIG <- data_tib_all3 %>%  filter(D_639684251==804785430 | ((D_639684251==419415087 | D_639684251==299561721 | D_639684251==716761013) & D_400969127==353358909 & (D_798549704==484055234 | D_798549704==802197176)))
-
-
-ECIG_ans= data_tib_all3_ECIG %>%  mutate(answer= case_when(D_667002790==169225725 ~ "0-5 minutes",
-                                                           D_667002790==967681778 ~ "6-30 minutes",
-                                                           D_667002790==998679771 ~ "31-59 minutes",
-                                                           D_667002790==638092100 ~ "1 hour",
-                                                           D_667002790==1127455035 ~ "2 hours+",
-                                             TRUE ~ "Skipped this question"))
-
-dtECIG_summary <- ECIG_ans %>% group_by(answer) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
-
-dtECIG_summary %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("CIG10: Timeframe for First Cigarette of the Day")) %>% 
-  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = answer,
-    )
-  ) %>% opt_row_striping()
+funct_10_11(D_667002790, D_763164658, D_815776236, D_639684251, D_400969127, "CIG10: Timeframe for First Cigarette of the Day")
 
 
 
 
 #CIG11
 
-funct_10_11(D_534351312, D_763164658, D_815776236, "CIG11: Smoking before First Meal of the Day")
+funct_10_11(D_534351312, D_763164658, D_815776236, D_639684251, D_400969127,"CIG11: Smoking before First Meal of the Day")
 
 
 #CIGLIFEA
@@ -1012,7 +985,8 @@ data_tib_all3$AGEGRID <- time_length(difftime(currentDate, data_tib_all3$DOB), "
 
 
 mhgroup9= data_tib_all3 %>%  filter(D_624111331==132232896 & !is.na(D_550244580_D_517801904) & (D_751046675==804785430 | D_242276545==353358909) & 
-                                      as.numeric(data_tib_all3$D_550244580_D_517801904)<40  & !(as.numeric(data_tib_all3$D_360277949)<40)) %>% 
+                                      as.numeric(data_tib_all3$D_550244580_D_517801904)<40  & 
+                                      (is.na(data_tib_all3$D_360277949) | !(as.numeric(data_tib_all3$D_360277949)<40))) %>% 
   mutate(surgery= case_when(D_442002787==428999623 ~ "15 minutes or less",
                                              D_442002787==248303092 ~ "16 to 30 minutes",
                                              D_442002787==998679771 ~ "31 to 59 minutes",
@@ -1043,7 +1017,9 @@ dt_surgery_summary %>%  gt(rowname_col = "row_lab") %>%
 
 #ECIGLIFEE
 mhgroup9= data_tib_all3 %>%  filter(D_624111331==132232896 & !is.na(D_550244580_D_517801904) & (D_751046675==804785430 | D_242276545==353358909) & 
-                                      as.numeric(data_tib_all3$D_550244580_D_517801904)<50   & !(as.numeric(data_tib_all3$D_360277949)<50) & as.numeric(data_tib_all3$AGEGRID)>39) %>% 
+                                      as.numeric(data_tib_all3$D_550244580_D_517801904)<50   & 
+                                      (is.na(data_tib_all3$D_360277949) | !(as.numeric(data_tib_all3$D_360277949)<50)) & 
+                                      as.numeric(data_tib_all3$AGEGRID)>39) %>% 
   mutate(surgery= case_when(D_208578552==428999623 ~ "15 minutes or less",
                                              D_208578552==248303092 ~ "16 to 30 minutes",
                                              D_208578552==998679771 ~ "31 to 59 minutes",
@@ -1074,7 +1050,9 @@ dt_surgery_summary %>%  gt(rowname_col = "row_lab") %>%
 
 #ECIGLIFEF
 mhgroup9= data_tib_all3 %>%  filter(D_624111331==132232896 & !is.na(D_550244580_D_517801904) & (D_751046675==804785430 | D_242276545==353358909) & 
-                                      as.numeric(data_tib_all3$D_550244580_D_517801904)<60  & as.numeric(data_tib_all3$AGEGRID)>49) %>% # & !(as.numeric(data_tib_all3$D_360277949)<60)) %>%
+                                      as.numeric(data_tib_all3$D_550244580_D_517801904)<60  & 
+                                      (is.na(data_tib_all3$D_360277949) | !(as.numeric(data_tib_all3$D_360277949)<60)) &
+                                      as.numeric(data_tib_all3$AGEGRID)>49) %>% 
   mutate(surgery= case_when(D_480155628==428999623 ~ "15 minutes or less",
                                              D_480155628==248303092 ~ "16 to 30 minutes",
                                              D_480155628==998679771 ~ "31 to 59 minutes",
@@ -1107,7 +1085,9 @@ dt_surgery_summary %>%  gt(rowname_col = "row_lab") %>%
 
 #ECIGLIFEG
 mhgroup9= data_tib_all3 %>%  filter(D_624111331==132232896 & !is.na(D_550244580_D_517801904) & (D_751046675==804785430 | D_242276545==353358909) & 
-                                      as.numeric(data_tib_all3$D_550244580_D_517801904)<70 & as.numeric(data_tib_all3$AGEGRID)>59) %>%  # & !(as.numeric(data_tib_all3$D_360277949)<70)) %>%  #everyone stopped before 70 
+                                      as.numeric(data_tib_all3$D_550244580_D_517801904)<70 & 
+                                      (is.na(data_tib_all3$D_360277949) | !(as.numeric(data_tib_all3$D_360277949)<70)) &
+                                      as.numeric(data_tib_all3$AGEGRID)>59) %>% 
   mutate(surgery= case_when(D_640944113==428999623 ~ "15 minutes or less",
                                              D_640944113==248303092 ~ "16 to 30 minutes",
                                              D_640944113==998679771 ~ "31 to 59 minutes",
@@ -1233,8 +1213,8 @@ hist_funct(D_598954337, "CIGAR9C: Cigars Smoked per Day", "Cigars", "Frequency")
 
 
 #CIGAR10
-
-cigar_kind= data_tib_all3 %>%  filter(D_287715042==353358909 | (D_182431332==486319890 | D_182431332==132232896)) %>% 
+#((D_763164658 == 486319890 | D_763164658== 132232896) & (D_815776236 == 353358909 | (D_639684251==804785430 | D_400969127==353358909)))
+cigar_kind= data_tib_all3 %>%  filter((D_182431332==486319890 | D_182431332==132232896) & (D_287715042==353358909 | (D_564438246==804785430 | D_395480458==353358909))) %>% 
   mutate(kind= case_when(D_103566006_D_103566006_D_123926260 ==1 ~ "Cigar",
                                              D_103566006_D_103566006_D_741643840==1 ~ "Cigarello",
                                              D_103566006_D_103566006_D_959535900==1 ~ "Little Finger Cigar",
@@ -1389,8 +1369,10 @@ cat(dim(chew10_list)[[1]], "provided the 'other' Ecigarette product they used.")
 
 
 #CHEWLIFEA
-lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & (D_101710639==804785430 | D_785139115==353358909) & 
-                                      as.numeric(data_tib_all3$D_257300783_D_424527685)<17 & !(as.numeric(data_tib_all3$D_671380198)<17)) %>% 
+lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & 
+                                      (D_101710639==804785430 | D_785139115==353358909) & 
+                                      as.numeric(data_tib_all3$D_257300783_D_424527685)<18 & 
+                                      (is.na(data_tib_all3$D_671380198) | !(as.numeric(data_tib_all3$D_671380198)<18))) %>% 
   mutate(timespan= case_when(D_495592561==428999623 ~ "15 minutes or less",
                                              D_495592561==248303092 ~ "16 to 30 minutes",
                                              D_495592561==998679771 ~ "31 to 59 minutes",
@@ -1420,8 +1402,10 @@ dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #CHEWLIFEB
-lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & (D_101710639==804785430 | D_785139115==353358909) & 
-                                      as.numeric(data_tib_all3$D_257300783_D_424527685)<25 & !(as.numeric(data_tib_all3$D_671380198)<25)) %>% 
+lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & 
+                                      (D_101710639==804785430 | D_785139115==353358909) & 
+                                      as.numeric(data_tib_all3$D_257300783_D_424527685)<25 & 
+                                      (is.na(data_tib_all3$D_671380198) | !(as.numeric(data_tib_all3$D_671380198)<25))) %>% 
   mutate(timespan= case_when(D_705282587==428999623 ~ "15 minutes or less",
                                              D_705282587==248303092 ~ "16 to 30 minutes",
                                              D_705282587==998679771 ~ "31 to 59 minutes",
@@ -1453,8 +1437,10 @@ dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%
 
 #CHEWLIFEC
 
-lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & (D_101710639==804785430 | D_785139115==353358909) & 
-                                      as.numeric(data_tib_all3$D_257300783_D_424527685)<30 & !(as.numeric(data_tib_all3$D_671380198)<30)) %>% 
+lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & 
+                                      (D_101710639==804785430 | D_785139115==353358909) & 
+                                      as.numeric(data_tib_all3$D_257300783_D_424527685)<30 & 
+                                      (is.na(data_tib_all3$D_671380198) | !(as.numeric(data_tib_all3$D_671380198)<30))) %>% 
   mutate(timespan= case_when(D_133396976==428999623 ~ "15 minutes or less",
                                              D_133396976==248303092 ~ "16 to 30 minutes",
                                              D_133396976==998679771 ~ "31 to 59 minutes",
@@ -1484,8 +1470,10 @@ dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #CHEWLIFED
-lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & (D_101710639==804785430 | D_785139115==353358909) & 
-                                      as.numeric(data_tib_all3$D_257300783_D_424527685)<40 & !(as.numeric(data_tib_all3$D_671380198)<40)) %>% 
+lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & 
+                                      (D_101710639==804785430 | D_785139115==353358909) & 
+                                      as.numeric(data_tib_all3$D_257300783_D_424527685)<40 & 
+                                      (is.na(data_tib_all3$D_671380198) | !(as.numeric(data_tib_all3$D_671380198)<40))) %>% 
   mutate(timespan= case_when(D_628770824==428999623 ~ "15 minutes or less",
                                              D_628770824==248303092 ~ "16 to 30 minutes",
                                              D_628770824==998679771 ~ "31 to 59 minutes",
@@ -1515,8 +1503,10 @@ dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #CHEWLIFEE
-lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & (D_101710639==804785430 | D_785139115==353358909) & 
-                                      as.numeric(data_tib_all3$D_257300783_D_424527685)<50 & !(as.numeric(data_tib_all3$D_671380198)<50)) %>% 
+lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & 
+                                      (D_101710639==804785430 | D_785139115==353358909) & 
+                                      as.numeric(data_tib_all3$D_257300783_D_424527685)<50 & 
+                                      (is.na(data_tib_all3$D_671380198) | !(as.numeric(data_tib_all3$D_671380198)<50))) %>% 
   mutate(timespan= case_when(D_558707243==428999623 ~ "15 minutes or less",
                                              D_558707243==248303092 ~ "16 to 30 minutes",
                                              D_558707243==998679771 ~ "31 to 59 minutes",
@@ -1547,8 +1537,11 @@ dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #CHEWLIFEF
-lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & (D_101710639==804785430 | D_785139115==353358909) & 
-                                      as.numeric(data_tib_all3$D_257300783_D_424527685)<60 & !(as.numeric(data_tib_all3$D_671380198)<50) & as.numeric(data_tib_all3$AGEGRID)>49) %>% 
+lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & 
+                                      (D_101710639==804785430 | D_785139115==353358909) & 
+                                      as.numeric(data_tib_all3$D_257300783_D_424527685)<60 & 
+                                      (is.na(data_tib_all3$D_671380198) | !(as.numeric(data_tib_all3$D_671380198)<60)) &
+                                      as.numeric(data_tib_all3$AGEGRID)>49) %>% 
   mutate(timespan= case_when(D_929034795==428999623 ~ "15 minutes or less",
                                              D_929034795==248303092 ~ "16 to 30 minutes",
                                              D_929034795==998679771 ~ "31 to 59 minutes",
@@ -1578,7 +1571,39 @@ dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #CHEWLIFEG
-#simple_funct3(D_995220236,"CHEWLIFEG: Time Chewing Tobacco/Dip Used per Day at Ages 60-69") #no one yet 
+#simple_funct3(D_995220236,"CHEWLIFEG: Time Chewing Tobacco/Dip Used per Day at Ages 60-69") #no one yet
+lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & 
+                                      (D_101710639==804785430 | D_785139115==353358909) & 
+                                      as.numeric(data_tib_all3$D_257300783_D_424527685)<70 & 
+                                      (is.na(data_tib_all3$D_671380198) | !(as.numeric(data_tib_all3$D_671380198)<70)) & 
+                                      as.numeric(data_tib_all3$AGEGRID)>59) %>% 
+  mutate(timespan= case_when(D_995220236==428999623 ~ "15 minutes or less",
+                                             D_995220236==248303092 ~ "16 to 30 minutes",
+                                             D_995220236==998679771 ~ "31 to 59 minutes",
+                                             D_995220236==638092100 ~ "1 hour",
+                                             D_995220236==127455035 ~ "2 hours or more",
+                                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+
+dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
+
+dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("CHEWLIFEG: Time Chewing Tobacco/Dip Used per Day at Ages 60-69")) %>% 
+  cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = timespan,
+    )
+  ) 
+
 
 #CHEWLIFEH
 #simple_funct3(D_551301510,"CHEWLIFEH: Time Chewing Tobacco/Dip Used per Day at Ages 70+") #no one yet 
@@ -2076,7 +2101,7 @@ one_logic_funct3(D_492742957,D_722122662,353358909,"SMMAR9C: Total Time Marijuan
 
 
 #SMMAR10  
-funct_10_11(D_377064836_D_377064836, D_319397722, D_722122662, "SMMAR10: Why Do You Smoke Marijuana")
+funct_10_11(D_377064836_D_377064836, D_319397722, D_722122662, D_503058092, D_129677435, "SMMAR10: Why Do You Smoke Marijuana")
 
 SMMAR10_other= module3 %>%  filter(!is.na(module3$D_377064836_D_779642303))
 smar_10 <-  module3 %>%  filter(D_377064836_D_377064836==807835037)
@@ -2086,7 +2111,8 @@ smar_10 <-  module3 %>%  filter(D_377064836_D_377064836==807835037)
 #SMMARLIFEA
 
 lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & (D_503058092==804785430 | D_129677435==353358909) & 
-                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<17  & !(as.numeric(data_tib_all3$D_863664828)<17)) %>% 
+                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<17  & 
+                                      (is.na(data_tib_all3$D_863664828) | !(as.numeric(data_tib_all3$D_863664828)<17))) %>% 
   mutate(timespan= case_when(D_258291510==428999623 ~ "15 minutes or less",
                                              D_258291510==248303092 ~ "16 to 30 minutes",
                                              D_258291510==998679771 ~ "31 to 59 minutes",
@@ -2116,8 +2142,10 @@ dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #SMMARLIFEB
-lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & (D_503058092==804785430 | D_129677435==353358909) & 
-                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<24  & !(as.numeric(data_tib_all3$D_863664828)<24)) %>% 
+lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & 
+                                      (D_503058092==804785430 | D_129677435==353358909) & 
+                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<24  & 
+                                      (is.na(data_tib_all3$D_863664828) | !(as.numeric(data_tib_all3$D_863664828)<24))) %>% 
   mutate(timespan= case_when(D_175995366==428999623 ~ "15 minutes or less",
                                              D_175995366==248303092 ~ "16 to 30 minutes",
                                              D_175995366==998679771 ~ "31 to 59 minutes",
@@ -2148,8 +2176,10 @@ dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #SMMARLIFEC
-lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & (D_503058092==804785430 | D_129677435==353358909) & 
-                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<30  & !(as.numeric(data_tib_all3$D_863664828)<30)) %>% 
+lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & 
+                                      (D_503058092==804785430 | D_129677435==353358909) & 
+                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<30  & 
+                                      (is.na(data_tib_all3$D_863664828) | !(as.numeric(data_tib_all3$D_863664828)<30))) %>% 
   mutate(timespan= case_when(D_643099118==428999623 ~ "15 minutes or less",
                                              D_643099118==248303092 ~ "16 to 30 minutes",
                                              D_643099118==998679771 ~ "31 to 59 minutes",
@@ -2179,8 +2209,10 @@ dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #SMMARLIFED
-lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & (D_503058092==804785430 | D_129677435==353358909) & 
-                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<40  & !(as.numeric(data_tib_all3$D_863664828)<40)) %>% 
+lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & 
+                                      (D_503058092==804785430 | D_129677435==353358909) & 
+                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<40  & 
+                                      (is.na(data_tib_all3$D_863664828) | !(as.numeric(data_tib_all3$D_863664828)<40))) %>% 
   mutate(timespan= case_when(D_864290328==428999623 ~ "15 minutes or less",
                                              D_864290328==248303092 ~ "16 to 30 minutes",
                                              D_864290328==998679771 ~ "31 to 59 minutes",
@@ -2211,8 +2243,11 @@ dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #SMMARLIFEE
-lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & (D_503058092==804785430 | D_129677435==353358909) & 
-                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<50  & !(as.numeric(data_tib_all3$D_863664828)<50) & as.numeric(data_tib_all3$AGEGRID)>39) %>% 
+lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & 
+                                      (D_503058092==804785430 | D_129677435==353358909) & 
+                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<50  & 
+                                      (is.na(data_tib_all3$D_863664828) | !(as.numeric(data_tib_all3$D_863664828)<50)) &
+                                      as.numeric(data_tib_all3$AGEGRID)>39) %>% 
   mutate(timespan= case_when(D_386950237==428999623 ~ "15 minutes or less",
                                              D_386950237==248303092 ~ "16 to 30 minutes",
                                              D_386950237==998679771 ~ "31 to 59 minutes",
@@ -2241,8 +2276,11 @@ dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%
   ) 
 
 #SMMARLIFEF
-lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & (D_503058092==804785430 | D_129677435==353358909) & 
-                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<60  & !(as.numeric(data_tib_all3$D_863664828)<60) & as.numeric(data_tib_all3$AGEGRID)>49) %>% 
+lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & 
+                                      (D_503058092==804785430 | D_129677435==353358909) & 
+                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<60  & 
+                                      (is.na(data_tib_all3$D_863664828) | !(as.numeric(data_tib_all3$D_863664828)<60)) & 
+                                      as.numeric(data_tib_all3$AGEGRID)>49) %>% 
   mutate(timespan= case_when(D_480217113==428999623 ~ "15 minutes or less",
                                              D_480217113==248303092 ~ "16 to 30 minutes",
                                              D_480217113==998679771 ~ "31 to 59 minutes",
@@ -2272,8 +2310,11 @@ dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #SMMARLIFEG
-lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & (D_503058092==804785430 | D_129677435==353358909) & 
-                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<70 & as.numeric(data_tib_all3$AGEGRID)>59 ) %>% #& !(as.numeric(data_tib_all3$D_863664828)<70) 
+lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_D_889949861) & 
+                                      (D_503058092==804785430 | D_129677435==353358909) & 
+                                      as.numeric(data_tib_all3$D_116080663_D_889949861)<70 & 
+                                      (is.na(data_tib_all3$D_863664828) | !(as.numeric(data_tib_all3$D_863664828)<70)) &
+                                      as.numeric(data_tib_all3$AGEGRID)>59 ) %>%
   mutate(timespan= case_when(D_645361463==428999623 ~ "15 minutes or less",
                                              D_645361463==248303092 ~ "16 to 30 minutes",
                                              D_645361463==998679771 ~ "31 to 59 minutes",
@@ -2396,7 +2437,7 @@ hist_funct(D_411960217, "TOMAR9C: Times per Day Majiuana & Tobacco Combined Prod
 
 
 #TOMAR10  
-funct_10_11(D_755923078_D_755923078, D_524914900, D_171050898, "SMMAR10: Why Do You Smoke Marijuana")
+funct_10_11(D_755923078_D_755923078, D_524914900, D_171050898, D_891825638, D_698314386, "SMMAR10: Why Do You Smoke Marijuana")
 
 #cat("Other Reason for Smoking Marijuana Combined with Tobacco")
 #table(module3$D_755923078_D_459020144) #other -- no one yet 
@@ -2531,7 +2572,7 @@ one_logic_funct3(D_562595294,D_177252178,353358909,"ELMAR9C: Total Time Marijuan
 
 
 #ELMAR10
-funct_10_11(D_268240612_D_268240612, D_325229459, D_177252178, "SMMAR10: Why Do You Smoke Marijuana")
+funct_10_11(D_268240612_D_268240612, D_325229459, D_177252178, D_521073718, D_142164107, "SMMAR10: Why Do You Smoke Marijuana")
 
 cat("Other Reason for Vaping Marijuana")
 table(module3$D_268240612_D_531654334) #other text 
@@ -2550,8 +2591,10 @@ table(module3$D_268240612_D_531654334) #other text
 
 
 #ELMARLIFED
-lifetime= data_tib_all3 %>%  filter(D_325229459==132232896 & !is.na(D_942945860_D_742716427) & (D_521073718==804785430 | D_142164107==353358909) & 
-                                      as.numeric(data_tib_all3$D_942945860_D_742716427)<40  & !(as.numeric(data_tib_all3$D_445187084)<40)) %>% 
+lifetime= data_tib_all3 %>%  filter(D_325229459==132232896 & !is.na(D_942945860_D_742716427) & 
+                                      (D_521073718==804785430 | D_142164107==353358909) & 
+                                      as.numeric(data_tib_all3$D_942945860_D_742716427)<40  & 
+                                      (is.na(data_tib_all3$D_445187084) | !(as.numeric(data_tib_all3$D_445187084)<40))) %>% 
   mutate(timespan= case_when(D_878281875==428999623 ~ "15 minutes or less",
                                              D_878281875==248303092 ~ "16 to 30 minutes",
                                              D_878281875==998679771 ~ "31 to 59 minutes",
@@ -2581,8 +2624,11 @@ dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #ELMARLIFE
-lifetime= data_tib_all3 %>%  filter(D_325229459==132232896 & !is.na(D_942945860_D_742716427) & (D_521073718==804785430 | D_142164107==353358909) & 
-                                      as.numeric(data_tib_all3$D_942945860_D_742716427)<50  & !(as.numeric(data_tib_all3$D_445187084)<50) & as.numeric(data_tib_all3$AGEGRID)>39) %>% 
+lifetime= data_tib_all3 %>%  filter(D_325229459==132232896 & !is.na(D_942945860_D_742716427) & 
+                                      (D_521073718==804785430 | D_142164107==353358909) & 
+                                      as.numeric(data_tib_all3$D_942945860_D_742716427)<50  & 
+                                      (is.na(data_tib_all3$D_445187084) | !(as.numeric(data_tib_all3$D_445187084)<50)) & 
+                                      as.numeric(data_tib_all3$AGEGRID)>39) %>% 
   mutate(timespan= case_when(D_989594002==428999623 ~ "15 minutes or less",
                                              D_989594002==248303092 ~ "16 to 30 minutes",
                                              D_989594002==998679771 ~ "31 to 59 minutes",
@@ -2613,8 +2659,11 @@ dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #ELMARLIFEF--no one yet
-lifetime= data_tib_all3 %>%  filter(D_325229459==132232896 & !is.na(D_942945860_D_742716427) & (D_521073718==804785430 | D_142164107==353358909) & 
-                                      as.numeric(data_tib_all3$D_942945860_D_742716427)<60  & !(as.numeric(data_tib_all3$D_445187084)<60) & as.numeric(data_tib_all3$AGEGRID)>49) %>% 
+lifetime= data_tib_all3 %>%  filter(D_325229459==132232896 & !is.na(D_942945860_D_742716427) & 
+                                      (D_521073718==804785430 | D_142164107==353358909) & 
+                                      as.numeric(data_tib_all3$D_942945860_D_742716427)<60  & 
+                                      (is.na(data_tib_all3$D_445187084) | !(as.numeric(data_tib_all3$D_445187084)<60)) & 
+                                      as.numeric(data_tib_all3$AGEGRID)>49) %>% 
   mutate(timespan= case_when(D_596004621==428999623 ~ "15 minutes or less",
                                              D_596004621==248303092 ~ "16 to 30 minutes",
                                              D_596004621==998679771 ~ "31 to 59 minutes",
@@ -2645,8 +2694,11 @@ dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summar
 
 
 #ELMARLIFEG--no one yet
-lifetime= data_tib_all3 %>%  filter(D_325229459==132232896 & !is.na(D_942945860_D_742716427) & (D_521073718==804785430 | D_142164107==353358909) & 
-                                      as.numeric(data_tib_all3$D_942945860_D_742716427)<70  & !(as.numeric(data_tib_all3$D_445187084)<70) & as.numeric(data_tib_all3$AGEGRID)>59) %>% 
+lifetime= data_tib_all3 %>%  filter(D_325229459==132232896 & !is.na(D_942945860_D_742716427) & 
+                                      (D_521073718==804785430 | D_142164107==353358909) & 
+                                      as.numeric(data_tib_all3$D_942945860_D_742716427)<70  & 
+                                      (is.na(data_tib_all3$D_445187084) | !(as.numeric(data_tib_all3$D_445187084)<70)) & 
+                                      as.numeric(data_tib_all3$AGEGRID)>59) %>% 
   mutate(timespan= case_when(D_459096272==428999623 ~ "15 minutes or less",
                                              D_459096272==248303092 ~ "16 to 30 minutes",
                                              D_459096272==998679771 ~ "31 to 59 minutes",
@@ -2657,22 +2709,22 @@ lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
-# dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
-#   fmt_number(columns = "percentage", decimals = 2) %>% 
-#   tab_header(title = md("ELMARLIFEG: Time Spent per Day Vaping Marijuana: Ages 60-69")) %>% 
-#   cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
-#   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-#   tab_options(
-#       stub.font.weight = "bold"
-#     ) %>%
-#   tab_style(
-#     style = list(
-#       cell_text(weight = "bold")
-#     ),
-#     locations = cells_body(
-#       columns = timespan,
-#     )
-#   ) 
+dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("ELMARLIFEG: Time Spent per Day Vaping Marijuana: Ages 60-69")) %>%
+  cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = timespan,
+    )
+  )
 
 
 #ELMARLIFEH
@@ -2806,7 +2858,7 @@ hist_funct(D_517100968_D_810608313, "EAMAR9C: Servings of Marijuana in Food/Drin
 
 
 #EAMAR10 
-funct_10_11(D_810324917_D_810324917, D_101170268, D_891996278, "EAMAR10: Why Do You Consume Marijuana in Food/Drinks")
+funct_10_11(D_810324917_D_810324917, D_101170268, D_891996278, D_742544044, D_259481608, "EAMAR10: Why Do You Consume Marijuana in Food/Drinks")
 
 cat("Other Reason for Consuming Marijuana")
 EAMAR10_other= module3$D_810324917_D_479400169[!is.na(module3$D_810324917_D_479400169)]
@@ -2970,7 +3022,7 @@ hist_funct(D_585819411_D_810608313, "THMAR9C: Servings of THC Dabbing per Day Wh
 # table(module3$D_585819411_D_585819411) #DK--- unanswered yet 
 
 #THMAR10-- no answers yet?
-funct_10_11(D_265469878_D_265469878, D_355689185, D_937550939, "THMAR10: Why Do You Use THC Concentrates via Dabbing")
+funct_10_11(D_265469878_D_265469878, D_355689185, D_937550939, D_420155119, D_536166591, "THMAR10: Why Do You Use THC Concentrates via Dabbing")
 
 cat("Other Reason for Dabbing Marijuana")
 table(module3$D_265469878_D_781650542) #OTH
@@ -3091,7 +3143,7 @@ boxp_funct(D_480426504, "ALCOHOL6: Age at Last Alcoholic Beverage", "Age")
 
 #ALCOHOL7   
 
-dtALC7= data_tib_all3 %>% filter(D_338467033==104430631 | is.na(D_338467033))
+dtALC7= data_tib_all3 %>% filter(D_448968121==353358909 & (D_338467033==104430631 | is.na(D_338467033)))
 
 
 alc_stop= dtALC7 %>%  mutate(answers= case_when(D_789159346_D_789159346_D_895826652 ==1 ~ "Personal Choice",
@@ -3123,8 +3175,6 @@ dtALC7_summary %>%  gt(rowname_col = "row_lab") %>%
       columns = answers,
     )
   ) %>% opt_row_striping()
-
-
 
 
 ```
