@@ -275,7 +275,8 @@ boxp_funct <- function(CID,Title, Xlab) {
 
 
 ##GT TABLE: Questions that all participants asked, update dictionary as new answer options come up
-dict <- list("104430631"="No", "353358909"="Yes", "589959753"="A little shorter", "623310018"="A lot shorter", "978204320"= "Grade School(Grades 1-8)", "935502060"="Some High School, No Diploma", "404564707"= "High School Graduate or GED", "432193665"="Some College, No Degree", "890756124"="Technical or Trade School After High School", "766964355"="Associate's Degree", "875342283"="Bachelor's Degree", "598242454"="Advanced Degree", "709650750"="Biological Child", "810290359"="Adopted Child", "509607548"="Step Child", "784922042"="Related to me in some other way", "288105839"=" Yes, fraternal twins", "626558982"="Yes, triplets or higher multiple birth", "178420302"="Do not Know", "536341288"="Female", "576796184"="Intersex or Other", "654207589"="Male","555374628"="Full Sibling", "871673221"="Half Sibling, Same Mother",  "198654048"="Half Sibling, Same Father", "807835037"="Other", "274062548"="More than 3 months ago", "958538953"="In the past 3 months", "317567178"="In the past month", "484055234"="In the past year",  "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago","958538953"="In the past 3 months",  "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible", "764708931"="Very flexible","0"="No", "1"="Yes", "536341288"="Female", "218837028"="Woman (New Response)", "983318667"="Man (New Response)"  , "654207589"="Male","746038746"="Prefer Not to Answer", "805712793"="Genderqueer","486192236"="Non-Binary", "807835037"="Other","873138103"="Transgender Woman","405267600"="Transgender Man", "220083334"="Very Feminine","541300533"="Mostly Feminine","878286618"="Somewhat Feminine","910745276"="Equally feminine and masculine","915528806"="Very masculine","265452386"="Mostly Masculine","510148951"="Somewhat Masculine","271882746"="Straight or heterosexual", "903084185"="Lesbian, gay, or homosexual", "999994434"="Bisexual", "584368278"="Retired", "475665841"="Homemaker", "656816477"="Unemployed", "756948639"="Unble to Work (Disabled)", "181769837"="Other Employment Status","551525967"="Yes, Full-Time Student", "738284740"="Yes, Part Time Student" )
+dict <- list("104430631"="No", "353358909"="Yes", "589959753"="A little shorter", "623310018"="A lot shorter", "978204320"= "Grade School(Grades 1-8)", "935502060"="Some High School, No Diploma", "404564707"= "High School Graduate or GED", "432193665"="Some College, No Degree", "890756124"="Technical or Trade School After High School", "766964355"="Associate's Degree", "875342283"="Bachelor's Degree", "598242454"="Advanced Degree", "709650750"="Biological Child", "810290359"="Adopted Child", "509607548"="Step Child", "784922042"="Related to me in some other way", "288105839"=" Yes, fraternal twins", "626558982"="Yes, triplets or higher multiple birth", "178420302"="Do not Know", "536341288"="Female", "576796184"="Intersex or Other", "654207589"="Male","555374628"="Full Sibling", "871673221"="Half Sibling, Same Mother",  "198654048"="Half Sibling, Same Father", "807835037"="Other", "274062548"="More than 3 months ago", "958538953"="In the past 3 months", "317567178"="In the past month", "484055234"="In the past year",  "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago","958538953"="In the past 3 months",  "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible", "764708931"="Very flexible","0"="No", "1"="Yes", "536341288"="Female", "218837028"="Woman (New Response)", "983318667"="Man (New Response)"  , "654207589"="Male","746038746"="Prefer Not to Answer", "805712793"="Genderqueer","486192236"="Non-Binary", "807835037"="Other","873138103"="Transgender Woman","405267600"="Transgender Man", "220083334"="Very Feminine","541300533"="Mostly Feminine","878286618"="Somewhat Feminine","910745276"="Equally feminine and masculine","915528806"="Very masculine","265452386"="Mostly Masculine","510148951"="Somewhat Masculine","271882746"="Straight or heterosexual", "903084185"="Lesbian, gay, or homosexual", "999994434"="Bisexual", "584368278"="Retired", "475665841"="Homemaker", "656816477"="Unemployed", "756948639"="Unble to Work (Disabled)", "181769837"="Other Employment Status","551525967"="Yes, Full-Time Student", "738284740"="Yes, Part Time Student", "288321056"="Married", "514080822"="Never Married","522680498"="Never Married but living with Partner","649436542"="Divorced","522680498"="Partner", "741094625"="Separated","733527132"="Widow" )
+
 
 
 simple_funct <- function(CID, Title){  
@@ -482,38 +483,7 @@ hist_funct(D_150344905, "Age if Age Verification Not Correct", "Age", "Frequency
 ## Marital Status 
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
 ##Marital Status 
-marital= data_tib_m1  %>%  mutate(status= case_when(D_783167257==288321056 ~ "Married", 
-                                                    D_783167257==514080822 ~ "Never Married",
-                                                    D_783167257==522680498 ~ "Never Married but living with Partner",
-                                                    D_783167257==649436542 ~ "Divorced",
-                                                    D_783167257==522680498 ~ "Partner", 
-                                                    D_783167257==741094625 ~ "Separated",
-                                                    D_783167257==733527132 ~ "Widow",
-                                                    TRUE ~ "Skipped this question"))
-
-dt_marriage_summary <- marital %>% group_by(status) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
-
-dt_marriage_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = c( "percentage"), decimals = 2) %>% 
-  tab_header(title = md("Marital Status")) %>% 
-  cols_label(n= md("**Number of Participants**"), status = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-    # summary_rows( groups=F,
-    # column = c(n,percentage),
-    # fns= list(
-    #   Sum= ~sum(.)
-    # ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = status,
-    )
-  ) %>% opt_row_striping()
+simple_funct(D_783167257, "MARITAL: Marital Status")
 
 
 ```
@@ -1249,7 +1219,6 @@ dt_sex2_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 #Appearance/Style
-
 style= data_tib_m1  %>%  mutate(descr= case_when(D_987107433==220083334 ~ "Very Feminine",
                                                D_987107433==541300533 ~ "Mostly Feminine",
                                                D_987107433==878286618 ~ "Somewhat Feminine",
@@ -2996,14 +2965,16 @@ weight45=boxp_funct(D_912857732_D_407167089,"Weight at 45","Weight")
 weight55=boxp_funct(D_912857732_D_503154158,"Weight at 55","Weight")
 grid.arrange(weight3, weight18, weight25, nrow=3)
 grid.arrange(weight35,weight45, weight55, nrow=3)
-
+```
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
 
 ###Weight loss-- attempt to make a flag of 5% or more weight loss
-module1$D_912857732_D_821387277 <- as.numeric(module1$D_912857732_D_821387277)
-module1$D_912857732_D_121646540 <- as.numeric(module1$D_912857732_D_121646540)
-module1$D_912857732_D_950080618 <- as.numeric(module1$D_912857732_D_950080618)
-module1$D_912857732_D_407167089 <- as.numeric(module1$D_912857732_D_407167089)
-module1$D_912857732_D_503154158 <- as.numeric(module1$D_912857732_D_503154158)
+
+# module1$D_912857732_D_821387277 <- as.numeric(module1$D_912857732_D_821387277)
+# module1$D_912857732_D_121646540 <- as.numeric(module1$D_912857732_D_121646540)
+# module1$D_912857732_D_950080618 <- as.numeric(module1$D_912857732_D_950080618)
+# module1$D_912857732_D_407167089 <- as.numeric(module1$D_912857732_D_407167089)
+# module1$D_912857732_D_503154158 <- as.numeric(module1$D_912857732_D_503154158)
 
 
 ###### These are all mathematically producing 0, meaning no one lost 5%+ or weight. That's not true
@@ -3044,7 +3015,7 @@ module1$D_912857732_D_503154158 <- as.numeric(module1$D_912857732_D_503154158)
 # 
 
 
-# simple_funct(D_808806810, "Weight Loss Between 18-25 Years Old Purposeful")
+
 data_tib_m1$D_912857732_D_821387277 <- as.numeric(data_tib_m1$D_912857732_D_821387277, na.rm=T)
 data_tib_m1$D_912857732_D_121646540 <- as.numeric(data_tib_m1$D_912857732_D_121646540, na.rm=T)
 data_tib_m1$D_912857732_D_950080618 <- as.numeric(data_tib_m1$D_912857732_D_950080618, na.rm=T)
@@ -3052,17 +3023,19 @@ data_tib_m1$D_912857732_D_407167089 <- as.numeric(data_tib_m1$D_912857732_D_4071
 data_tib_m1$D_912857732_D_503154158 <- as.numeric(data_tib_m1$D_912857732_D_503154158, na.rm=T)
 
 
-diff25 <- abs((data_tib_m1$D_912857732_D_121646540-data_tib_m1$D_912857732_D_821387277)/data_tib_m1$D_912857732_D_821387277)
-diff35 <- abs((data_tib_m1$D_912857732_D_950080618-data_tib_m1$D_912857732_D_121646540)/data_tib_m1$D_912857732_D_121646540)
-diff45 <- abs((data_tib_m1$D_912857732_D_407167089-data_tib_m1$D_912857732_D_950080618)/data_tib_m1$D_912857732_D_950080618)
-diff55 <- abs((data_tib_m1$D_912857732_D_503154158-data_tib_m1$D_912857732_D_407167089)/data_tib_m1$D_912857732_D_407167089)
+data_tib_m1$diff25 <- (data_tib_m1$D_912857732_D_121646540-data_tib_m1$D_912857732_D_821387277)/data_tib_m1$D_912857732_D_821387277
+data_tib_m1$diff25 <- (data_tib_m1$D_912857732_D_121646540-data_tib_m1$D_912857732_D_821387277)/data_tib_m1$D_912857732_D_821387277
+
+data_tib_m1$diff35 <- (data_tib_m1$D_912857732_D_950080618-data_tib_m1$D_912857732_D_121646540)/data_tib_m1$D_912857732_D_121646540
+data_tib_m1$diff45 <- (data_tib_m1$D_912857732_D_407167089-data_tib_m1$D_912857732_D_950080618)/data_tib_m1$D_912857732_D_950080618
+data_tib_m1$diff55 <- (data_tib_m1$D_912857732_D_503154158-data_tib_m1$D_912857732_D_407167089)/data_tib_m1$D_912857732_D_407167089
 
 
 
 
 
 
-WGT1825= data_tib_m1 %>%  filter(diff25>0.05) %>%  mutate(meds= case_when(D_808806810==353358909 ~ "Yes",
+WGT1825= data_tib_m1 %>%  filter(diff25<(-0.05)) %>%  mutate(meds= case_when(D_808806810==353358909 ~ "Yes",
                                                    D_808806810==104430631 ~ "No",
                                                    TRUE ~ "Skipped this question"))
 
@@ -3096,7 +3069,7 @@ WGT1825_summary %>%  gt::gt() %>%
 # #weight loss (25-35) on purpose?
 # simple_funct(D_803129396, "Weight Loss Between 18-25 Years Old Purposeful")
 
-WGT2535= data_tib_m1 %>%  filter(diff35>0.05) %>%  mutate(meds= case_when(D_803129396==353358909 ~ "Yes",
+WGT2535= data_tib_m1 %>%  filter(diff35<(-0.05)) %>%  mutate(meds= case_when(D_803129396==353358909 ~ "Yes",
                                                    D_803129396==104430631 ~ "No",
                                                    TRUE ~ "Skipped this question"))
 
@@ -3130,7 +3103,7 @@ WGT2535_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 # #weight loss (35-45) on purpose?
 # simple_funct(D_183572295, "Weight Loss Between 18-25 Years Old Purposeful")
 
-WGT3545= data_tib_m1 %>%  filter(diff45>0.05) %>%  mutate(meds= case_when(D_183572295==353358909 ~ "Yes",
+WGT3545= data_tib_m1 %>%  filter(diff45<(-0.05)) %>%  mutate(meds= case_when(D_183572295==353358909 ~ "Yes",
                                                    D_183572295==104430631 ~ "No",
                                                    TRUE ~ "Skipped this question"))
 
@@ -3164,7 +3137,7 @@ WGT3545_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 # #weight loss (45-55) on purpose?
 # simple_funct(D_837402132, "Weight Loss Between 18-25 Years Old Purposeful")
 
-WGT4555= data_tib_m1 %>%  filter(diff55>0.05) %>%  mutate(meds= case_when(D_837402132==353358909 ~ "Yes",
+WGT4555= data_tib_m1 %>%  filter(diff55<(-0.05)) %>%  mutate(meds= case_when(D_837402132==353358909 ~ "Yes",
                                                    D_837402132==104430631 ~ "No",
                                                    TRUE ~ "Skipped this question"))
 
@@ -3200,7 +3173,7 @@ WGT4555_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 #   ifelse((((module1$D_912857732_D_121646540 - module1$D_912857732_D_821387277)*-1)/module1$D_912857732_D_121646540[[i]])>(0.05), 1, 0)})   ##should I instead create 
 # weight_loss$weight1825
 
-dt_wt1825= data_tib_m1  %>%  filter(diff25>0.05) # & D_514996698=="353358909"
+dt_wt1825= data_tib_m1  %>%  filter(diff25<(-0.05)) # & D_514996698=="353358909"
 
 dt_wt1825= dt_wt1825  %>%  mutate(multc1 = ifelse(D_207025341_D_207025341_D_934037640==1, 1, 0) + ifelse(D_207025341_D_207025341_D_990501908==1, 1, 0) + ifelse(D_207025341_D_207025341_D_691423127==1, 1, 0) + ifelse(D_207025341_D_207025341_D_203773667==1, 1, 0) + ifelse(D_207025341_D_207025341_D_862170896==1, 1, 0) + ifelse(D_207025341_D_207025341_D_448594163==1, 1, 0) + ifelse(D_207025341_D_207025341_D_807835037==1, 1, 0))
 
@@ -3243,7 +3216,7 @@ dt_wt1825_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 #how did you lose the weight 25-35? 
-dt_wt2535= data_tib_m1 %>%  filter(diff35>0.05) #& D_194396716=="353358909"
+dt_wt2535= data_tib_m1 %>%  filter(diff35<(-0.05)) #& D_194396716=="353358909"
 
 dt_wt2535= dt_wt2535  %>%  mutate(multc1 = ifelse(D_827393644_D_827393644_D_934037640==1, 1, 0) + ifelse(D_827393644_D_827393644_D_990501908==1, 1, 0) + ifelse(D_827393644_D_827393644_D_691423127==1, 1, 0) + ifelse(D_827393644_D_827393644_D_203773667==1, 1, 0) + ifelse(D_827393644_D_827393644_D_862170896==1, 1, 0) + ifelse(D_827393644_D_827393644_D_448594163==1, 1, 0) + ifelse(D_827393644_D_827393644_D_807835037==1, 1, 0)) 
 
@@ -3285,7 +3258,7 @@ dt_wt2535_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 #how did you lose the weight 35-45?
-dt_wt3545= data_tib_m1   %>%  filter(diff45>0.05) #& D_649776532=="353358909"
+dt_wt3545= data_tib_m1   %>%  filter(diff45<(-0.05)) #& D_649776532=="353358909"
 
 dt_wt3545= dt_wt3545  %>%  mutate(multc1 = ifelse(D_630675760_D_630675760_D_934037640==1, 1, 0) + ifelse(D_630675760_D_630675760_D_990501908==1, 1, 0) + ifelse(D_630675760_D_630675760_D_691423127==1, 1, 0) + ifelse(D_630675760_D_630675760_D_203773667==1, 1, 0) + ifelse(D_630675760_D_630675760_D_862170896==1, 1, 0) + ifelse(D_630675760_D_630675760_D_448594163==1, 1, 0) + ifelse(D_630675760_D_630675760_D_807835037==1, 1, 0))
 
@@ -3328,7 +3301,7 @@ dt_wt3545_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 #how did you lose the weight 45-55?
-dt_wt4555= data_tib_m1  %>%  filter(diff55>0.05) #& D_221338826=="353358909"
+dt_wt4555= data_tib_m1  %>%  filter(diff55<(-0.05)) #& D_221338826=="353358909"
 
 dt_wt4555= dt_wt4555  %>%  mutate(multc1 = ifelse(D_827393644_D_827393644_D_934037640==1, 1, 0) + ifelse(D_827393644_D_827393644_D_990501908==1, 1, 0) + ifelse(D_827393644_D_827393644_D_691423127==1, 1, 0) + ifelse(D_827393644_D_827393644_D_203773667==1, 1, 0) + ifelse(D_827393644_D_827393644_D_862170896==1, 1, 0) + ifelse(D_827393644_D_827393644_D_448594163==1, 1, 0) + ifelse(D_827393644_D_827393644_D_807835037==1, 1, 0))
 
@@ -4206,16 +4179,6 @@ sib_logic_funct(D_579563781_6_6, 6, "SIB2_6: Sibling 6 Sex at Birth")
 sib_logic_funct(D_579563781_7_7, 7, "SIB2_7: Sibling 7 Sex at Birth")
 sib_logic_funct(D_579563781_8_8, 8, "SIB2_8: Sibling 8 Sex at Birth")
 
-
-
-sib_logic_funct(D_807431780_1_1, 1, "MULT2_1: Sibling 1 a Twin or Multiple")
-sib_logic_funct(D_807431780_2_2, 2, "MULT2_2: Sibling 2 a Twin or Multiple")
-sib_logic_funct(D_807431780_3_3, 3, "MULT2_3: Sibling 3 a Twin or Multiple")
-sib_logic_funct(D_807431780_4_4, 4, "MULT2_4: Sibling 4 a Twin or Multiple")
-sib_logic_funct(D_807431780_5_5, 5, "MULT2_5: Sibling 5 a Twin or Multiple")
-sib_logic_funct(D_807431780_6_6, 6, "MULT2_6: Sibling 6 a Twin or Multiple")
-sib_logic_funct(D_807431780_7_7, 7, "MULT2_7: Sibling 7 a Twin or Multiple")
-sib_logic_funct(D_807431780_8_8, 8, "MULT2_8: Sibling 8 a Twin or Multiple")
 
 
 #MULT2

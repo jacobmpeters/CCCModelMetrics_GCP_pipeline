@@ -5485,7 +5485,7 @@ tab_footnote(
 
 
 #Age first used 
-module2$D_797076693 <- round(as.numeric(module2$D_797076693), digits=0)
+#module2$D_797076693 <- round(as.numeric(module2$D_797076693), digits=0)
 #boxp_funct(D_797076693,"TESTTHER3: Age Testosterone First Used", "Age")
 hist_funct(D_797076693,"TESTTHER3: Age Testosterone First Used", "Age", "Number of Participants")
 
@@ -5535,7 +5535,7 @@ hist_funct(D_414663452,"TESTTHER5: Age Testosterone Last Used", "Age", "Number o
 #Taken other types
 #one_logic_funct(D_570187182, D_621744463, 353358909, "PRESHOR: Ever taken Other Prescription Medication")
 testt1= data_tib_m2 %>% filter(D_621744463==353358909) %>%  mutate(answer= case_when(D_570187182==104430631 ~ "No",
-                                                                                     D_570187182==353358909 ~ "Yes",,
+                                                                                     D_570187182==353358909 ~ "Yes",
                                                                                      TRUE ~ "Skipped this question"))
 
 testt1_summary <- testt1 %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
@@ -9789,9 +9789,12 @@ SNORING5_ans= SNORING5 %>%  mutate(answer= case_when(D_756521698==718687985 ~ "A
                                                      D_756521698==632512449 ~ "1 to 2 times per month",
                                                      D_756521698==520089841 ~ "Less than 1 to 2 times per month",
                                                      D_756521698==178420302 ~ "Unknown",
+                                                     D_756521698==648960871 ~ "Never",
                                                         TRUE ~ "Skipped this question"))
 
-SNORING5_ans$answer <- factor(SNORING5_ans$answer,levels=c("Almost every day", "3 to 4 times per week", "1 to 2 times per week", "1 to 2 times per month", "Less than 1 to 2 times per month","Unknown", "Skipped this question" ))
+SNORING5_ans$answer <- factor(SNORING5_ans$answer,levels=c("Almost every day", "3 to 4 times per week", "1 to 2 times per week", 
+                                                           "1 to 2 times per month", "Less than 1 to 2 times per month", "Never", 
+                                                           "Unknown", "Skipped this question" ))
 
 dtSNORING5_summary <- SNORING5_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 

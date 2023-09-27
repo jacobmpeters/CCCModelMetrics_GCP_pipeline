@@ -248,7 +248,7 @@ boxp_funct <- function(CID,Title, Xlab) {
 
 
 ##GT TABLE: Questions that all participants asked, update dictionary as new answer options come up
-dict <- list("104430631"="No", "353358909"="Yes", "589959753"="A little shorter", "623310018"="A lot shorter", "978204320"= "Grade School(Grades 1-8)", "935502060"="Some High School, No Diploma", "404564707"= "High School Graduate or GED", "432193665"="Some College, No Degree", "890756124"="Technical or Trade School After High School", "766964355"="Associate's Degree", "875342283"="Bachelor's Degree", "598242454"="Advanced Degree", "709650750"="Biological Child", "810290359"="Adopted Child", "509607548"="Step Child","784922042"="Related to me in some other way", "288105839"=" Yes, fraternal twins", "626558982"="Yes, triplets or higher multiple birth", "178420302"="Do not Know", "536341288"="Female", "576796184"="Intersex or Other", "654207589"="Male","555374628"="Full Sibling", "871673221"="Half Sibling, Same Mother",  "198654048"="Half Sibling, Same Father", "807835037"="Other", "274062548"="More than 3 months ago", "958538953"="In the past 3 months", "317567178"="In the past month", "484055234"="In the past year",  "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago","958538953"="In the past 3 months",  "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible", "764708931"="Very flexible","0"="No", "1"="Yes", "536341288"="Female", "218837028"="Woman (New Response)", "983318667"="Man (New Response)"  , "654207589"="Male","746038746"="Prefer Not to Answer", "805712793"="Genderqueer","486192236"="Non-Binary", "807835037"="Other","873138103"="Transgender Woman","405267600"="Transgender Man", "220083334"="Very Feminine","541300533"="Mostly Feminine","878286618"="Somewhat Feminine","910745276"="Equally feminine and masculine","915528806"="Very masculine","265452386"="Mostly Masculine","510148951"="Somewhat Masculine","271882746"="Straight or heterosexual", "903084185"="Lesbian, gay, or homosexual", "999994434"="Bisexual")
+dict <- list("104430631"="No", "353358909"="Yes", "589959753"="A little shorter", "623310018"="A lot shorter", "978204320"= "Grade School(Grades 1-8)", "935502060"="Some High School, No Diploma", "404564707"= "High School Graduate or GED", "432193665"="Some College, No Degree", "890756124"="Technical or Trade School After High School", "766964355"="Associate's Degree", "875342283"="Bachelor's Degree", "598242454"="Advanced Degree", "709650750"="Biological Child", "810290359"="Adopted Child", "509607548"="Step Child","784922042"="Related to me in some other way", "288105839"=" Yes, fraternal twins", "626558982"="Yes, triplets or higher multiple birth", "178420302"="Do not Know", "536341288"="Female", "576796184"="Intersex or Other", "654207589"="Male","555374628"="Full Sibling", "871673221"="Half Sibling, Same Mother",  "198654048"="Half Sibling, Same Father", "807835037"="Other", "274062548"="More than 3 months ago", "958538953"="In the past 3 months", "317567178"="In the past month", "484055234"="In the past year",  "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago","958538953"="In the past 3 months",  "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible", "764708931"="Very flexible","0"="No", "1"="Yes", "536341288"="Female", "218837028"="Woman (New Response)", "983318667"="Man (New Response)"  , "654207589"="Male","746038746"="Prefer Not to Answer", "805712793"="Genderqueer","486192236"="Non-Binary", "807835037"="Other","873138103"="Transgender Woman","405267600"="Transgender Man", "220083334"="Very Feminine","541300533"="Mostly Feminine","878286618"="Somewhat Feminine","910745276"="Equally feminine and masculine","915528806"="Very masculine","265452386"="Mostly Masculine","510148951"="Somewhat Masculine","271882746"="Straight or heterosexual", "903084185"="Lesbian, gay, or homosexual", "999994434"="Bisexual", "584368278"="Retired", "475665841"="Homemaker", "656816477"="Unemployed", "756948639"="Unble to Work (Disabled)", "181769837"="Other Employment Status","551525967"="Yes, Full-Time Student", "738284740"="Yes, Part Time Student", "275706407"="Someone on behalf of Participant", "589702540"="Completed by Participant", "288321056"="Married", "514080822"="Never Married","522680498"="Never Married but living with Partner","649436542"="Divorced","522680498"="Partner", "741094625"="Separated","733527132"="Widow"  )
 
 simple_funct1 <- function(CID, Title){
   CID_SYM <- rlang::ensym(CID)
@@ -404,33 +404,7 @@ data_tib_merged %>%  select(D_555481393_D_979809707) %>% filter(!is.na(D_5554813
 # MARTIAL 
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
 
-marital= data_tib_merged  %>%  mutate(status= case_when(D_783167257==288321056 ~ "Married", 
-                                                      D_783167257==514080822 ~ "Never Married",
-                                                      D_783167257==522680498 ~ "Never Married but living with Partner",
-                                                      D_783167257==649436542 ~ "Divorced",
-                                                      D_783167257==522680498 ~ "Partner", 
-                                                      D_783167257==741094625 ~ "Separated",
-                                                      D_783167257==733527132 ~ "Widow",
-                                                      TRUE ~ "Skipped this question"))
-
-dt_marriage_summary <- marital %>% group_by(status) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
-
-dt_marriage_summary %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(column = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Marital Status")) %>% 
-  cols_label(n= md("**Number of Participants**"), status = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-    stub.font.weight = "bold"
-  ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = status,
-    )
-  ) 
+simple_funct(D_783167257, "MARITAL: Marital Status")
 
 ```
 # BLDTRANS
@@ -5362,25 +5336,30 @@ boxp_funct_F(D_797076693,"TESTTHER3: Age Testosterone First Used", "Age")
 
 #How often
 
-dtTESTTHER2 <- data_tib_all2 %>%  filter(D_111235606==353358909 & !(D_946849196_D_729863969==104430631 &  D_946849196_D_108104748==104430631  &
+dtTESTTHER2= data_tib_all2  %>% filter(D_111235606==353358909 & !(D_946849196_D_729863969==104430631 &  D_946849196_D_108104748==104430631  &
                                                                     D_946849196_D_717308596==104430631 &  D_946849196_D_746788766==104430631 &  
                                                                     D_946849196_D_158214723==104430631 &  D_946849196_D_658810736==353358909))
 test_med= dtTESTTHER2 %>%  mutate(meds= case_when(D_984514646=="729363341"~"Daily(2+ times)",
                                               D_984514646=="181786871"~"Daily",
                                               D_984514646=="626911538"~"Every few days",
                                               D_984514646=="522395860"~"Once per Week",
-                                              D_984514646=="814242010"~"Few times per Month",
+                                              D_984514646=="814242010"~"Few times per",
                                               D_984514646=="235613392"~"Rarely",
                                              TRUE ~ "Skipped this question"))
-test_med$meds <- factor(test_med$meds,levels=c("Daily(2+ times)","Every few days","Once per Week","Few times per Month","Rarely","Skipped this question"))
+
 
 dtTESTTHER2_summary <- test_med %>% group_by(meds) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
 
 
-dtTESTTHER2_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtTESTTHER2_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("TESTTHER4: How often Testosterone Used")) %>% 
   cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -5392,7 +5371,7 @@ dtTESTTHER2_summary %>%  gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = meds,
     )
-  ) 
+  ) %>% opt_row_striping()
 
 #Age last used
 boxp_funct_F(D_414663452,"TESTTHER5: Age Testosterone Last Used", "Age")
@@ -6584,10 +6563,7 @@ one_logic_funct2(D_823541843, D_591723682,353358909, "SLEEP2M: Ability to Choose
 
 # SLHABIT1A-G
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
-
-
-#Trouble falling asleep
-##simple_funct2(D_421859821_D_220238240, "SLHABIT1A: Having Trouble Falling Asleep")
+##simple_funct(D_421859821_D_220238240, "SLHABIT1A: Having Trouble Falling Asleep")
 SLHABIT1A_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_220238240==104430631 ~ "No",
                                                      D_421859821_D_220238240==525779785 ~ "Yes, less than once per week",
                                                      D_421859821_D_220238240==565036180 ~ "Yes, 1 or 2 times per week",
@@ -6599,10 +6575,15 @@ SLHABIT1A_ans$answer <- factor(SLHABIT1A_ans$answer,levels=c("No", "Yes, less th
 
 dtSLHABIT1A_summary <- SLHABIT1A_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSLHABIT1A_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtSLHABIT1A_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SLHABIT1A: Having Trouble Falling Asleep")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -6614,26 +6595,31 @@ dtSLHABIT1A_summary %>%  gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = answer,
     )
-  ) 
+  ) %>% opt_row_striping()
 
 
 #Wake up several times
 ##simple_funct(D_421859821_D_151006826, "SLHABIT1B: Waking up Several Times per Night")
-SLHABIT1B_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_220238240==104430631 ~ "No",
-                                                     D_421859821_D_220238240==525779785 ~ "Yes, less than once per week",
-                                                     D_421859821_D_220238240==565036180 ~ "Yes, 1 or 2 times per week",
-                                                     D_421859821_D_220238240==284343405 ~ "Yes, 3 or 4 times per week",
-                                                     D_421859821_D_220238240==270994579 ~ "Yes, 5 or more times per week",
+SLHABIT1B_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_151006826==104430631 ~ "No",
+                                                     D_421859821_D_151006826==525779785 ~ "Yes, less than once per week",
+                                                     D_421859821_D_151006826==565036180 ~ "Yes, 1 or 2 times per week",
+                                                     D_421859821_D_151006826==284343405 ~ "Yes, 3 or 4 times per week",
+                                                     D_421859821_D_151006826==270994579 ~ "Yes, 5 or more times per week",
                                                         TRUE ~ "Skipped this question"))
 
 SLHABIT1B_ans$answer <- factor(SLHABIT1B_ans$answer,levels=c("No", "Yes, less than once per week", "Yes, 1 or 2 times per week", "Yes, 3 or 4 times per week", "Yes, 5 or more times per week", "Skipped this question" ))
 
 dtSLHABIT1B_summary <- SLHABIT1B_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSLHABIT1B_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtSLHABIT1B_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SLHABIT1B: Waking up Several Times per Night")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -6645,26 +6631,31 @@ dtSLHABIT1B_summary %>%  gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = answer,
     )
-  ) 
+  ) %>% opt_row_striping()
 
 
 #Wake up early
 ##simple_funct(D_421859821_D_965290070, "SLHABIT1C: Waking up Too early")
-SLHABIT1C_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_220238240==104430631 ~ "No",
-                                                     D_421859821_D_220238240==525779785 ~ "Yes, less than once per week",
-                                                     D_421859821_D_220238240==565036180 ~ "Yes, 1 or 2 times per week",
-                                                     D_421859821_D_220238240==284343405 ~ "Yes, 3 or 4 times per week",
-                                                     D_421859821_D_220238240==270994579 ~ "Yes, 5 or more times per week",
+SLHABIT1C_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_965290070==104430631 ~ "No",
+                                                     D_421859821_D_965290070==525779785 ~ "Yes, less than once per week",
+                                                     D_421859821_D_965290070==565036180 ~ "Yes, 1 or 2 times per week",
+                                                     D_421859821_D_965290070==284343405 ~ "Yes, 3 or 4 times per week",
+                                                     D_421859821_D_965290070==270994579 ~ "Yes, 5 or more times per week",
                                                         TRUE ~ "Skipped this question"))
 
 SLHABIT1C_ans$answer <- factor(SLHABIT1C_ans$answer,levels=c("No", "Yes, less than once per week", "Yes, 1 or 2 times per week", "Yes, 3 or 4 times per week", "Yes, 5 or more times per week", "Skipped this question" ))
 
 dtSLHABIT1C_summary <- SLHABIT1C_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSLHABIT1C_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtSLHABIT1C_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SLHABIT1C: Waking up Too early")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -6676,25 +6667,30 @@ dtSLHABIT1C_summary %>%  gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = answer,
     )
-  ) 
+  ) %>% opt_row_striping()
 
 #Getting back to sleep
 ##simple_funct(D_421859821_D_781115321, "SLHABIT1D: Trouble Falling Back Asleep")
-SLHABIT1D_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_220238240==104430631 ~ "No",
-                                                     D_421859821_D_220238240==525779785 ~ "Yes, less than once per week",
-                                                     D_421859821_D_220238240==565036180 ~ "Yes, 1 or 2 times per week",
-                                                     D_421859821_D_220238240==284343405 ~ "Yes, 3 or 4 times per week",
-                                                     D_421859821_D_220238240==270994579 ~ "Yes, 5 or more times per week",
+SLHABIT1D_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_781115321==104430631 ~ "No",
+                                                     D_421859821_D_781115321==525779785 ~ "Yes, less than once per week",
+                                                     D_421859821_D_781115321==565036180 ~ "Yes, 1 or 2 times per week",
+                                                     D_421859821_D_781115321==284343405 ~ "Yes, 3 or 4 times per week",
+                                                     D_421859821_D_781115321==270994579 ~ "Yes, 5 or more times per week",
                                                         TRUE ~ "Skipped this question"))
 
 SLHABIT1D_ans$answer <- factor(SLHABIT1D_ans$answer,levels=c("No", "Yes, less than once per week", "Yes, 1 or 2 times per week", "Yes, 3 or 4 times per week", "Yes, 5 or more times per week", "Skipped this question" ))
 
 dtSLHABIT1D_summary <- SLHABIT1D_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSLHABIT1D_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtSLHABIT1D_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SLHABIT1D: Trouble Falling Back Asleep")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -6706,25 +6702,30 @@ dtSLHABIT1D_summary %>%  gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = answer,
     )
-  ) 
+  ) %>% opt_row_striping()
 
 #sleeping pills
 ##simple_funct(D_421859821_D_453071098, "SLHABIT1E: Prescription Sleep Medication Taken")
-SLHABIT1E_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_220238240==104430631 ~ "No",
-                                                     D_421859821_D_220238240==525779785 ~ "Yes, less than once per week",
-                                                     D_421859821_D_220238240==565036180 ~ "Yes, 1 or 2 times per week",
-                                                     D_421859821_D_220238240==284343405 ~ "Yes, 3 or 4 times per week",
-                                                     D_421859821_D_220238240==270994579 ~ "Yes, 5 or more times per week",
+SLHABIT1E_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_453071098==104430631 ~ "No",
+                                                     D_421859821_D_453071098==525779785 ~ "Yes, less than once per week",
+                                                     D_421859821_D_453071098==565036180 ~ "Yes, 1 or 2 times per week",
+                                                     D_421859821_D_453071098==284343405 ~ "Yes, 3 or 4 times per week",
+                                                     D_421859821_D_453071098==270994579 ~ "Yes, 5 or more times per week",
                                                         TRUE ~ "Skipped this question"))
 
 SLHABIT1E_ans$answer <- factor(SLHABIT1E_ans$answer,levels=c("No", "Yes, less than once per week", "Yes, 1 or 2 times per week", "Yes, 3 or 4 times per week", "Yes, 5 or more times per week", "Skipped this question" ))
 
 dtSLHABIT1E_summary <- SLHABIT1E_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSLHABIT1E_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtSLHABIT1E_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SLHABIT1E: Prescription Sleep Medication Taken")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -6736,26 +6737,31 @@ dtSLHABIT1E_summary %>%  gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = answer,
     )
-  ) 
+  ) %>% opt_row_striping()
 
 
 #Irritable
 ##simple_funct(D_421859821_D_513065503, "SLHABIT1F: Sleep Problems causing Irritability")
-SLHABIT1F_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_220238240==104430631 ~ "No",
-                                                     D_421859821_D_220238240==525779785 ~ "Yes, less than once per week",
-                                                     D_421859821_D_220238240==565036180 ~ "Yes, 1 or 2 times per week",
-                                                     D_421859821_D_220238240==284343405 ~ "Yes, 3 or 4 times per week",
-                                                     D_421859821_D_220238240==270994579 ~ "Yes, 5 or more times per week",
+SLHABIT1F_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_513065503==104430631 ~ "No",
+                                                     D_421859821_D_513065503==525779785 ~ "Yes, less than once per week",
+                                                     D_421859821_D_513065503==565036180 ~ "Yes, 1 or 2 times per week",
+                                                     D_421859821_D_513065503==284343405 ~ "Yes, 3 or 4 times per week",
+                                                     D_421859821_D_513065503==270994579 ~ "Yes, 5 or more times per week",
                                                         TRUE ~ "Skipped this question"))
 
 SLHABIT1F_ans$answer <- factor(SLHABIT1F_ans$answer,levels=c("No", "Yes, less than once per week", "Yes, 1 or 2 times per week", "Yes, 3 or 4 times per week", "Yes, 5 or more times per week", "Skipped this question" ))
 
 dtSLHABIT1F_summary <- SLHABIT1F_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSLHABIT1F_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtSLHABIT1F_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SLHABIT1F: Sleep Problems causing Irritability")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -6767,26 +6773,31 @@ dtSLHABIT1F_summary %>%  gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = answer,
     )
-  ) 
+  ) %>% opt_row_striping()
 
 
 #Tired during the day
 ##simple_funct(D_421859821_D_257137378, "SLHABIT1G: Feeling Tired Throughout the day")
-SLHABIT1G_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_220238240==104430631 ~ "No",
-                                                     D_421859821_D_220238240==525779785 ~ "Yes, less than once per week",
-                                                     D_421859821_D_220238240==565036180 ~ "Yes, 1 or 2 times per week",
-                                                     D_421859821_D_220238240==284343405 ~ "Yes, 3 or 4 times per week",
-                                                     D_421859821_D_220238240==270994579 ~ "Yes, 5 or more times per week",
+SLHABIT1G_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_257137378==104430631 ~ "No",
+                                                     D_421859821_D_257137378==525779785 ~ "Yes, less than once per week",
+                                                     D_421859821_D_257137378==565036180 ~ "Yes, 1 or 2 times per week",
+                                                     D_421859821_D_257137378==284343405 ~ "Yes, 3 or 4 times per week",
+                                                     D_421859821_D_257137378==270994579 ~ "Yes, 5 or more times per week",
                                                         TRUE ~ "Skipped this question"))
 
 SLHABIT1G_ans$answer <- factor(SLHABIT1G_ans$answer,levels=c("No", "Yes, less than once per week", "Yes, 1 or 2 times per week", "Yes, 3 or 4 times per week", "Yes, 5 or more times per week", "Skipped this question" ))
 
 dtSLHABIT1G_summary <- SLHABIT1G_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSLHABIT1G_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtSLHABIT1G_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SLHABIT1G: Feeling Tired Throughout the day")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -6798,9 +6809,7 @@ dtSLHABIT1G_summary %>%  gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = answer,
     )
-  ) 
-
-
+  ) %>% opt_row_striping()
 ```
 
 # SLHABIT2
@@ -7062,10 +7071,15 @@ SLHABIT3H_ans$answer <- factor(SLHABIT3H_ans$answer,levels=c("No chance", "Sligh
 
 dtSLHABIT3H_summary <- SLHABIT3H_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSLHABIT3H_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtSLHABIT3H_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SLHABIT3H: Chance of Falling Asleep while Stopped at a Traffic Light")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -7077,7 +7091,7 @@ dtSLHABIT3H_summary %>%  gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = answer,
     )
-  ) 
+  ) %>% opt_row_striping()
 
 #dinner table
 ##simple_funct(D_981441822_D_955609858, "SLHABIT3I: Chance of Falling Asleep while at the Dinner Table")
@@ -7091,10 +7105,15 @@ SLHABIT3I_ans$answer <- factor(SLHABIT3I_ans$answer,levels=c("No chance", "Sligh
 
 dtSLHABIT3I_summary <- SLHABIT3I_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSLHABIT3I_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtSLHABIT3I_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SLHABIT3I: Chance of Falling Asleep while at the Dinner Table")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -7106,7 +7125,7 @@ dtSLHABIT3I_summary %>%  gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = answer,
     )
-  ) 
+  ) %>% opt_row_striping()
 
 
 ```
@@ -7514,7 +7533,7 @@ knitr::opts_chunk$set(comment = NA)
 
 
 
-#module3 <- merge_m3 %>% filter(d_976570371==231311385)
+module3 <- merge_m3 %>% filter(d_976570371==231311385)
 
 
 data_tib_all3 <- as_tibble(module3)
@@ -7560,9 +7579,9 @@ dict <- list("104430631"="No", "353358909"="Yes", "265550580"="Didn't Drink ", "
              "805449318"="11-49","486319890"="50-99","132232896"="100+", "317567178"="In the past month", "484055234"="In the past year", "802197176"="More than a year", "169225725"="Within 5 minutes",
              "967681778"="6-30 min.", "122802180"="Almost All the Time", "950591599"="Most of the Time","167208049"="Half the Time", "793320798"="Sometimes","216450786"="Almost Never", 
              "647504893"="Every Day", "417208949"="Most Days of the Week","797736697"="A Few Days per week","480609810"="One Day per Week","485011582"="A Few Days per Month",
-             "865134801"="One Day per Month","667010122"="A Few days per Year","648960871"="Never", "174968750"="Less Than One Hour", "738454194"="1-2 Hours","229540444"="3-5 Hours", 
+             "667010122"="A Few days per Year","648960871"="Never", "174968750"="Less Than One Hour", "738454194"="1-2 Hours","229540444"="3-5 Hours", 
              "838981994"="6-9 Hours",  "464169461"="10-15 Hours", "683466918"="15+ Hours", "162693263"="Everyday, at least 2 hrs","924926068"="Everday, 0-2 Hours", "417208949"="Most Days", 
-             "797736697"="A Few Days per Week",  "480609810"="1 day per Week", "485011582"="A Few Days per Month", "865134801"="One Day per Month", "667010122"="A Few Days per Year", 
+             "480609810"="1 day per Week", "485011582"="A Few Days per Month", "865134801"="One Day per Month", 
              "648960871"="Never", "503218834"="0",   "759356722"="1",  "668407984"="2", "448069154"="3",  "485163252"="4", "160036380"="5+", "648665281"="1",   "420091116"="2", "412554346"="3",
              "475454159"="4", "312200270"="5","411022152"="6+", "249485680"="Blistering Sunburn",  "646918928"="Sunburn w/o Blisters", "692155653"="Mild Sunburn, Eventual Tan", 
              "899670578"="A Tan wWithout Sunburn", "455468743"="No Skin Color Change", "503218834"="None",  "961021302"="1-2", "953684708"="3-4", "922737557"="5-9", "945387130"="10+",
@@ -7573,7 +7592,8 @@ dict <- list("104430631"="No", "353358909"="Yes", "265550580"="Didn't Drink ", "
              "777809207"="Dark Brown", "181769837"="Other", "230748315"="Blond",  "379848047"="Red", "224120697"="Reddish Brown", "270559240"="Medium Brown",  "469115418"="Black", "300633065"="Very Light",
              "834817071"="Light", "385246065"="Medium", "189414295"="Dark", "482157734"="Very dark", "259218831"="No Freckles",  "519761171"="A few", "800179850"="Some", "455684772"="A lot",
              "425604618"="1",  "914302382"="2", "835682347"="3", "562508684"="4", "180306463"="5", "413495952"="6+", "332226274"="1",  "549638643"="2", "939235325"="3", "473673527"="4",
-             "290010251"="5","355205294"="6+", "968093023"="1",   "545630587"="2","526602834"="3", "905402667"="4", "900343645"="5","554549266"="6+")
+             "290010251"="5","355205294"="6+", "968093023"="1",   "545630587"="2","526602834"="3", "905402667"="4", "900343645"="5","554549266"="6+", "437269318"="Recreation", "838317013"="As Medicine",
+             "585672584"="Both", "807835037"="Other", "746038746"="Prefer Not to Answer")
 
 
 
@@ -7582,19 +7602,14 @@ dict <- list("104430631"="No", "353358909"="Yes", "265550580"="Didn't Drink ", "
 #GT table for questions asked to all (no skip logic)
 simple_funct3 <- function(CID, Title){  
   CID_SYM <- rlang::ensym(CID)
-  dt_select <- module3 %>%  select(Connect_ID, !!CID_SYM)
-  gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% 
+  dt_select <- data_tib_all3 %>%  select(Connect_ID, !!CID_SYM)
+  gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% mutate(answer=recode(!!CID_SYM, !!!dict)) %>% 
     replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
   
   gt_yn %>%  gt(rowname_col = "row_lab")  %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md(Title)) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
     grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -7606,7 +7621,7 @@ simple_funct3 <- function(CID, Title){
     locations = cells_body(
       columns = answer,
     )
-  ) 
+  ) %>% opt_row_striping()
 }
 
 #GT table with one filter/skip logic
@@ -7653,27 +7668,7 @@ simple_funct3(D_863593410, "SKINSUN: Skin Reaction of Being in the Sun for an Ho
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
 
 #BLISTERING
-#simple_funct3(D_525152373, "BLISTERING: Number of Blistering Sunburns over Lifetime")
-blsiter= module3  %>%  mutate(oth_age= case_when(D_863593410=="503218834"~"None",
-                                              D_863593410=="961021302"~"1 to 2",
-                                              D_863593410=="953684708"~"3 to 4",
-                                              D_863593410=="922737557"~"5 to 9",
-                                              D_863593410=="945387130"~"10 or more",
-                                              D_863593410=="178420302"~"Unknown",
-                                              TRUE ~ "Skipped this question"))
-blsiter$oth_age <- factor(blsiter$oth_age,levels=c("None","1 to 2","3 to 4","5 to 9", "10 or more","Unknown","Skipped this question"))
-
-dt_blsiter <- blsiter %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
-
-dt_blsiter %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("BLISTERING: Number of Blistering Sunburns over Lifetime")) %>% 
-  cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(stub.font.weight = "bold") %>%
-  tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) 
+simple_funct3(D_525152373, "BLISTERING: Number of Blistering Sunburns over Lifetime")
 ```
 # TANOUT12, TANOUTADU
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
