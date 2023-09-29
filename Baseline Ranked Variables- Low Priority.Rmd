@@ -404,7 +404,9 @@ data_tib_merged %>%  select(D_555481393_D_979809707) %>% filter(!is.na(D_5554813
 # MARTIAL 
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
 
-simple_funct(D_783167257, "MARITAL: Marital Status")
+
+simple_funct1(D_783167257, "MARITAL: Marital Status")
+
 
 ```
 # BLDTRANS
@@ -5581,7 +5583,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
 ```{r, include=FALSE}
 #warning=FALSE, echo=FALSE, message=FALSE
 
- ##simple_funct(D_649352910_D_654385712, "SITTINGA: Driving or Sitting in a Car, Bus, or Train") 
+ ##simple_funct1(D_649352910_D_654385712, "SITTINGA: Driving or Sitting in a Car, Bus, or Train") 
 
 
  SITTINGA_ans= data_tib_all2 %>%  mutate(answer= case_when(D_649352910_D_654385712==503218834 ~ "None", 
@@ -5618,7 +5620,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
    )  
 
 
- ##simple_funct(D_649352910_D_263483736, "SittingB: Watching TV or other Video Content") 
+ ##simple_funct1(D_649352910_D_263483736, "SittingB: Watching TV or other Video Content") 
  SITTINGB_ans= data_tib_all2 %>%  mutate(answer= case_when(D_649352910_D_263483736==503218834 ~ "None", 
                                                          D_649352910_D_263483736==464753847 ~ "Less than 30 minutes", 
                                                          D_649352910_D_263483736==729681071 ~ "30 minutes", 
@@ -5653,7 +5655,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
    )  
 
 
- ##simple_funct(D_649352910_D_806746224, "SittingC: Browsing or Playing Games") 
+ ##simple_funct1(D_649352910_D_806746224, "SittingC: Browsing or Playing Games") 
  SITTINGC_ans= data_tib_all2 %>%  mutate(answer= case_when(D_649352910_D_806746224==503218834 ~ "None", 
                                                          D_649352910_D_806746224==464753847 ~ "Less than 30 minutes", 
                                                          D_649352910_D_806746224==729681071 ~ "30 minutes", 
@@ -5688,7 +5690,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
    )  
 
 
- ##simple_funct(D_649352910_D_396649512, "SittingD: Other Activity") 
+ ##simple_funct1(D_649352910_D_396649512, "SittingD: Other Activity") 
  SITTINGD_ans= data_tib_all2 %>%  mutate(answer= case_when(D_649352910_D_396649512==503218834 ~ "None", 
                                                          D_649352910_D_396649512==464753847 ~ "Less than 30 minutes", 
                                                          D_649352910_D_396649512==729681071 ~ "30 minutes", 
@@ -5728,7 +5730,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
 ```{r, include=FALSE}
 #warning=FALSE, echo=FALSE, message=FALSE
 
- ##simple_funct(D_733547268_D_980120253, "HOUSE1A: Frequency of Light Household Chores") 
+ ##simple_funct1(D_733547268_D_980120253, "HOUSE1A: Frequency of Light Household Chores") 
  HOUSE1A_ans= data_tib_all2 %>%  mutate(answer= case_when(D_733547268_D_980120253==503218834 ~ "None", 
                                                          D_733547268_D_980120253==464753847 ~ "Less than 30 minutes", 
                                                          D_733547268_D_980120253==729681071 ~ "30 minutes", 
@@ -5763,7 +5765,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
    )  
 
 
- ##simple_funct(D_733547268_D_993029890, "HOUSE1B: Frequency of Moderate to Vigorous Household Chores") 
+ ##simple_funct1(D_733547268_D_993029890, "HOUSE1B: Frequency of Moderate to Vigorous Household Chores") 
  HOUSE1B_ans= data_tib_all2 %>%  mutate(answer= case_when(D_733547268_D_993029890==503218834 ~ "None", 
                                                          D_733547268_D_993029890==464753847 ~ "Less than 30 minutes", 
                                                          D_733547268_D_993029890==729681071 ~ "30 minutes", 
@@ -5798,7 +5800,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
    )  
 
 
- ##simple_funct(D_733547268_D_980196073, "HOUSE1C: Frequency of Caring for Pets") 
+ ##simple_funct1(D_733547268_D_980196073, "HOUSE1C: Frequency of Caring for Pets") 
  HOUSE1C_ans= data_tib_all2 %>%  mutate(answer= case_when(D_733547268_D_980196073==503218834 ~ "None", 
                                                          D_733547268_D_980196073==464753847 ~ "Less than 30 minutes", 
                                                          D_733547268_D_980196073==729681071 ~ "30 minutes", 
@@ -5833,7 +5835,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
    )  
 
 
- ##simple_funct(D_733547268_D_115422925, "HOUSE1D: Frequency of Caring for Kids/Adults") 
+ ##simple_funct1(D_733547268_D_115422925, "HOUSE1D: Frequency of Caring for Kids/Adults") 
  HOUSE1D_ans= data_tib_all2 %>%  mutate(answer= case_when(D_733547268_D_980196073==503218834 ~ "None", 
                                                          D_733547268_D_980196073==464753847 ~ "Less than 30 minutes", 
                                                          D_733547268_D_980196073==729681071 ~ "30 minutes", 
@@ -5869,7 +5871,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 
- ##simple_funct(D_733547268_D_151161693, "HOUSE1E: Frequency of Walking while Shopping") 
+ ##simple_funct1(D_733547268_D_151161693, "HOUSE1E: Frequency of Walking while Shopping") 
  HOUSE1E_ans= data_tib_all2 %>%  mutate(answer= case_when(D_733547268_D_151161693==503218834 ~ "None", 
                                                          D_733547268_D_151161693==464753847 ~ "Less than 30 minutes", 
                                                          D_733547268_D_151161693==729681071 ~ "30 minutes", 
@@ -6564,7 +6566,9 @@ one_logic_funct2(D_823541843, D_591723682,353358909, "SLEEP2M: Ability to Choose
 
 # SLHABIT1A-G
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
-##simple_funct(D_421859821_D_220238240, "SLHABIT1A: Having Trouble Falling Asleep")
+
+##simple_funct1(D_421859821_D_220238240, "SLHABIT1A: Having Trouble Falling Asleep")
+
 SLHABIT1A_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_220238240==104430631 ~ "No",
                                                      D_421859821_D_220238240==525779785 ~ "Yes, less than once per week",
                                                      D_421859821_D_220238240==565036180 ~ "Yes, 1 or 2 times per week",
@@ -6600,7 +6604,9 @@ dtSLHABIT1A_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 #Wake up several times
-##simple_funct(D_421859821_D_151006826, "SLHABIT1B: Waking up Several Times per Night")
+
+##simple_funct1(D_421859821_D_151006826, "SLHABIT1B: Waking up Several Times per Night")
+
 SLHABIT1B_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_151006826==104430631 ~ "No",
                                                      D_421859821_D_151006826==525779785 ~ "Yes, less than once per week",
                                                      D_421859821_D_151006826==565036180 ~ "Yes, 1 or 2 times per week",
@@ -6636,7 +6642,9 @@ dtSLHABIT1B_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 #Wake up early
-##simple_funct(D_421859821_D_965290070, "SLHABIT1C: Waking up Too early")
+
+##simple_funct1(D_421859821_D_965290070, "SLHABIT1C: Waking up Too early")
+
 SLHABIT1C_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_965290070==104430631 ~ "No",
                                                      D_421859821_D_965290070==525779785 ~ "Yes, less than once per week",
                                                      D_421859821_D_965290070==565036180 ~ "Yes, 1 or 2 times per week",
@@ -6671,7 +6679,9 @@ dtSLHABIT1C_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   ) %>% opt_row_striping()
 
 #Getting back to sleep
-##simple_funct(D_421859821_D_781115321, "SLHABIT1D: Trouble Falling Back Asleep")
+
+##simple_funct1(D_421859821_D_781115321, "SLHABIT1D: Trouble Falling Back Asleep")
+
 SLHABIT1D_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_781115321==104430631 ~ "No",
                                                      D_421859821_D_781115321==525779785 ~ "Yes, less than once per week",
                                                      D_421859821_D_781115321==565036180 ~ "Yes, 1 or 2 times per week",
@@ -6706,7 +6716,9 @@ dtSLHABIT1D_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   ) %>% opt_row_striping()
 
 #sleeping pills
-##simple_funct(D_421859821_D_453071098, "SLHABIT1E: Prescription Sleep Medication Taken")
+
+##simple_funct1(D_421859821_D_453071098, "SLHABIT1E: Prescription Sleep Medication Taken")
+
 SLHABIT1E_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_453071098==104430631 ~ "No",
                                                      D_421859821_D_453071098==525779785 ~ "Yes, less than once per week",
                                                      D_421859821_D_453071098==565036180 ~ "Yes, 1 or 2 times per week",
@@ -6742,7 +6754,8 @@ dtSLHABIT1E_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 #Irritable
-##simple_funct(D_421859821_D_513065503, "SLHABIT1F: Sleep Problems causing Irritability")
+##simple_funct1(D_421859821_D_513065503, "SLHABIT1F: Sleep Problems causing Irritability")
+
 SLHABIT1F_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_513065503==104430631 ~ "No",
                                                      D_421859821_D_513065503==525779785 ~ "Yes, less than once per week",
                                                      D_421859821_D_513065503==565036180 ~ "Yes, 1 or 2 times per week",
@@ -6778,7 +6791,9 @@ dtSLHABIT1F_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 #Tired during the day
-##simple_funct(D_421859821_D_257137378, "SLHABIT1G: Feeling Tired Throughout the day")
+
+##simple_funct1(D_421859821_D_257137378, "SLHABIT1G: Feeling Tired Throughout the day")
+
 SLHABIT1G_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_257137378==104430631 ~ "No",
                                                      D_421859821_D_257137378==525779785 ~ "Yes, less than once per week",
                                                      D_421859821_D_257137378==565036180 ~ "Yes, 1 or 2 times per week",
@@ -6817,7 +6832,7 @@ dtSLHABIT1G_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Sleep last 4 weeks
-##simple_funct(D_910856756, "SLHABIT2: Sleep Quality in the Last Four Weeks")
+##simple_funct1(D_910856756, "SLHABIT2: Sleep Quality in the Last Four Weeks")
 SLHABIT2_ans= data_tib_all2 %>%  mutate(answer= case_when(D_910856756==462478011 ~ "Very sound or restful",
                                                      D_910856756==303095574 ~ "Sound and restful",
                                                      D_910856756==838403733 ~ "Average quality",
@@ -6854,7 +6869,7 @@ dtSLHABIT2_summary %>%  gt(rowname_col = "row_lab") %>%
 
 ##Chance of Falling asleep while:
 #sitting and reading
-##simple_funct(D_981441822_D_403155173, "SLHABIT3A: Chance of Falling Asleep while Sitting and Reading")
+##simple_funct1(D_981441822_D_403155173, "SLHABIT3A: Chance of Falling Asleep while Sitting and Reading")
 SLHABIT3A_ans= data_tib_all2 %>%  mutate(answer= case_when(D_981441822_D_403155173==514068832 ~ "No chance",
                                                      D_981441822_D_403155173==774439579 ~ "Slight chance",
                                                      D_981441822_D_403155173==747099514 ~ "Moderate chance",
@@ -6884,7 +6899,7 @@ dtSLHABIT3A_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #watch tv
-##simple_funct(D_981441822_D_576621769, "SLHABIT3B: Chance of Falling Asleep while Watching TV")
+##simple_funct1(D_981441822_D_576621769, "SLHABIT3B: Chance of Falling Asleep while Watching TV")
 SLHABIT3B_ans= data_tib_all2 %>%  mutate(answer= case_when(D_981441822_D_403155173==514068832 ~ "No chance",
                                                      D_981441822_D_403155173==774439579 ~ "Slight chance",
                                                      D_981441822_D_403155173==747099514 ~ "Moderate chance",
@@ -6914,7 +6929,7 @@ dtSLHABIT3B_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #sitting inactive
-##simple_funct(D_981441822_D_988508028, "SLHABIT3C: Chance of Falling Asleep while Sitting Inactive")
+##simple_funct1(D_981441822_D_988508028, "SLHABIT3C: Chance of Falling Asleep while Sitting Inactive")
 SLHABIT3C_ans= data_tib_all2 %>%  mutate(answer= case_when(D_981441822_D_403155173==514068832 ~ "No chance",
                                                      D_981441822_D_403155173==774439579 ~ "Slight chance",
                                                      D_981441822_D_403155173==747099514 ~ "Moderate chance",
@@ -6943,7 +6958,7 @@ dtSLHABIT3C_summary %>%  gt(rowname_col = "row_lab") %>%
   ) 
 
 #riding passenger
-##simple_funct(D_981441822_D_186488870, "SLHABIT3D: Chance of Falling Asleep while Sitting as a Passenger in the Car")
+##simple_funct1(D_981441822_D_186488870, "SLHABIT3D: Chance of Falling Asleep while Sitting as a Passenger in the Car")
 SLHABIT3D_ans= data_tib_all2 %>%  mutate(answer= case_when(D_981441822_D_403155173==514068832 ~ "No chance",
                                                      D_981441822_D_403155173==774439579 ~ "Slight chance",
                                                      D_981441822_D_403155173==747099514 ~ "Moderate chance",
@@ -6972,7 +6987,7 @@ dtSLHABIT3D_summary %>%  gt(rowname_col = "row_lab") %>%
   ) 
 
 #lying in the afternoon
-##simple_funct(D_981441822_D_922388461, "SLHABIT3E: Chance of Falling Asleep while Lying Resting in the Afternoon")
+##simple_funct1(D_981441822_D_922388461, "SLHABIT3E: Chance of Falling Asleep while Lying Resting in the Afternoon")
 SLHABIT3E_ans= data_tib_all2 %>%  mutate(answer= case_when(D_981441822_D_403155173==514068832 ~ "No chance",
                                                      D_981441822_D_403155173==774439579 ~ "Slight chance",
                                                      D_981441822_D_403155173==747099514 ~ "Moderate chance",
@@ -7002,7 +7017,7 @@ dtSLHABIT3E_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #sitting talking
-##simple_funct(D_981441822_D_760686611, "SLHABIT3F: Chance of Falling Asleep while Sitting and Talking")
+##simple_funct1(D_981441822_D_760686611, "SLHABIT3F: Chance of Falling Asleep while Sitting and Talking")
 SLHABIT3F_ans= data_tib_all2 %>%  mutate(answer= case_when(D_981441822_D_403155173==514068832 ~ "No chance",
                                                      D_981441822_D_403155173==774439579 ~ "Slight chance",
                                                      D_981441822_D_403155173==747099514 ~ "Moderate chance",
@@ -7032,7 +7047,7 @@ dtSLHABIT3F_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #siting after lunch w/o alc
-##simple_funct(D_981441822_D_354550061, "SLHABIT3G: Chance of Falling Asleep while Sitting after Lunch w/o Alcohol")
+##simple_funct1(D_981441822_D_354550061, "SLHABIT3G: Chance of Falling Asleep while Sitting after Lunch w/o Alcohol")
 SLHABIT3G_ans= data_tib_all2 %>%  mutate(answer= case_when(D_981441822_D_403155173==514068832 ~ "No chance",
                                                      D_981441822_D_403155173==774439579 ~ "Slight chance",
                                                      D_981441822_D_403155173==747099514 ~ "Moderate chance",
@@ -7061,7 +7076,7 @@ dtSLHABIT3G_summary %>%  gt(rowname_col = "row_lab") %>%
   ) 
 
 #traffic light
-##simple_funct(D_981441822_D_179705366, "SLHABIT3H: Chance of Falling Asleep while Stopped at a Traffic Light")
+##simple_funct1(D_981441822_D_179705366, "SLHABIT3H: Chance of Falling Asleep while Stopped at a Traffic Light")
 SLHABIT3H_ans= data_tib_all2 %>%  mutate(answer= case_when(D_981441822_D_403155173==514068832 ~ "No chance",
                                                      D_981441822_D_403155173==774439579 ~ "Slight chance",
                                                      D_981441822_D_403155173==747099514 ~ "Moderate chance",
@@ -7095,7 +7110,7 @@ dtSLHABIT3H_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   ) %>% opt_row_striping()
 
 #dinner table
-##simple_funct(D_981441822_D_955609858, "SLHABIT3I: Chance of Falling Asleep while at the Dinner Table")
+##simple_funct1(D_981441822_D_955609858, "SLHABIT3I: Chance of Falling Asleep while at the Dinner Table")
 SLHABIT3I_ans= data_tib_all2 %>%  mutate(answer= case_when(D_981441822_D_403155173==514068832 ~ "No chance",
                                                      D_981441822_D_403155173==774439579 ~ "Slight chance",
                                                      D_981441822_D_403155173==747099514 ~ "Moderate chance",
