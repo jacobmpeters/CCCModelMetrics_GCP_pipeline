@@ -225,7 +225,7 @@ merged <- merged %>% filter(D_699625233==353358909)
 
 
 #Verified by site
-cat("Verified by site:", sum(merged$D_821247024==197316935, na.rm=TRUE))
+#cat("Verified by site:", sum(merged$D_821247024==197316935, na.rm=TRUE))
 
 
 #Mod1 completed
@@ -275,7 +275,9 @@ boxp_funct <- function(CID,Title, Xlab) {
 
 
 ##GT TABLE: Questions that all participants asked, update dictionary as new answer options come up
-dict <- list("104430631"="No", "353358909"="Yes", "589959753"="A little shorter", "623310018"="A lot shorter", "978204320"= "Grade School(Grades 1-8)", "935502060"="Some High School, No Diploma", "404564707"= "High School Graduate or GED", "432193665"="Some College, No Degree", "890756124"="Technical or Trade School After High School", "766964355"="Associate's Degree", "875342283"="Bachelor's Degree", "598242454"="Advanced Degree", "709650750"="Biological Child", "810290359"="Adopted Child", "509607548"="Step Child", "784922042"="Related to me in some other way", "288105839"=" Yes, fraternal twins", "626558982"="Yes, triplets or higher multiple birth", "178420302"="Do not Know", "536341288"="Female", "576796184"="Intersex or Other", "654207589"="Male","555374628"="Full Sibling", "871673221"="Half Sibling, Same Mother",  "198654048"="Half Sibling, Same Father", "807835037"="Other", "274062548"="More than 3 months ago", "958538953"="In the past 3 months", "317567178"="In the past month", "484055234"="In the past year",  "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago","958538953"="In the past 3 months",  "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible", "764708931"="Very flexible","0"="No", "1"="Yes", "536341288"="Female", "218837028"="Woman (New Response)", "983318667"="Man (New Response)"  , "654207589"="Male","746038746"="Prefer Not to Answer", "805712793"="Genderqueer","486192236"="Non-Binary", "807835037"="Other","873138103"="Transgender Woman","405267600"="Transgender Man", "220083334"="Very Feminine","541300533"="Mostly Feminine","878286618"="Somewhat Feminine","910745276"="Equally feminine and masculine","915528806"="Very masculine","265452386"="Mostly Masculine","510148951"="Somewhat Masculine","271882746"="Straight or heterosexual", "903084185"="Lesbian, gay, or homosexual", "999994434"="Bisexual", "584368278"="Retired", "475665841"="Homemaker", "656816477"="Unemployed", "756948639"="Unble to Work (Disabled)", "181769837"="Other Employment Status","551525967"="Yes, Full-Time Student", "738284740"="Yes, Part Time Student" )
+
+dict <- list("104430631"="No", "353358909"="Yes", "589959753"="A little shorter", "623310018"="A lot shorter", "978204320"= "Grade School(Grades 1-8)", "935502060"="Some High School, No Diploma", "404564707"= "High School Graduate or GED", "432193665"="Some College, No Degree", "890756124"="Technical or Trade School After High School", "766964355"="Associate's Degree", "875342283"="Bachelor's Degree", "598242454"="Advanced Degree", "709650750"="Biological Child", "810290359"="Adopted Child", "509607548"="Step Child", "784922042"="Related to me in some other way", "288105839"=" Yes, fraternal twins", "626558982"="Yes, triplets or higher multiple birth", "178420302"="Do not Know", "536341288"="Female", "576796184"="Intersex or Other", "654207589"="Male","555374628"="Full Sibling", "871673221"="Half Sibling, Same Mother",  "198654048"="Half Sibling, Same Father", "807835037"="Other", "274062548"="More than 3 months ago", "958538953"="In the past 3 months", "317567178"="In the past month", "484055234"="In the past year",  "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago","958538953"="In the past 3 months",  "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible", "764708931"="Very flexible","0"="No", "1"="Yes", "536341288"="Female", "218837028"="Woman (New Response)", "983318667"="Man (New Response)"  , "654207589"="Male","746038746"="Prefer Not to Answer", "805712793"="Genderqueer","486192236"="Non-Binary", "807835037"="Other","873138103"="Transgender Woman","405267600"="Transgender Man", "220083334"="Very Feminine","541300533"="Mostly Feminine","878286618"="Somewhat Feminine","910745276"="Equally feminine and masculine","915528806"="Very masculine","265452386"="Mostly Masculine","510148951"="Somewhat Masculine","271882746"="Straight or heterosexual", "903084185"="Lesbian, gay, or homosexual", "999994434"="Bisexual", "584368278"="Retired", "475665841"="Homemaker", "656816477"="Unemployed", "756948639"="Unble to Work (Disabled)", "181769837"="Other Employment Status","551525967"="Yes, Full-Time Student", "738284740"="Yes, Part Time Student", "288321056"="Married", "514080822"="Never Married","522680498"="Never Married but living with Partner","649436542"="Divorced","522680498"="Partner", "741094625"="Separated","733527132"="Widow" )
+
 
 
 simple_funct <- function(CID, Title){  
@@ -482,38 +484,7 @@ hist_funct(D_150344905, "Age if Age Verification Not Correct", "Age", "Frequency
 ## Marital Status 
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
 ##Marital Status 
-marital= data_tib_m1  %>%  mutate(status= case_when(D_783167257==288321056 ~ "Married", 
-                                                    D_783167257==514080822 ~ "Never Married",
-                                                    D_783167257==522680498 ~ "Never Married but living with Partner",
-                                                    D_783167257==649436542 ~ "Divorced",
-                                                    D_783167257==522680498 ~ "Partner", 
-                                                    D_783167257==741094625 ~ "Separated",
-                                                    D_783167257==733527132 ~ "Widow",
-                                                    TRUE ~ "Skipped this question"))
-
-dt_marriage_summary <- marital %>% group_by(status) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
-
-dt_marriage_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = c( "percentage"), decimals = 2) %>% 
-  tab_header(title = md("Marital Status")) %>% 
-  cols_label(n= md("**Number of Participants**"), status = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-    # summary_rows( groups=F,
-    # column = c(n,percentage),
-    # fns= list(
-    #   Sum= ~sum(.)
-    # ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = status,
-    )
-  ) %>% opt_row_striping()
+simple_funct(D_783167257, "MARITAL: Marital Status")
 
 
 ```
@@ -1249,7 +1220,6 @@ dt_sex2_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 #Appearance/Style
-
 style= data_tib_m1  %>%  mutate(descr= case_when(D_987107433==220083334 ~ "Very Feminine",
                                                D_987107433==541300533 ~ "Mostly Feminine",
                                                D_987107433==878286618 ~ "Somewhat Feminine",
@@ -2305,7 +2275,7 @@ grid.arrange(hpv_a_dg, hpv_y_dg, nrow=2)
 
 
 #cat("HIV/AIDS Diagnosis")
-hiv_a_dg=boxp_funct(D_523188839_D_206625031,"HIV/AIDS Age at Diagnosis","Age") #unanswered
+hiv_a_dg=boxp_funct(D_523188839_D_206625031,"HIV/AIDS Age at Diagnosis","Age") 
 hiv_y_dg=boxp_funct(D_523188839_D_261863326,"HIV/AIDS Year of Diagnosis","Year")
 grid.arrange(hiv_a_dg, hiv_y_dg, nrow=2)
 
@@ -2444,7 +2414,7 @@ cat("Proportion of Fibrocystic Breast Cases Confirmed with Biopsy:", fibro, "%")
 
 
 #cat("Ductal Carcinoma in situ(DCIS) Diagnosis")
-duct_a_dg=boxp_funct(D_219956652_D_206625031,"DCIS Age at Diagnosis","Age") #unanswered
+duct_a_dg=boxp_funct(D_219956652_D_206625031,"DCIS Age at Diagnosis","Age") 
 duct_y_dg=boxp_funct(D_219956652_D_261863326,"DCIS Year of Diagnosis","Year") ##why does this have years with decimals?
 grid.arrange(duct_a_dg, duct_y_dg, nrow=2)
   #diagnosed with biopsy
@@ -2570,31 +2540,31 @@ dt_mgr9
 
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
 #	Tonsils removed (tonsillectomy)
-tonsil_a_sg=boxp_funct(D_367884741_D_206625031,"Age of Tonisllectomy Surgery","Age") 
+tonsil_a_sg=boxp_funct(D_367884741_D_206625031,"Age at Tonisllectomy Surgery","Age") 
 tonsil_y_sg=boxp_funct(D_367884741_D_261863326,"Year of Tonisllectomy Surgery","Year")
 grid.arrange(tonsil_a_sg, tonsil_y_sg, nrow=2)
 
 
 #	Gallbladder removed (cholecystectomy)
-gall_a_sg=boxp_funct(D_178353079_D_206625031,"Age of Cholecystectomy Surgery","Age") 
+gall_a_sg=boxp_funct(D_178353079_D_206625031,"Age at Cholecystectomy Surgery","Age") 
 gall_y_sg=boxp_funct(D_178353079_D_261863326,"Year of Cholecystectomy Surgery","Year")
 grid.arrange(gall_a_sg, gall_y_sg, nrow=2)
 
 
 #	Appendix removed (appendectomy)
-apdx_a_sg=boxp_funct(D_550075233_D_206625031,"Age of Appendectomy Surgery","Age") 
+apdx_a_sg=boxp_funct(D_550075233_D_206625031,"Age at Appendectomy Surgery","Age") 
 apdx_y_sg=boxp_funct(D_550075233_D_261863326,"Year of Appendectomy Surgery","Year")
 grid.arrange(apdx_a_sg, apdx_y_sg, nrow=2)
 
 
 #	Liposuction
-lipo_a_sg=boxp_funct(D_860920332_D_206625031,"Age of Liposuction Surgery","Age") 
+lipo_a_sg=boxp_funct(D_860920332_D_206625031,"Age at Liposuction Surgery","Age") 
 lipo_y_sg=boxp_funct(D_860920332_D_261863326,"Year of Liposuction Surgery","Year")
 grid.arrange(lipo_a_sg, lipo_y_sg, nrow=2)
 
 
 #	Bariatric surgery (lap band, gastric bypass)
-bar_sg_a_sg=boxp_funct(D_986613440_D_206625031,"Age of Gastric Bypass Surgery","Age")
+bar_sg_a_sg=boxp_funct(D_986613440_D_206625031,"Age at Gastric Bypass Surgery","Age")
 bar_sg_y_sg=boxp_funct(D_986613440_D_261863326,"Year of Gastric Bypass Surgery","Year")
 grid.arrange(bar_sg_a_sg, bar_sg_y_sg, nrow=2)
 ```
@@ -2645,11 +2615,6 @@ tmp_Brst <- data_tib_m1 %>%  filter(data_tib_m1$D_624179836_D_533491176==1)
 tmpMC2<- tmp_Brst[, grepl("517307064", colnames(tmp_Brst))]
 tmpMC2$D_517307064_D_942347130 <- ifelse(is.na(tmpMC2$D_517307064_D_942347130), 0, 1)
 
-
-# D_173240848_D_173240848_D_939782495, D_173240848_D_173240848_D_135725957,D_173240848_D_173240848_D_518416174,D_173240848_D_173240848_D_847945207,D_173240848_D_173240848_D_942970912,D_173240848_D_173240848_D_596122041,
-#D_173240848_D_173240848_D_489400183,D_173240848_D_173240848_D_863246236,D_173240848_D_173240848_D_607793249,D_173240848_D_173240848_D_532172400,D_173240848_D_173240848_D_754745617,D_173240848_D_173240848_D_665036297,
-#D_173240848_D_173240848_D_200837530,D_173240848_D_173240848_D_990319383, D_173240848_D_173240848_D_487917585,D_173240848_D_173240848_D_482225200,D_173240848_D_173240848_D_764891959,D_173240848_D_173240848_D_139822395,D_173240848_D_173240848_D_248374037,
-#D_173240848_D_173240848_D_807835037,D_173240848_D_173240848_D_178420302,D_173240848_D_173240848_D_295976386)
 
 
 tmpM2 <- tmpMC2[, c(8,2,3,12,4,1,9, 5, 7, 10, 6)]
@@ -2706,54 +2671,54 @@ tab_footnote(
 
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
 #cat("Breast Implants")
-implant_a_sg=boxp_funct(D_477690298_D_623218391,"Age of Breats Implants Surgery","Age")
+implant_a_sg=boxp_funct(D_477690298_D_623218391,"Age at Breats Implants Surgery","Age")
 implant_y_sg=boxp_funct(D_477690298_D_802622485,"Year of Breats Implants Surgery","Year")
 grid.arrange(implant_a_sg, implant_y_sg, nrow=2)
 
 
 #cat("Mastopexy")
-mastop_a_sg=boxp_funct(D_176453768_D_623218391,"Age of Mastopexy Surgery","Age")
+mastop_a_sg=boxp_funct(D_176453768_D_623218391,"Age at Mastopexy Surgery","Age")
 mastop_y_sg=boxp_funct(D_176453768_D_802622485,"Year of Mastopexy Surgery","Year")
 grid.arrange(mastop_a_sg, mastop_y_sg, nrow=2)
 
 
 #cat("Breast Reconstruction")
-boxp_funct(D_145786416_D_623218391,"Age of Breast Reconstruction Surgery","Age")
-#recon_y_sg=boxp_funct(D_145786416_D_802622485,"Year of Breast Reconstruction Surgery","Year") unanswered
-#grid.arrange(recon_a_sg, recon_y_sg, nrow=2)
+recon_a_sg=boxp_funct(D_145786416_D_623218391,"Age at Breast Reconstruction Surgery","Age")
+recon_y_sg=boxp_funct(D_145786416_D_802622485,"Year of Breast Reconstruction Surgery","Year") 
+grid.arrange(recon_a_sg, recon_y_sg, nrow=2)
 
 #cat("Breast Reduction")
-reduct_a_sg=boxp_funct(D_287605131_D_623218391,"Age of Breast Reduction Surgery","Age")
+reduct_a_sg=boxp_funct(D_287605131_D_623218391,"Age at Breast Reduction Surgery","Age")
 reduct_y_sg=boxp_funct(D_287605131_D_802622485,"Year of Breast Reduction Surgery","Year")
 grid.arrange(reduct_a_sg, reduct_y_sg, nrow=2)
 
 #cat("Partial Mastectomy")
-prtms_a_sg=boxp_funct(D_701157499_D_623218391,"Age of Partial Mastectomy Surgery","Age")
+prtms_a_sg=boxp_funct(D_701157499_D_623218391,"Age at Partial Mastectomy Surgery","Age")
 prtms_y_sg=boxp_funct(D_701157499_D_802622485,"Year of Partial Mastectomy Surgery","Year")
 grid.arrange(prtms_a_sg, prtms_y_sg, nrow=2)
 
 #cat("Mastectomy")
-#mastec_a_sg=boxp_funct(D_428639167_D_623218391,"Age of Mastectomy Surgery","Age") #--none yet
-boxp_funct(D_428639167_D_802622485,"Year of Mastectomy Surgery","Year") 
-#grid.arrange(mastec_a_sg, mastec_y_sg, nrow=2)
+mastec_a_sg=boxp_funct(D_428639167_D_623218391,"Age at Mastectomy Surgery","Age") 
+mastec_y_sg=boxp_funct(D_428639167_D_802622485,"Year of Mastectomy Surgery","Year") 
+grid.arrange(mastec_a_sg, mastec_y_sg, nrow=2)
 
 #cat("Double Mastectomy")
-dbmas_a_sg=boxp_funct(D_282355641_D_623218391,"Age of Double Mastectomy Surgery","Age")
+dbmas_a_sg=boxp_funct(D_282355641_D_623218391,"Age at Double Mastectomy Surgery","Age")
 dbmas_y_sg=boxp_funct(D_282355641_D_802622485,"Year of Double Mastectomy Surgery","Year")
 grid.arrange(dbmas_a_sg, dbmas_y_sg, nrow=2)
 
 #cat("Breast Abscess")
-abscess_a_sg=boxp_funct(D_539301647_D_623218391,"Age of Breast Abscess Surgery","Age") 
+abscess_a_sg=boxp_funct(D_539301647_D_623218391,"Age at Breast Abscess Surgery","Age") 
 abscess_y_sg=boxp_funct(D_539301647_D_802622485,"Year of Breast Abscess Surgery","Year") 
 grid.arrange(abscess_a_sg, abscess_y_sg, nrow=2)
 
 #cat("Lactiferous Surgery")
-lact_a_sg=boxp_funct(D_579225381_D_623218391,"Age of Removal of Lactiferous Surgery","Age")
+lact_a_sg=boxp_funct(D_579225381_D_623218391,"Age at Removal of Lactiferous Surgery","Age")
 lact_y_sg=boxp_funct(D_579225381_D_802622485,"Year of Removal of Lactiferous Surgery","Year")
 grid.arrange(lact_a_sg, lact_y_sg, nrow=2)
 
 #cat("Other Breast Surgery")
-othb_a_sg=boxp_funct(D_891214661_D_623218391,"Age of Other Breast Surgery","Age")
+othb_a_sg=boxp_funct(D_891214661_D_623218391,"Age at Other Breast Surgery","Age")
 othb_y_sg=boxp_funct(D_891214661_D_802622485,"Year of Other Breast Surgery","Year")
 grid.arrange(othb_a_sg, othb_y_sg, nrow=2)
 
@@ -3001,14 +2966,16 @@ weight45=boxp_funct(D_912857732_D_407167089,"Weight at 45","Weight")
 weight55=boxp_funct(D_912857732_D_503154158,"Weight at 55","Weight")
 grid.arrange(weight3, weight18, weight25, nrow=3)
 grid.arrange(weight35,weight45, weight55, nrow=3)
-
+```
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
 
 ###Weight loss-- attempt to make a flag of 5% or more weight loss
-module1$D_912857732_D_821387277 <- as.numeric(module1$D_912857732_D_821387277)
-module1$D_912857732_D_121646540 <- as.numeric(module1$D_912857732_D_121646540)
-module1$D_912857732_D_950080618 <- as.numeric(module1$D_912857732_D_950080618)
-module1$D_912857732_D_407167089 <- as.numeric(module1$D_912857732_D_407167089)
-module1$D_912857732_D_503154158 <- as.numeric(module1$D_912857732_D_503154158)
+
+# module1$D_912857732_D_821387277 <- as.numeric(module1$D_912857732_D_821387277)
+# module1$D_912857732_D_121646540 <- as.numeric(module1$D_912857732_D_121646540)
+# module1$D_912857732_D_950080618 <- as.numeric(module1$D_912857732_D_950080618)
+# module1$D_912857732_D_407167089 <- as.numeric(module1$D_912857732_D_407167089)
+# module1$D_912857732_D_503154158 <- as.numeric(module1$D_912857732_D_503154158)
 
 
 ###### These are all mathematically producing 0, meaning no one lost 5%+ or weight. That's not true
@@ -3049,7 +3016,7 @@ module1$D_912857732_D_503154158 <- as.numeric(module1$D_912857732_D_503154158)
 # 
 
 
-# simple_funct(D_808806810, "Weight Loss Between 18-25 Years Old Purposeful")
+
 data_tib_m1$D_912857732_D_821387277 <- as.numeric(data_tib_m1$D_912857732_D_821387277, na.rm=T)
 data_tib_m1$D_912857732_D_121646540 <- as.numeric(data_tib_m1$D_912857732_D_121646540, na.rm=T)
 data_tib_m1$D_912857732_D_950080618 <- as.numeric(data_tib_m1$D_912857732_D_950080618, na.rm=T)
@@ -3057,17 +3024,19 @@ data_tib_m1$D_912857732_D_407167089 <- as.numeric(data_tib_m1$D_912857732_D_4071
 data_tib_m1$D_912857732_D_503154158 <- as.numeric(data_tib_m1$D_912857732_D_503154158, na.rm=T)
 
 
-diff25 <- abs((data_tib_m1$D_912857732_D_121646540-data_tib_m1$D_912857732_D_821387277)/data_tib_m1$D_912857732_D_821387277)
-diff35 <- abs((data_tib_m1$D_912857732_D_950080618-data_tib_m1$D_912857732_D_121646540)/data_tib_m1$D_912857732_D_121646540)
-diff45 <- abs((data_tib_m1$D_912857732_D_407167089-data_tib_m1$D_912857732_D_950080618)/data_tib_m1$D_912857732_D_950080618)
-diff55 <- abs((data_tib_m1$D_912857732_D_503154158-data_tib_m1$D_912857732_D_407167089)/data_tib_m1$D_912857732_D_407167089)
+data_tib_m1$diff25 <- (data_tib_m1$D_912857732_D_121646540-data_tib_m1$D_912857732_D_821387277)/data_tib_m1$D_912857732_D_821387277
+data_tib_m1$diff25 <- (data_tib_m1$D_912857732_D_121646540-data_tib_m1$D_912857732_D_821387277)/data_tib_m1$D_912857732_D_821387277
+
+data_tib_m1$diff35 <- (data_tib_m1$D_912857732_D_950080618-data_tib_m1$D_912857732_D_121646540)/data_tib_m1$D_912857732_D_121646540
+data_tib_m1$diff45 <- (data_tib_m1$D_912857732_D_407167089-data_tib_m1$D_912857732_D_950080618)/data_tib_m1$D_912857732_D_950080618
+data_tib_m1$diff55 <- (data_tib_m1$D_912857732_D_503154158-data_tib_m1$D_912857732_D_407167089)/data_tib_m1$D_912857732_D_407167089
 
 
 
 
 
 
-WGT1825= data_tib_m1 %>%  filter(diff25>0.05) %>%  mutate(meds= case_when(D_808806810==353358909 ~ "Yes",
+WGT1825= data_tib_m1 %>%  filter(diff25<(-0.05)) %>%  mutate(meds= case_when(D_808806810==353358909 ~ "Yes",
                                                    D_808806810==104430631 ~ "No",
                                                    TRUE ~ "Skipped this question"))
 
@@ -3101,7 +3070,7 @@ WGT1825_summary %>%  gt::gt() %>%
 # #weight loss (25-35) on purpose?
 # simple_funct(D_803129396, "Weight Loss Between 18-25 Years Old Purposeful")
 
-WGT2535= data_tib_m1 %>%  filter(diff35>0.05) %>%  mutate(meds= case_when(D_803129396==353358909 ~ "Yes",
+WGT2535= data_tib_m1 %>%  filter(diff35<(-0.05)) %>%  mutate(meds= case_when(D_803129396==353358909 ~ "Yes",
                                                    D_803129396==104430631 ~ "No",
                                                    TRUE ~ "Skipped this question"))
 
@@ -3135,7 +3104,7 @@ WGT2535_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 # #weight loss (35-45) on purpose?
 # simple_funct(D_183572295, "Weight Loss Between 18-25 Years Old Purposeful")
 
-WGT3545= data_tib_m1 %>%  filter(diff45>0.05) %>%  mutate(meds= case_when(D_183572295==353358909 ~ "Yes",
+WGT3545= data_tib_m1 %>%  filter(diff45<(-0.05)) %>%  mutate(meds= case_when(D_183572295==353358909 ~ "Yes",
                                                    D_183572295==104430631 ~ "No",
                                                    TRUE ~ "Skipped this question"))
 
@@ -3169,7 +3138,7 @@ WGT3545_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 # #weight loss (45-55) on purpose?
 # simple_funct(D_837402132, "Weight Loss Between 18-25 Years Old Purposeful")
 
-WGT4555= data_tib_m1 %>%  filter(diff55>0.05) %>%  mutate(meds= case_when(D_837402132==353358909 ~ "Yes",
+WGT4555= data_tib_m1 %>%  filter(diff55<(-0.05)) %>%  mutate(meds= case_when(D_837402132==353358909 ~ "Yes",
                                                    D_837402132==104430631 ~ "No",
                                                    TRUE ~ "Skipped this question"))
 
@@ -3205,7 +3174,7 @@ WGT4555_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 #   ifelse((((module1$D_912857732_D_121646540 - module1$D_912857732_D_821387277)*-1)/module1$D_912857732_D_121646540[[i]])>(0.05), 1, 0)})   ##should I instead create 
 # weight_loss$weight1825
 
-dt_wt1825= data_tib_m1  %>%  filter(diff25>0.05) # & D_514996698=="353358909"
+dt_wt1825= data_tib_m1  %>%  filter(diff25<(-0.05)) # & D_514996698=="353358909"
 
 dt_wt1825= dt_wt1825  %>%  mutate(multc1 = ifelse(D_207025341_D_207025341_D_934037640==1, 1, 0) + ifelse(D_207025341_D_207025341_D_990501908==1, 1, 0) + ifelse(D_207025341_D_207025341_D_691423127==1, 1, 0) + ifelse(D_207025341_D_207025341_D_203773667==1, 1, 0) + ifelse(D_207025341_D_207025341_D_862170896==1, 1, 0) + ifelse(D_207025341_D_207025341_D_448594163==1, 1, 0) + ifelse(D_207025341_D_207025341_D_807835037==1, 1, 0))
 
@@ -3248,7 +3217,7 @@ dt_wt1825_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 #how did you lose the weight 25-35? 
-dt_wt2535= data_tib_m1 %>%  filter(diff35>0.05) #& D_194396716=="353358909"
+dt_wt2535= data_tib_m1 %>%  filter(diff35<(-0.05)) #& D_194396716=="353358909"
 
 dt_wt2535= dt_wt2535  %>%  mutate(multc1 = ifelse(D_827393644_D_827393644_D_934037640==1, 1, 0) + ifelse(D_827393644_D_827393644_D_990501908==1, 1, 0) + ifelse(D_827393644_D_827393644_D_691423127==1, 1, 0) + ifelse(D_827393644_D_827393644_D_203773667==1, 1, 0) + ifelse(D_827393644_D_827393644_D_862170896==1, 1, 0) + ifelse(D_827393644_D_827393644_D_448594163==1, 1, 0) + ifelse(D_827393644_D_827393644_D_807835037==1, 1, 0)) 
 
@@ -3290,7 +3259,7 @@ dt_wt2535_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 #how did you lose the weight 35-45?
-dt_wt3545= data_tib_m1   %>%  filter(diff45>0.05) #& D_649776532=="353358909"
+dt_wt3545= data_tib_m1   %>%  filter(diff45<(-0.05)) #& D_649776532=="353358909"
 
 dt_wt3545= dt_wt3545  %>%  mutate(multc1 = ifelse(D_630675760_D_630675760_D_934037640==1, 1, 0) + ifelse(D_630675760_D_630675760_D_990501908==1, 1, 0) + ifelse(D_630675760_D_630675760_D_691423127==1, 1, 0) + ifelse(D_630675760_D_630675760_D_203773667==1, 1, 0) + ifelse(D_630675760_D_630675760_D_862170896==1, 1, 0) + ifelse(D_630675760_D_630675760_D_448594163==1, 1, 0) + ifelse(D_630675760_D_630675760_D_807835037==1, 1, 0))
 
@@ -3333,7 +3302,7 @@ dt_wt3545_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 #how did you lose the weight 45-55?
-dt_wt4555= data_tib_m1  %>%  filter(diff55>0.05) #& D_221338826=="353358909"
+dt_wt4555= data_tib_m1  %>%  filter(diff55<(-0.05)) #& D_221338826=="353358909"
 
 dt_wt4555= dt_wt4555  %>%  mutate(multc1 = ifelse(D_827393644_D_827393644_D_934037640==1, 1, 0) + ifelse(D_827393644_D_827393644_D_990501908==1, 1, 0) + ifelse(D_827393644_D_827393644_D_691423127==1, 1, 0) + ifelse(D_827393644_D_827393644_D_203773667==1, 1, 0) + ifelse(D_827393644_D_827393644_D_862170896==1, 1, 0) + ifelse(D_827393644_D_827393644_D_448594163==1, 1, 0) + ifelse(D_827393644_D_827393644_D_807835037==1, 1, 0))
 
@@ -3701,11 +3670,6 @@ tmpMOMCANC <- data_tib_m1 %>%  filter(data_tib_m1$D_276353712==353358909)
 tmpMC2<- tmpMOMCANC[, grepl("814510313", colnames(tmpMOMCANC))]
 tmpMC2$D_814510313_D_677702321 <- ifelse(is.na(tmpMC2$D_814510313_D_677702321), 0, 1)
 
-
-# tmp2_1 <- data_tib_all2 %>%  select(D_814510313_D_814510313_D_939782495, D_814510313_D_814510313_D_135725957, D_814510313_D_814510313_D_518416174, D_814510313_D_814510313_D_847945207, D_814510313_D_814510313_D_283025574,
-#D_814510313_D_814510313_D_942970912, D_814510313_D_814510313_D_596122041, D_814510313_D_814510313_D_489400183, D_814510313_D_814510313_D_863246236, D_814510313_D_814510313_D_607793249, D_814510313_D_814510313_D_532172400,
-#D_814510313_D_814510313_D_754745617, D_814510313_D_814510313_D_665036297, D_814510313_D_814510313_D_200837530, D_814510313_D_814510313_D_990319383, D_814510313_D_814510313_D_487917585, D_814510313_D_814510313_D_603181162, D_814510313_D_814510313_D_482225200,
-#D_814510313_D_814510313_D_764891959, D_814510313_D_814510313_D_139822395, D_814510313_D_814510313_D_723614811, D_814510313_D_814510313_D_807835037, D_814510313_D_814510313_D_178420302)
 
 tmpM2 <- tmpMC2[, c(25,2,10,23,6, 
                     26,12, 9,24, 14, 11, 
@@ -4175,14 +4139,14 @@ stom_y_ddg=boxp_funct(D_727260639_D_261863326,"Father's Year of Stomach Cancer D
 grid.arrange(stom_a_ddg, stom_y_ddg, nrow=2)
 
 #testicular
-boxp_funct(D_359291056_D_206625031,"Father's Age at Testicular Cancer Diagnosis","Age")
-# boxp_funct(D_359291056_D_261863326,"Father's Year of Testicular Cancer Diagnosis","Year") 
-#grid.arrange(test_a_ddg, test_y_ddg, nrow=2)
+test_a_ddg=boxp_funct(D_359291056_D_206625031,"Father's Age at Testicular Cancer Diagnosis","Age")
+test_y_ddg=boxp_funct(D_359291056_D_261863326,"Father's Year of Testicular Cancer Diagnosis","Year") 
+grid.arrange(test_a_ddg, test_y_ddg, nrow=2)
  
 #thyroid
-boxp_funct(D_968841976_D_206625031,"Father's Age at Thyriod Cancer Diagnosis","Age")
-# boxp_funct(D_968841976_D_261863326,"Father's Year of Thyriod Cancer Diagnosis","Year") 
- #grid.arrange(thy_a_ddg, thy_y_ddg, nrow=2)
+thy_a_ddg=boxp_funct(D_968841976_D_206625031,"Father's Age at Thyriod Cancer Diagnosis","Age")
+thy_y_ddg=boxp_funct(D_968841976_D_261863326,"Father's Year of Thyriod Cancer Diagnosis","Year") 
+grid.arrange(thy_a_ddg, thy_y_ddg, nrow=2)
 
 #other
 oth_a_ddg=boxp_funct(D_864981804_D_206625031,"Father's Age at Other Cancer Diagnosis","Age")
@@ -4218,14 +4182,263 @@ sib_logic_funct(D_579563781_8_8, 8, "SIB2_8: Sibling 8 Sex at Birth")
 
 
 
-sib_logic_funct(D_807431780_1_1, 1, "MULT2_1: Sibling 1 a Twin or Multiple")
-sib_logic_funct(D_807431780_2_2, 2, "MULT2_2: Sibling 2 a Twin or Multiple")
-sib_logic_funct(D_807431780_3_3, 3, "MULT2_3: Sibling 3 a Twin or Multiple")
-sib_logic_funct(D_807431780_4_4, 4, "MULT2_4: Sibling 4 a Twin or Multiple")
-sib_logic_funct(D_807431780_5_5, 5, "MULT2_5: Sibling 5 a Twin or Multiple")
-sib_logic_funct(D_807431780_6_6, 6, "MULT2_6: Sibling 6 a Twin or Multiple")
-sib_logic_funct(D_807431780_7_7, 7, "MULT2_7: Sibling 7 a Twin or Multiple")
-sib_logic_funct(D_807431780_8_8, 8, "MULT2_8: Sibling 8 a Twin or Multiple")
+#MULT2
+sibmult2= data_tib_m1  %>%  filter(as.numeric(D_694265648) >0 & (D_992987417==353358909 | D_992987417==288105839 | D_992987417==626558982))  
+
+
+sibmult2_1  = sibmult2 %>% mutate(status=case_when(D_807431780_1_1==353358909~ "Yes",
+                          D_807431780_1_1==104430631~ "No",
+                          TRUE ~ "Skipped this Question"))
+
+dt_sibcanc1_summary <- sibmult2_1 %>% dplyr::group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
+
+
+dt_sibcanc1_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not a proper gt_tbl??
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("MULT2_1: Sibling 1 a Twin or Multiple")) %>%
+  cols_label(status = md("**Diagnosed**"), n = md("**Number of Participants**"), percentage = md("**Percentage of Participants**")) %>%
+    # summary_rows(
+    # column = c(n,percentage),
+    # fns= list(
+    #   Sum= ~sum(.)
+    # ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = status,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+sibmult2_2  = sibmult2 %>%  filter(as.numeric(D_694265648) >1) %>%   mutate(status=case_when(D_807431780_2_2==353358909~ "Yes",
+                          D_807431780_2_2==104430631~ "No",
+                          TRUE ~ "Skipped this Question"))
+
+dt_sibmult2_2_summary <- sibmult2_2 %>% dplyr::group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
+
+
+dt_sibmult2_2_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not a proper gt_tbl??
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("MULT2_2: Sibling 1 a Twin or Multiple")) %>%
+  cols_label(status = md("**Diagnosed**"), n = md("**Number of Participants**"), percentage = md("**Percentage of Participants**")) %>%
+    # summary_rows(
+    # column = c(n,percentage),
+    # fns= list(
+    #   Sum= ~sum(.)
+    # ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = status,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+sibmult2_3  = sibmult2 %>% filter(as.numeric(D_694265648) >2) %>%   mutate(status=case_when(D_807431780_3_3==353358909~ "Yes",
+                          D_807431780_3_3==104430631~ "No",
+                          TRUE ~ "Skipped this Question"))
+
+dt_sibmult2_3_summary <- sibmult2_3 %>% dplyr::group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
+
+
+dt_sibmult2_3_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not a proper gt_tbl??
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("MULT2_3: Sibling 1 a Twin or Multiple")) %>%
+  cols_label(status = md("**Diagnosed**"), n = md("**Number of Participants**"), percentage = md("**Percentage of Participants**")) %>%
+    # summary_rows(
+    # column = c(n,percentage),
+    # fns= list(
+    #   Sum= ~sum(.)
+    # ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = status,
+    )
+  ) %>% opt_row_striping()
+
+
+
+ 
+sibmult2_4  = sibmult2 %>% filter(as.numeric(D_694265648) >3) %>% mutate(status=case_when(D_807431780_4_4==353358909~ "Yes",
+                          D_807431780_4_4==104430631~ "No",
+                          TRUE ~ "Skipped this Question"))
+
+dt_sibmult2_4_summary <- sibmult2_4 %>% dplyr::group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
+
+
+dt_sibmult2_4_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not a proper gt_tbl??
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("MULT2_4: Sibling 1 a Twin or Multiple")) %>%
+  cols_label(status = md("**Diagnosed**"), n = md("**Number of Participants**"), percentage = md("**Percentage of Participants**")) %>%
+    # summary_rows(
+    # column = c(n,percentage),
+    # fns= list(
+    #   Sum= ~sum(.)
+    # ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = status,
+    )
+  ) %>% opt_row_striping()
+
+
+
+ 
+sibmult2_5  = sibmult2 %>%filter(as.numeric(D_694265648) >4) %>%   mutate(status=case_when(D_807431780_5_5==353358909~ "Yes",
+                          D_807431780_5_5==104430631~ "No",
+                          TRUE ~ "Skipped this Question"))
+
+dt_sibmult2_5_summary <- sibmult2_5 %>% dplyr::group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
+
+
+dt_sibmult2_5_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not a proper gt_tbl??
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("MULT2_5: Sibling 1 a Twin or Multiple")) %>%
+  cols_label(status = md("**Diagnosed**"), n = md("**Number of Participants**"), percentage = md("**Percentage of Participants**")) %>%
+    # summary_rows(
+    # column = c(n,percentage),
+    # fns= list(
+    #   Sum= ~sum(.)
+    # ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = status,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+sibmult2_6  = sibmult2 %>%  filter(as.numeric(D_694265648) >5) %>%  mutate(status=case_when(D_807431780_6_6==353358909~ "Yes",
+                          D_807431780_6_6==104430631~ "No",
+                          TRUE ~ "Skipped this Question"))
+
+dt_sibmult2_6_summary <- sibmult2_6 %>% dplyr::group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
+
+
+dt_sibmult2_6_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not a proper gt_tbl??
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("MULT2_6: Sibling 1 a Twin or Multiple")) %>%
+  cols_label(status = md("**Diagnosed**"), n = md("**Number of Participants**"), percentage = md("**Percentage of Participants**")) %>%
+    # summary_rows(
+    # column = c(n,percentage),
+    # fns= list(
+    #   Sum= ~sum(.)
+    # ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = status,
+    )
+  ) %>% opt_row_striping()
+
+
+
+ 
+sibmult2_7  = sibmult2 %>%  filter(as.numeric(D_694265648) >6) %>%  mutate(status=case_when(D_807431780_7_7==353358909~ "Yes",
+                          D_807431780_7_7==104430631~ "No",
+                          TRUE ~ "Skipped this Question"))
+
+dt_sibmult2_6_summary <- sibmult2_7 %>% dplyr::group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
+
+
+dt_sibmult2_6_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not a proper gt_tbl??
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("MULT2_7: Sibling 1 a Twin or Multiple")) %>%
+  cols_label(status = md("**Diagnosed**"), n = md("**Number of Participants**"), percentage = md("**Percentage of Participants**")) %>%
+    # summary_rows(
+    # column = c(n,percentage),
+    # fns= list(
+    #   Sum= ~sum(.)
+    # ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = status,
+    )
+  ) %>% opt_row_striping()
+
+
+
+  
+sibmult2_8  = sibmult2 %>%  filter(as.numeric(D_694265648) >7) %>%  mutate(status=case_when(D_807431780_8_8==353358909~ "Yes",
+                          D_807431780_8_8==104430631~ "No",
+                          TRUE ~ "Skipped this Question"))
+
+dt_sibmult2_6_summary <- sibmult2_8 %>% dplyr::group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
+
+
+dt_sibmult2_6_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not a proper gt_tbl??
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("MULT2_8: Sibling 8 a Twin or Multiple")) %>%
+  cols_label(status = md("**Diagnosed**"), n = md("**Number of Participants**"), percentage = md("**Percentage of Participants**")) %>%
+    # summary_rows(
+    # column = c(n,percentage),
+    # fns= list(
+    #   Sum= ~sum(.)
+    # ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = status,
+    )
+  ) %>% opt_row_striping()
+
 
 
 #MULT2
@@ -4639,11 +4852,6 @@ sibling_bd_canc <- dt_body_sibling_summary %>%  gt::gt(rowname_col = "row_lab") 
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SIBCANC2: Type of Cancer Sibling 1-4 Diagnosed With")) %>% 
   cols_label(bodyp = md("**Cancer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -4663,439 +4871,484 @@ sibling_bd_canc
 
 
 #Age and Year at Diagnosis 
-# boxp_funct(D_384881609_1_1_D_206625031_1_1,"Age Sibling 1 Anal Cancer Diagnosed", "Age")
-# boxp_funct(D_384881609_1_1_D_261863326_1_1,"Year Sibling 1 Anal Cancer Diagnosed", "Year")
-# boxp_funct(D_483975329_1_1_D_206625031_1_1,"Age Sibling 1 Bladder Cancer Diagnosed", "Age")
-# boxp_funct(D_483975329_1_1_D_261863326_1_1,"Year Sibling 1 Bladder Cancer Diagnosed", "Year")
-sib1_c1=boxp_funct(D_570279754_1_1_D_206625031_1_1,"Age Sibling 1 Brain Cancer Diagnosed", "Age")
-#boxp_funct(D_570279754_1_1_D_261863326_1_1,"Year Sibling 1 Brain Cancer Diagnosed", "Year")
-sib1_c2=boxp_funct(D_907590067_1_1_D_206625031_1_1,"Age Sibling 1 Breast Cancer Diagnosed", "Age")
-#boxp_funct(D_907590067_1_1_D_261863326_1_1,"Year Sibling 1 Breast Cancer Diagnosed", "Year")
-sib1_c3=boxp_funct(D_860112841_1_1_D_206625031_1_1,"Age Sibling 1 Cervical Cancer Diagnosed", "Age")
-#boxp_funct(D_860112841_1_1_D_261863326_1_1,"Year Sibling 1 Cervical Cancer Diagnosed", "Year")
-sib1_c4=boxp_funct(D_158354252_1_1_D_206625031_1_1,"Age Sibling 1 Colon Cancer Diagnosed", "Age")
-sib1_c5=boxp_funct(D_158354252_1_1_D_261863326_1_1,"Year Sibling 1 Colon Cancer Diagnosed", "Year")
-#boxp_funct(D_654594205_1_1_D_206625031_1_1,"Age Sibling 1 Esophageal Cancer Diagnosed", "Age") #missing
-#boxp_funct(D_654594205_1_1_D_261863326_1_1,"Year Sibling 1 Esophageal Cancer Diagnosed", "Year") #missing
-#boxp_funct(D_550722030_1_1_D_206625031_1_1,"Age Sibling 1 Heck Neck and Shoulders Cancer Diagnosed", "Age") 
-#boxp_funct(D_550722030_1_1_D_261863326_1_1,"Year Sibling 1 Heck Neck and Shoulders Cancer Diagnosed", "Year")
-#boxp_funct(D_142912472_1_1_D_206625031_1_1,"Age Sibling 1 Kidney Cancer Diagnosed", "Age") #missing
-#boxp_funct(D_142912472_1_1_D_261863326_1_1,"Year Sibling 1 Kidney Cancer Diagnosed", "Year") 
-#boxp_funct(D_158409298_1_1_D_206625031_1_1,"Age Sibling 1 Leukemia Cancer Diagnosed", "Age")
-#boxp_funct(D_158409298_1_1_D_261863326_1_1,"Year Sibling 1 Leukemia Cancer Diagnosed", "Year")
-sib1_c6=boxp_funct(D_529744595_1_1_D_206625031_1_1,"Age Sibling 1 Liver Cancer Diagnosed", "Age") 
-#boxp_funct(D_529744595_1_1_D_261863326_1_1,"Year Sibling 1 Liver Cancer Diagnosed", "Year") 
-sib1_c7=boxp_funct(D_315987564_1_1_D_206625031_1_1,"Age Sibling 1 Lung Cancer Diagnosed", "Age") 
-#boxp_funct(D_315987564_1_1_D_261863326_1_1,"Year Sibling 1 Lung Cancer Diagnosed", "Year") 
-sib1_c8=boxp_funct(D_852278004_1_1_D_206625031_1_1,"Age Sibling 1 Non-Hodgkins Lymphoma Cancer Diagnosed", "Age")
-#sib1_c1=boxp_funct(D_852278004_1_1_D_261863326_1_1,"Year Sibling 1 Non-Hodgkins Lymphoma Cancer Diagnosed", "Year")
-sib1_c9=boxp_funct(D_391972881_1_1_D_206625031_1_1,"Age Sibling 1 Lymphoma Cancer Diagnosed", "Age") 
-sib1_c10=boxp_funct(D_259089008_1_1_D_206625031_1_1,"Age Sibling 1 Melanoma Cancer Diagnosed", "Age")
-#boxp_funct(D_259089008_1_1_D_261863326_1_1,"Year Sibling 1 Melanoma Cancer Diagnosed", "Year")
-sib1_c11=boxp_funct(D_209771602_1_1_D_206625031_1_1,"Age Sibling 1 Non-Melanoma Cancer Diagnosed", "Age")
-#boxp_funct(D_209771602_1_1_D_261863326_1_1,"Year Sibling 1 Non-Melanoma Cancer Diagnosed", "Year")
-sib1_c12=boxp_funct(D_682651189_1_1_D_206625031_1_1,"Age Sibling 1 Ovarian Cancer Diagnosed", "Age") 
-#boxp_funct(D_682651189_1_1_D_261863326_1_1,"Year Sibling 1 Ovarian Cancer Diagnosed", "Year") 
-sib1_c13=boxp_funct(D_750994269_1_1_D_206625031_1_1,"Age Sibling 1 Pancreatic Cancer Diagnosed", "Age") 
-#boxp_funct(D_750994269_1_1_D_261863326_1_1,"Year Sibling 1 Pancreatic Cancer Diagnosed", "Year") 
-sib1_c14=boxp_funct(D_700889863_1_1_D_206625031_1_1,"Age Sibling 1 Prostate Cancer Diagnosed", "Age")
-#boxp_funct(D_700889863_1_1_D_261863326_1_1,"Year Sibling 1 Prostate Cancer Diagnosed", "Year")
-sib1_c15=boxp_funct(D_990114799_1_1_D_206625031_1_1,"Age Sibling 1 Stomach Cancer Diagnosed", "Age")
-sib1_c16=boxp_funct(D_990114799_1_1_D_261863326_1_1,"Year Sibling 1 Stomach Cancer Diagnosed", "Year")
-#boxp_funct(D_195363361_1_1_D_206625031_1_1,"Age Sibling 1 Testicular Cancer Diagnosed", "Age")
-#boxp_funct(D_195363361_1_1_D_261863326_1_1,"Year Sibling 1 Testicular Cancer Diagnosed", "Year")
-#boxp_funct(D_216840563_1_1_D_206625031_1_1,"Age Sibling 1 Thyroid Cancer Diagnosed", "Age")
-sib1_c17=boxp_funct(D_216840563_1_1_D_261863326_1_1,"Year Sibling 1 Thyroid Cancer Diagnosed", "Year")
-sib1_c18=boxp_funct(D_514034680_1_1_D_206625031_1_1,"Age Sibling 1 Uterine Cancer Diagnosed", "Age") 
-#boxp_funct(D_514034680_1_1_D_261863326_1_1,"Year Sibling 1 Uterine Cancer Diagnosed", "Year") 
-sib1_c19=boxp_funct(D_247160067_1_1_D_206625031_1_1,"Age Sibling 1 Other Cancer Diagnosed", "Age")
-sib1_c20=boxp_funct(D_247160067_1_1_D_261863326_1_1,"Year Sibling 1 Other Cancer Diagnosed", "Year")
-sib1_c21=boxp_funct(D_312545873_1_1_D_206625031_1_1,"Age Sibling 1 Unknown Cancer Diagnosed", "Age")
-#boxp_funct(D_312545873_1_1_D_261863326_1_1,"Year Sibling 1 Unknown Cancer Diagnosed", "Year")
-grid.arrange(sib1_c1, sib1_c2, nrow=2)
-grid.arrange(sib1_c3, sib1_c4, nrow=2)
-grid.arrange(sib1_c5, sib1_c6, nrow=2)
-grid.arrange(sib1_c7, sib1_c8, nrow=2)
-grid.arrange(sib1_c9, sib1_c10, nrow=2)
-grid.arrange(sib1_c11, sib1_c12, nrow=2)
-grid.arrange(sib1_c13, sib1_c14, nrow=2)
-grid.arrange(sib1_c15, sib1_c16, nrow=2)
-grid.arrange(sib1_c17, sib1_c18, nrow=2)
-grid.arrange(sib1_c18, sib1_c20, sib1_c21, nrow=3)
+sib1_c1=boxp_funct(D_384881609_1_1_D_206625031_1_1,"Age Sibling 1 Anal Cancer Diagnosed", "Age")
+sib1_c2=boxp_funct(D_384881609_1_1_D_261863326_1_1,"Year Sibling 1 Anal Cancer Diagnosed", "Year")
+sib1_c3=boxp_funct(D_483975329_1_1_D_206625031_1_1,"Age Sibling 1 Bladder Cancer Diagnosed", "Age")
+sib1_c4=boxp_funct(D_483975329_1_1_D_261863326_1_1,"Year Sibling 1 Bladder Cancer Diagnosed", "Year")
+sib1_c5=boxp_funct(D_570279754_1_1_D_206625031_1_1,"Age Sibling 1 Brain Cancer Diagnosed", "Age")
+sib1_c6=boxp_funct(D_570279754_1_1_D_261863326_1_1,"Year Sibling 1 Brain Cancer Diagnosed", "Year")
+sib1_c7=boxp_funct(D_907590067_1_1_D_206625031_1_1,"Age Sibling 1 Breast Cancer Diagnosed", "Age")
+sib1_c8=boxp_funct(D_907590067_1_1_D_261863326_1_1,"Year Sibling 1 Breast Cancer Diagnosed", "Year")
+sib1_c9=boxp_funct(D_860112841_1_1_D_206625031_1_1,"Age Sibling 1 Cervical Cancer Diagnosed", "Age")
+sib1_c10=boxp_funct(D_860112841_1_1_D_261863326_1_1,"Year Sibling 1 Cervical Cancer Diagnosed", "Year")
+sib1_c11=boxp_funct(D_158354252_1_1_D_206625031_1_1,"Age Sibling 1 Colon Cancer Diagnosed", "Age")
+sib1_c12=boxp_funct(D_158354252_1_1_D_261863326_1_1,"Year Sibling 1 Colon Cancer Diagnosed", "Year")
+sib1_c13=boxp_funct(D_654594205_1_1_D_206625031_1_1,"Age Sibling 1 Esophageal Cancer Diagnosed", "Age") #missing
+sib1_c14=boxp_funct(D_654594205_1_1_D_261863326_1_1,"Year Sibling 1 Esophageal Cancer Diagnosed", "Year") #missing
+sib1_c15=boxp_funct(D_550722030_1_1_D_206625031_1_1,"Age Sibling 1 Heck Neck and Shoulders Cancer Diagnosed", "Age") 
+sib1_c16=boxp_funct(D_550722030_1_1_D_261863326_1_1,"Year Sibling 1 Heck Neck and Shoulders Cancer Diagnosed", "Year")
+sib1_c17=boxp_funct(D_142912472_1_1_D_206625031_1_1,"Age Sibling 1 Kidney Cancer Diagnosed", "Age") #missing
+sib1_c18=boxp_funct(D_142912472_1_1_D_261863326_1_1,"Year Sibling 1 Kidney Cancer Diagnosed", "Year") 
+sib1_c19=boxp_funct(D_158409298_1_1_D_206625031_1_1,"Age Sibling 1 Leukemia Cancer Diagnosed", "Age")
+sib1_c20=boxp_funct(D_158409298_1_1_D_261863326_1_1,"Year Sibling 1 Leukemia Cancer Diagnosed", "Year")
+sib1_c21=boxp_funct(D_529744595_1_1_D_206625031_1_1,"Age Sibling 1 Liver Cancer Diagnosed", "Age") 
+sib1_c22=boxp_funct(D_529744595_1_1_D_261863326_1_1,"Year Sibling 1 Liver Cancer Diagnosed", "Year") 
+sib1_c23=boxp_funct(D_315987564_1_1_D_206625031_1_1,"Age Sibling 1 Lung Cancer Diagnosed", "Age") 
+sib1_c24=boxp_funct(D_315987564_1_1_D_261863326_1_1,"Year Sibling 1 Lung Cancer Diagnosed", "Year") 
+sib1_c25=boxp_funct(D_852278004_1_1_D_206625031_1_1,"Age Sibling 1 Non-Hodgkins Lymphoma Cancer Diagnosed", "Age")
+sib1_c26=boxp_funct(D_852278004_1_1_D_261863326_1_1,"Year Sibling 1 Non-Hodgkins Lymphoma Cancer Diagnosed", "Year")
+sib1_c27=boxp_funct(D_391972881_1_1_D_206625031_1_1,"Age Sibling 1 Lymphoma Cancer Diagnosed", "Age") 
+sib1_c28=boxp_funct(D_259089008_1_1_D_206625031_1_1,"Age Sibling 1 Melanoma Cancer Diagnosed", "Age")
+sib1_c29=boxp_funct(D_259089008_1_1_D_261863326_1_1,"Year Sibling 1 Melanoma Cancer Diagnosed", "Year")
+sib1_c30=boxp_funct(D_209771602_1_1_D_206625031_1_1,"Age Sibling 1 Non-Melanoma Cancer Diagnosed", "Age")
+sib1_c31=boxp_funct(D_209771602_1_1_D_261863326_1_1,"Year Sibling 1 Non-Melanoma Cancer Diagnosed", "Year")
+sib1_c32=boxp_funct(D_682651189_1_1_D_206625031_1_1,"Age Sibling 1 Ovarian Cancer Diagnosed", "Age") 
+sib1_c33=boxp_funct(D_682651189_1_1_D_261863326_1_1,"Year Sibling 1 Ovarian Cancer Diagnosed", "Year") 
+sib1_c34=boxp_funct(D_750994269_1_1_D_206625031_1_1,"Age Sibling 1 Pancreatic Cancer Diagnosed", "Age") 
+sib1_c35=boxp_funct(D_750994269_1_1_D_261863326_1_1,"Year Sibling 1 Pancreatic Cancer Diagnosed", "Year") 
+sib1_c36=boxp_funct(D_700889863_1_1_D_206625031_1_1,"Age Sibling 1 Prostate Cancer Diagnosed", "Age")
+sib1_c37=boxp_funct(D_700889863_1_1_D_261863326_1_1,"Year Sibling 1 Prostate Cancer Diagnosed", "Year")
+sib1_c38=boxp_funct(D_990114799_1_1_D_206625031_1_1,"Age Sibling 1 Stomach Cancer Diagnosed", "Age")
+sib1_c39=boxp_funct(D_990114799_1_1_D_261863326_1_1,"Year Sibling 1 Stomach Cancer Diagnosed", "Year")
+sib1_c40=boxp_funct(D_195363361_1_1_D_206625031_1_1,"Age Sibling 1 Testicular Cancer Diagnosed", "Age")
+sib1_c41=boxp_funct(D_195363361_1_1_D_261863326_1_1,"Year Sibling 1 Testicular Cancer Diagnosed", "Year")
+sib1_c42=boxp_funct(D_216840563_1_1_D_206625031_1_1,"Age Sibling 1 Thyroid Cancer Diagnosed", "Age")
+sib1_c43=boxp_funct(D_216840563_1_1_D_261863326_1_1,"Year Sibling 1 Thyroid Cancer Diagnosed", "Year")
+sib1_c44=boxp_funct(D_514034680_1_1_D_206625031_1_1,"Age Sibling 1 Uterine Cancer Diagnosed", "Age") 
+sib1_c45=boxp_funct(D_514034680_1_1_D_261863326_1_1,"Year Sibling 1 Uterine Cancer Diagnosed", "Year") 
+sib1_c46=boxp_funct(D_247160067_1_1_D_206625031_1_1,"Age Sibling 1 Other Cancer Diagnosed", "Age")
+sib1_c47=boxp_funct(D_247160067_1_1_D_261863326_1_1,"Year Sibling 1 Other Cancer Diagnosed", "Year")
+sib1_c48=boxp_funct(D_312545873_1_1_D_206625031_1_1,"Age Sibling 1 Unknown Cancer Diagnosed", "Age")
+sib1_c49=boxp_funct(D_312545873_1_1_D_261863326_1_1,"Year Sibling 1 Unknown Cancer Diagnosed", "Year")
+
+grid.arrange(sib1_c1, sib1_c2, sib1_c3, sib1_c4, nrow=4)
+grid.arrange(sib1_c5, sib1_c6, sib1_c7, sib1_c8, nrow=4)
+grid.arrange(sib1_c9, sib1_c10, sib1_c11, sib1_c12, nrow=4)
+grid.arrange(sib1_c13, sib1_c14, sib1_c15, sib1_c16, nrow=4)
+grid.arrange(sib1_c17, sib1_c18, sib1_c19, sib1_c20, nrow=4)
+grid.arrange(sib1_c21, sib1_c22, sib1_c23, sib1_c24, nrow=4)
+grid.arrange(sib1_c25, sib1_c26, sib1_c27, sib1_c28, nrow=4)
+grid.arrange(sib1_c29, sib1_c30, sib1_c31, sib1_c32, nrow=4)
+grid.arrange(sib1_c33, sib1_c34, sib1_c35, sib1_c36, nrow=4)
+grid.arrange(sib1_c37, sib1_c38, sib1_c39, sib1_c40, nrow=4)
+grid.arrange(sib1_c41, sib1_c42, sib1_c43, sib1_c44, nrow=4)
+grid.arrange(sib1_c45, sib1_c46, sib1_c47, sib1_c48, nrow=4)
 
 
-#boxp_funct(D_384881609_2_2_D_206625031_2_2,"Age Sibling 2 Anal Cancer Diagnosed", "Age")
+sib2_c1=boxp_funct(D_384881609_2_2_D_206625031_2_2,"Age Sibling 2 Anal Cancer Diagnosed", "Age")
 #boxp_funct(D_384881609_2_2_D_261863326_2_2,"Year Sibling 2 Anal Cancer Diagnosed", "Year")
-#boxp_funct(D_483975329_2_2_D_206625031_2_2,"Age Sibling 2 Bladder Cancer Diagnosed", "Age")
-#boxp_funct(D_483975329_2_2_D_261863326_2_2,"Year Sibling 2 Bladder Cancer Diagnosed", "Year")
-#boxp_funct(D_570279754_2_2_D_206625031_2_2,"Age Sibling 2 Brain Cancer Diagnosed", "Age")
-#boxp_funct(D_570279754_2_2_D_261863326_2_2,"Year Sibling 2 Brain Cancer Diagnosed", "Year")
-sib2_c1=boxp_funct(D_907590067_2_2_D_206625031_2_2,"Age Sibling 2 Breast Cancer Diagnosed", "Age")
-#boxp_funct(D_907590067_2_2_D_261863326_2_2,"Year Sibling 2 Breast Cancer Diagnosed", "Year")
-#boxp_funct(D_860112841_2_2_D_206625031_2_2,"Age Sibling 2 Cervical Cancer Diagnosed", "Age")
-#boxp_funct(D_860112841_2_2_D_261863326_2_2,"Year Sibling 2 Cervical Cancer Diagnosed", "Year")
-sib2_c2=boxp_funct(D_158354252_2_2_D_206625031_2_2,"Age Sibling 2 Colon Cancer Diagnosed", "Age")
-#boxp_funct(D_158354252_2_2_D_261863326_2_2,"Year Sibling 2 Colon Cancer Diagnosed", "Year")
-#boxp_funct(D_654594205_2_2_D_206625031_2_2,"Age Sibling 2 Esophageal Cancer Diagnosed", "Age") 
-#boxp_funct(D_654594205_2_2_D_261863326_2_2,"Year Sibling 2 Esophageal Cancer Diagnosed", "Year") 
-#boxp_funct(D_550722030_2_2_D_206625031_2_2,"Age Sibling 2 Heck Neck and Shoulders Cancer Diagnosed", "Age") 
-#boxp_funct(D_550722030_2_2_D_261863326_2_2,"Year Sibling 2 Heck Neck and Shoulders Cancer Diagnosed", "Year")
-#boxp_funct(D_142912472_2_2_D_206625031_2_2,"Age Sibling 2 Kidney Cancer Diagnosed", "Age") 
-sib2_c3=boxp_funct(D_142912472_2_2_D_261863326_2_2,"Year Sibling 2 Kidney Cancer Diagnosed", "Year") 
-sib2_c4=boxp_funct(D_158409298_2_2_D_206625031_2_2,"Age Sibling 2 Leukemia Cancer Diagnosed", "Age")
-#boxp_funct(D_158409298_2_2_D_261863326_2_2,"Year Sibling 2 Leukemia Cancer Diagnosed", "Year")
-#boxp_funct(D_529744595_2_2_D_206625031_2_2,"Age Sibling 2 Liver Cancer Diagnosed", "Age") 
-sib2_c5=boxp_funct(D_529744595_2_2_D_261863326_2_2,"Year Sibling 2 Liver Cancer Diagnosed", "Year") 
-sib2_c6=boxp_funct(D_315987564_2_2_D_206625031_2_2,"Age Sibling 2 Lung Cancer Diagnosed", "Age") 
-sib2_c7=boxp_funct(D_315987564_2_2_D_261863326_2_2,"Year Sibling 2 Lung Cancer Diagnosed", "Year") 
-sib2_c8=boxp_funct(D_852278004_2_2_D_206625031_2_2,"Age Sibling 2 Non-Hodgkins Lymphoma Cancer Diagnosed", "Age")
-#boxp_funct(D_852278004_2_2_D_261863326_2_2,"Year Sibling 2 Non-Hodgkins Lymphoma Cancer Diagnosed", "Year")
-#boxp_funct(D_391972881_2_2_D_206625031_2_2,"Age Sibling 2 Lymphoma Cancer Diagnosed", "Age") 
-sib2_c9=boxp_funct(D_259089008_2_2_D_206625031_2_2,"Age Sibling 2 Melanoma Cancer Diagnosed", "Age")
-#boxp_funct(D_259089008_2_2_D_261863326_2_2,"Year Sibling 2 Melanoma Cancer Diagnosed", "Year")
-sib2_c10=boxp_funct(D_209771602_2_2_D_206625031_2_2,"Age Sibling 2 Non-Melanoma Cancer Diagnosed", "Age")
-#boxp_funct(D_209771602_2_2_D_261863326_2_2,"Year Sibling 2 Non-Melanoma Cancer Diagnosed", "Year")
-sib2_c11=boxp_funct(D_682651189_2_2_D_206625031_2_2,"Age Sibling 2 Ovarian Cancer Diagnosed", "Age") 
-#boxp_funct(D_682651189_2_2_D_261863326_2_2,"Year Sibling 2 Ovarian Cancer Diagnosed", "Year") 
-#boxp_funct(D_750994269_2_2_D_206625031_2_2,"Age Sibling 2 Pancreatic Cancer Diagnosed", "Age") 
-#boxp_funct(D_750994269_2_2_D_261863326_2_2,"Year Sibling 2 Pancreatic Cancer Diagnosed", "Year") 
-sib2_c12=boxp_funct(D_700889863_2_2_D_206625031_2_2,"Age Sibling 2 Prostate Cancer Diagnosed", "Age")
-#boxp_funct(D_700889863_2_2_D_261863326_2_2,"Year Sibling 2 Prostate Cancer Diagnosed", "Year")
-#boxp_funct(D_990114799_2_2_D_206625031_2_2,"Age Sibling 2 Stomach Cancer Diagnosed", "Age")
-#boxp_funct(D_990114799_2_2_D_261863326_2_2,"Year Sibling 2 Stomach Cancer Diagnosed", "Year")
-sib2_c13=boxp_funct(D_195363361_2_2_D_206625031_2_2,"Age Sibling 2 Testicular Cancer Diagnosed", "Age")
-#boxp_funct(D_195363361_2_2_D_261863326_2_2,"Year Sibling 2 Testicular Cancer Diagnosed", "Year")
-sib2_c14=boxp_funct(D_216840563_2_2_D_206625031_2_2,"Age Sibling 2 Thyroid Cancer Diagnosed", "Age")
-sib2_c15=boxp_funct(D_216840563_2_2_D_261863326_2_2,"Year Sibling 2 Thyroid Cancer Diagnosed", "Year")
-#boxp_funct(D_514034680_2_2_D_206625031_2_2,"Age Sibling 2 Uterine Cancer Diagnosed", "Age") 
-#boxp_funct(D_514034680_2_2_D_261863326_2_2,"Year Sibling 2 Uterine Cancer Diagnosed", "Year") 
-sib2_c16=boxp_funct(D_247160067_2_2_D_206625031_2_2,"Age Sibling 2 Other Cancer Diagnosed", "Age")
-#boxp_funct(D_247160067_2_2_D_261863326_2_2,"Year Sibling 2 Other Cancer Diagnosed", "Year")
-#boxp_funct(D_312545873_2_2_D_206625031_2_2,"Age Sibling 2 Unknown Cancer Diagnosed", "Age")
-#boxp_funct(D_312545873_2_2_D_261863326_2_2,"Year Sibling 2 Unknown Cancer Diagnosed", "Year")
-grid.arrange(sib2_c1, sib2_c2, nrow=2)
-grid.arrange(sib2_c3, sib2_c4, nrow=2)
-grid.arrange(sib2_c5, sib2_c6, nrow=2)
-grid.arrange(sib2_c7, sib2_c8, nrow=2)
-grid.arrange(sib2_c9, sib2_c10, nrow=2)
-grid.arrange(sib2_c11, sib2_c12, nrow=2)
-grid.arrange(sib2_c13, sib2_c14, nrow=2)
-grid.arrange(sib2_c15, sib2_c16, nrow=2)
+sib2_c2=boxp_funct(D_483975329_2_2_D_206625031_2_2,"Age Sibling 2 Bladder Cancer Diagnosed", "Age")
+sib2_c3=boxp_funct(D_483975329_2_2_D_261863326_2_2,"Year Sibling 2 Bladder Cancer Diagnosed", "Year")
+sib2_c4=boxp_funct(D_570279754_2_2_D_206625031_2_2,"Age Sibling 2 Brain Cancer Diagnosed", "Age")
+sib2_c5=boxp_funct(D_570279754_2_2_D_261863326_2_2,"Year Sibling 2 Brain Cancer Diagnosed", "Year")
+sib2_c6=boxp_funct(D_907590067_2_2_D_206625031_2_2,"Age Sibling 2 Breast Cancer Diagnosed", "Age")
+sib2_c7=boxp_funct(D_907590067_2_2_D_261863326_2_2,"Year Sibling 2 Breast Cancer Diagnosed", "Year")
+sib2_c8=boxp_funct(D_860112841_2_2_D_206625031_2_2,"Age Sibling 2 Cervical Cancer Diagnosed", "Age")
+sib2_c9=boxp_funct(D_860112841_2_2_D_261863326_2_2,"Year Sibling 2 Cervical Cancer Diagnosed", "Year")
+sib2_c10=boxp_funct(D_158354252_2_2_D_206625031_2_2,"Age Sibling 2 Colon Cancer Diagnosed", "Age")
+sib2_c11=boxp_funct(D_158354252_2_2_D_261863326_2_2,"Year Sibling 2 Colon Cancer Diagnosed", "Year")
+sib2_c12=boxp_funct(D_654594205_2_2_D_206625031_2_2,"Age Sibling 2 Esophageal Cancer Diagnosed", "Age") 
+sib2_c13=boxp_funct(D_654594205_2_2_D_261863326_2_2,"Year Sibling 2 Esophageal Cancer Diagnosed", "Year") 
+sib2_c14=boxp_funct(D_550722030_2_2_D_206625031_2_2,"Age Sibling 2 Heck Neck and Shoulders Cancer Diagnosed", "Age") 
+sib2_c15=boxp_funct(D_550722030_2_2_D_261863326_2_2,"Year Sibling 2 Heck Neck and Shoulders Cancer Diagnosed", "Year")
+sib2_c16=boxp_funct(D_142912472_2_2_D_206625031_2_2,"Age Sibling 2 Kidney Cancer Diagnosed", "Age") 
+sib2_c17=boxp_funct(D_142912472_2_2_D_261863326_2_2,"Year Sibling 2 Kidney Cancer Diagnosed", "Year") 
+sib2_c18=boxp_funct(D_158409298_2_2_D_206625031_2_2,"Age Sibling 2 Leukemia Cancer Diagnosed", "Age")
+sib2_c19=boxp_funct(D_158409298_2_2_D_261863326_2_2,"Year Sibling 2 Leukemia Cancer Diagnosed", "Year")
+sib2_c20=boxp_funct(D_529744595_2_2_D_206625031_2_2,"Age Sibling 2 Liver Cancer Diagnosed", "Age") 
+sib2_c21=boxp_funct(D_529744595_2_2_D_261863326_2_2,"Year Sibling 2 Liver Cancer Diagnosed", "Year") 
+sib2_c22=boxp_funct(D_315987564_2_2_D_206625031_2_2,"Age Sibling 2 Lung Cancer Diagnosed", "Age") 
+sib2_c23=boxp_funct(D_315987564_2_2_D_261863326_2_2,"Year Sibling 2 Lung Cancer Diagnosed", "Year") 
+sib2_c24=boxp_funct(D_852278004_2_2_D_206625031_2_2,"Age Sibling 2 Non-Hodgkins Lymphoma Cancer Diagnosed", "Age")
+sib2_c25=boxp_funct(D_852278004_2_2_D_261863326_2_2,"Year Sibling 2 Non-Hodgkins Lymphoma Cancer Diagnosed", "Year")
+sib2_c26=boxp_funct(D_391972881_2_2_D_206625031_2_2,"Age Sibling 2 Lymphoma Cancer Diagnosed", "Age") 
+sib2_c27=boxp_funct(D_259089008_2_2_D_206625031_2_2,"Age Sibling 2 Melanoma Cancer Diagnosed", "Age")
+sib2_c28=boxp_funct(D_259089008_2_2_D_261863326_2_2,"Year Sibling 2 Melanoma Cancer Diagnosed", "Year")
+sib2_c29=boxp_funct(D_209771602_2_2_D_206625031_2_2,"Age Sibling 2 Non-Melanoma Cancer Diagnosed", "Age")
+sib2_c30=boxp_funct(D_209771602_2_2_D_261863326_2_2,"Year Sibling 2 Non-Melanoma Cancer Diagnosed", "Year")
+sib2_c31=boxp_funct(D_682651189_2_2_D_206625031_2_2,"Age Sibling 2 Ovarian Cancer Diagnosed", "Age") 
+sib2_c32=boxp_funct(D_682651189_2_2_D_261863326_2_2,"Year Sibling 2 Ovarian Cancer Diagnosed", "Year") 
+sib2_c33=boxp_funct(D_750994269_2_2_D_206625031_2_2,"Age Sibling 2 Pancreatic Cancer Diagnosed", "Age") 
+sib2_c34=boxp_funct(D_750994269_2_2_D_261863326_2_2,"Year Sibling 2 Pancreatic Cancer Diagnosed", "Year") 
+sib2_c35=boxp_funct(D_700889863_2_2_D_206625031_2_2,"Age Sibling 2 Prostate Cancer Diagnosed", "Age")
+sib2_c36=boxp_funct(D_700889863_2_2_D_261863326_2_2,"Year Sibling 2 Prostate Cancer Diagnosed", "Year")
+sib2_c37=boxp_funct(D_990114799_2_2_D_206625031_2_2,"Age Sibling 2 Stomach Cancer Diagnosed", "Age")
+sib2_c38=boxp_funct(D_990114799_2_2_D_261863326_2_2,"Year Sibling 2 Stomach Cancer Diagnosed", "Year")
+sib2_c39=boxp_funct(D_195363361_2_2_D_206625031_2_2,"Age Sibling 2 Testicular Cancer Diagnosed", "Age")
+sib2_c40=boxp_funct(D_195363361_2_2_D_261863326_2_2,"Year Sibling 2 Testicular Cancer Diagnosed", "Year")
+sib2_c41=boxp_funct(D_216840563_2_2_D_206625031_2_2,"Age Sibling 2 Thyroid Cancer Diagnosed", "Age")
+sib2_c42=boxp_funct(D_216840563_2_2_D_261863326_2_2,"Year Sibling 2 Thyroid Cancer Diagnosed", "Year")
+sib2_c43=boxp_funct(D_514034680_2_2_D_206625031_2_2,"Age Sibling 2 Uterine Cancer Diagnosed", "Age") 
+sib2_c44=boxp_funct(D_514034680_2_2_D_261863326_2_2,"Year Sibling 2 Uterine Cancer Diagnosed", "Year") 
+sib2_c45=boxp_funct(D_247160067_2_2_D_206625031_2_2,"Age Sibling 2 Other Cancer Diagnosed", "Age")
+sib2_c46=boxp_funct(D_247160067_2_2_D_261863326_2_2,"Year Sibling 2 Other Cancer Diagnosed", "Year")
+sib2_c47=boxp_funct(D_312545873_2_2_D_206625031_2_2,"Age Sibling 2 Unknown Cancer Diagnosed", "Age")
+sib2_c48=boxp_funct(D_312545873_2_2_D_261863326_2_2,"Year Sibling 2 Unknown Cancer Diagnosed", "Year")
+
+grid.arrange(sib2_c1, sib2_c2, sib2_c3, sib2_c4, nrow=4)
+grid.arrange(sib2_c5, sib2_c6, sib2_c7, sib2_c8, nrow=4)
+grid.arrange(sib2_c9, sib2_c10, sib2_c11, sib2_c12, nrow=4)
+grid.arrange(sib2_c13, sib2_c14, sib2_c15, sib2_c16, nrow=4)
+grid.arrange(sib2_c17, sib2_c18, sib2_c19, sib2_c20, nrow=4)
+grid.arrange(sib2_c21, sib2_c22, sib2_c23, sib2_c24, nrow=4)
+grid.arrange(sib2_c25, sib2_c26, sib2_c27, sib2_c28, nrow=4)
+grid.arrange(sib2_c29, sib2_c30, sib2_c31, sib2_c32, nrow=4)
+grid.arrange(sib2_c33, sib2_c34, sib2_c35, sib2_c36, nrow=4)
+grid.arrange(sib2_c37, sib2_c38, sib2_c39, sib2_c40, nrow=4)
+grid.arrange(sib2_c41, sib2_c42, sib2_c43, sib2_c44, nrow=4)
+grid.arrange(sib2_c45, sib2_c46, sib2_c47, sib2_c48, nrow=4)
 
 
 #boxp_funct(D_384881609_3_3_D_206625031_3_3,"Age Sibling 3 Anal Cancer Diagnosed", "Age")
 #boxp_funct(D_384881609_3_3_D_261863326_3_3,"Year Sibling 3 Anal Cancer Diagnosed", "Year")
-#boxp_funct(D_483975329_3_3_D_206625031_3_3,"Age Sibling 3 Bladder Cancer Diagnosed", "Age")
+sib3_c2=boxp_funct(D_483975329_3_3_D_206625031_3_3,"Age Sibling 3 Bladder Cancer Diagnosed", "Age")
 #boxp_funct(D_483975329_3_3_D_261863326_3_3,"Year Sibling 3 Bladder Cancer Diagnosed", "Year")
-sib3_c1=boxp_funct(D_570279754_3_3_D_206625031_3_3,"Age Sibling 3 Brain Cancer Diagnosed", "Age")
-#boxp_funct(D_570279754_3_3_D_261863326_3_3,"Year Sibling 3 Brain Cancer Diagnosed", "Year")
-sib3_c2=boxp_funct(D_907590067_3_3_D_206625031_3_3,"Age Sibling 3 Breast Cancer Diagnosed", "Age")
-sib3_c3=boxp_funct(D_907590067_3_3_D_261863326_3_3,"Year Sibling 3 Breast Cancer Diagnosed", "Year")
-#boxp_funct(D_860112841_3_3_D_206625031_3_3,"Age Sibling 3 Cervical Cancer Diagnosed", "Age")
-#boxp_funct(D_860112841_3_3_D_261863326_3_3,"Year Sibling 3 Cervical Cancer Diagnosed", "Year")
-sib3_c4=boxp_funct(D_158354252_3_3_D_206625031_3_3,"Age Sibling 3 Colon Cancer Diagnosed", "Age")
-#boxp_funct(D_158354252_3_3_D_261863326_3_3,"Year Sibling 3 Colon Cancer Diagnosed", "Year")
-#boxp_funct(D_654594205_3_3_D_206625031_3_3,"Age Sibling 3 Esophageal Cancer Diagnosed", "Age") 
+sib3_c3=boxp_funct(D_570279754_3_3_D_206625031_3_3,"Age Sibling 3 Brain Cancer Diagnosed", "Age")
+sib3_c4=boxp_funct(D_570279754_3_3_D_261863326_3_3,"Year Sibling 3 Brain Cancer Diagnosed", "Year")
+sib3_c5=boxp_funct(D_907590067_3_3_D_206625031_3_3,"Age Sibling 3 Breast Cancer Diagnosed", "Age")
+sib3_c6=boxp_funct(D_907590067_3_3_D_261863326_3_3,"Year Sibling 3 Breast Cancer Diagnosed", "Year")
+sib3_c7=boxp_funct(D_860112841_3_3_D_206625031_3_3,"Age Sibling 3 Cervical Cancer Diagnosed", "Age")
+sib3_c8=boxp_funct(D_860112841_3_3_D_261863326_3_3,"Year Sibling 3 Cervical Cancer Diagnosed", "Year")
+sib3_c9=boxp_funct(D_158354252_3_3_D_206625031_3_3,"Age Sibling 3 Colon Cancer Diagnosed", "Age")
+sib3_c10=boxp_funct(D_158354252_3_3_D_261863326_3_3,"Year Sibling 3 Colon Cancer Diagnosed", "Year")
+sib3_c11=boxp_funct(D_654594205_3_3_D_206625031_3_3,"Age Sibling 3 Esophageal Cancer Diagnosed", "Age") 
 #boxp_funct(D_654594205_3_3_D_261863326_3_3,"Year Sibling 3 Esophageal Cancer Diagnosed", "Year") 
-#boxp_funct(D_550722030_3_3_D_206625031_3_3,"Age Sibling 3 Heck Neck and Shoulders Cancer Diagnosed", "Age") 
-#boxp_funct(D_550722030_3_3_D_261863326_3_3,"Year Sibling 3 Heck Neck and Shoulders Cancer Diagnosed", "Year")
-#boxp_funct(D_142912472_3_3_D_206625031_3_3,"Age Sibling 3 Kidney Cancer Diagnosed", "Age") 
-#boxp_funct(D_142912472_3_3_D_261863326_3_3,"Year Sibling 3 Kidney Cancer Diagnosed", "Year") 
-#boxp_funct(D_158409298_3_3_D_206625031_3_3,"Age Sibling 3 Leukemia Cancer Diagnosed", "Age")
-#boxp_funct(D_158409298_3_3_D_261863326_3_3,"Year Sibling 3 Leukemia Cancer Diagnosed", "Year")
-#boxp_funct(D_529744595_3_3_D_206625031_3_3,"Age Sibling 3 Liver Cancer Diagnosed", "Age") 
-#boxp_funct(D_529744595_3_3_D_261863326_3_3,"Year Sibling 3 Liver Cancer Diagnosed", "Year") 
-sib3_c5=boxp_funct(D_315987564_3_3_D_206625031_3_3,"Age Sibling 3 Lung Cancer Diagnosed", "Age") 
+sib3_c12=boxp_funct(D_550722030_3_3_D_206625031_3_3,"Age Sibling 3 Heck Neck and Shoulders Cancer Diagnosed", "Age") 
+sib3_c13=boxp_funct(D_550722030_3_3_D_261863326_3_3,"Year Sibling 3 Heck Neck and Shoulders Cancer Diagnosed", "Year")
+sib3_c14=boxp_funct(D_142912472_3_3_D_206625031_3_3,"Age Sibling 3 Kidney Cancer Diagnosed", "Age") 
+sib3_c15=boxp_funct(D_142912472_3_3_D_261863326_3_3,"Year Sibling 3 Kidney Cancer Diagnosed", "Year") 
+sib3_c16=boxp_funct(D_158409298_3_3_D_206625031_3_3,"Age Sibling 3 Leukemia Cancer Diagnosed", "Age")
+sib3_c17=boxp_funct(D_158409298_3_3_D_261863326_3_3,"Year Sibling 3 Leukemia Cancer Diagnosed", "Year")
+sib3_c18=boxp_funct(D_529744595_3_3_D_206625031_3_3,"Age Sibling 3 Liver Cancer Diagnosed", "Age") 
+sib3_c19=boxp_funct(D_529744595_3_3_D_261863326_3_3,"Year Sibling 3 Liver Cancer Diagnosed", "Year") 
+sib3_c20=boxp_funct(D_315987564_3_3_D_206625031_3_3,"Age Sibling 3 Lung Cancer Diagnosed", "Age") 
 #boxp_funct(D_315987564_3_3_D_261863326_3_3,"Year Sibling 3 Lung Cancer Diagnosed", "Year") 
-#boxp_funct(D_852278004_3_3_D_206625031_3_3,"Age Sibling 3 Non-Hodgkins Lymphoma Cancer Diagnosed", "Age")
-#boxp_funct(D_852278004_3_3_D_261863326_3_3,"Year Sibling 3 Non-Hodgkins Lymphoma Cancer Diagnosed", "Year")
-#boxp_funct(D_391972881_3_3_D_206625031_3_3,"Age Sibling 3 Lymphoma Cancer Diagnosed", "Age") 
-sib3_c6=boxp_funct(D_259089008_3_3_D_206625031_3_3,"Age Sibling 3 Melanoma Cancer Diagnosed", "Age")
-#boxp_funct(D_259089008_3_3_D_261863326_3_3,"Year Sibling 3 Melanoma Cancer Diagnosed", "Year")
-sib3_c7=boxp_funct(D_209771602_3_3_D_206625031_3_3,"Age Sibling 3 Non-Melanoma Cancer Diagnosed", "Age")
-#boxp_funct(D_209771602_3_3_D_261863326_3_3,"Year Sibling 3 Non-Melanoma Cancer Diagnosed", "Year")
-#boxp_funct(D_682651189_3_3_D_206625031_3_3,"Age Sibling 3 Ovarian Cancer Diagnosed", "Age") 
-#boxp_funct(D_682651189_3_3_D_261863326_3_3,"Year Sibling 3 Ovarian Cancer Diagnosed", "Year") 
-#boxp_funct(D_750994269_3_3_D_206625031_3_3,"Age Sibling 3 Pancreatic Cancer Diagnosed", "Age") 
-#boxp_funct(D_750994269_3_3_D_261863326_3_3,"Year Sibling 3 Pancreatic Cancer Diagnosed", "Year") 
-#boxp_funct(D_700889863_3_3_D_206625031_3_3,"Age Sibling 3 Prostate Cancer Diagnosed", "Age")
-#boxp_funct(D_700889863_3_3_D_261863326_3_3,"Year Sibling 3 Prostate Cancer Diagnosed", "Year")
-#boxp_funct(D_990114799_3_3_D_206625031_3_3,"Age Sibling 3 Stomach Cancer Diagnosed", "Age")
-#boxp_funct(D_990114799_3_3_D_261863326_3_3,"Year Sibling 3 Stomach Cancer Diagnosed", "Year")
-#boxp_funct(D_195363361_3_3_D_206625031_3_3,"Age Sibling 3 Testicular Cancer Diagnosed", "Age")
+sib3_c21=boxp_funct(D_852278004_3_3_D_206625031_3_3,"Age Sibling 3 Non-Hodgkins Lymphoma Cancer Diagnosed", "Age")
+sib3_c22=boxp_funct(D_852278004_3_3_D_261863326_3_3,"Year Sibling 3 Non-Hodgkins Lymphoma Cancer Diagnosed", "Year")
+sib3_c23=boxp_funct(D_391972881_3_3_D_206625031_3_3,"Age Sibling 3 Lymphoma Cancer Diagnosed", "Age") 
+sib3_c24=boxp_funct(D_259089008_3_3_D_206625031_3_3,"Age Sibling 3 Melanoma Cancer Diagnosed", "Age")
+sib3_c25=boxp_funct(D_259089008_3_3_D_261863326_3_3,"Year Sibling 3 Melanoma Cancer Diagnosed", "Year")
+sib3_c26=boxp_funct(D_209771602_3_3_D_206625031_3_3,"Age Sibling 3 Non-Melanoma Cancer Diagnosed", "Age")
+sib3_c27=boxp_funct(D_209771602_3_3_D_261863326_3_3,"Year Sibling 3 Non-Melanoma Cancer Diagnosed", "Year")
+sib3_c28=boxp_funct(D_682651189_3_3_D_206625031_3_3,"Age Sibling 3 Ovarian Cancer Diagnosed", "Age") 
+sib3_c29=boxp_funct(D_682651189_3_3_D_261863326_3_3,"Year Sibling 3 Ovarian Cancer Diagnosed", "Year") 
+sib3_c30=boxp_funct(D_750994269_3_3_D_206625031_3_3,"Age Sibling 3 Pancreatic Cancer Diagnosed", "Age") 
+sib3_c31=boxp_funct(D_750994269_3_3_D_261863326_3_3,"Year Sibling 3 Pancreatic Cancer Diagnosed", "Year") 
+sib3_c32=boxp_funct(D_700889863_3_3_D_206625031_3_3,"Age Sibling 3 Prostate Cancer Diagnosed", "Age")
+sib3_c33=boxp_funct(D_700889863_3_3_D_261863326_3_3,"Year Sibling 3 Prostate Cancer Diagnosed", "Year")
+sib3_c34=boxp_funct(D_990114799_3_3_D_206625031_3_3,"Age Sibling 3 Stomach Cancer Diagnosed", "Age")
+sib3_c35=boxp_funct(D_990114799_3_3_D_261863326_3_3,"Year Sibling 3 Stomach Cancer Diagnosed", "Year")
+sib3_c36=boxp_funct(D_195363361_3_3_D_206625031_3_3,"Age Sibling 3 Testicular Cancer Diagnosed", "Age")
 #boxp_funct(D_195363361_3_3_D_261863326_3_3,"Year Sibling 3 Testicular Cancer Diagnosed", "Year")
-sib3_c8=boxp_funct(D_216840563_3_3_D_206625031_3_3,"Age Sibling 3 Thyroid Cancer Diagnosed", "Age")
-#boxp_funct(D_216840563_3_3_D_261863326_3_3,"Year Sibling 3 Thyroid Cancer Diagnosed", "Year")
-#boxp_funct(D_514034680_3_3_D_206625031_3_3,"Age Sibling 3 Uterine Cancer Diagnosed", "Age") 
-#boxp_funct(D_514034680_3_3_D_261863326_3_3,"Year Sibling 3 Uterine Cancer Diagnosed", "Year") 
-#boxp_funct(D_247160067_3_3_D_206625031_3_3,"Age Sibling 3 Other Cancer Diagnosed", "Age")
-#boxp_funct(D_247160067_3_3_D_261863326_3_3,"Year Sibling 3 Other Cancer Diagnosed", "Year")
-sib3_c9=boxp_funct(D_312545873_3_3_D_206625031_3_3,"Age Sibling 3 Unknown Cancer Diagnosed", "Age")
-sib3_c10=boxp_funct(D_312545873_3_3_D_261863326_3_3,"Year Sibling 3 Unknown Cancer Diagnosed", "Year")
-grid.arrange(sib3_c1, sib3_c2, nrow=2)
-grid.arrange(sib3_c3, sib3_c4, nrow=2)
-grid.arrange(sib3_c5, sib3_c6, nrow=2)
-grid.arrange(sib3_c7, sib3_c8, nrow=2)
-grid.arrange(sib3_c9, sib3_c10, nrow=2)
+sib3_c37=boxp_funct(D_216840563_3_3_D_206625031_3_3,"Age Sibling 3 Thyroid Cancer Diagnosed", "Age")
+sib3_c38=boxp_funct(D_216840563_3_3_D_261863326_3_3,"Year Sibling 3 Thyroid Cancer Diagnosed", "Year")
+sib3_c39=boxp_funct(D_514034680_3_3_D_206625031_3_3,"Age Sibling 3 Uterine Cancer Diagnosed", "Age") 
+sib3_c40=boxp_funct(D_514034680_3_3_D_261863326_3_3,"Year Sibling 3 Uterine Cancer Diagnosed", "Year") 
+sib3_c41=boxp_funct(D_247160067_3_3_D_206625031_3_3,"Age Sibling 3 Other Cancer Diagnosed", "Age")
+sib3_c42=boxp_funct(D_247160067_3_3_D_261863326_3_3,"Year Sibling 3 Other Cancer Diagnosed", "Year")
+sib3_c43=boxp_funct(D_312545873_3_3_D_206625031_3_3,"Age Sibling 3 Unknown Cancer Diagnosed", "Age")
+sib3_c44=boxp_funct(D_312545873_3_3_D_261863326_3_3,"Year Sibling 3 Unknown Cancer Diagnosed", "Year")
+
+grid.arrange(sib3_c2, sib3_c3, sib3_c4, nrow=3)
+grid.arrange(sib3_c5, sib3_c6, sib3_c7, sib3_c8, nrow=4)
+grid.arrange(sib3_c9, sib3_c10, sib3_c11, sib3_c12, nrow=4)
+grid.arrange(sib3_c13, sib3_c14, sib3_c15, sib3_c16, nrow=4)
+grid.arrange(sib3_c17, sib3_c18, sib3_c19, sib3_c20, nrow=4)
+grid.arrange(sib3_c21, sib3_c22, sib3_c23, sib3_c24, nrow=4)
+grid.arrange(sib3_c25, sib3_c26, sib3_c27, sib3_c28, nrow=4)
+grid.arrange(sib3_c29, sib3_c30, sib3_c31, sib3_c32, nrow=4)
+grid.arrange(sib3_c33, sib3_c34, sib3_c35, sib3_c36, nrow=4)
+grid.arrange(sib3_c37, sib3_c38, sib3_c39, sib3_c40, nrow=4)
+grid.arrange(sib3_c41, sib3_c42, sib3_c43, sib3_c44, nrow=4)
 
 
-#boxp_funct(D_384881609_4_4_D_206625031_4_4,"Age Sibling 4 Anal Cancer Diagnosed", "Age")
+
+sib4_c1=boxp_funct(D_384881609_4_4_D_206625031_4_4,"Age Sibling 4 Anal Cancer Diagnosed", "Age")
 #boxp_funct(D_384881609_4_4_D_261863326_4_4,"Year Sibling 4 Anal Cancer Diagnosed", "Year")
-#boxp_funct(D_483975329_4_4_D_206625031_4_4,"Age Sibling 4 Bladder Cancer Diagnosed", "Age")
-#boxp_funct(D_483975329_4_4_D_261863326_4_4,"Year Sibling 4 Bladder Cancer Diagnosed", "Year")
-#boxp_funct(D_570279754_4_4_D_206625031_4_4,"Age Sibling 4 Brain Cancer Diagnosed", "Age")
-#boxp_funct(D_570279754_4_4_D_261863326_4_4,"Year Sibling 4 Brain Cancer Diagnosed", "Year")
-sib4_c1=boxp_funct(D_907590067_4_4_D_206625031_4_4,"Age Sibling 4 Breast Cancer Diagnosed", "Age")
-sib4_c2=boxp_funct(D_907590067_4_4_D_261863326_4_4,"Year Sibling 4 Breast Cancer Diagnosed", "Year")
-#boxp_funct(D_860112841_4_4_D_206625031_4_4,"Age Sibling 4 Cervical Cancer Diagnosed", "Age")
-#boxp_funct(D_860112841_4_4_D_261863326_4_4,"Year Sibling 4 Cervical Cancer Diagnosed", "Year")
-#boxp_funct(D_158354252_4_4_D_206625031_4_4,"Age Sibling 4 Colon Cancer Diagnosed", "Age")
-#boxp_funct(D_158354252_4_4_D_261863326_4_4,"Year Sibling 4 Colon Cancer Diagnosed", "Year")
-#boxp_funct(D_654594205_4_4_D_206625031_4_4,"Age Sibling 4 Esophageal Cancer Diagnosed", "Age") 
+sib4_c2=boxp_funct(D_483975329_4_4_D_206625031_4_4,"Age Sibling 4 Bladder Cancer Diagnosed", "Age")
+sib4_c3=boxp_funct(D_483975329_4_4_D_261863326_4_4,"Year Sibling 4 Bladder Cancer Diagnosed", "Year")
+sib4_c4=boxp_funct(D_570279754_4_4_D_206625031_4_4,"Age Sibling 4 Brain Cancer Diagnosed", "Age")
+sib4_c5=boxp_funct(D_570279754_4_4_D_261863326_4_4,"Year Sibling 4 Brain Cancer Diagnosed", "Year")
+sib4_c6=boxp_funct(D_907590067_4_4_D_206625031_4_4,"Age Sibling 4 Breast Cancer Diagnosed", "Age")
+sib4_c7=boxp_funct(D_907590067_4_4_D_261863326_4_4,"Year Sibling 4 Breast Cancer Diagnosed", "Year")
+sib4_c8=boxp_funct(D_860112841_4_4_D_206625031_4_4,"Age Sibling 4 Cervical Cancer Diagnosed", "Age")
+sib4_c9=boxp_funct(D_860112841_4_4_D_261863326_4_4,"Year Sibling 4 Cervical Cancer Diagnosed", "Year")
+sib4_c10=boxp_funct(D_158354252_4_4_D_206625031_4_4,"Age Sibling 4 Colon Cancer Diagnosed", "Age")
+sib4_c11=boxp_funct(D_158354252_4_4_D_261863326_4_4,"Year Sibling 4 Colon Cancer Diagnosed", "Year")
+sib4_c12=boxp_funct(D_654594205_4_4_D_206625031_4_4,"Age Sibling 4 Esophageal Cancer Diagnosed", "Age") 
 #boxp_funct(D_654594205_4_4_D_261863326_4_4,"Year Sibling 4 Esophageal Cancer Diagnosed", "Year") 
-#boxp_funct(D_550722030_4_4_D_206625031_4_4,"Age Sibling 4 Heck Neck and Shoulders Cancer Diagnosed", "Age") 
-#boxp_funct(D_550722030_4_4_D_261863326_4_4,"Year Sibling 4 Heck Neck and Shoulders Cancer Diagnosed", "Year")
-#boxp_funct(D_142912472_4_4_D_206625031_4_4,"Age Sibling 4 Kidney Cancer Diagnosed", "Age") 
-#boxp_funct(D_142912472_4_4_D_261863326_4_4,"Year Sibling 4 Kidney Cancer Diagnosed", "Year") 
-#boxp_funct(D_158409298_4_4_D_206625031_4_4,"Age Sibling 4 Leukemia Cancer Diagnosed", "Age")
-#boxp_funct(D_158409298_4_4_D_261863326_4_4,"Year Sibling 4 Leukemia Cancer Diagnosed", "Year")
-#boxp_funct(D_529744595_4_4_D_206625031_4_4,"Age Sibling 4 Liver Cancer Diagnosed", "Age") 
-#boxp_funct(D_529744595_4_4_D_261863326_4_4,"Year Sibling 4 Liver Cancer Diagnosed", "Year") 
-sib4_c3=boxp_funct(D_315987564_4_4_D_206625031_4_4,"Age Sibling 4 Lung Cancer Diagnosed", "Age") 
-#boxp_funct(D_315987564_4_4_D_261863326_4_4,"Year Sibling 4 Lung Cancer Diagnosed", "Year") 
-#boxp_funct(D_852278004_4_4_D_206625031_4_4,"Age Sibling 4 Non-Hodgkins Lymphoma Cancer Diagnosed", "Age")
-#boxp_funct(D_852278004_4_4_D_261863326_4_4,"Year Sibling 4 Non-Hodgkins Lymphoma Cancer Diagnosed", "Year")
-#boxp_funct(D_391972881_4_4_D_206625031_4_4,"Age Sibling 4 Lymphoma Cancer Diagnosed", "Age") 
-#boxp_funct(D_259089008_4_4_D_206625031_4_4,"Age Sibling 4 Melanoma Cancer Diagnosed", "Age")
-#boxp_funct(D_259089008_4_4_D_261863326_4_4,"Year Sibling 4 Melanoma Cancer Diagnosed", "Year")
-#boxp_funct(D_209771602_4_4_D_206625031_4_4,"Age Sibling 4 Non-Melanoma Cancer Diagnosed", "Age")
-#boxp_funct(D_209771602_4_4_D_261863326_4_4,"Year Sibling 4 Non-Melanoma Cancer Diagnosed", "Year")
-sib4_c4=boxp_funct(D_682651189_4_4_D_206625031_4_4,"Age Sibling 4 Ovarian Cancer Diagnosed", "Age") 
-#boxp_funct(D_682651189_4_4_D_261863326_4_4,"Year Sibling 4 Ovarian Cancer Diagnosed", "Year") 
-#boxp_funct(D_750994269_4_4_D_206625031_4_4,"Age Sibling 4 Pancreatic Cancer Diagnosed", "Age") 
-#boxp_funct(D_750994269_4_4_D_261863326_4_4,"Year Sibling 4 Pancreatic Cancer Diagnosed", "Year") 
-sib4_c5=boxp_funct(D_700889863_4_4_D_206625031_4_4,"Age Sibling 4 Prostate Cancer Diagnosed", "Age")
-#boxp_funct(D_700889863_4_4_D_261863326_4_4,"Year Sibling 4 Prostate Cancer Diagnosed", "Year")
-#boxp_funct(D_990114799_4_4_D_206625031_4_4,"Age Sibling 4 Stomach Cancer Diagnosed", "Age")
-#boxp_funct(D_990114799_4_4_D_261863326_4_4,"Year Sibling 4 Stomach Cancer Diagnosed", "Year")
-#boxp_funct(D_195363361_4_4_D_206625031_4_4,"Age Sibling 4 Testicular Cancer Diagnosed", "Age")
-#boxp_funct(D_195363361_4_4_D_261863326_4_4,"Year Sibling 4 Testicular Cancer Diagnosed", "Year")
-sib4_c6=boxp_funct(D_216840563_4_4_D_206625031_4_4,"Age Sibling 4 Thyroid Cancer Diagnosed", "Age")
-#boxp_funct(D_216840563_4_4_D_261863326_4_4,"Year Sibling 4 Thyroid Cancer Diagnosed", "Year")
-#boxp_funct(D_514034680_4_4_D_206625031_4_4,"Age Sibling 4 Uterine Cancer Diagnosed", "Age") 
-#boxp_funct(D_514034680_4_4_D_261863326_4_4,"Year Sibling 4 Uterine Cancer Diagnosed", "Year") 
-#boxp_funct(D_247160067_4_4_D_206625031_4_4,"Age Sibling 4 Other Cancer Diagnosed", "Age")
-#boxp_funct(D_247160067_4_4_D_261863326_4_4,"Year Sibling 4 Other Cancer Diagnosed", "Year")
-#boxp_funct(D_312545873_4_4_D_206625031_4_4,"Age Sibling 4 Unknown Cancer Diagnosed", "Age")
-#boxp_funct(D_312545873_4_4_D_261863326_4_4,"Year Sibling 4 Unknown Cancer Diagnosed", "Year")
-grid.arrange(sib4_c1, sib4_c2, nrow=2)
-grid.arrange(sib4_c3, sib4_c4, nrow=2)
-grid.arrange(sib4_c5, sib4_c6, nrow=2)
+sib4_c13=boxp_funct(D_550722030_4_4_D_206625031_4_4,"Age Sibling 4 Heck Neck and Shoulders Cancer Diagnosed", "Age") 
+sib4_c14=boxp_funct(D_550722030_4_4_D_261863326_4_4,"Year Sibling 4 Heck Neck and Shoulders Cancer Diagnosed", "Year")
+sib4_c15=boxp_funct(D_142912472_4_4_D_206625031_4_4,"Age Sibling 4 Kidney Cancer Diagnosed", "Age") 
+sib4_c16=boxp_funct(D_142912472_4_4_D_261863326_4_4,"Year Sibling 4 Kidney Cancer Diagnosed", "Year") 
+sib4_c17=boxp_funct(D_158409298_4_4_D_206625031_4_4,"Age Sibling 4 Leukemia Cancer Diagnosed", "Age")
+sib4_c18=boxp_funct(D_158409298_4_4_D_261863326_4_4,"Year Sibling 4 Leukemia Cancer Diagnosed", "Year")
+sib4_c19=boxp_funct(D_529744595_4_4_D_206625031_4_4,"Age Sibling 4 Liver Cancer Diagnosed", "Age") 
+sib4_c20=boxp_funct(D_529744595_4_4_D_261863326_4_4,"Year Sibling 4 Liver Cancer Diagnosed", "Year") 
+sib4_c21=boxp_funct(D_315987564_4_4_D_206625031_4_4,"Age Sibling 4 Lung Cancer Diagnosed", "Age") 
+sib4_c22=boxp_funct(D_315987564_4_4_D_261863326_4_4,"Year Sibling 4 Lung Cancer Diagnosed", "Year") 
+sib4_c23=boxp_funct(D_852278004_4_4_D_206625031_4_4,"Age Sibling 4 Non-Hodgkins Lymphoma Cancer Diagnosed", "Age")
+sib4_c24=boxp_funct(D_852278004_4_4_D_261863326_4_4,"Year Sibling 4 Non-Hodgkins Lymphoma Cancer Diagnosed", "Year")
+sib4_c25=boxp_funct(D_391972881_4_4_D_206625031_4_4,"Age Sibling 4 Lymphoma Cancer Diagnosed", "Age") 
+sib4_c26=boxp_funct(D_259089008_4_4_D_206625031_4_4,"Age Sibling 4 Melanoma Cancer Diagnosed", "Age")
+sib4_c27=boxp_funct(D_259089008_4_4_D_261863326_4_4,"Year Sibling 4 Melanoma Cancer Diagnosed", "Year")
+sib4_c28=boxp_funct(D_209771602_4_4_D_206625031_4_4,"Age Sibling 4 Non-Melanoma Cancer Diagnosed", "Age")
+sib4_c29=boxp_funct(D_209771602_4_4_D_261863326_4_4,"Year Sibling 4 Non-Melanoma Cancer Diagnosed", "Year")
+sib4_c30=boxp_funct(D_682651189_4_4_D_206625031_4_4,"Age Sibling 4 Ovarian Cancer Diagnosed", "Age") 
+sib4_c31=boxp_funct(D_682651189_4_4_D_261863326_4_4,"Year Sibling 4 Ovarian Cancer Diagnosed", "Year") 
+sib4_c32=boxp_funct(D_750994269_4_4_D_206625031_4_4,"Age Sibling 4 Pancreatic Cancer Diagnosed", "Age") 
+sib4_c33=boxp_funct(D_750994269_4_4_D_261863326_4_4,"Year Sibling 4 Pancreatic Cancer Diagnosed", "Year") 
+sib4_c34=boxp_funct(D_700889863_4_4_D_206625031_4_4,"Age Sibling 4 Prostate Cancer Diagnosed", "Age")
+sib4_c35=boxp_funct(D_700889863_4_4_D_261863326_4_4,"Year Sibling 4 Prostate Cancer Diagnosed", "Year")
+sib4_c36=boxp_funct(D_990114799_4_4_D_206625031_4_4,"Age Sibling 4 Stomach Cancer Diagnosed", "Age")
+sib4_c37=boxp_funct(D_990114799_4_4_D_261863326_4_4,"Year Sibling 4 Stomach Cancer Diagnosed", "Year")
+sib4_c38=boxp_funct(D_195363361_4_4_D_206625031_4_4,"Age Sibling 4 Testicular Cancer Diagnosed", "Age")
+sib4_c39=boxp_funct(D_195363361_4_4_D_261863326_4_4,"Year Sibling 4 Testicular Cancer Diagnosed", "Year")
+sib4_c40=boxp_funct(D_216840563_4_4_D_206625031_4_4,"Age Sibling 4 Thyroid Cancer Diagnosed", "Age")
+sib4_c41=boxp_funct(D_216840563_4_4_D_261863326_4_4,"Year Sibling 4 Thyroid Cancer Diagnosed", "Year")
+sib4_c42=boxp_funct(D_514034680_4_4_D_206625031_4_4,"Age Sibling 4 Uterine Cancer Diagnosed", "Age") 
+sib4_c43=boxp_funct(D_514034680_4_4_D_261863326_4_4,"Year Sibling 4 Uterine Cancer Diagnosed", "Year") 
+sib4_c44=boxp_funct(D_247160067_4_4_D_206625031_4_4,"Age Sibling 4 Other Cancer Diagnosed", "Age")
+sib4_c45=boxp_funct(D_247160067_4_4_D_261863326_4_4,"Year Sibling 4 Other Cancer Diagnosed", "Year")
+sib4_c46=boxp_funct(D_312545873_4_4_D_206625031_4_4,"Age Sibling 4 Unknown Cancer Diagnosed", "Age")
+sib4_c47=boxp_funct(D_312545873_4_4_D_261863326_4_4,"Year Sibling 4 Unknown Cancer Diagnosed", "Year")
+
+grid.arrange(sib4_c1, sib4_c2, sib4_c3, sib4_c4, nrow=4)
+grid.arrange(sib4_c5, sib4_c6, sib4_c7, sib4_c8, nrow=4)
+grid.arrange(sib4_c9, sib4_c10, sib4_c11, sib4_c12, nrow=4)
+grid.arrange(sib4_c13, sib4_c14, sib4_c15, sib4_c16, nrow=4)
+grid.arrange(sib4_c17, sib4_c18, sib4_c19, sib4_c20, nrow=4)
+grid.arrange(sib4_c21, sib4_c22, sib4_c23, sib4_c24, nrow=4)
+grid.arrange(sib4_c25, sib4_c26, sib4_c27, sib4_c28, nrow=4)
+grid.arrange(sib4_c29, sib4_c30, sib4_c31, sib4_c32, nrow=4)
+grid.arrange(sib4_c33, sib4_c34, sib4_c35, sib4_c36, nrow=4)
+grid.arrange(sib4_c37, sib4_c38, sib4_c39, sib4_c40, nrow=4)
+grid.arrange(sib4_c41, sib4_c42, sib4_c43, sib4_c44, nrow=4)
+grid.arrange(sib4_c45, sib4_c46, sib4_c47,  nrow=3)
 
 
 #boxp_funct(D_384881609_5_5_D_206625031_5_5,"Age Sibling 5 Anal Cancer Diagnosed", "Age")
 #boxp_funct(D_384881609_5_5_D_261863326_5_5,"Year Sibling 5 Anal Cancer Diagnosed", "Year")
-#boxp_funct(D_483975329_5_5_D_206625031_5_5,"Age Sibling 5 Bladder Cancer Diagnosed", "Age")
+sib5_c1=boxp_funct(D_483975329_5_5_D_206625031_5_5,"Age Sibling 5 Bladder Cancer Diagnosed", "Age")
 #boxp_funct(D_483975329_5_5_D_261863326_5_5,"Year Sibling 5 Bladder Cancer Diagnosed", "Year")
-#boxp_funct(D_570279754_5_5_D_206625031_5_5,"Age Sibling 5 Brain Cancer Diagnosed", "Age")
+sib5_c2=boxp_funct(D_570279754_5_5_D_206625031_5_5,"Age Sibling 5 Brain Cancer Diagnosed", "Age")
 #boxp_funct(D_570279754_5_5_D_261863326_5_5,"Year Sibling 5 Brain Cancer Diagnosed", "Year")
-sib5_c1=boxp_funct(D_907590067_5_5_D_206625031_5_5,"Age Sibling 5 Breast Cancer Diagnosed", "Age")
-#boxp_funct(D_907590067_5_5_D_261863326_5_5,"Year Sibling 5 Breast Cancer Diagnosed", "Year")
-#boxp_funct(D_860112841_5_5_D_206625031_5_5,"Age Sibling 5 Cervical Cancer Diagnosed", "Age")
+sib5_c3=boxp_funct(D_907590067_5_5_D_206625031_5_5,"Age Sibling 5 Breast Cancer Diagnosed", "Age")
+sib5_c4=boxp_funct(D_907590067_5_5_D_261863326_5_5,"Year Sibling 5 Breast Cancer Diagnosed", "Year")
+sib5_c5=boxp_funct(D_860112841_5_5_D_206625031_5_5,"Age Sibling 5 Cervical Cancer Diagnosed", "Age")
 #boxp_funct(D_860112841_5_5_D_261863326_5_5,"Year Sibling 5 Cervical Cancer Diagnosed", "Year")
-#boxp_funct(D_158354252_5_5_D_206625031_5_5,"Age Sibling 5 Colon Cancer Diagnosed", "Age")
-#boxp_funct(D_158354252_5_5_D_261863326_5_5,"Year Sibling 5 Colon Cancer Diagnosed", "Year")
-#boxp_funct(D_654594205_5_5_D_206625031_5_5,"Age Sibling 5 Esophageal Cancer Diagnosed", "Age") 
-#boxp_funct(D_654594205_5_5_D_261863326_5_5,"Year Sibling 5 Esophageal Cancer Diagnosed", "Year") 
-#boxp_funct(D_550722030_5_5_D_206625031_5_5,"Age Sibling 5 Heck Neck and Shoulders Cancer Diagnosed", "Age") 
+sib5_c6=boxp_funct(D_158354252_5_5_D_206625031_5_5,"Age Sibling 5 Colon Cancer Diagnosed", "Age")
+sib5_c7=boxp_funct(D_158354252_5_5_D_261863326_5_5,"Year Sibling 5 Colon Cancer Diagnosed", "Year")
+sib5_c8=boxp_funct(D_654594205_5_5_D_206625031_5_5,"Age Sibling 5 Esophageal Cancer Diagnosed", "Age") 
+sib5_c9=boxp_funct(D_654594205_5_5_D_261863326_5_5,"Year Sibling 5 Esophageal Cancer Diagnosed", "Year") 
+sib5_c10=boxp_funct(D_550722030_5_5_D_206625031_5_5,"Age Sibling 5 Heck Neck and Shoulders Cancer Diagnosed", "Age") 
 #boxp_funct(D_550722030_5_5_D_261863326_5_5,"Year Sibling 5 Heck Neck and Shoulders Cancer Diagnosed", "Year")
-#boxp_funct(D_142912472_5_5_D_206625031_5_5,"Age Sibling 5 Kidney Cancer Diagnosed", "Age") 
-#boxp_funct(D_142912472_5_5_D_261863326_5_5,"Year Sibling 5 Kidney Cancer Diagnosed", "Year") 
-#boxp_funct(D_158409298_5_5_D_206625031_5_5,"Age Sibling 5 Leukemia Cancer Diagnosed", "Age")
+sib5_c11=boxp_funct(D_142912472_5_5_D_206625031_5_5,"Age Sibling 5 Kidney Cancer Diagnosed", "Age") 
+sib5_c12=boxp_funct(D_142912472_5_5_D_261863326_5_5,"Year Sibling 5 Kidney Cancer Diagnosed", "Year") 
+sib5_c13=boxp_funct(D_158409298_5_5_D_206625031_5_5,"Age Sibling 5 Leukemia Cancer Diagnosed", "Age")
 #boxp_funct(D_158409298_5_5_D_261863326_5_5,"Year Sibling 5 Leukemia Cancer Diagnosed", "Year")
-#boxp_funct(D_529744595_5_5_D_206625031_5_5,"Age Sibling 5 Liver Cancer Diagnosed", "Age") 
+sib5_c14=boxp_funct(D_529744595_5_5_D_206625031_5_5,"Age Sibling 5 Liver Cancer Diagnosed", "Age") 
 #boxp_funct(D_529744595_5_5_D_261863326_5_5,"Year Sibling 5 Liver Cancer Diagnosed", "Year") 
-#boxp_funct(D_315987564_5_5_D_206625031_5_5,"Age Sibling 5 Lung Cancer Diagnosed", "Age") 
-#boxp_funct(D_315987564_5_5_D_261863326_5_5,"Year Sibling 5 Lung Cancer Diagnosed", "Year") 
-#boxp_funct(D_852278004_5_5_D_206625031_5_5,"Age Sibling 5 Non-Hodgkins Lymphoma Cancer Diagnosed", "Age")
+sib5_c15=boxp_funct(D_315987564_5_5_D_206625031_5_5,"Age Sibling 5 Lung Cancer Diagnosed", "Age") 
+sib5_c16=boxp_funct(D_315987564_5_5_D_261863326_5_5,"Year Sibling 5 Lung Cancer Diagnosed", "Year") 
+sib5_c17=boxp_funct(D_852278004_5_5_D_206625031_5_5,"Age Sibling 5 Non-Hodgkins Lymphoma Cancer Diagnosed", "Age")
 #boxp_funct(D_852278004_5_5_D_261863326_5_5,"Year Sibling 5 Non-Hodgkins Lymphoma Cancer Diagnosed", "Year")
 #boxp_funct(D_391972881_5_5_D_206625031_5_5,"Age Sibling 5 Lymphoma Cancer Diagnosed", "Age") 
-sib5_c2=boxp_funct(D_259089008_5_5_D_206625031_5_5,"Age Sibling 5 Melanoma Cancer Diagnosed", "Age")
-#boxp_funct(D_259089008_5_5_D_261863326_5_5,"Year Sibling 5 Melanoma Cancer Diagnosed", "Year")
-#boxp_funct(D_209771602_5_5_D_206625031_5_5,"Age Sibling 5 Non-Melanoma Cancer Diagnosed", "Age")
+sib5_c18=boxp_funct(D_259089008_5_5_D_206625031_5_5,"Age Sibling 5 Melanoma Cancer Diagnosed", "Age")
+sib5_c19=boxp_funct(D_259089008_5_5_D_261863326_5_5,"Year Sibling 5 Melanoma Cancer Diagnosed", "Year")
+sib5_c20=boxp_funct(D_209771602_5_5_D_206625031_5_5,"Age Sibling 5 Non-Melanoma Cancer Diagnosed", "Age")
 #boxp_funct(D_209771602_5_5_D_261863326_5_5,"Year Sibling 5 Non-Melanoma Cancer Diagnosed", "Year")
-#boxp_funct(D_682651189_5_5_D_206625031_5_5,"Age Sibling 5 Ovarian Cancer Diagnosed", "Age") 
+sib5_c21=boxp_funct(D_682651189_5_5_D_206625031_5_5,"Age Sibling 5 Ovarian Cancer Diagnosed", "Age") 
 #boxp_funct(D_682651189_5_5_D_261863326_5_5,"Year Sibling 5 Ovarian Cancer Diagnosed", "Year") 
-#boxp_funct(D_750994269_5_5_D_206625031_5_5,"Age Sibling 5 Pancreatic Cancer Diagnosed", "Age") 
+sib5_c22=boxp_funct(D_750994269_5_5_D_206625031_5_5,"Age Sibling 5 Pancreatic Cancer Diagnosed", "Age") 
 #boxp_funct(D_750994269_5_5_D_261863326_5_5,"Year Sibling 5 Pancreatic Cancer Diagnosed", "Year") 
-#boxp_funct(D_700889863_5_5_D_206625031_5_5,"Age Sibling 5 Prostate Cancer Diagnosed", "Age")
-#boxp_funct(D_700889863_5_5_D_261863326_5_5,"Year Sibling 5 Prostate Cancer Diagnosed", "Year")
-#boxp_funct(D_990114799_5_5_D_206625031_5_5,"Age Sibling 5 Stomach Cancer Diagnosed", "Age")
+sib5_c23=boxp_funct(D_700889863_5_5_D_206625031_5_5,"Age Sibling 5 Prostate Cancer Diagnosed", "Age")
+sib5_c24=boxp_funct(D_700889863_5_5_D_261863326_5_5,"Year Sibling 5 Prostate Cancer Diagnosed", "Year")
+sib5_c25=boxp_funct(D_990114799_5_5_D_206625031_5_5,"Age Sibling 5 Stomach Cancer Diagnosed", "Age")
 #boxp_funct(D_990114799_5_5_D_261863326_5_5,"Year Sibling 5 Stomach Cancer Diagnosed", "Year")
-#boxp_funct(D_195363361_5_5_D_206625031_5_5,"Age Sibling 5 Testicular Cancer Diagnosed", "Age")
+sib5_c26=boxp_funct(D_195363361_5_5_D_206625031_5_5,"Age Sibling 5 Testicular Cancer Diagnosed", "Age")
 #boxp_funct(D_195363361_5_5_D_261863326_5_5,"Year Sibling 5 Testicular Cancer Diagnosed", "Year")
-sib5_c3=boxp_funct(D_216840563_5_5_D_206625031_5_5,"Age Sibling 5 Thyroid Cancer Diagnosed", "Age")
+sib5_c27=boxp_funct(D_216840563_5_5_D_206625031_5_5,"Age Sibling 5 Thyroid Cancer Diagnosed", "Age")
 #boxp_funct(D_216840563_5_5_D_261863326_5_5,"Year Sibling 5 Thyroid Cancer Diagnosed", "Year")
-#boxp_funct(D_514034680_5_5_D_206625031_5_5,"Age Sibling 5 Uterine Cancer Diagnosed", "Age") 
-#boxp_funct(D_514034680_5_5_D_261863326_5_5,"Year Sibling 5 Uterine Cancer Diagnosed", "Year") 
+sib5_c28=boxp_funct(D_514034680_5_5_D_206625031_5_5,"Age Sibling 5 Uterine Cancer Diagnosed", "Age") 
+sib5_c29=boxp_funct(D_514034680_5_5_D_261863326_5_5,"Year Sibling 5 Uterine Cancer Diagnosed", "Year") 
 #boxp_funct(D_247160067_5_5_D_206625031_5_5,"Age Sibling 5 Other Cancer Diagnosed", "Age")
 #boxp_funct(D_247160067_5_5_D_261863326_5_5,"Year Sibling 5 Other Cancer Diagnosed", "Year")
-#boxp_funct(D_312545873_5_5_D_206625031_5_5,"Age Sibling 5 Unknown Cancer Diagnosed", "Age")
-#boxp_funct(D_312545873_5_5_D_261863326_5_5,"Year Sibling 5 Unknown Cancer Diagnosed", "Year")
-grid.arrange(sib5_c1, sib5_c2, sib5_c3, nrow=3)
+sib5_c30=boxp_funct(D_312545873_5_5_D_206625031_5_5,"Age Sibling 5 Unknown Cancer Diagnosed", "Age")
+sib5_c31=boxp_funct(D_312545873_5_5_D_261863326_5_5,"Year Sibling 5 Unknown Cancer Diagnosed", "Year")
+
+grid.arrange(sib5_c1, sib5_c2, sib5_c3, sib5_c4, nrow=4)
+grid.arrange(sib5_c5, sib5_c6, sib5_c7, sib5_c8, nrow=4)
+grid.arrange(sib5_c9, sib5_c10, sib5_c11, sib5_c12, nrow=4)
+grid.arrange(sib5_c13, sib5_c14, sib5_c15, sib5_c16, nrow=4)
+grid.arrange(sib5_c17, sib5_c18, sib5_c19, sib5_c20, nrow=4)
+grid.arrange(sib5_c21, sib5_c22, sib5_c23, sib5_c24, nrow=4)
+grid.arrange(sib5_c25, sib5_c26, sib5_c27, sib5_c28, nrow=4)
+grid.arrange(sib5_c29, sib5_c30, sib5_c31,  nrow=3)
+
 
 
 #boxp_funct(D_384881609_6_6_D_206625031_6_6,"Age Sibling 6 Anal Cancer Diagnosed", "Age")
 #boxp_funct(D_384881609_6_6_D_261863326_6_6,"Year Sibling 6 Anal Cancer Diagnosed", "Year")
 #boxp_funct(D_483975329_6_6_D_206625031_6_6,"Age Sibling 6 Bladder Cancer Diagnosed", "Age")
-#boxp_funct(D_483975329_6_6_D_261863326_6_6,"Year Sibling 6 Bladder Cancer Diagnosed", "Year")
-#boxp_funct(D_570279754_6_6_D_206625031_6_6,"Age Sibling 6 Brain Cancer Diagnosed", "Age")
+sib6_c1=boxp_funct(D_483975329_6_6_D_261863326_6_6,"Year Sibling 6 Bladder Cancer Diagnosed", "Year")
+sib6_c2=boxp_funct(D_570279754_6_6_D_206625031_6_6,"Age Sibling 6 Brain Cancer Diagnosed", "Age")
 #boxp_funct(D_570279754_6_6_D_261863326_6_6,"Year Sibling 6 Brain Cancer Diagnosed", "Year")
-#boxp_funct(D_907590067_6_6_D_206625031_6_6,"Age Sibling 6 Breast Cancer Diagnosed", "Age")
-#boxp_funct(D_907590067_6_6_D_261863326_6_6,"Year Sibling 6 Breast Cancer Diagnosed", "Year")
+sib6_c3=boxp_funct(D_907590067_6_6_D_206625031_6_6,"Age Sibling 6 Breast Cancer Diagnosed", "Age")
+sib6_c4=boxp_funct(D_907590067_6_6_D_261863326_6_6,"Year Sibling 6 Breast Cancer Diagnosed", "Year")
 #boxp_funct(D_860112841_6_6_D_206625031_6_6,"Age Sibling 6 Cervical Cancer Diagnosed", "Age")
-#boxp_funct(D_860112841_6_6_D_261863326_6_6,"Year Sibling 6 Cervical Cancer Diagnosed", "Year")
-#boxp_funct(D_158354252_6_6_D_206625031_6_6,"Age Sibling 6 Colon Cancer Diagnosed", "Age")
-#boxp_funct(D_158354252_6_6_D_261863326_6_6,"Year Sibling 6 Colon Cancer Diagnosed", "Year")
-#boxp_funct(D_654594205_6_6_D_206625031_6_6,"Age Sibling 6 Esophageal Cancer Diagnosed", "Age") 
-#boxp_funct(D_654594205_6_6_D_261863326_6_6,"Year Sibling 6 Esophageal Cancer Diagnosed", "Year") 
-#boxp_funct(D_550722030_6_6_D_206625031_6_6,"Age Sibling 6 Heck Neck and Shoulders Cancer Diagnosed", "Age") 
+sib6_c5=boxp_funct(D_860112841_6_6_D_261863326_6_6,"Year Sibling 6 Cervical Cancer Diagnosed", "Year")
+sib6_c6=boxp_funct(D_158354252_6_6_D_206625031_6_6,"Age Sibling 6 Colon Cancer Diagnosed", "Age")
+sib6_c7=boxp_funct(D_158354252_6_6_D_261863326_6_6,"Year Sibling 6 Colon Cancer Diagnosed", "Year")
+sib6_c8=boxp_funct(D_654594205_6_6_D_206625031_6_6,"Age Sibling 6 Esophageal Cancer Diagnosed", "Age") 
+sib6_c9=boxp_funct(D_654594205_6_6_D_261863326_6_6,"Year Sibling 6 Esophageal Cancer Diagnosed", "Year") 
+sib6_c10=boxp_funct(D_550722030_6_6_D_206625031_6_6,"Age Sibling 6 Heck Neck and Shoulders Cancer Diagnosed", "Age") 
 #boxp_funct(D_550722030_6_6_D_261863326_6_6,"Year Sibling 6 Heck Neck and Shoulders Cancer Diagnosed", "Year")
-#boxp_funct(D_142912472_6_6_D_206625031_6_6,"Age Sibling 6 Kidney Cancer Diagnosed", "Age") 
-#boxp_funct(D_142912472_6_6_D_261863326_6_6,"Year Sibling 6 Kidney Cancer Diagnosed", "Year") 
-#boxp_funct(D_158409298_6_6_D_206625031_6_6,"Age Sibling 6 Leukemia Cancer Diagnosed", "Age")
-#boxp_funct(D_158409298_6_6_D_261863326_6_6,"Year Sibling 6 Leukemia Cancer Diagnosed", "Year")
+sib6_c11=boxp_funct(D_142912472_6_6_D_206625031_6_6,"Age Sibling 6 Kidney Cancer Diagnosed", "Age") 
+sib6_c12=boxp_funct(D_142912472_6_6_D_261863326_6_6,"Year Sibling 6 Kidney Cancer Diagnosed", "Year") 
+sib6_c13=boxp_funct(D_158409298_6_6_D_206625031_6_6,"Age Sibling 6 Leukemia Cancer Diagnosed", "Age")
+sib6_c14=boxp_funct(D_158409298_6_6_D_261863326_6_6,"Year Sibling 6 Leukemia Cancer Diagnosed", "Year")
 #boxp_funct(D_529744595_6_6_D_206625031_6_6,"Age Sibling 6 Liver Cancer Diagnosed", "Age") 
-#boxp_funct(D_529744595_6_6_D_261863326_6_6,"Year Sibling 6 Liver Cancer Diagnosed", "Year") 
-#boxp_funct(D_315987564_6_6_D_206625031_6_6,"Age Sibling 6 Lung Cancer Diagnosed", "Age") 
+sib6_c15=boxp_funct(D_529744595_6_6_D_261863326_6_6,"Year Sibling 6 Liver Cancer Diagnosed", "Year") 
+sib6_c16=boxp_funct(D_315987564_6_6_D_206625031_6_6,"Age Sibling 6 Lung Cancer Diagnosed", "Age") 
 #boxp_funct(D_315987564_6_6_D_261863326_6_6,"Year Sibling 6 Lung Cancer Diagnosed", "Year") 
-#boxp_funct(D_852278004_6_6_D_206625031_6_6,"Age Sibling 6 Non-Hodgkins Lymphoma Cancer Diagnosed", "Age")
-#boxp_funct(D_852278004_6_6_D_261863326_6_6,"Year Sibling 6 Non-Hodgkins Lymphoma Cancer Diagnosed", "Year")
-#boxp_funct(D_391972881_6_6_D_206625031_6_6,"Age Sibling 6 Lymphoma Cancer Diagnosed", "Age") 
+sib6_c17=boxp_funct(D_852278004_6_6_D_206625031_6_6,"Age Sibling 6 Non-Hodgkins Lymphoma Cancer Diagnosed", "Age")
+sib6_c18=boxp_funct(D_852278004_6_6_D_261863326_6_6,"Year Sibling 6 Non-Hodgkins Lymphoma Cancer Diagnosed", "Year")
+sib6_c19=boxp_funct(D_391972881_6_6_D_206625031_6_6,"Age Sibling 6 Lymphoma Cancer Diagnosed", "Age") 
 #boxp_funct(D_259089008_6_6_D_206625031_6_6,"Age Sibling 6 Melanoma Cancer Diagnosed", "Age")
 #boxp_funct(D_259089008_6_6_D_261863326_6_6,"Year Sibling 6 Melanoma Cancer Diagnosed", "Year")
-#boxp_funct(D_209771602_6_6_D_206625031_6_6,"Age Sibling 6 Non-Melanoma Cancer Diagnosed", "Age")
-#boxp_funct(D_209771602_6_6_D_261863326_6_6,"Year Sibling 6 Non-Melanoma Cancer Diagnosed", "Year")
-#boxp_funct(D_682651189_6_6_D_206625031_6_6,"Age Sibling 6 Ovarian Cancer Diagnosed", "Age") 
-#boxp_funct(D_682651189_6_6_D_261863326_6_6,"Year Sibling 6 Ovarian Cancer Diagnosed", "Year") 
-#boxp_funct(D_750994269_6_6_D_206625031_6_6,"Age Sibling 6 Pancreatic Cancer Diagnosed", "Age") 
+sib6_c20=boxp_funct(D_209771602_6_6_D_206625031_6_6,"Age Sibling 6 Non-Melanoma Cancer Diagnosed", "Age")
+sib6_c21=boxp_funct(D_209771602_6_6_D_261863326_6_6,"Year Sibling 6 Non-Melanoma Cancer Diagnosed", "Year")
+sib6_c22=boxp_funct(D_682651189_6_6_D_206625031_6_6,"Age Sibling 6 Ovarian Cancer Diagnosed", "Age") 
+sib6_c23=boxp_funct(D_682651189_6_6_D_261863326_6_6,"Year Sibling 6 Ovarian Cancer Diagnosed", "Year") 
+sib6_c24=boxp_funct(D_750994269_6_6_D_206625031_6_6,"Age Sibling 6 Pancreatic Cancer Diagnosed", "Age") 
 #boxp_funct(D_750994269_6_6_D_261863326_6_6,"Year Sibling 6 Pancreatic Cancer Diagnosed", "Year") 
-#boxp_funct(D_700889863_6_6_D_206625031_6_6,"Age Sibling 6 Prostate Cancer Diagnosed", "Age")
-#boxp_funct(D_700889863_6_6_D_261863326_6_6,"Year Sibling 6 Prostate Cancer Diagnosed", "Year")
-#boxp_funct(D_990114799_6_6_D_206625031_6_6,"Age Sibling 6 Stomach Cancer Diagnosed", "Age")
-#boxp_funct(D_990114799_6_6_D_261863326_6_6,"Year Sibling 6 Stomach Cancer Diagnosed", "Year")
-#boxp_funct(D_195363361_6_6_D_206625031_6_6,"Age Sibling 6 Testicular Cancer Diagnosed", "Age")
-#boxp_funct(D_195363361_6_6_D_261863326_6_6,"Year Sibling 6 Testicular Cancer Diagnosed", "Year")
-#boxp_funct(D_216840563_6_6_D_206625031_6_6,"Age Sibling 6 Thyroid Cancer Diagnosed", "Age")
+sib6_c25=boxp_funct(D_700889863_6_6_D_206625031_6_6,"Age Sibling 6 Prostate Cancer Diagnosed", "Age")
+sib6_c26=boxp_funct(D_700889863_6_6_D_261863326_6_6,"Year Sibling 6 Prostate Cancer Diagnosed", "Year")
+sib6_c27=boxp_funct(D_990114799_6_6_D_206625031_6_6,"Age Sibling 6 Stomach Cancer Diagnosed", "Age")
+sib6_c28=boxp_funct(D_990114799_6_6_D_261863326_6_6,"Year Sibling 6 Stomach Cancer Diagnosed", "Year")
+sib6_c29=boxp_funct(D_195363361_6_6_D_206625031_6_6,"Age Sibling 6 Testicular Cancer Diagnosed", "Age")
+sib6_c30=boxp_funct(D_195363361_6_6_D_261863326_6_6,"Year Sibling 6 Testicular Cancer Diagnosed", "Year")
+sib6_c31=boxp_funct(D_216840563_6_6_D_206625031_6_6,"Age Sibling 6 Thyroid Cancer Diagnosed", "Age")
 #boxp_funct(D_216840563_6_6_D_261863326_6_6,"Year Sibling 6 Thyroid Cancer Diagnosed", "Year")
 #boxp_funct(D_514034680_6_6_D_206625031_6_6,"Age Sibling 6 Uterine Cancer Diagnosed", "Age") 
-#boxp_funct(D_514034680_6_6_D_261863326_6_6,"Year Sibling 6 Uterine Cancer Diagnosed", "Year") 
+sib6_c32=boxp_funct(D_514034680_6_6_D_261863326_6_6,"Year Sibling 6 Uterine Cancer Diagnosed", "Year") 
 #boxp_funct(D_247160067_6_6_D_206625031_6_6,"Age Sibling 6 Other Cancer Diagnosed", "Age")
 #boxp_funct(D_247160067_6_6_D_261863326_6_6,"Year Sibling 6 Other Cancer Diagnosed", "Year")
-#boxp_funct(D_312545873_6_6_D_206625031_6_6,"Age Sibling 6 Unknown Cancer Diagnosed", "Age")
-#boxp_funct(D_312545873_6_6_D_261863326_6_6,"Year Sibling 6 Unknown Cancer Diagnosed", "Year")
+sib6_c33=boxp_funct(D_312545873_6_6_D_206625031_6_6,"Age Sibling 6 Unknown Cancer Diagnosed", "Age")
+sib6_c34=boxp_funct(D_312545873_6_6_D_261863326_6_6,"Year Sibling 6 Unknown Cancer Diagnosed", "Year")
+
+grid.arrange(sib6_c1, sib6_c2, sib6_c3, sib6_c4, nrow=4)
+grid.arrange(sib6_c5, sib6_c6, sib6_c7, sib6_c8, nrow=4)
+grid.arrange(sib6_c9, sib6_c10, sib6_c11, sib6_c12, nrow=4)
+grid.arrange(sib6_c13, sib6_c14, sib6_c15, sib6_c16, nrow=4)
+grid.arrange(sib6_c17, sib6_c18, sib6_c19, sib6_c20, nrow=4)
+grid.arrange(sib6_c21, sib6_c22, sib6_c23, sib6_c24, nrow=4)
+grid.arrange(sib6_c25, sib6_c26, sib6_c27, sib6_c28, nrow=4)
+grid.arrange(sib6_c29, sib6_c30, sib6_c31, sib6_c32,  nrow=4)
+grid.arrange(sib6_c33, sib6_c34, nrow=2)
 
 
-#boxp_funct(D_384881609_7_7_D_206625031_7_7,"Age Sibling 7 Anal Cancer Diagnosed", "Age")
-#boxp_funct(D_384881609_7_7_D_261863326_7_7,"Year Sibling 7 Anal Cancer Diagnosed", "Year")
-#boxp_funct(D_483975329_7_7_D_206625031_7_7,"Age Sibling 7 Bladder Cancer Diagnosed", "Age")
-#boxp_funct(D_483975329_7_7_D_261863326_7_7,"Year Sibling 7 Bladder Cancer Diagnosed", "Year")
-#boxp_funct(D_570279754_7_7_D_206625031_7_7,"Age Sibling 7 Brain Cancer Diagnosed", "Age")
-#boxp_funct(D_570279754_7_7_D_261863326_7_7,"Year Sibling 7 Brain Cancer Diagnosed", "Year")
-#boxp_funct(D_907590067_7_7_D_206625031_7_7,"Age Sibling 7 Breast Cancer Diagnosed", "Age")
-#boxp_funct(D_907590067_7_7_D_261863326_7_7,"Year Sibling 7 Breast Cancer Diagnosed", "Year")
-#boxp_funct(D_860112841_7_7_D_206625031_7_7,"Age Sibling 7 Cervical Cancer Diagnosed", "Age")
-#boxp_funct(D_860112841_7_7_D_261863326_7_7,"Year Sibling 7 Cervical Cancer Diagnosed", "Year")
-#boxp_funct(D_158354252_7_7_D_206625031_7_7,"Age Sibling 7 Colon Cancer Diagnosed", "Age")
-#boxp_funct(D_158354252_7_7_D_261863326_7_7,"Year Sibling 7 Colon Cancer Diagnosed", "Year")
-#boxp_funct(D_654594205_7_7_D_206625031_7_7,"Age Sibling 7 Esophageal Cancer Diagnosed", "Age") 
-#boxp_funct(D_654594205_7_7_D_261863326_7_7,"Year Sibling 7 Esophageal Cancer Diagnosed", "Year") 
-#boxp_funct(D_550722030_7_7_D_206625031_7_7,"Age Sibling 7 Heck Neck and Shoulders Cancer Diagnosed", "Age") 
-#boxp_funct(D_550722030_7_7_D_261863326_7_7,"Year Sibling 7 Heck Neck and Shoulders Cancer Diagnosed", "Year")
-#boxp_funct(D_142912472_7_7_D_206625031_7_7,"Age Sibling 7 Kidney Cancer Diagnosed", "Age") 
-#boxp_funct(D_142912472_7_7_D_261863326_7_7,"Year Sibling 7 Kidney Cancer Diagnosed", "Year") 
-#boxp_funct(D_158409298_7_7_D_206625031_7_7,"Age Sibling 7 Leukemia Cancer Diagnosed", "Age")
-#boxp_funct(D_158409298_7_7_D_261863326_7_7,"Year Sibling 7 Leukemia Cancer Diagnosed", "Year")
-#boxp_funct(D_529744595_7_7_D_206625031_7_7,"Age Sibling 7 Liver Cancer Diagnosed", "Age") 
-#boxp_funct(D_529744595_7_7_D_261863326_7_7,"Year Sibling 7 Liver Cancer Diagnosed", "Year") 
-#boxp_funct(D_315987564_7_7_D_206625031_7_7,"Age Sibling 7 Lung Cancer Diagnosed", "Age") 
-#boxp_funct(D_315987564_7_7_D_261863326_7_7,"Year Sibling 7 Lung Cancer Diagnosed", "Year") 
-#boxp_funct(D_852278004_7_7_D_206625031_7_7,"Age Sibling 7 Non-Hodgkins Lymphoma Cancer Diagnosed", "Age")
-#boxp_funct(D_852278004_7_7_D_261863326_7_7,"Year Sibling 7 Non-Hodgkins Lymphoma Cancer Diagnosed", "Year")
-#boxp_funct(D_391972881_7_7_D_206625031_7_7,"Age Sibling 7 Lymphoma Cancer Diagnosed", "Age") 
-#boxp_funct(D_259089008_7_7_D_206625031_7_7,"Age Sibling 7 Melanoma Cancer Diagnosed", "Age")
-#boxp_funct(D_259089008_7_7_D_261863326_7_7,"Year Sibling 7 Melanoma Cancer Diagnosed", "Year")
-#boxp_funct(D_209771602_7_7_D_206625031_7_7,"Age Sibling 7 Non-Melanoma Cancer Diagnosed", "Age")
-#boxp_funct(D_209771602_7_7_D_261863326_7_7,"Year Sibling 7 Non-Melanoma Cancer Diagnosed", "Year")
-#boxp_funct(D_682651189_7_7_D_206625031_7_7,"Age Sibling 7 Ovarian Cancer Diagnosed", "Age") 
-#boxp_funct(D_682651189_7_7_D_261863326_7_7,"Year Sibling 7 Ovarian Cancer Diagnosed", "Year") 
-#boxp_funct(D_750994269_7_7_D_206625031_7_7,"Age Sibling 7 Pancreatic Cancer Diagnosed", "Age") 
-#boxp_funct(D_750994269_7_7_D_261863326_7_7,"Year Sibling 7 Pancreatic Cancer Diagnosed", "Year") 
-#boxp_funct(D_700889863_7_7_D_206625031_7_7,"Age Sibling 7 Prostate Cancer Diagnosed", "Age")
-#boxp_funct(D_700889863_7_7_D_261863326_7_7,"Year Sibling 7 Prostate Cancer Diagnosed", "Year")
-#boxp_funct(D_990114799_7_7_D_206625031_7_7,"Age Sibling 7 Stomach Cancer Diagnosed", "Age")
-#boxp_funct(D_990114799_7_7_D_261863326_7_7,"Year Sibling 7 Stomach Cancer Diagnosed", "Year")
-#boxp_funct(D_195363361_7_7_D_206625031_7_7,"Age Sibling 7 Testicular Cancer Diagnosed", "Age")
-#boxp_funct(D_195363361_7_7_D_261863326_7_7,"Year Sibling 7 Testicular Cancer Diagnosed", "Year")
-#boxp_funct(D_216840563_7_7_D_206625031_7_7,"Age Sibling 7 Thyroid Cancer Diagnosed", "Age")
-#boxp_funct(D_216840563_7_7_D_261863326_7_7,"Year Sibling 7 Thyroid Cancer Diagnosed", "Year")
-#boxp_funct(D_514034680_7_7_D_206625031_7_7,"Age Sibling 7 Uterine Cancer Diagnosed", "Age") 
-#boxp_funct(D_514034680_7_7_D_261863326_7_7,"Year Sibling 7 Uterine Cancer Diagnosed", "Year") 
-#boxp_funct(D_247160067_7_7_D_206625031_7_7,"Age Sibling 7 Other Cancer Diagnosed", "Age")
-#boxp_funct(D_247160067_7_7_D_261863326_7_7,"Year Sibling 7 Other Cancer Diagnosed", "Year")
-#boxp_funct(D_312545873_7_7_D_206625031_7_7,"Age Sibling 7 Unknown Cancer Diagnosed", "Age")
-#boxp_funct(D_312545873_7_7_D_261863326_7_7,"Year Sibling 7 Unknown Cancer Diagnosed", "Year")
-
-
-#boxp_funct(D_384881609_8_8_D_206625031_8_8,"Age Sibling 8 Anal Cancer Diagnosed", "Age")
-#boxp_funct(D_384881609_8_8_D_261863326_8_8,"Year Sibling 8 Anal Cancer Diagnosed", "Year")
-#boxp_funct(D_483975329_8_8_D_206625031_8_8,"Age Sibling 8 Bladder Cancer Diagnosed", "Age")
-#boxp_funct(D_483975329_8_8_D_261863326_8_8,"Year Sibling 8 Bladder Cancer Diagnosed", "Year")
-#boxp_funct(D_570279754_8_8_D_206625031_8_8,"Age Sibling 8 Brain Cancer Diagnosed", "Age")
-#boxp_funct(D_570279754_8_8_D_261863326_8_8,"Year Sibling 8 Brain Cancer Diagnosed", "Year")
-#boxp_funct(D_907590067_8_8_D_206625031_8_8,"Age Sibling 8 Breast Cancer Diagnosed", "Age")
-#boxp_funct(D_907590067_8_8_D_261863326_8_8,"Year Sibling 8 Breast Cancer Diagnosed", "Year")
-#boxp_funct(D_860112841_8_8_D_206625031_8_8,"Age Sibling 8 Cervical Cancer Diagnosed", "Age")
-#boxp_funct(D_860112841_8_8_D_261863326_8_8,"Year Sibling 8 Cervical Cancer Diagnosed", "Year")
-#boxp_funct(D_158354252_8_8_D_206625031_8_8,"Age Sibling 8 Colon Cancer Diagnosed", "Age")
-#boxp_funct(D_158354252_8_8_D_261863326_8_8,"Year Sibling 8 Colon Cancer Diagnosed", "Year")
-#boxp_funct(D_654594205_8_8_D_206625031_8_8,"Age Sibling 8 Esophageal Cancer Diagnosed", "Age") 
-#boxp_funct(D_654594205_8_8_D_261863326_8_8,"Year Sibling 8 Esophageal Cancer Diagnosed", "Year") 
-#boxp_funct(D_550722030_8_8_D_206625031_8_8,"Age Sibling 8 Heck Neck and Shoulders Cancer Diagnosed", "Age") 
-#boxp_funct(D_550722030_8_8_D_261863326_8_8,"Year Sibling 8 Heck Neck and Shoulders Cancer Diagnosed", "Year")
-#boxp_funct(D_142912472_8_8_D_206625031_8_8,"Age Sibling 8 Kidney Cancer Diagnosed", "Age") 
-#boxp_funct(D_142912472_8_8_D_261863326_8_8,"Year Sibling 8 Kidney Cancer Diagnosed", "Year") 
-#boxp_funct(D_158409298_8_8_D_206625031_8_8,"Age Sibling 8 Leukemia Cancer Diagnosed", "Age")
-#boxp_funct(D_158409298_8_8_D_261863326_8_8,"Year Sibling 8 Leukemia Cancer Diagnosed", "Year")
-#boxp_funct(D_529744595_8_8_D_206625031_8_8,"Age Sibling 8 Liver Cancer Diagnosed", "Age") 
-#boxp_funct(D_529744595_8_8_D_261863326_8_8,"Year Sibling 8 Liver Cancer Diagnosed", "Year") 
-#boxp_funct(D_315987564_8_8_D_206625031_8_8,"Age Sibling 8 Lung Cancer Diagnosed", "Age") 
-#boxp_funct(D_315987564_8_8_D_261863326_8_8,"Year Sibling 8 Lung Cancer Diagnosed", "Year") 
-#boxp_funct(D_852278004_8_8_D_206625031_8_8,"Age Sibling 8 Non-Hodgkins Lymphoma Cancer Diagnosed", "Age")
-#boxp_funct(D_852278004_8_8_D_261863326_8_8,"Year Sibling 8 Non-Hodgkins Lymphoma Cancer Diagnosed", "Year")
-#boxp_funct(D_391972881_8_8_D_206625031_8_8,"Age Sibling 8 Lymphoma Cancer Diagnosed", "Age") 
-#boxp_funct(D_259089008_8_8_D_206625031_8_8,"Age Sibling 8 Melanoma Cancer Diagnosed", "Age")
-#boxp_funct(D_259089008_8_8_D_261863326_8_8,"Year Sibling 8 Melanoma Cancer Diagnosed", "Year")
-#boxp_funct(D_209771602_8_8_D_206625031_8_8,"Age Sibling 8 Non-Melanoma Cancer Diagnosed", "Age")
-#boxp_funct(D_209771602_8_8_D_261863326_8_8,"Year Sibling 8 Non-Melanoma Cancer Diagnosed", "Year")
-#boxp_funct(D_682651189_8_8_D_206625031_8_8,"Age Sibling 8 Ovarian Cancer Diagnosed", "Age") 
-#boxp_funct(D_682651189_8_8_D_261863326_8_8,"Year Sibling 8 Ovarian Cancer Diagnosed", "Year") 
-#boxp_funct(D_750994269_8_8_D_206625031_8_8,"Age Sibling 8 Pancreatic Cancer Diagnosed", "Age") 
-#boxp_funct(D_750994269_8_8_D_261863326_8_8,"Year Sibling 8 Pancreatic Cancer Diagnosed", "Year") 
-#boxp_funct(D_700889863_8_8_D_206625031_8_8,"Age Sibling 8 Prostate Cancer Diagnosed", "Age")
-#boxp_funct(D_700889863_8_8_D_261863326_8_8,"Year Sibling 8 Prostate Cancer Diagnosed", "Year")
-#boxp_funct(D_990114799_8_8_D_206625031_8_8,"Age Sibling 8 Stomach Cancer Diagnosed", "Age")
-#boxp_funct(D_990114799_8_8_D_261863326_8_8,"Year Sibling 8 Stomach Cancer Diagnosed", "Year")
-#boxp_funct(D_195363361_8_8_D_206625031_8_8,"Age Sibling 8 Testicular Cancer Diagnosed", "Age")
-#boxp_funct(D_195363361_8_8_D_261863326_8_8,"Year Sibling 8 Testicular Cancer Diagnosed", "Year")
-#boxp_funct(D_216840563_8_8_D_206625031_8_8,"Age Sibling 8 Thyroid Cancer Diagnosed", "Age")
-#boxp_funct(D_216840563_8_8_D_261863326_8_8,"Year Sibling 8 Thyroid Cancer Diagnosed", "Year")
-#boxp_funct(D_514034680_8_8_D_206625031_8_8,"Age Sibling 8 Uterine Cancer Diagnosed", "Age") 
-#boxp_funct(D_514034680_8_8_D_261863326_8_8,"Year Sibling 8 Uterine Cancer Diagnosed", "Year") 
-#boxp_funct(D_247160067_8_8_D_206625031_8_8,"Age Sibling 8 Other Cancer Diagnosed", "Age")
-#boxp_funct(D_247160067_8_8_D_261863326_8_8,"Year Sibling 8 Other Cancer Diagnosed", "Year")
-#boxp_funct(D_312545873_8_8_D_206625031_8_8,"Age Sibling 8 Unknown Cancer Diagnosed", "Age")
-#boxp_funct(D_312545873_8_8_D_261863326_8_8,"Year Sibling 8 Unknown Cancer Diagnosed", "Year")
+# boxp_funct(D_384881609_7_7_D_206625031_7_7,"Age Sibling 7 Anal Cancer Diagnosed", "Age")
+# boxp_funct(D_384881609_7_7_D_261863326_7_7,"Year Sibling 7 Anal Cancer Diagnosed", "Year")
+# boxp_funct(D_483975329_7_7_D_206625031_7_7,"Age Sibling 7 Bladder Cancer Diagnosed", "Age")
+# boxp_funct(D_483975329_7_7_D_261863326_7_7,"Year Sibling 7 Bladder Cancer Diagnosed", "Year")
+# boxp_funct(D_570279754_7_7_D_206625031_7_7,"Age Sibling 7 Brain Cancer Diagnosed", "Age")
+# boxp_funct(D_570279754_7_7_D_261863326_7_7,"Year Sibling 7 Brain Cancer Diagnosed", "Year")
+# boxp_funct(D_907590067_7_7_D_206625031_7_7,"Age Sibling 7 Breast Cancer Diagnosed", "Age")
+# boxp_funct(D_907590067_7_7_D_261863326_7_7,"Year Sibling 7 Breast Cancer Diagnosed", "Year")
+# boxp_funct(D_860112841_7_7_D_206625031_7_7,"Age Sibling 7 Cervical Cancer Diagnosed", "Age")
+# boxp_funct(D_860112841_7_7_D_261863326_7_7,"Year Sibling 7 Cervical Cancer Diagnosed", "Year")
+# boxp_funct(D_158354252_7_7_D_206625031_7_7,"Age Sibling 7 Colon Cancer Diagnosed", "Age")
+# boxp_funct(D_158354252_7_7_D_261863326_7_7,"Year Sibling 7 Colon Cancer Diagnosed", "Year")
+# boxp_funct(D_654594205_7_7_D_206625031_7_7,"Age Sibling 7 Esophageal Cancer Diagnosed", "Age") 
+# boxp_funct(D_654594205_7_7_D_261863326_7_7,"Year Sibling 7 Esophageal Cancer Diagnosed", "Year") 
+# boxp_funct(D_550722030_7_7_D_206625031_7_7,"Age Sibling 7 Heck Neck and Shoulders Cancer Diagnosed", "Age") 
+# boxp_funct(D_550722030_7_7_D_261863326_7_7,"Year Sibling 7 Heck Neck and Shoulders Cancer Diagnosed", "Year")
+# boxp_funct(D_142912472_7_7_D_206625031_7_7,"Age Sibling 7 Kidney Cancer Diagnosed", "Age") 
+# boxp_funct(D_142912472_7_7_D_261863326_7_7,"Year Sibling 7 Kidney Cancer Diagnosed", "Year") 
+# boxp_funct(D_158409298_7_7_D_206625031_7_7,"Age Sibling 7 Leukemia Cancer Diagnosed", "Age")
+# boxp_funct(D_158409298_7_7_D_261863326_7_7,"Year Sibling 7 Leukemia Cancer Diagnosed", "Year")
+# boxp_funct(D_529744595_7_7_D_206625031_7_7,"Age Sibling 7 Liver Cancer Diagnosed", "Age") 
+# boxp_funct(D_529744595_7_7_D_261863326_7_7,"Year Sibling 7 Liver Cancer Diagnosed", "Year") 
+# boxp_funct(D_315987564_7_7_D_206625031_7_7,"Age Sibling 7 Lung Cancer Diagnosed", "Age") 
+# boxp_funct(D_315987564_7_7_D_261863326_7_7,"Year Sibling 7 Lung Cancer Diagnosed", "Year") 
+# boxp_funct(D_852278004_7_7_D_206625031_7_7,"Age Sibling 7 Non-Hodgkins Lymphoma Cancer Diagnosed", "Age")
+# boxp_funct(D_852278004_7_7_D_261863326_7_7,"Year Sibling 7 Non-Hodgkins Lymphoma Cancer Diagnosed", "Year")
+# boxp_funct(D_391972881_7_7_D_206625031_7_7,"Age Sibling 7 Lymphoma Cancer Diagnosed", "Age") 
+# boxp_funct(D_259089008_7_7_D_206625031_7_7,"Age Sibling 7 Melanoma Cancer Diagnosed", "Age")
+# boxp_funct(D_259089008_7_7_D_261863326_7_7,"Year Sibling 7 Melanoma Cancer Diagnosed", "Year")
+# boxp_funct(D_209771602_7_7_D_206625031_7_7,"Age Sibling 7 Non-Melanoma Cancer Diagnosed", "Age")
+# boxp_funct(D_209771602_7_7_D_261863326_7_7,"Year Sibling 7 Non-Melanoma Cancer Diagnosed", "Year")
+# boxp_funct(D_682651189_7_7_D_206625031_7_7,"Age Sibling 7 Ovarian Cancer Diagnosed", "Age") 
+# boxp_funct(D_682651189_7_7_D_261863326_7_7,"Year Sibling 7 Ovarian Cancer Diagnosed", "Year") 
+# boxp_funct(D_750994269_7_7_D_206625031_7_7,"Age Sibling 7 Pancreatic Cancer Diagnosed", "Age") 
+# boxp_funct(D_750994269_7_7_D_261863326_7_7,"Year Sibling 7 Pancreatic Cancer Diagnosed", "Year") 
+# boxp_funct(D_700889863_7_7_D_206625031_7_7,"Age Sibling 7 Prostate Cancer Diagnosed", "Age")
+# boxp_funct(D_700889863_7_7_D_261863326_7_7,"Year Sibling 7 Prostate Cancer Diagnosed", "Year")
+# boxp_funct(D_990114799_7_7_D_206625031_7_7,"Age Sibling 7 Stomach Cancer Diagnosed", "Age")
+# boxp_funct(D_990114799_7_7_D_261863326_7_7,"Year Sibling 7 Stomach Cancer Diagnosed", "Year")
+# boxp_funct(D_195363361_7_7_D_206625031_7_7,"Age Sibling 7 Testicular Cancer Diagnosed", "Age")
+# boxp_funct(D_195363361_7_7_D_261863326_7_7,"Year Sibling 7 Testicular Cancer Diagnosed", "Year")
+# boxp_funct(D_216840563_7_7_D_206625031_7_7,"Age Sibling 7 Thyroid Cancer Diagnosed", "Age")
+# boxp_funct(D_216840563_7_7_D_261863326_7_7,"Year Sibling 7 Thyroid Cancer Diagnosed", "Year")
+# boxp_funct(D_514034680_7_7_D_206625031_7_7,"Age Sibling 7 Uterine Cancer Diagnosed", "Age") 
+# boxp_funct(D_514034680_7_7_D_261863326_7_7,"Year Sibling 7 Uterine Cancer Diagnosed", "Year") 
+# boxp_funct(D_247160067_7_7_D_206625031_7_7,"Age Sibling 7 Other Cancer Diagnosed", "Age")
+# boxp_funct(D_247160067_7_7_D_261863326_7_7,"Year Sibling 7 Other Cancer Diagnosed", "Year")
+# boxp_funct(D_312545873_7_7_D_206625031_7_7,"Age Sibling 7 Unknown Cancer Diagnosed", "Age")
+# boxp_funct(D_312545873_7_7_D_261863326_7_7,"Year Sibling 7 Unknown Cancer Diagnosed", "Year")
+# 
+# 
+# boxp_funct(D_384881609_8_8_D_206625031_8_8,"Age Sibling 8 Anal Cancer Diagnosed", "Age")
+# boxp_funct(D_384881609_8_8_D_261863326_8_8,"Year Sibling 8 Anal Cancer Diagnosed", "Year")
+# boxp_funct(D_483975329_8_8_D_206625031_8_8,"Age Sibling 8 Bladder Cancer Diagnosed", "Age")
+# boxp_funct(D_483975329_8_8_D_261863326_8_8,"Year Sibling 8 Bladder Cancer Diagnosed", "Year")
+# boxp_funct(D_570279754_8_8_D_206625031_8_8,"Age Sibling 8 Brain Cancer Diagnosed", "Age")
+# boxp_funct(D_570279754_8_8_D_261863326_8_8,"Year Sibling 8 Brain Cancer Diagnosed", "Year")
+# boxp_funct(D_907590067_8_8_D_206625031_8_8,"Age Sibling 8 Breast Cancer Diagnosed", "Age")
+# boxp_funct(D_907590067_8_8_D_261863326_8_8,"Year Sibling 8 Breast Cancer Diagnosed", "Year")
+# boxp_funct(D_860112841_8_8_D_206625031_8_8,"Age Sibling 8 Cervical Cancer Diagnosed", "Age")
+# boxp_funct(D_860112841_8_8_D_261863326_8_8,"Year Sibling 8 Cervical Cancer Diagnosed", "Year")
+# boxp_funct(D_158354252_8_8_D_206625031_8_8,"Age Sibling 8 Colon Cancer Diagnosed", "Age")
+# boxp_funct(D_158354252_8_8_D_261863326_8_8,"Year Sibling 8 Colon Cancer Diagnosed", "Year")
+# boxp_funct(D_654594205_8_8_D_206625031_8_8,"Age Sibling 8 Esophageal Cancer Diagnosed", "Age") 
+# boxp_funct(D_654594205_8_8_D_261863326_8_8,"Year Sibling 8 Esophageal Cancer Diagnosed", "Year") 
+# boxp_funct(D_550722030_8_8_D_206625031_8_8,"Age Sibling 8 Heck Neck and Shoulders Cancer Diagnosed", "Age") 
+# boxp_funct(D_550722030_8_8_D_261863326_8_8,"Year Sibling 8 Heck Neck and Shoulders Cancer Diagnosed", "Year")
+# boxp_funct(D_142912472_8_8_D_206625031_8_8,"Age Sibling 8 Kidney Cancer Diagnosed", "Age") 
+# boxp_funct(D_142912472_8_8_D_261863326_8_8,"Year Sibling 8 Kidney Cancer Diagnosed", "Year") 
+# boxp_funct(D_158409298_8_8_D_206625031_8_8,"Age Sibling 8 Leukemia Cancer Diagnosed", "Age")
+# boxp_funct(D_158409298_8_8_D_261863326_8_8,"Year Sibling 8 Leukemia Cancer Diagnosed", "Year")
+# boxp_funct(D_529744595_8_8_D_206625031_8_8,"Age Sibling 8 Liver Cancer Diagnosed", "Age") 
+# boxp_funct(D_529744595_8_8_D_261863326_8_8,"Year Sibling 8 Liver Cancer Diagnosed", "Year") 
+# boxp_funct(D_315987564_8_8_D_206625031_8_8,"Age Sibling 8 Lung Cancer Diagnosed", "Age") 
+# boxp_funct(D_315987564_8_8_D_261863326_8_8,"Year Sibling 8 Lung Cancer Diagnosed", "Year") 
+# boxp_funct(D_852278004_8_8_D_206625031_8_8,"Age Sibling 8 Non-Hodgkins Lymphoma Cancer Diagnosed", "Age")
+# boxp_funct(D_852278004_8_8_D_261863326_8_8,"Year Sibling 8 Non-Hodgkins Lymphoma Cancer Diagnosed", "Year")
+# boxp_funct(D_391972881_8_8_D_206625031_8_8,"Age Sibling 8 Lymphoma Cancer Diagnosed", "Age") 
+# boxp_funct(D_259089008_8_8_D_206625031_8_8,"Age Sibling 8 Melanoma Cancer Diagnosed", "Age")
+# boxp_funct(D_259089008_8_8_D_261863326_8_8,"Year Sibling 8 Melanoma Cancer Diagnosed", "Year")
+# boxp_funct(D_209771602_8_8_D_206625031_8_8,"Age Sibling 8 Non-Melanoma Cancer Diagnosed", "Age")
+# boxp_funct(D_209771602_8_8_D_261863326_8_8,"Year Sibling 8 Non-Melanoma Cancer Diagnosed", "Year")
+# boxp_funct(D_682651189_8_8_D_206625031_8_8,"Age Sibling 8 Ovarian Cancer Diagnosed", "Age") 
+# boxp_funct(D_682651189_8_8_D_261863326_8_8,"Year Sibling 8 Ovarian Cancer Diagnosed", "Year") 
+# boxp_funct(D_750994269_8_8_D_206625031_8_8,"Age Sibling 8 Pancreatic Cancer Diagnosed", "Age") 
+# boxp_funct(D_750994269_8_8_D_261863326_8_8,"Year Sibling 8 Pancreatic Cancer Diagnosed", "Year") 
+# boxp_funct(D_700889863_8_8_D_206625031_8_8,"Age Sibling 8 Prostate Cancer Diagnosed", "Age")
+# boxp_funct(D_700889863_8_8_D_261863326_8_8,"Year Sibling 8 Prostate Cancer Diagnosed", "Year")
+# boxp_funct(D_990114799_8_8_D_206625031_8_8,"Age Sibling 8 Stomach Cancer Diagnosed", "Age")
+# boxp_funct(D_990114799_8_8_D_261863326_8_8,"Year Sibling 8 Stomach Cancer Diagnosed", "Year")
+# boxp_funct(D_195363361_8_8_D_206625031_8_8,"Age Sibling 8 Testicular Cancer Diagnosed", "Age")
+# boxp_funct(D_195363361_8_8_D_261863326_8_8,"Year Sibling 8 Testicular Cancer Diagnosed", "Year")
+# boxp_funct(D_216840563_8_8_D_206625031_8_8,"Age Sibling 8 Thyroid Cancer Diagnosed", "Age")
+# boxp_funct(D_216840563_8_8_D_261863326_8_8,"Year Sibling 8 Thyroid Cancer Diagnosed", "Year")
+# boxp_funct(D_514034680_8_8_D_206625031_8_8,"Age Sibling 8 Uterine Cancer Diagnosed", "Age") 
+# boxp_funct(D_514034680_8_8_D_261863326_8_8,"Year Sibling 8 Uterine Cancer Diagnosed", "Year") 
+# boxp_funct(D_247160067_8_8_D_206625031_8_8,"Age Sibling 8 Other Cancer Diagnosed", "Age")
+# boxp_funct(D_247160067_8_8_D_261863326_8_8,"Year Sibling 8 Other Cancer Diagnosed", "Year")
+# boxp_funct(D_312545873_8_8_D_206625031_8_8,"Age Sibling 8 Unknown Cancer Diagnosed", "Age")
+# boxp_funct(D_312545873_8_8_D_261863326_8_8,"Year Sibling 8 Unknown Cancer Diagnosed", "Year")
 
 
 
@@ -5552,212 +5805,245 @@ kid_bd_canc
 
 
 #Age and Year of Diagnosis 
-# boxp_funct(module1$D_900939817_1_1_D_206625031_1_1, "Child 1 Age at Anal Cancer Diagnosis", "Age") #anal
-# boxp_funct(module1$D_900939817_1_1_D_261863326_1_1, "Child 1 Year at Anal Cancer Diagnosis", "Year") #anal
-# boxp_funct(module1$D_938150507_1_1_D_206625031_1_1, "Child 1 Age at Bladder Cancer Diagnosis", "Age") #bladder
-# boxp_funct(module1$D_938150507_1_1_D_261863326_1_1, "Child 1 Year at Bladder Cancer Diagnosis", "Year") #bladder
-# boxp_funct(module1$D_601211723_1_1_D_206625031_1_1, "Child 1 Age at Brain Cancer Diagnosis", "Age") #brain
-# boxp_funct(module1$D_601211723_1_1_D_261863326_1_1, "Child 1 Year at Brain Cancer Diagnosis", "Year") #brain
-# boxp_funct(module1$D_861788020_1_1_D_206625031_1_1, "Child 1 Age at Breast Cancer Diagnosis", "Age") #breast
-# boxp_funct(module1$D_861788020_1_1_D_261863326_1_1, "Child 1 Year at Breast Cancer Diagnosis", "Year") #breast
-# boxp_funct(module1$D_204425387_1_1_D_206625031_1_1, "Child 1 Age at Cervical Cancer Diagnosis", "Age") #cervical
-# boxp_funct(module1$D_204425387_1_1_D_261863326_1_1, "Child 1 Year at Cervical Cancer Diagnosis", "Year") #cervical
-# boxp_funct(module1$D_558929585_1_1_D_206625031_1_1, "Child 1 Age at Colon Cancer Diagnosis", "Age") #colon
-# boxp_funct(module1$D_558929585_1_1_D_261863326_1_1, "Child 1 Year at Colon Cancer Diagnosis", "Year") #colon
-# boxp_funct(module1$D_233764880_1_1_D_206625031_1_1, "Child 1 Age at Esophageal Cancer Diagnosis", "Age") #esphageal
-# boxp_funct(module1$D_233764880_1_1_D_261863326_1_1, "Child 1 Year at Esophageal Cancer Diagnosis", "Year") #esphageal
-# boxp_funct(module1$D_905145893_1_1_D_206625031_1_1, "Child 1 Age at Head&Neck Cancer Diagnosis", "Age")#head & neck
-# boxp_funct(module1$D_905145893_1_1_D_261863326_1_1, "Child 1 Year at Head&Neck Cancer Diagnosis", "Year")#head & neck
-# boxp_funct(module1$D_473190270_1_1_D_206625031_1_1, "Child 1 Age at Kidney Cancer Diagnosis", "Age")#kidney
-# boxp_funct(module1$D_473190270_1_1_D_261863326_1_1, "Child 1 Year at Kidney Cancer Diagnosis", "Year")#kidney
-# boxp_funct(module1$D_483735587_1_1_D_206625031_1_1, "Child 1 Age at Leukemia Cancer Diagnosis", "Age") #leuk
-# boxp_funct(module1$D_483735587_1_1_D_261863326_1_1, "Child 1 Year at Leukemia Cancer Diagnosis", "Year") #leuk
-# boxp_funct(module1$D_331759900_1_1_D_206625031_1_1, "Child 1 Age at Liver Cancer Diagnosis", "Age") #liver
-# boxp_funct(module1$D_331759900_1_1_D_261863326_1_1, "Child 1 Year at Liver Cancer Diagnosis", "Year") #liver
-# boxp_funct(module1$D_513077276_1_1_D_206625031_1_1, "Child 1 Age at Lung Cancer Diagnosis", "Age")#lung
-# boxp_funct(module1$D_513077276_1_1_D_261863326_1_1, "Child 1 Year at Lung Cancer Diagnosis", "Year")#lung
-# boxp_funct(module1$D_519974530_1_1_D_206625031_1_1, "Child 1 Age at Non-Hodgkin's Lymphoma Cancer Diagnosis", "Age") #nonH
-# boxp_funct(module1$D_519974530_1_1_D_261863326_1_1, "Child 1 Year at Non-Hodgkin's Lymphoma Cancer Diagnosis", "Year") #nonH
-# boxp_funct(module1$D_907776050_1_1_D_206625031_1_1, "Child 1 Age at Lymphoma Cancer Diagnosis", "Age") #lymphoma
-# boxp_funct(module1$D_907776050_1_1_D_261863326_1_1, "Child 1 Year at Lymphoma Cancer Diagnosis", "Year") #lymphoma
-# boxp_funct(module1$D_271684775_1_1_D_206625031_1_1, "Child 1 Age at Melanoma Cancer Diagnosis", "Age") #mel
-# boxp_funct(module1$D_271684775_1_1_D_261863326_1_1, "Child 1 Year at Melanoma Cancer Diagnosis", "Year") #mel
-# boxp_funct(module1$D_252160589_1_1_D_206625031_1_1, "Child 1 Age at Non-Melanoma Cancer Diagnosis", "Age") #non-mel
-# boxp_funct(module1$D_252160589_1_1_D_261863326_1_1, "Child 1 Year at Non-Melanoma Cancer Diagnosis", "Year") #non-mel
-# boxp_funct(module1$D_774774759_1_1_D_206625031_1_1, "Child 1 Age Ovarian Cancer Diagnosis", "Age") #ovarian
-# boxp_funct(module1$D_774774759_1_1_D_261863326_1_1, "Child 1 Year at Ovarian Cancer Diagnosis", "Year") #ovarian
-# boxp_funct(module1$D_127257956_1_1_D_206625031_1_1, "Child 1 Age at Pancreatic Cancer Diagnosis", "Age") #pancreatic
-# boxp_funct(module1$D_127257956_1_1_D_261863326_1_1, "Child 1 Year at Pancreatic Cancer Diagnosis", "Year") #pancreatic
-# boxp_funct(module1$D_496917282_1_1_D_206625031_1_1, "Child 1 Age at Prostate Cancer Diagnosis", "Age") #prostate
-# boxp_funct(module1$D_496917282_1_1_D_261863326_1_1, "Child 1 Year at Prostate Cancer Diagnosis", "Year") #prostate
-# boxp_funct(module1$D_908129316_1_1_D_206625031_1_1, "Child 1 Age at Stomach Cancer Diagnosis", "Age") #stomach
-# boxp_funct(module1$D_908129316_1_1_D_261863326_1_1, "Child 1 Year at Stomach Cancer Diagnosis", "Year") #stomach
-# boxp_funct(module1$D_795003496_1_1_D_206625031_1_1, "Child 1 Age at Testicular Cancer Diagnosis", "Age") #testicular
-# boxp_funct(module1$D_795003496_1_1_D_261863326_1_1, "Child 1 Year at Testicular Cancer Diagnosis", "Year") #testicular
-# boxp_funct(module1$D_969177591_1_1_D_206625031_1_1, "Child 1 Age at Thyroid Cancer Diagnosis", "Age") #thyroid
-# boxp_funct(module1$D_969177591_1_1_D_261863326_1_1, "Child 1 Year at Thyroid Cancer Diagnosis", "Year") #thyroid
-# boxp_funct(module1$D_116065851_1_1_D_206625031_1_1, "Child 1 Age at Urine Cancer Diagnosis", "Age") #urine
-# boxp_funct(module1$D_116065851_1_1_D_261863326_1_1, "Child 1 Year at Urine Cancer Diagnosis", "Year") #urine
-# boxp_funct(module1$D_278159347_1_1_D_206625031_1_1, "Child 1 Age at Other Cancer Diagnosis", "Age") #other
-# boxp_funct(module1$D_278159347_1_1_D_261863326_1_1, "Child 1 Year at Other Cancer Diagnosis", "Year") #other
-# boxp_funct(module1$D_845219872_1_1_D_206625031_1_1, "Child 1 Age at Unknown Cancer Diagnosis", "Age")#unknown
-# boxp_funct(module1$D_845219872_1_1_D_261863326_1_1, "Child 1 Year at Unknown Cancer Diagnosis", "Year") #unknown
-# 
-# 
-# boxp_funct(module1$D_900939817_2_2_D_206625031_2_2, "Child 2 Age at Anal Cancer Diagnosis", "Age") #anal
-# boxp_funct(module1$D_900939817_2_2_D_261863326_2_2, "Child 2 Year at Anal Cancer Diagnosis", "Year") #anal
-# boxp_funct(module1$D_938150507_2_2_D_206625031_2_2, "Child 2 Age at Bladder Cancer Diagnosis", "Age") #bladder
-# boxp_funct(module1$D_938150507_2_2_D_261863326_2_2, "Child 2 Year at Bladder Cancer Diagnosis", "Year") #bladder
-# boxp_funct(module1$D_601211723_2_2_D_206625031_2_2, "Child 2 Age at Brain Cancer Diagnosis", "Age") #brain
-# boxp_funct(module1$D_601211723_2_2_D_261863326_2_2, "Child 2 Year at Brain Cancer Diagnosis", "Year") #brain
-# boxp_funct(module1$D_861788020_2_2_D_206625031_2_2, "Child 2 Age at Breast Cancer Diagnosis", "Age") #breast
-# boxp_funct(module1$D_861788020_2_2_D_261863326_2_2, "Child 2 Year at Breast Cancer Diagnosis", "Year") #breast
-# boxp_funct(module1$D_204425387_2_2_D_206625031_2_2, "Child 2 Age at Cervical Cancer Diagnosis", "Age") #cervical
-# boxp_funct(module1$D_204425387_2_2_D_261863326_2_2, "Child 2 Year at Cervical Cancer Diagnosis", "Year") #cervical
-# boxp_funct(module1$D_558929585_2_2_D_206625031_2_2, "Child 2 Age at Colon Cancer Diagnosis", "Age") #colon
-# boxp_funct(module1$D_558929585_2_2_D_261863326_2_2, "Child 2 Year at Colon Cancer Diagnosis", "Year") #colon
-# boxp_funct(module1$D_233764880_2_2_D_206625031_2_2, "Child 2 Age at Esophageal Cancer Diagnosis", "Age") #esphageal
-# boxp_funct(module1$D_233764880_2_2_D_261863326_2_2, "Child 2 Year at Esophageal Cancer Diagnosis", "Year") #esphageal
-# boxp_funct(module1$D_905145893_2_2_D_206625031_2_2, "Child 2 Age at Head&Neck Cancer Diagnosis", "Age")#head & neck
-# boxp_funct(module1$D_905145893_2_2_D_261863326_2_2, "Child 2 Year at Head&Neck Cancer Diagnosis", "Year")#head & neck
-# boxp_funct(module1$D_473190270_2_2_D_206625031_2_2, "Child 2 Age at Kidney Cancer Diagnosis", "Age")#kidney
-# boxp_funct(module1$D_473190270_2_2_D_261863326_2_2, "Child 2 Year at Kidney Cancer Diagnosis", "Year")#kidney
-# boxp_funct(module1$D_483735587_2_2_D_206625031_2_2, "Child 2 Age at Leukemia Cancer Diagnosis", "Age") #leuk
-# boxp_funct(module1$D_483735587_2_2_D_261863326_2_2, "Child 2 Year at Leukemia Cancer Diagnosis", "Year") #leuk
-# boxp_funct(module1$D_331759900_2_2_D_206625031_2_2, "Child 2 Age at Liver Cancer Diagnosis", "Age") #liver
-# boxp_funct(module1$D_331759900_2_2_D_261863326_2_2, "Child 2 Year at Liver Cancer Diagnosis", "Year") #liver
-# boxp_funct(module1$D_513077276_2_2_D_206625031_2_2, "Child 2 Age at Lung Cancer Diagnosis", "Age")#lung
-# boxp_funct(module1$D_513077276_2_2_D_261863326_2_2, "Child 2 Year at Lung Cancer Diagnosis", "Year")#lung
-# boxp_funct(module1$D_519974530_2_2_D_206625031_2_2, "Child 2 Age at Non-Hodgkin's Lymphoma Cancer Diagnosis", "Age") #nonH
-# boxp_funct(module1$D_519974530_2_2_D_261863326_2_2, "Child 2 Year at Non-Hodgkin's Lymphoma Cancer Diagnosis", "Year") #nonH
-# boxp_funct(module1$D_907776050_2_2_D_206625031_2_2, "Child 2 Age at Lymphoma Cancer Diagnosis", "Age") #lymphoma
-# boxp_funct(module1$D_907776050_2_2_D_261863326_2_2, "Child 2 Year at Lymphoma Cancer Diagnosis", "Year") #lymphoma
-# boxp_funct(module1$D_271684775_2_2_D_206625031_2_2, "Child 2 Age at Melanoma Cancer Diagnosis", "Age") #mel
-# boxp_funct(module1$D_271684775_2_2_D_261863326_2_2, "Child 2 Year at Melanoma Cancer Diagnosis", "Year") #mel
-# boxp_funct(module1$D_252160589_2_2_D_206625031_2_2, "Child 2 Age at Non-Melanoma Cancer Diagnosis", "Age") #non-mel
-# boxp_funct(module1$D_252160589_2_2_D_261863326_2_2, "Child 2 Year at Non-Melanoma Cancer Diagnosis", "Year") #non-mel
-# boxp_funct(module1$D_774774759_2_2_D_206625031_2_2, "Child 2 Age Ovarian Cancer Diagnosis", "Age") #ovarian
-# boxp_funct(module1$D_774774759_2_2_D_261863326_2_2, "Child 2 Year at Ovarian Cancer Diagnosis", "Year") #ovarian
-# boxp_funct(module1$D_127257956_2_2_D_206625031_2_2, "Child 2 Age at Pancreatic Cancer Diagnosis", "Age") #pancreatic
-# boxp_funct(module1$D_127257956_2_2_D_261863326_2_2, "Child 2 Year at Pancreatic Cancer Diagnosis", "Year") #pancreatic
-# boxp_funct(module1$D_496917282_2_2_D_206625031_2_2, "Child 2 Age at Prostate Cancer Diagnosis", "Age") #prostate
-# boxp_funct(module1$D_496917282_2_2_D_261863326_2_2, "Child 2 Year at Prostate Cancer Diagnosis", "Year") #prostate
-# boxp_funct(module1$D_908129316_2_2_D_206625031_2_2, "Child 2 Age at Stomach Cancer Diagnosis", "Age") #stomach
-# boxp_funct(module1$D_908129316_2_2_D_261863326_2_2, "Child 2 Year at Stomach Cancer Diagnosis", "Year") #stomach
-# boxp_funct(module1$D_795003496_2_2_D_206625031_2_2, "Child 2 Age at Testicular Cancer Diagnosis", "Age") #testicular
-# boxp_funct(module1$D_795003496_2_2_D_261863326_2_2, "Child 2 Year at Testicular Cancer Diagnosis", "Year") #testicular
-# boxp_funct(module1$D_969177591_2_2_D_206625031_2_2, "Child 2 Age at Thyroid Cancer Diagnosis", "Age") #thyroid
-# boxp_funct(module1$D_969177591_2_2_D_261863326_2_2, "Child 2 Year at Thyroid Cancer Diagnosis", "Year") #thyroid
-# boxp_funct(module1$D_116065851_2_2_D_206625031_2_2, "Child 2 Age at Urine Cancer Diagnosis", "Age") #urine
-# boxp_funct(module1$D_116065851_2_2_D_261863326_2_2, "Child 2 Year at Urine Cancer Diagnosis", "Year") #urine
-# boxp_funct(module1$D_278159347_2_2_D_206625031_2_2, "Child 2 Age at Other Cancer Diagnosis", "Age") #other
-# boxp_funct(module1$D_278159347_2_2_D_261863326_2_2, "Child 2 Year at Other Cancer Diagnosis", "Year") #other
-# boxp_funct(module1$D_845219872_2_2_D_206625031_2_2, "Child 2 Age at Unknown Cancer Diagnosis", "Age")#unknown
-# boxp_funct(module1$D_845219872_2_2_D_261863326_2_2, "Child 2 Year at Unknown Cancer Diagnosis", "Year") #unknown
-# 
-# 
-# boxp_funct(module1$D_900939817_3_3_D_206625031_3_3, "Child 3 Age at Anal Cancer Diagnosis", "Age") #anal
-# boxp_funct(module1$D_900939817_3_3_D_261863326_3_3, "Child 3 Year at Anal Cancer Diagnosis", "Year") #anal
-# boxp_funct(module1$D_938150507_3_3_D_206625031_3_3, "Child 3 Age at Bladder Cancer Diagnosis", "Age") #bladder
-# boxp_funct(module1$D_938150507_3_3_D_261863326_3_3, "Child 3 Year at Bladder Cancer Diagnosis", "Year") #bladder
-# boxp_funct(module1$D_601211723_3_3_D_206625031_3_3, "Child 3 Age at Brain Cancer Diagnosis", "Age") #brain
-# boxp_funct(module1$D_601211723_3_3_D_261863326_3_3, "Child 3 Year at Brain Cancer Diagnosis", "Year") #brain
-# boxp_funct(module1$D_861788020_3_3_D_206625031_3_3, "Child 3 Age at Breast Cancer Diagnosis", "Age") #breast
-# boxp_funct(module1$D_861788020_3_3_D_261863326_3_3, "Child 3 Year at Breast Cancer Diagnosis", "Year") #breast
-# boxp_funct(module1$D_204425387_3_3_D_206625031_3_3, "Child 3 Age at Cervical Cancer Diagnosis", "Age") #cervical
-# boxp_funct(module1$D_204425387_3_3_D_261863326_3_3, "Child 3 Year at Cervical Cancer Diagnosis", "Year") #cervical
-# boxp_funct(module1$D_558929585_3_3_D_206625031_3_3, "Child 3 Age at Colon Cancer Diagnosis", "Age") #colon
-# boxp_funct(module1$D_558929585_3_3_D_261863326_3_3, "Child 3 Year at Colon Cancer Diagnosis", "Year") #colon
-# boxp_funct(module1$D_233764880_3_3_D_206625031_3_3, "Child 3 Age at Esophageal Cancer Diagnosis", "Age") #esphageal
-# boxp_funct(module1$D_233764880_3_3_D_261863326_3_3, "Child 3 Year at Esophageal Cancer Diagnosis", "Year") #esphageal
-# boxp_funct(module1$D_905145893_3_3_D_206625031_3_3, "Child 3 Age at Head&Neck Cancer Diagnosis", "Age")#head & neck
-# boxp_funct(module1$D_905145893_3_3_D_261863326_3_3, "Child 3 Year at Head&Neck Cancer Diagnosis", "Year")#head & neck
-# boxp_funct(module1$D_473190270_3_3_D_206625031_3_3, "Child 3 Age at Kidney Cancer Diagnosis", "Age")#kidney
-# boxp_funct(module1$D_473190270_3_3_D_261863326_3_3, "Child 3 Year at Kidney Cancer Diagnosis", "Year")#kidney
-# boxp_funct(module1$D_483735587_3_3_D_206625031_3_3, "Child 3 Age at Leukemia Cancer Diagnosis", "Age") #leuk
-# boxp_funct(module1$D_483735587_3_3_D_261863326_3_3, "Child 3 Year at Leukemia Cancer Diagnosis", "Year") #leuk
-# boxp_funct(module1$D_331759900_3_3_D_206625031_3_3, "Child 3 Age at Liver Cancer Diagnosis", "Age") #liver
-# boxp_funct(module1$D_331759900_3_3_D_261863326_3_3, "Child 3 Year at Liver Cancer Diagnosis", "Year") #liver
-# boxp_funct(module1$D_513077276_3_3_D_206625031_3_3, "Child 3 Age at Lung Cancer Diagnosis", "Age")#lung
-# boxp_funct(module1$D_513077276_3_3_D_261863326_3_3, "Child 3 Year at Lung Cancer Diagnosis", "Year")#lung
-# boxp_funct(module1$D_519974530_3_3_D_206625031_3_3, "Child 3 Age at Non-Hodgkin's Lymphoma Cancer Diagnosis", "Age") #nonH
-# boxp_funct(module1$D_519974530_3_3_D_261863326_3_3, "Child 3 Year at Non-Hodgkin's Lymphoma Cancer Diagnosis", "Year") #nonH
-# boxp_funct(module1$D_907776050_3_3_D_206625031_3_3, "Child 3 Age at Lymphoma Cancer Diagnosis", "Age") #lymphoma
-# boxp_funct(module1$D_907776050_3_3_D_261863326_3_3, "Child 3 Year at Lymphoma Cancer Diagnosis", "Year") #lymphoma
-# boxp_funct(module1$D_271684775_3_3_D_206625031_3_3, "Child 3 Age at Melanoma Cancer Diagnosis", "Age") #mel
-# boxp_funct(module1$D_271684775_3_3_D_261863326_3_3, "Child 3 Year at Melanoma Cancer Diagnosis", "Year") #mel
-# boxp_funct(module1$D_252160589_3_3_D_206625031_3_3, "Child 3 Age at Non-Melanoma Cancer Diagnosis", "Age") #non-mel
-# boxp_funct(module1$D_252160589_3_3_D_261863326_3_3, "Child 3 Year at Non-Melanoma Cancer Diagnosis", "Year") #non-mel
-# boxp_funct(module1$D_774774759_3_3_D_206625031_3_3, "Child 3 Age Ovarian Cancer Diagnosis", "Age") #ovarian
-# boxp_funct(module1$D_774774759_3_3_D_261863326_3_3, "Child 3 Year at Ovarian Cancer Diagnosis", "Year") #ovarian
-# boxp_funct(module1$D_127257956_3_3_D_206625031_3_3, "Child 3 Age at Pancreatic Cancer Diagnosis", "Age") #pancreatic
-# boxp_funct(module1$D_127257956_3_3_D_261863326_3_3, "Child 3 Year at Pancreatic Cancer Diagnosis", "Year") #pancreatic
-# boxp_funct(module1$D_496917282_3_3_D_206625031_3_3, "Child 3 Age at Prostate Cancer Diagnosis", "Age") #prostate
-# boxp_funct(module1$D_496917282_3_3_D_261863326_3_3, "Child 3 Year at Prostate Cancer Diagnosis", "Year") #prostate
-# boxp_funct(module1$D_908129316_3_3_D_206625031_3_3, "Child 3 Age at Stomach Cancer Diagnosis", "Age") #stomach
-# boxp_funct(module1$D_908129316_3_3_D_261863326_3_3, "Child 3 Year at Stomach Cancer Diagnosis", "Year") #stomach
-# boxp_funct(module1$D_795003496_3_3_D_206625031_3_3, "Child 3 Age at Testicular Cancer Diagnosis", "Age") #testicular
-# boxp_funct(module1$D_795003496_3_3_D_261863326_3_3, "Child 3 Year at Testicular Cancer Diagnosis", "Year") #testicular
-# boxp_funct(module1$D_969177591_3_3_D_206625031_3_3, "Child 3 Age at Thyroid Cancer Diagnosis", "Age") #thyroid
-# boxp_funct(module1$D_969177591_3_3_D_261863326_3_3, "Child 3 Year at Thyroid Cancer Diagnosis", "Year") #thyroid
-# boxp_funct(module1$D_116065851_3_3_D_206625031_3_3, "Child 3 Age at Urine Cancer Diagnosis", "Age") #urine
-# boxp_funct(module1$D_116065851_3_3_D_261863326_3_3, "Child 3 Year at Urine Cancer Diagnosis", "Year") #urine
-# boxp_funct(module1$D_278159347_3_3_D_206625031_3_3, "Child 3 Age at Other Cancer Diagnosis", "Age") #other
-# boxp_funct(module1$D_278159347_3_3_D_261863326_3_3, "Child 3 Year at Other Cancer Diagnosis", "Year") #other
-# boxp_funct(module1$D_845219872_3_3_D_206625031_3_3, "Child 3 Age at Unknown Cancer Diagnosis", "Age")#unknown
-# boxp_funct(module1$D_845219872_3_3_D_261863326_3_3, "Child 3 Year at Unknown Cancer Diagnosis", "Year") #unknown
-# 
-# 
-# boxp_funct(module1$D_900939817_4_4_D_206625031_4_4, "Child 4 Age at Anal Cancer Diagnosis", "Age") #anal
-# boxp_funct(module1$D_900939817_4_4_D_261863326_4_4, "Child 4 Year at Anal Cancer Diagnosis", "Year") #anal
-# boxp_funct(module1$D_938150507_4_4_D_206625031_4_4, "Child 4 Age at Bladder Cancer Diagnosis", "Age") #bladder
-# boxp_funct(module1$D_938150507_4_4_D_261863326_4_4, "Child 4 Year at Bladder Cancer Diagnosis", "Year") #bladder
-# boxp_funct(module1$D_601211723_4_4_D_206625031_4_4, "Child 4 Age at Brain Cancer Diagnosis", "Age") #brain
-# boxp_funct(module1$D_601211723_4_4_D_261863326_4_4, "Child 4 Year at Brain Cancer Diagnosis", "Year") #brain
-# boxp_funct(module1$D_861788020_4_4_D_206625031_4_4, "Child 4 Age at Breast Cancer Diagnosis", "Age") #breast
-# boxp_funct(module1$D_861788020_4_4_D_261863326_4_4, "Child 4 Year at Breast Cancer Diagnosis", "Year") #breast
-# boxp_funct(module1$D_204425387_4_4_D_206625031_4_4, "Child 4 Age at Cervical Cancer Diagnosis", "Age") #cervical
-# boxp_funct(module1$D_204425387_4_4_D_261863326_4_4, "Child 4 Year at Cervical Cancer Diagnosis", "Year") #cervical
-# boxp_funct(module1$D_558929585_4_4_D_206625031_4_4, "Child 4 Age at Colon Cancer Diagnosis", "Age") #colon
-# boxp_funct(module1$D_558929585_4_4_D_261863326_4_4, "Child 4 Year at Colon Cancer Diagnosis", "Year") #colon
-# boxp_funct(module1$D_233764880_4_4_D_206625031_4_4, "Child 4 Age at Esophageal Cancer Diagnosis", "Age") #esphageal
-# boxp_funct(module1$D_233764880_4_4_D_261863326_4_4, "Child 4 Year at Esophageal Cancer Diagnosis", "Year") #esphageal
-# boxp_funct(module1$D_905145893_4_4_D_206625031_4_4, "Child 4 Age at Head&Neck Cancer Diagnosis", "Age")#head & neck
-# boxp_funct(module1$D_905145893_4_4_D_261863326_4_4, "Child 4 Year at Head&Neck Cancer Diagnosis", "Year")#head & neck
-# boxp_funct(module1$D_473190270_4_4_D_206625031_4_4, "Child 4 Age at Kidney Cancer Diagnosis", "Age")#kidney
-# boxp_funct(module1$D_473190270_4_4_D_261863326_4_4, "Child 4 Year at Kidney Cancer Diagnosis", "Year")#kidney
-# boxp_funct(module1$D_483735587_4_4_D_206625031_4_4, "Child 4 Age at Leukemia Cancer Diagnosis", "Age") #leuk
-# boxp_funct(module1$D_483735587_4_4_D_261863326_4_4, "Child 4 Year at Leukemia Cancer Diagnosis", "Year") #leuk
-# boxp_funct(module1$D_331759900_4_4_D_206625031_4_4, "Child 4 Age at Liver Cancer Diagnosis", "Age") #liver
-# boxp_funct(module1$D_331759900_4_4_D_261863326_4_4, "Child 4 Year at Liver Cancer Diagnosis", "Year") #liver
-# boxp_funct(module1$D_513077276_4_4_D_206625031_4_4, "Child 4 Age at Lung Cancer Diagnosis", "Age")#lung
-# boxp_funct(module1$D_513077276_4_4_D_261863326_4_4, "Child 4 Year at Lung Cancer Diagnosis", "Year")#lung
-# boxp_funct(module1$D_519974530_4_4_D_206625031_4_4, "Child 4 Age at Non-Hodgkin's Lymphoma Cancer Diagnosis", "Age") #nonH
-# boxp_funct(module1$D_519974530_4_4_D_261863326_4_4, "Child 4 Year at Non-Hodgkin's Lymphoma Cancer Diagnosis", "Year") #nonH
-# boxp_funct(module1$D_907776050_4_4_D_206625031_4_4, "Child 4 Age at Lymphoma Cancer Diagnosis", "Age") #lymphoma
-# boxp_funct(module1$D_907776050_4_4_D_261863326_4_4, "Child 4 Year at Lymphoma Cancer Diagnosis", "Year") #lymphoma
-# boxp_funct(module1$D_271684775_4_4_D_206625031_4_4, "Child 4 Age at Melanoma Cancer Diagnosis", "Age") #mel
-# boxp_funct(module1$D_271684775_4_4_D_261863326_4_4, "Child 4 Year at Melanoma Cancer Diagnosis", "Year") #mel
-# boxp_funct(module1$D_252160589_4_4_D_206625031_4_4, "Child 4 Age at Non-Melanoma Cancer Diagnosis", "Age") #non-mel
-# boxp_funct(module1$D_252160589_4_4_D_261863326_4_4, "Child 4 Year at Non-Melanoma Cancer Diagnosis", "Year") #non-mel
-# boxp_funct(module1$D_774774759_4_4_D_206625031_4_4, "Child 4 Age Ovarian Cancer Diagnosis", "Age") #ovarian
-# boxp_funct(module1$D_774774759_4_4_D_261863326_4_4, "Child 4 Year at Ovarian Cancer Diagnosis", "Year") #ovarian
-# boxp_funct(module1$D_127257956_4_4_D_206625031_4_4, "Child 4 Age at Pancreatic Cancer Diagnosis", "Age") #pancreatic
-# boxp_funct(module1$D_127257956_4_4_D_261863326_4_4, "Child 4 Year at Pancreatic Cancer Diagnosis", "Year") #pancreatic
-# boxp_funct(module1$D_496917282_4_4_D_206625031_4_4, "Child 4 Age at Prostate Cancer Diagnosis", "Age") #prostate
-# boxp_funct(module1$D_496917282_4_4_D_261863326_4_4, "Child 4 Year at Prostate Cancer Diagnosis", "Year") #prostate
-# boxp_funct(module1$D_908129316_4_4_D_206625031_4_4, "Child 4 Age at Stomach Cancer Diagnosis", "Age") #stomach
-# boxp_funct(module1$D_908129316_4_4_D_261863326_4_4, "Child 4 Year at Stomach Cancer Diagnosis", "Year") #stomach
-# boxp_funct(module1$D_795003496_4_4_D_206625031_4_4, "Child 4 Age at Testicular Cancer Diagnosis", "Age") #testicular
-# boxp_funct(module1$D_795003496_4_4_D_261863326_4_4, "Child 4 Year at Testicular Cancer Diagnosis", "Year") #testicular
-# boxp_funct(module1$D_969177591_4_4_D_206625031_4_4, "Child 4 Age at Thyroid Cancer Diagnosis", "Age") #thyroid
-# boxp_funct(module1$D_969177591_4_4_D_261863326_4_4, "Child 4 Year at Thyroid Cancer Diagnosis", "Year") #thyroid
-# boxp_funct(module1$D_116065851_4_4_D_206625031_4_4, "Child 4 Age at Urine Cancer Diagnosis", "Age") #urine
-# boxp_funct(module1$D_116065851_4_4_D_261863326_4_4, "Child 4 Year at Urine Cancer Diagnosis", "Year") #urine
-# boxp_funct(module1$D_278159347_4_4_D_206625031_4_4, "Child 4 Age at Other Cancer Diagnosis", "Age") #other
-# boxp_funct(module1$D_278159347_4_4_D_261863326_4_4, "Child 4 Year at Other Cancer Diagnosis", "Year") #other
-# boxp_funct(module1$D_845219872_4_4_D_206625031_4_4, "Child 4 Age at Unknown Cancer Diagnosis", "Age")#unknown
-# boxp_funct(module1$D_845219872_4_4_D_261863326_4_4, "Child 4 Year at Unknown Cancer Diagnosis", "Year") #unknown
+ch1_c1=boxp_funct(D_900939817_1_1_D_206625031_1_1, "Child 1 Age at Anal Cancer Diagnosis", "Age") #anal
+ch1_c2=boxp_funct(D_900939817_1_1_D_261863326_1_1, "Child 1 Year at Anal Cancer Diagnosis", "Year") #anal
+ch1_c3=boxp_funct(D_938150507_1_1_D_206625031_1_1, "Child 1 Age at Bladder Cancer Diagnosis", "Age") #bladder
+#boxp_funct(D_938150507_1_1_D_261863326_1_1, "Child 1 Year at Bladder Cancer Diagnosis", "Year") #bladder
+ch1_c4=boxp_funct(D_601211723_1_1_D_206625031_1_1, "Child 1 Age at Brain Cancer Diagnosis", "Age") #brain
+ch1_c5=boxp_funct(D_601211723_1_1_D_261863326_1_1, "Child 1 Year at Brain Cancer Diagnosis", "Year") #brain
+ch1_c6=boxp_funct(D_861788020_1_1_D_206625031_1_1, "Child 1 Age at Breast Cancer Diagnosis", "Age") #breast
+ch1_c7=boxp_funct(D_861788020_1_1_D_261863326_1_1, "Child 1 Year at Breast Cancer Diagnosis", "Year") #breast
+ch1_c8=boxp_funct(D_204425387_1_1_D_206625031_1_1, "Child 1 Age at Cervical Cancer Diagnosis", "Age") #cervical
+ch1_c9=boxp_funct(D_204425387_1_1_D_261863326_1_1, "Child 1 Year at Cervical Cancer Diagnosis", "Year") #cervical
+ch1_c10=boxp_funct(D_558929585_1_1_D_206625031_1_1, "Child 1 Age at Colon Cancer Diagnosis", "Age") #colon
+ch1_c11=boxp_funct(D_558929585_1_1_D_261863326_1_1, "Child 1 Year at Colon Cancer Diagnosis", "Year") #colon
+ch1_c12=boxp_funct(D_233764880_1_1_D_206625031_1_1, "Child 1 Age at Esophageal Cancer Diagnosis", "Age") #esphageal
+ch1_c13=boxp_funct(D_233764880_1_1_D_261863326_1_1, "Child 1 Year at Esophageal Cancer Diagnosis", "Year") #esphageal
+ch1_c14=boxp_funct(D_905145893_1_1_D_206625031_1_1, "Child 1 Age at Head&Neck Cancer Diagnosis", "Age")#head & neck
+#boxp_funct(D_905145893_1_1_D_261863326_1_1, "Child 1 Year at Head&Neck Cancer Diagnosis", "Year")#head & neck
+ch1_c15=boxp_funct(D_473190270_1_1_D_206625031_1_1, "Child 1 Age at Kidney Cancer Diagnosis", "Age")#kidney
+ch1_c16=boxp_funct(D_473190270_1_1_D_261863326_1_1, "Child 1 Year at Kidney Cancer Diagnosis", "Year")#kidney
+ch1_c17=boxp_funct(D_483735587_1_1_D_206625031_1_1, "Child 1 Age at Leukemia Cancer Diagnosis", "Age") #leuk
+ch1_c18=boxp_funct(D_483735587_1_1_D_261863326_1_1, "Child 1 Year at Leukemia Cancer Diagnosis", "Year") #leuk
+ch1_c19=boxp_funct(D_331759900_1_1_D_206625031_1_1, "Child 1 Age at Liver Cancer Diagnosis", "Age") #liver
+#boxp_funct(D_331759900_1_1_D_261863326_1_1, "Child 1 Year at Liver Cancer Diagnosis", "Year") #liver
+#boxp_funct(D_513077276_1_1_D_206625031_1_1, "Child 1 Age at Lung Cancer Diagnosis", "Age")#lung
+#boxp_funct(D_513077276_1_1_D_261863326_1_1, "Child 1 Year at Lung Cancer Diagnosis", "Year")#lung
+ch1_c20=boxp_funct(D_519974530_1_1_D_206625031_1_1, "Child 1 Age at Non-Hodgkin's Lymphoma Cancer Diagnosis", "Age") #nonH
+#boxp_funct(D_519974530_1_1_D_261863326_1_1, "Child 1 Year at Non-Hodgkin's Lymphoma Cancer Diagnosis", "Year") #nonH
+ch1_c21=boxp_funct(D_907776050_1_1_D_206625031_1_1, "Child 1 Age at Lymphoma Cancer Diagnosis", "Age") #lymphoma
+#boxp_funct(D_907776050_1_1_D_261863326_1_1, "Child 1 Year at Lymphoma Cancer Diagnosis", "Year") #lymphoma
+ch1_c22=boxp_funct(D_271684775_1_1_D_206625031_1_1, "Child 1 Age at Melanoma Cancer Diagnosis", "Age") #mel
+#boxp_funct(D_271684775_1_1_D_261863326_1_1, "Child 1 Year at Melanoma Cancer Diagnosis", "Year") #mel
+ch1_c23=boxp_funct(D_252160589_1_1_D_206625031_1_1, "Child 1 Age at Non-Melanoma Cancer Diagnosis", "Age") #non-mel
+ch1_c24=boxp_funct(D_252160589_1_1_D_261863326_1_1, "Child 1 Year at Non-Melanoma Cancer Diagnosis", "Year") #non-mel
+ch1_c25=boxp_funct(D_774774759_1_1_D_206625031_1_1, "Child 1 Age Ovarian Cancer Diagnosis", "Age") #ovarian
+#boxp_funct(D_774774759_1_1_D_261863326_1_1, "Child 1 Year at Ovarian Cancer Diagnosis", "Year") #ovarian
+ch1_c26=boxp_funct(D_127257956_1_1_D_206625031_1_1, "Child 1 Age at Pancreatic Cancer Diagnosis", "Age") #pancreatic
+#boxp_funct(D_127257956_1_1_D_261863326_1_1, "Child 1 Year at Pancreatic Cancer Diagnosis", "Year") #pancreatic
+ch1_c27=boxp_funct(D_496917282_1_1_D_206625031_1_1, "Child 1 Age at Prostate Cancer Diagnosis", "Age") #prostate
+#boxp_funct(D_496917282_1_1_D_261863326_1_1, "Child 1 Year at Prostate Cancer Diagnosis", "Year") #prostate
+ch1_c28=boxp_funct(D_908129316_1_1_D_206625031_1_1, "Child 1 Age at Stomach Cancer Diagnosis", "Age") #stomach
+#boxp_funct(D_908129316_1_1_D_261863326_1_1, "Child 1 Year at Stomach Cancer Diagnosis", "Year") #stomach
+ch1_c29=boxp_funct(D_795003496_1_1_D_206625031_1_1, "Child 1 Age at Testicular Cancer Diagnosis", "Age") #testicular
+ch1_c30=boxp_funct(D_795003496_1_1_D_261863326_1_1, "Child 1 Year at Testicular Cancer Diagnosis", "Year") #testicular
+ch1_c31=boxp_funct(D_969177591_1_1_D_206625031_1_1, "Child 1 Age at Thyroid Cancer Diagnosis", "Age") #thyroid
+ch1_c32=boxp_funct(D_969177591_1_1_D_261863326_1_1, "Child 1 Year at Thyroid Cancer Diagnosis", "Year") #thyroid
+ch1_c33=boxp_funct(D_116065851_1_1_D_206625031_1_1, "Child 1 Age at Urine Cancer Diagnosis", "Age") #urine
+ch1_c34=boxp_funct(D_116065851_1_1_D_261863326_1_1, "Child 1 Year at Urine Cancer Diagnosis", "Year") #urine
+ch1_c35=boxp_funct(D_278159347_1_1_D_206625031_1_1, "Child 1 Age at Other Cancer Diagnosis", "Age") #other
+ch1_c36=boxp_funct(D_278159347_1_1_D_261863326_1_1, "Child 1 Year at Other Cancer Diagnosis", "Year") #other
+ch1_c37=boxp_funct(D_845219872_1_1_D_206625031_1_1, "Child 1 Age at Unknown Cancer Diagnosis", "Age")#unknown
+ch1_c38=boxp_funct(D_845219872_1_1_D_261863326_1_1, "Child 1 Year at Unknown Cancer Diagnosis", "Year") #unknown
+
+grid.arrange(ch1_c1, ch1_c2, ch1_c3, ch1_c4, nrow=4)
+grid.arrange(ch1_c5, ch1_c6, ch1_c7, ch1_c8, nrow=4)
+grid.arrange(ch1_c9, ch1_c10, ch1_c11, ch1_c12, nrow=4)
+grid.arrange(ch1_c13, ch1_c14, ch1_c15, ch1_c16, nrow=4)
+grid.arrange(ch1_c17, ch1_c18, ch1_c19, ch1_c20, nrow=4)
+grid.arrange(ch1_c21, ch1_c22, ch1_c23, ch1_c24, nrow=4)
+grid.arrange(ch1_c25, ch1_c26, ch1_c27, ch1_c28, nrow=4)
+grid.arrange(ch1_c29, ch1_c30, ch1_c31, ch1_c32, nrow=4)
+grid.arrange(ch1_c33, ch1_c34, ch1_c35, ch1_c36, nrow=4)
+grid.arrange(ch1_c37, ch1_c38,  nrow=2)
+ 
+
+
+#boxp_funct(D_900939817_2_2_D_206625031_2_2, "Child 2 Age at Anal Cancer Diagnosis", "Age") #anal
+#boxp_funct(D_900939817_2_2_D_261863326_2_2, "Child 2 Year at Anal Cancer Diagnosis", "Year") #anal
+#boxp_funct(D_938150507_2_2_D_206625031_2_2, "Child 2 Age at Bladder Cancer Diagnosis", "Age") #bladder
+#boxp_funct(D_938150507_2_2_D_261863326_2_2, "Child 2 Year at Bladder Cancer Diagnosis", "Year") #bladder
+ch2_c1=boxp_funct(D_601211723_2_2_D_206625031_2_2, "Child 2 Age at Brain Cancer Diagnosis", "Age") #brain
+ch2_c2=boxp_funct(D_601211723_2_2_D_261863326_2_2, "Child 2 Year at Brain Cancer Diagnosis", "Year") #brain
+ch2_c3=boxp_funct(D_861788020_2_2_D_206625031_2_2, "Child 2 Age at Breast Cancer Diagnosis", "Age") #breast
+#boxp_funct(D_861788020_2_2_D_261863326_2_2, "Child 2 Year at Breast Cancer Diagnosis", "Year") #breast
+ch2_c4=boxp_funct(D_204425387_2_2_D_206625031_2_2, "Child 2 Age at Cervical Cancer Diagnosis", "Age") #cervical
+ch2_c5=boxp_funct(D_204425387_2_2_D_261863326_2_2, "Child 2 Year at Cervical Cancer Diagnosis", "Year") #cervical
+ch2_c6=boxp_funct(D_558929585_2_2_D_206625031_2_2, "Child 2 Age at Colon Cancer Diagnosis", "Age") #colon
+#boxp_funct(D_558929585_2_2_D_261863326_2_2, "Child 2 Year at Colon Cancer Diagnosis", "Year") #colon
+#boxp_funct(D_233764880_2_2_D_206625031_2_2, "Child 2 Age at Esophageal Cancer Diagnosis", "Age") #esphageal
+#boxp_funct(D_233764880_2_2_D_261863326_2_2, "Child 2 Year at Esophageal Cancer Diagnosis", "Year") #esphageal
+ch2_c7=boxp_funct(D_905145893_2_2_D_206625031_2_2, "Child 2 Age at Head&Neck Cancer Diagnosis", "Age")#head & neck
+ch2_c8=boxp_funct(D_905145893_2_2_D_261863326_2_2, "Child 2 Year at Head&Neck Cancer Diagnosis", "Year")#head & neck
+ch2_c9=boxp_funct(D_473190270_2_2_D_206625031_2_2, "Child 2 Age at Kidney Cancer Diagnosis", "Age")#kidney
+#boxp_funct(D_473190270_2_2_D_261863326_2_2, "Child 2 Year at Kidney Cancer Diagnosis", "Year")#kidney
+ch2_c10=boxp_funct(D_483735587_2_2_D_206625031_2_2, "Child 2 Age at Leukemia Cancer Diagnosis", "Age") #leuk
+ch2_c11=boxp_funct(D_483735587_2_2_D_261863326_2_2, "Child 2 Year at Leukemia Cancer Diagnosis", "Year") #leuk
+#boxp_funct(D_331759900_2_2_D_206625031_2_2, "Child 2 Age at Liver Cancer Diagnosis", "Age") #liver
+#boxp_funct(D_331759900_2_2_D_261863326_2_2, "Child 2 Year at Liver Cancer Diagnosis", "Year") #liver
+#boxp_funct(D_513077276_2_2_D_206625031_2_2, "Child 2 Age at Lung Cancer Diagnosis", "Age")#lung
+#boxp_funct(D_513077276_2_2_D_261863326_2_2, "Child 2 Year at Lung Cancer Diagnosis", "Year")#lung
+ch2_c12=boxp_funct(D_519974530_2_2_D_206625031_2_2, "Child 2 Age at Non-Hodgkin's Lymphoma Cancer Diagnosis", "Age") #nonH
+#boxp_funct(D_519974530_2_2_D_261863326_2_2, "Child 2 Year at Non-Hodgkin's Lymphoma Cancer Diagnosis", "Year") #nonH
+ch2_c13=boxp_funct(D_907776050_2_2_D_206625031_2_2, "Child 2 Age at Lymphoma Cancer Diagnosis", "Age") #lymphoma
+#boxp_funct(D_907776050_2_2_D_261863326_2_2, "Child 2 Year at Lymphoma Cancer Diagnosis", "Year") #lymphoma
+ch2_c14=boxp_funct(D_271684775_2_2_D_206625031_2_2, "Child 2 Age at Melanoma Cancer Diagnosis", "Age") #mel
+#boxp_funct(D_271684775_2_2_D_261863326_2_2, "Child 2 Year at Melanoma Cancer Diagnosis", "Year") #mel
+ch2_c15=boxp_funct(D_252160589_2_2_D_206625031_2_2, "Child 2 Age at Non-Melanoma Cancer Diagnosis", "Age") #non-mel
+#boxp_funct(D_252160589_2_2_D_261863326_2_2, "Child 2 Year at Non-Melanoma Cancer Diagnosis", "Year") #non-mel
+ch2_c16=boxp_funct(D_774774759_2_2_D_206625031_2_2, "Child 2 Age Ovarian Cancer Diagnosis", "Age") #ovarian
+#boxp_funct(D_774774759_2_2_D_261863326_2_2, "Child 2 Year at Ovarian Cancer Diagnosis", "Year") #ovarian
+#boxp_funct(D_127257956_2_2_D_206625031_2_2, "Child 2 Age at Pancreatic Cancer Diagnosis", "Age") #pancreatic
+#boxp_funct(D_127257956_2_2_D_261863326_2_2, "Child 2 Year at Pancreatic Cancer Diagnosis", "Year") #pancreatic
+#boxp_funct(D_496917282_2_2_D_206625031_2_2, "Child 2 Age at Prostate Cancer Diagnosis", "Age") #prostate
+#boxp_funct(D_496917282_2_2_D_261863326_2_2, "Child 2 Year at Prostate Cancer Diagnosis", "Year") #prostate
+#boxp_funct(D_908129316_2_2_D_206625031_2_2, "Child 2 Age at Stomach Cancer Diagnosis", "Age") #stomach
+#boxp_funct(D_908129316_2_2_D_261863326_2_2, "Child 2 Year at Stomach Cancer Diagnosis", "Year") #stomach
+ch2_c17=boxp_funct(D_795003496_2_2_D_206625031_2_2, "Child 2 Age at Testicular Cancer Diagnosis", "Age") #testicular
+ch2_c18=boxp_funct(D_795003496_2_2_D_261863326_2_2, "Child 2 Year at Testicular Cancer Diagnosis", "Year") #testicular
+ch2_c19=boxp_funct(D_969177591_2_2_D_206625031_2_2, "Child 2 Age at Thyroid Cancer Diagnosis", "Age") #thyroid
+#boxp_funct(D_969177591_2_2_D_261863326_2_2, "Child 2 Year at Thyroid Cancer Diagnosis", "Year") #thyroid
+ch2_c20=boxp_funct(D_116065851_2_2_D_206625031_2_2, "Child 2 Age at Urine Cancer Diagnosis", "Age") #urine
+#boxp_funct(D_116065851_2_2_D_261863326_2_2, "Child 2 Year at Urine Cancer Diagnosis", "Year") #urine
+ch2_c21=boxp_funct(D_278159347_2_2_D_206625031_2_2, "Child 2 Age at Other Cancer Diagnosis", "Age") #other
+#boxp_funct(D_278159347_2_2_D_261863326_2_2, "Child 2 Year at Other Cancer Diagnosis", "Year") #other
+ch2_c22=boxp_funct(D_845219872_2_2_D_206625031_2_2, "Child 2 Age at Unknown Cancer Diagnosis", "Age")#unknown
+#boxp_funct(D_845219872_2_2_D_261863326_2_2, "Child 2 Year at Unknown Cancer Diagnosis", "Year") #unknown
+
+grid.arrange(ch2_c1, ch2_c2, ch2_c3, ch2_c4, nrow=4)
+grid.arrange(ch2_c5, ch2_c6, ch2_c7, ch2_c8, nrow=4)
+grid.arrange(ch2_c9, ch2_c10, ch2_c11, ch2_c12, nrow=4)
+grid.arrange(ch2_c13, ch2_c14, ch2_c15, ch2_c16, nrow=4)
+grid.arrange(ch2_c17, ch2_c18, ch2_c19, ch2_c20, nrow=4)
+grid.arrange(ch2_c21, ch2_c22,  nrow=2)
+
+
+
+
+#boxp_funct(D_900939817_3_3_D_206625031_3_3, "Child 3 Age at Anal Cancer Diagnosis", "Age") #anal
+#boxp_funct(D_900939817_3_3_D_261863326_3_3, "Child 3 Year at Anal Cancer Diagnosis", "Year") #anal
+ch3_c1=boxp_funct(D_938150507_3_3_D_206625031_3_3, "Child 3 Age at Bladder Cancer Diagnosis", "Age") #bladder
+#boxp_funct(D_938150507_3_3_D_261863326_3_3, "Child 3 Year at Bladder Cancer Diagnosis", "Year") #bladder
+ch3_c2=boxp_funct(D_601211723_3_3_D_206625031_3_3, "Child 3 Age at Brain Cancer Diagnosis", "Age") #brain
+#boxp_funct(D_601211723_3_3_D_261863326_3_3, "Child 3 Year at Brain Cancer Diagnosis", "Year") #brain
+ch3_c3=boxp_funct(D_861788020_3_3_D_206625031_3_3, "Child 3 Age at Breast Cancer Diagnosis", "Age") #breast
+#boxp_funct(D_861788020_3_3_D_261863326_3_3, "Child 3 Year at Breast Cancer Diagnosis", "Year") #breast
+ch3_c4=boxp_funct(D_204425387_3_3_D_206625031_3_3, "Child 3 Age at Cervical Cancer Diagnosis", "Age") #cervical
+#boxp_funct(D_204425387_3_3_D_261863326_3_3, "Child 3 Year at Cervical Cancer Diagnosis", "Year") #cervical
+#boxp_funct(D_558929585_3_3_D_206625031_3_3, "Child 3 Age at Colon Cancer Diagnosis", "Age") #colon
+#boxp_funct(D_558929585_3_3_D_261863326_3_3, "Child 3 Year at Colon Cancer Diagnosis", "Year") #colon
+#boxp_funct(D_233764880_3_3_D_206625031_3_3, "Child 3 Age at Esophageal Cancer Diagnosis", "Age") #esphageal
+#boxp_funct(D_233764880_3_3_D_261863326_3_3, "Child 3 Year at Esophageal Cancer Diagnosis", "Year") #esphageal
+ch3_c5=boxp_funct(D_905145893_3_3_D_206625031_3_3, "Child 3 Age at Head&Neck Cancer Diagnosis", "Age")#head & neck
+#boxp_funct(D_905145893_3_3_D_261863326_3_3, "Child 3 Year at Head&Neck Cancer Diagnosis", "Year")#head & neck
+#boxp_funct(D_473190270_3_3_D_206625031_3_3, "Child 3 Age at Kidney Cancer Diagnosis", "Age")#kidney
+#boxp_funct(D_473190270_3_3_D_261863326_3_3, "Child 3 Year at Kidney Cancer Diagnosis", "Year")#kidney
+ch3_c6=boxp_funct(D_483735587_3_3_D_206625031_3_3, "Child 3 Age at Leukemia Cancer Diagnosis", "Age") #leuk
+#boxp_funct(D_483735587_3_3_D_261863326_3_3, "Child 3 Year at Leukemia Cancer Diagnosis", "Year") #leuk
+#boxp_funct(D_331759900_3_3_D_206625031_3_3, "Child 3 Age at Liver Cancer Diagnosis", "Age") #liver
+#boxp_funct(D_331759900_3_3_D_261863326_3_3, "Child 3 Year at Liver Cancer Diagnosis", "Year") #liver
+#boxp_funct(D_513077276_3_3_D_206625031_3_3, "Child 3 Age at Lung Cancer Diagnosis", "Age")#lung
+#boxp_funct(D_513077276_3_3_D_261863326_3_3, "Child 3 Year at Lung Cancer Diagnosis", "Year")#lung
+ch3_c7=boxp_funct(D_519974530_3_3_D_206625031_3_3, "Child 3 Age at Non-Hodgkin's Lymphoma Cancer Diagnosis", "Age") #nonH
+#boxp_funct(D_519974530_3_3_D_261863326_3_3, "Child 3 Year at Non-Hodgkin's Lymphoma Cancer Diagnosis", "Year") #nonH
+ch3_c8=boxp_funct(D_907776050_3_3_D_206625031_3_3, "Child 3 Age at Lymphoma Cancer Diagnosis", "Age") #lymphoma
+#boxp_funct(D_907776050_3_3_D_261863326_3_3, "Child 3 Year at Lymphoma Cancer Diagnosis", "Year") #lymphoma
+ch3_c9=boxp_funct(D_271684775_3_3_D_206625031_3_3, "Child 3 Age at Melanoma Cancer Diagnosis", "Age") #mel
+#boxp_funct(D_271684775_3_3_D_261863326_3_3, "Child 3 Year at Melanoma Cancer Diagnosis", "Year") #mel
+ch3_c10=boxp_funct(D_252160589_3_3_D_206625031_3_3, "Child 3 Age at Non-Melanoma Cancer Diagnosis", "Age") #non-mel
+#boxp_funct(D_252160589_3_3_D_261863326_3_3, "Child 3 Year at Non-Melanoma Cancer Diagnosis", "Year") #non-mel
+ch3_c11=boxp_funct(D_774774759_3_3_D_206625031_3_3, "Child 3 Age Ovarian Cancer Diagnosis", "Age") #ovarian
+#boxp_funct(D_774774759_3_3_D_261863326_3_3, "Child 3 Year at Ovarian Cancer Diagnosis", "Year") #ovarian
+#boxp_funct(D_127257956_3_3_D_206625031_3_3, "Child 3 Age at Pancreatic Cancer Diagnosis", "Age") #pancreatic
+#boxp_funct(D_127257956_3_3_D_261863326_3_3, "Child 3 Year at Pancreatic Cancer Diagnosis", "Year") #pancreatic
+ch3_c12=boxp_funct(D_496917282_3_3_D_206625031_3_3, "Child 3 Age at Prostate Cancer Diagnosis", "Age") #prostate
+#boxp_funct(D_496917282_3_3_D_261863326_3_3, "Child 3 Year at Prostate Cancer Diagnosis", "Year") #prostate
+#boxp_funct(D_908129316_3_3_D_206625031_3_3, "Child 3 Age at Stomach Cancer Diagnosis", "Age") #stomach
+#boxp_funct(D_908129316_3_3_D_261863326_3_3, "Child 3 Year at Stomach Cancer Diagnosis", "Year") #stomach
+ch3_c13=boxp_funct(D_795003496_3_3_D_206625031_3_3, "Child 3 Age at Testicular Cancer Diagnosis", "Age") #testicular
+#boxp_funct(D_795003496_3_3_D_261863326_3_3, "Child 3 Year at Testicular Cancer Diagnosis", "Year") #testicular
+ch3_c14=boxp_funct(D_969177591_3_3_D_206625031_3_3, "Child 3 Age at Thyroid Cancer Diagnosis", "Age") #thyroid
+ch3_c15=boxp_funct(D_969177591_3_3_D_261863326_3_3, "Child 3 Year at Thyroid Cancer Diagnosis", "Year") #thyroid
+#boxp_funct(D_116065851_3_3_D_206625031_3_3, "Child 3 Age at Urine Cancer Diagnosis", "Age") #urine
+#boxp_funct(D_116065851_3_3_D_261863326_3_3, "Child 3 Year at Urine Cancer Diagnosis", "Year") #urine
+ch3_c16=boxp_funct(D_278159347_3_3_D_206625031_3_3, "Child 3 Age at Other Cancer Diagnosis", "Age") #other
+ch3_c17=boxp_funct(D_278159347_3_3_D_261863326_3_3, "Child 3 Year at Other Cancer Diagnosis", "Year") #other
+ch3_c18=boxp_funct(D_845219872_3_3_D_206625031_3_3, "Child 3 Age at Unknown Cancer Diagnosis", "Age")#unknown
+#boxp_funct(D_845219872_3_3_D_261863326_3_3, "Child 3 Year at Unknown Cancer Diagnosis", "Year") #unknown
+
+grid.arrange(ch3_c1, ch3_c2, ch3_c3, ch3_c4, nrow=4)
+grid.arrange(ch3_c5, ch3_c6, ch3_c7, ch3_c8, nrow=4)
+grid.arrange(ch3_c9, ch3_c10, ch3_c11, ch3_c12, nrow=4)
+grid.arrange(ch3_c13, ch3_c14, ch3_c15, ch3_c16, nrow=4)
+grid.arrange(ch3_c17, nrow=2)
+
+
+
+
+#boxp_funct(D_900939817_4_4_D_206625031_4_4, "Child 4 Age at Anal Cancer Diagnosis", "Age") #anal
+#boxp_funct(D_900939817_4_4_D_261863326_4_4, "Child 4 Year at Anal Cancer Diagnosis", "Year") #anal
+#boxp_funct(D_938150507_4_4_D_206625031_4_4, "Child 4 Age at Bladder Cancer Diagnosis", "Age") #bladder
+ch4_c1=boxp_funct(D_938150507_4_4_D_261863326_4_4, "Child 4 Year at Bladder Cancer Diagnosis", "Year") #bladder
+ch4_c2=boxp_funct(D_601211723_4_4_D_206625031_4_4, "Child 4 Age at Brain Cancer Diagnosis", "Age") #brain
+#boxp_funct(D_601211723_4_4_D_261863326_4_4, "Child 4 Year at Brain Cancer Diagnosis", "Year") #brain
+#boxp_funct(D_861788020_4_4_D_206625031_4_4, "Child 4 Age at Breast Cancer Diagnosis", "Age") #breast
+#boxp_funct(D_861788020_4_4_D_261863326_4_4, "Child 4 Year at Breast Cancer Diagnosis", "Year") #breast
+ch4_c3=boxp_funct(D_204425387_4_4_D_206625031_4_4, "Child 4 Age at Cervical Cancer Diagnosis", "Age") #cervical
+#boxp_funct(D_204425387_4_4_D_261863326_4_4, "Child 4 Year at Cervical Cancer Diagnosis", "Year") #cervical
+ch4_c4=boxp_funct(D_558929585_4_4_D_206625031_4_4, "Child 4 Age at Colon Cancer Diagnosis", "Age") #colon
+#boxp_funct(D_558929585_4_4_D_261863326_4_4, "Child 4 Year at Colon Cancer Diagnosis", "Year") #colon
+#boxp_funct(D_233764880_4_4_D_206625031_4_4, "Child 4 Age at Esophageal Cancer Diagnosis", "Age") #esphageal
+#boxp_funct(D_233764880_4_4_D_261863326_4_4, "Child 4 Year at Esophageal Cancer Diagnosis", "Year") #esphageal
+#boxp_funct(D_905145893_4_4_D_206625031_4_4, "Child 4 Age at Head&Neck Cancer Diagnosis", "Age")#head & neck
+#boxp_funct(D_905145893_4_4_D_261863326_4_4, "Child 4 Year at Head&Neck Cancer Diagnosis", "Year")#head & neck
+#boxp_funct(D_473190270_4_4_D_206625031_4_4, "Child 4 Age at Kidney Cancer Diagnosis", "Age")#kidney
+#boxp_funct(D_473190270_4_4_D_261863326_4_4, "Child 4 Year at Kidney Cancer Diagnosis", "Year")#kidney
+ch4_c5=boxp_funct(D_483735587_4_4_D_206625031_4_4, "Child 4 Age at Leukemia Cancer Diagnosis", "Age") #leuk
+#boxp_funct(D_483735587_4_4_D_261863326_4_4, "Child 4 Year at Leukemia Cancer Diagnosis", "Year") #leuk
+#boxp_funct(D_331759900_4_4_D_206625031_4_4, "Child 4 Age at Liver Cancer Diagnosis", "Age") #liver
+#boxp_funct(D_331759900_4_4_D_261863326_4_4, "Child 4 Year at Liver Cancer Diagnosis", "Year") #liver
+#boxp_funct(D_513077276_4_4_D_206625031_4_4, "Child 4 Age at Lung Cancer Diagnosis", "Age")#lung
+#boxp_funct(D_513077276_4_4_D_261863326_4_4, "Child 4 Year at Lung Cancer Diagnosis", "Year")#lung
+ch4_c6=boxp_funct(D_519974530_4_4_D_206625031_4_4, "Child 4 Age at Non-Hodgkin's Lymphoma Cancer Diagnosis", "Age") #nonH
+#boxp_funct(D_519974530_4_4_D_261863326_4_4, "Child 4 Year at Non-Hodgkin's Lymphoma Cancer Diagnosis", "Year") #nonH
+#boxp_funct(D_907776050_4_4_D_206625031_4_4, "Child 4 Age at Lymphoma Cancer Diagnosis", "Age") #lymphoma
+#boxp_funct(D_907776050_4_4_D_261863326_4_4, "Child 4 Year at Lymphoma Cancer Diagnosis", "Year") #lymphoma
+ch4_c7=boxp_funct(D_271684775_4_4_D_206625031_4_4, "Child 4 Age at Melanoma Cancer Diagnosis", "Age") #mel
+#boxp_funct(D_271684775_4_4_D_261863326_4_4, "Child 4 Year at Melanoma Cancer Diagnosis", "Year") #mel
+#boxp_funct(D_252160589_4_4_D_206625031_4_4, "Child 4 Age at Non-Melanoma Cancer Diagnosis", "Age") #non-mel
+#boxp_funct(D_252160589_4_4_D_261863326_4_4, "Child 4 Year at Non-Melanoma Cancer Diagnosis", "Year") #non-mel
+#boxp_funct(D_774774759_4_4_D_206625031_4_4, "Child 4 Age Ovarian Cancer Diagnosis", "Age") #ovarian
+#boxp_funct(D_774774759_4_4_D_261863326_4_4, "Child 4 Year at Ovarian Cancer Diagnosis", "Year") #ovarian
+#boxp_funct(D_127257956_4_4_D_206625031_4_4, "Child 4 Age at Pancreatic Cancer Diagnosis", "Age") #pancreatic
+#boxp_funct(D_127257956_4_4_D_261863326_4_4, "Child 4 Year at Pancreatic Cancer Diagnosis", "Year") #pancreatic
+#boxp_funct(D_496917282_4_4_D_206625031_4_4, "Child 4 Age at Prostate Cancer Diagnosis", "Age") #prostate
+#boxp_funct(D_496917282_4_4_D_261863326_4_4, "Child 4 Year at Prostate Cancer Diagnosis", "Year") #prostate
+#boxp_funct(D_908129316_4_4_D_206625031_4_4, "Child 4 Age at Stomach Cancer Diagnosis", "Age") #stomach
+#boxp_funct(D_908129316_4_4_D_261863326_4_4, "Child 4 Year at Stomach Cancer Diagnosis", "Year") #stomach
+#boxp_funct(D_795003496_4_4_D_206625031_4_4, "Child 4 Age at Testicular Cancer Diagnosis", "Age") #testicular
+#boxp_funct(D_795003496_4_4_D_261863326_4_4, "Child 4 Year at Testicular Cancer Diagnosis", "Year") #testicular
+ch4_c8=boxp_funct(D_969177591_4_4_D_206625031_4_4, "Child 4 Age at Thyroid Cancer Diagnosis", "Age") #thyroid
+#boxp_funct(D_969177591_4_4_D_261863326_4_4, "Child 4 Year at Thyroid Cancer Diagnosis", "Year") #thyroid
+#boxp_funct(D_116065851_4_4_D_206625031_4_4, "Child 4 Age at Urine Cancer Diagnosis", "Age") #urine
+#boxp_funct(D_116065851_4_4_D_261863326_4_4, "Child 4 Year at Urine Cancer Diagnosis", "Year") #urine
+ch4_c9=boxp_funct(D_278159347_4_4_D_206625031_4_4, "Child 4 Age at Other Cancer Diagnosis", "Age") #other
+#boxp_funct(D_278159347_4_4_D_261863326_4_4, "Child 4 Year at Other Cancer Diagnosis", "Year") #other
+#boxp_funct(D_845219872_4_4_D_206625031_4_4, "Child 4 Age at Unknown Cancer Diagnosis", "Age")#unknown
+#boxp_funct(D_845219872_4_4_D_261863326_4_4, "Child 4 Year at Unknown Cancer Diagnosis", "Year") #unknown
+
+grid.arrange(ch4_c1, ch4_c2, ch4_c3, ch4_c4, nrow=4)
+grid.arrange(ch4_c5, ch4_c6, ch4_c7, ch4_c8, nrow=4)
+
 
 
 ```
@@ -6318,8 +6604,6 @@ simple_funct(D_431721131, "QXAUTHOR1: Who Completed this Survey")
 
 
 ```
-
-
 
 
 

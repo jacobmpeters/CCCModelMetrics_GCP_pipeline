@@ -169,7 +169,7 @@ table(m1_complete_nodup$version)
 parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
 D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
 D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, 
-d_663265240, d_878865966, d_684635302, d_167958071,
+d_663265240, d_878865966, d_684635302, d_167958071, d_536735468,
 d_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_914639140, d_311580100 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
 where Connect_ID IS NOT NULL"
 parts_table <- bq_project_query(project, parts)
@@ -379,7 +379,7 @@ table(M2_complete_nodup$version)
 M2_complete_nodup$Connect_ID <- as.numeric(M2_complete_nodup$Connect_ID)
 
 
-merge_m2= left_join(merged, M2_complete_nodup, by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
+merge_m2= left_join(M2_complete_nodup, merged,  by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
 
 ```
 
@@ -392,7 +392,7 @@ merge_m2= left_join(merged, M2_complete_nodup, by="Connect_ID") #%>%  left_join(
 #cat("Module 1 completed:", dim(module2)[[1]])
 
 #Mod2 completed
-module2 <- module2 %>% filter(d_536735468==231311385)
+module2 <- merge_m2 %>% filter(d_536735468==231311385)
 cat("Module 2 Completed:", dim(module2)[[1]])
 
 data_tib_m2 <- as_tibble(module2)
@@ -1955,9 +1955,8 @@ METFOR1_summary %>%  gt::gt() %>%
 
 #Days per day/week/month
 #hist_funct(D_694817520_D_765748316, "METFOR2: How often Metformin Taken (per week)", "Days", "Frequency")
-bar_rplc_funct(D_694817520_D_765748316, "METFOR2: How often Metformin Taken (per week)", "Days", "Frequency")
-
-hist_funct(D_694817520_D_785412329, "METFOR2: How often Metformin Taken (per week)", "Days", "Frequency")
+hist_funct(D_694817520_D_765748316, "METFOR2: How often Metformin Taken (per week)", "Days", "Frequency")
+hist_funct(D_694817520_D_785412329, "METFOR2: How often Metformin Taken (per month)", "Days", "Frequency")
 
 #Milligrams per day
 hist_funct(D_991622246_D_101310722, "METFOR3: Milligrams per Day", "Pills", "Frequency")
@@ -1977,9 +1976,9 @@ hist_funct(D_450131058, "METFOR4: Years Metformin Taken", "Years", "Frequency")
 #one_logic_funct2(D_976052812, D_112024853, 353358909, "METFOR5: Last Time Metformin Taken")
 METFOR5= data_tib_m2  %>%   filter(D_112024853==353358909)
 
-bby_asp= METFOR5 %>%  mutate(reasons= case_when(D_976052812==317567178 ~ "In the past month",
-                                             D_976052812==484055234 ~ "More than a month, less than a year",
-                                             D_976052812==802197176 ~ "More than 1 year",
+bby_asp= METFOR5 %>%  mutate(reasons= case_when(D_991873978==317567178 ~ "In the past month",
+                                             D_991873978==484055234 ~ "More than a month, less than a year",
+                                             D_991873978==802197176 ~ "More than 1 year",
                                              TRUE~ "Skipped this question"))
 
 
@@ -5339,7 +5338,7 @@ dtseph2_summary %>%  gt::gt() %>%
 #Ever used
 #one_logic_funct(D_111235606, D_621744463, 353358909, "TESTTHER1: Used Testosterone Therapy")
 testt1= data_tib_m2 %>% filter(D_621744463==353358909) %>%  mutate(answer= case_when(D_111235606==104430631 ~ "No",
-                                             D_111235606==353358909 ~ "Yes",,
+                                             D_111235606==353358909 ~ "Yes",
                                              TRUE ~ "Skipped this question"))
 
 testt1_summary <- testt1 %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
@@ -5486,7 +5485,7 @@ tab_footnote(
 
 
 #Age first used 
-module2$D_797076693 <- round(as.numeric(module2$D_797076693), digits=0)
+#module2$D_797076693 <- round(as.numeric(module2$D_797076693), digits=0)
 #boxp_funct(D_797076693,"TESTTHER3: Age Testosterone First Used", "Age")
 hist_funct(D_797076693,"TESTTHER3: Age Testosterone First Used", "Age", "Number of Participants")
 
@@ -5536,7 +5535,7 @@ hist_funct(D_414663452,"TESTTHER5: Age Testosterone Last Used", "Age", "Number o
 #Taken other types
 #one_logic_funct(D_570187182, D_621744463, 353358909, "PRESHOR: Ever taken Other Prescription Medication")
 testt1= data_tib_m2 %>% filter(D_621744463==353358909) %>%  mutate(answer= case_when(D_570187182==104430631 ~ "No",
-                                                                                     D_570187182==353358909 ~ "Yes",,
+                                                                                     D_570187182==353358909 ~ "Yes",
                                                                                      TRUE ~ "Skipped this question"))
 
 testt1_summary <- testt1 %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
@@ -8471,7 +8470,7 @@ LAWN4A= data_tib_m2 %>%  filter(D_204421360_D_797221287==1)
 vig_ss= LAWN4A %>%  mutate(season= case_when(D_429531329==428999623 ~ "0-15 minutes",
                                              D_429531329==248303092 ~ "16-30 minutes",
                                              D_429531329==206020811 ~ "31-44 minutes",
-                                             D_429531329==264163865 ~ "45-59 minutes",
+                                             D_429531329==638092100 ~ "45-59 minutes",
                                              D_429531329==264163865 ~ "1 hour",
                                              D_429531329==628177728 ~ "2 hours",
                                              D_429531329==805918496 ~ "3+ hours",
@@ -8587,7 +8586,7 @@ LAWN4B= data_tib_m2 %>%  filter(D_204421360_D_500744195==1)
 vig_ss= LAWN4B %>%  mutate(season= case_when(D_644018981==428999623 ~ "0-15 minutes",
                                              D_644018981==248303092 ~ "16-30 minutes",
                                              D_644018981==206020811 ~ "31-44 minutes",
-                                             D_644018981==264163865 ~ "45-59 minutes",
+                                             D_644018981==638092100 ~ "45-59 minutes",
                                              D_644018981==264163865 ~ "1 hour",
                                              D_644018981==628177728 ~ "2 hours",
                                              D_644018981==805918496 ~ "3+ hours",
@@ -8704,7 +8703,7 @@ LAWN4C= data_tib_m2 %>%  filter(D_204421360_D_383015037==1)
 vig_ss= LAWN4C %>%  mutate(season= case_when(D_267261558==428999623 ~ "0-15 minutes",
                                              D_267261558==248303092 ~ "16-30 minutes",
                                              D_267261558==206020811 ~ "31-44 minutes",
-                                             D_267261558==264163865 ~ "45-59 minutes",
+                                             D_267261558==638092100 ~ "45-59 minutes",
                                              D_267261558==264163865 ~ "1 hour",
                                              D_267261558==628177728 ~ "2 hours",
                                              D_267261558==805918496 ~ "3+ hours",
@@ -9790,9 +9789,12 @@ SNORING5_ans= SNORING5 %>%  mutate(answer= case_when(D_756521698==718687985 ~ "A
                                                      D_756521698==632512449 ~ "1 to 2 times per month",
                                                      D_756521698==520089841 ~ "Less than 1 to 2 times per month",
                                                      D_756521698==178420302 ~ "Unknown",
+                                                     D_756521698==648960871 ~ "Never",
                                                         TRUE ~ "Skipped this question"))
 
-SNORING5_ans$answer <- factor(SNORING5_ans$answer,levels=c("Almost every day", "3 to 4 times per week", "1 to 2 times per week", "1 to 2 times per month", "Less than 1 to 2 times per month","Unknown", "Skipped this question" ))
+SNORING5_ans$answer <- factor(SNORING5_ans$answer,levels=c("Almost every day", "3 to 4 times per week", "1 to 2 times per week", 
+                                                           "1 to 2 times per month", "Less than 1 to 2 times per month", "Never", 
+                                                           "Unknown", "Skipped this question" ))
 
 dtSNORING5_summary <- SNORING5_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
