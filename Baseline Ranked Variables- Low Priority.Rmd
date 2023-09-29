@@ -404,7 +404,9 @@ data_tib_merged %>%  select(D_555481393_D_979809707) %>% filter(!is.na(D_5554813
 # MARTIAL 
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
 
+
 simple_funct1(D_783167257, "MARITAL: Marital Status")
+
 
 ```
 # BLDTRANS
@@ -6564,7 +6566,9 @@ one_logic_funct2(D_823541843, D_591723682,353358909, "SLEEP2M: Ability to Choose
 
 # SLHABIT1A-G
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
+
 ##simple_funct1(D_421859821_D_220238240, "SLHABIT1A: Having Trouble Falling Asleep")
+
 SLHABIT1A_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_220238240==104430631 ~ "No",
                                                      D_421859821_D_220238240==525779785 ~ "Yes, less than once per week",
                                                      D_421859821_D_220238240==565036180 ~ "Yes, 1 or 2 times per week",
@@ -6600,7 +6604,9 @@ dtSLHABIT1A_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 #Wake up several times
+
 ##simple_funct1(D_421859821_D_151006826, "SLHABIT1B: Waking up Several Times per Night")
+
 SLHABIT1B_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_151006826==104430631 ~ "No",
                                                      D_421859821_D_151006826==525779785 ~ "Yes, less than once per week",
                                                      D_421859821_D_151006826==565036180 ~ "Yes, 1 or 2 times per week",
@@ -6636,7 +6642,9 @@ dtSLHABIT1B_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 #Wake up early
+
 ##simple_funct1(D_421859821_D_965290070, "SLHABIT1C: Waking up Too early")
+
 SLHABIT1C_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_965290070==104430631 ~ "No",
                                                      D_421859821_D_965290070==525779785 ~ "Yes, less than once per week",
                                                      D_421859821_D_965290070==565036180 ~ "Yes, 1 or 2 times per week",
@@ -6671,7 +6679,9 @@ dtSLHABIT1C_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   ) %>% opt_row_striping()
 
 #Getting back to sleep
+
 ##simple_funct1(D_421859821_D_781115321, "SLHABIT1D: Trouble Falling Back Asleep")
+
 SLHABIT1D_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_781115321==104430631 ~ "No",
                                                      D_421859821_D_781115321==525779785 ~ "Yes, less than once per week",
                                                      D_421859821_D_781115321==565036180 ~ "Yes, 1 or 2 times per week",
@@ -6706,7 +6716,9 @@ dtSLHABIT1D_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   ) %>% opt_row_striping()
 
 #sleeping pills
+
 ##simple_funct1(D_421859821_D_453071098, "SLHABIT1E: Prescription Sleep Medication Taken")
+
 SLHABIT1E_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_453071098==104430631 ~ "No",
                                                      D_421859821_D_453071098==525779785 ~ "Yes, less than once per week",
                                                      D_421859821_D_453071098==565036180 ~ "Yes, 1 or 2 times per week",
@@ -6743,6 +6755,7 @@ dtSLHABIT1E_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 #Irritable
 ##simple_funct1(D_421859821_D_513065503, "SLHABIT1F: Sleep Problems causing Irritability")
+
 SLHABIT1F_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_513065503==104430631 ~ "No",
                                                      D_421859821_D_513065503==525779785 ~ "Yes, less than once per week",
                                                      D_421859821_D_513065503==565036180 ~ "Yes, 1 or 2 times per week",
@@ -6778,7 +6791,9 @@ dtSLHABIT1F_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 #Tired during the day
+
 ##simple_funct1(D_421859821_D_257137378, "SLHABIT1G: Feeling Tired Throughout the day")
+
 SLHABIT1G_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_257137378==104430631 ~ "No",
                                                      D_421859821_D_257137378==525779785 ~ "Yes, less than once per week",
                                                      D_421859821_D_257137378==565036180 ~ "Yes, 1 or 2 times per week",
