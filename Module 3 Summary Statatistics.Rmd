@@ -303,29 +303,24 @@ boxp_funct <- function(CID,Title, Xlab) {
 
 
 
-dict <- list("104430631"="No", "353358909"="Yes", "265550580"="Didn't Drink ", "950039557"="A few times per Year","402048066"="A few times per Month","522395860"="Once per Week",
-             "756073829"="A few times per Week","858624942"="Once per day","424768954"="2-3 times per Day","687445652"="4-5 times per Day","333682419"="6+ times per Day", 
-             "595249233"="Less Than once per Month ", "637900673"="Once a month","207952166"="2-3 times per Month","198347104"="1-2 times per week","471294296"="3-4 times per Week",
-             "594557208"="5-6 times per Week","647504893"="Every Day", "428999623"="0-14 minutes", "248303092"="16-30 min.", "998679771"="31-59 min.","638092100"="1 hr","127455035"="2+ hrs",
-             "419415087"="No, not at all", "299561721"="Yes, but rarely","716761013"="Yes, but some days","804785430"="Yes, every day", "151488193"="10 or less",
-             "805449318"="11-49","486319890"="50-99","132232896"="100+", "317567178"="In the past month", "484055234"="In the past year", "802197176"="More than a year", "169225725"="Within 5 minutes",
-             "967681778"="6-30 min.", "122802180"="Almost All the Time", "950591599"="Most of the Time","167208049"="Half the Time", "793320798"="Sometimes","216450786"="Almost Never", 
-             "647504893"="Every Day", "417208949"="Most Days of the Week","797736697"="A Few Days per week","480609810"="One Day per Week","485011582"="A Few Days per Month",
-             "667010122"="A Few days per Year","648960871"="Never", "174968750"="Less Than One Hour", "738454194"="1-2 Hours","229540444"="3-5 Hours", 
-             "838981994"="6-9 Hours",  "464169461"="10-15 Hours", "683466918"="15+ Hours", "162693263"="Everyday, at least 2 hrs","924926068"="Everday, 0-2 Hours", "417208949"="Most Days", 
-             "480609810"="1 day per Week", "485011582"="A Few Days per Month", "865134801"="One Day per Month", 
-             "648960871"="Never", "503218834"="0",   "759356722"="1",  "668407984"="2", "448069154"="3",  "485163252"="4", "160036380"="5+", "648665281"="1",   "420091116"="2", "412554346"="3",
-             "475454159"="4", "312200270"="5","411022152"="6+", "249485680"="Blistering Sunburn",  "646918928"="Sunburn w/o Blisters", "692155653"="Mild Sunburn, Eventual Tan", 
-             "899670578"="A Tan wWithout Sunburn", "455468743"="No Skin Color Change", "503218834"="None",  "961021302"="1-2", "953684708"="3-4", "922737557"="5-9", "945387130"="10+",
-             "178420302"="Unknown", "648960871"="Never",  "235613392"="Rarely",  "132099255"="Sometimes", "211590917"="Often",  "907579123"="Always", "905073380"="All exposed Areas", 
-             "223461539"="Some Exposed Areas", "901521065"="Face or Head Only", "445549128"="Less Than 15","995736452"="15-20",  "120045322"="21-35", "190125431"="36-50",  "133730190"="51+",
-             "102445389"="1-9 Times", "388196732"="10-49 Times", "649327523"="50-99 Times","587052987"="100-249", "838336013"="250+", "676516297"="Everyday", "511873578"="A few Days per Week",
-             "522395860"="Once a Week", "756470750"="A few Days per Month", "402335383"="Less than 12x perYear", "317312221"="Blue",  "858866416"="Green","696181630"="Hazel", "248624772"="Light Brown", 
-             "777809207"="Dark Brown", "181769837"="Other", "230748315"="Blond",  "379848047"="Red", "224120697"="Reddish Brown", "270559240"="Medium Brown",  "469115418"="Black", "300633065"="Very Light",
-             "834817071"="Light", "385246065"="Medium", "189414295"="Dark", "482157734"="Very dark", "259218831"="No Freckles",  "519761171"="A few", "800179850"="Some", "455684772"="A lot",
-             "425604618"="1",  "914302382"="2", "835682347"="3", "562508684"="4", "180306463"="5", "413495952"="6+", "332226274"="1",  "549638643"="2", "939235325"="3", "473673527"="4",
-             "290010251"="5","355205294"="6+", "968093023"="1",   "545630587"="2","526602834"="3", "905402667"="4", "900343645"="5","554549266"="6+", "437269318"="Recreation", "838317013"="As Medicine",
-             "585672584"="Both", "807835037"="Other", "746038746"="Prefer Not to Answer")
+dict <- list("104430631"="No", "353358909"="Yes", "265550580"="Didn't Drink", "950039557"="A few times per Year","402048066"="A few times per Month","522395860"="Once per Week","756073829"="A few times per Week","858624942"="Once per day","424768954"="2-3 times per Day","687445652"="4-5 times per Day","333682419"="6+ times per Day",  "595249233"="Less Than once per Month", "637900673"="Once a month","207952166"="2-3 times per month","198347104"="1-2 times per week","471294296"="3-4 times per week", "594557208"="5-6 times per Week","647504893"="Every Day", "428999623"="0-14 minutes", "248303092"="16-30 min.", "998679771"="31-59 min.","638092100"="1 hr","127455035"="2+ hrs", "419415087"="No, not at all", "299561721"="Yes, but rarely","716761013"="Yes, but some days","804785430"="Yes, every day", "151488193"="10 or less", "805449318"="11-49","486319890"="50-99","132232896"="100+", "317567178"="In the past month", "484055234"="In the past year", "802197176"="More than a year", "169225725"="Within 5 minutes", "967681778"="6-30 min.", "122802180"="Almost All the Time", "950591599"="Most of the Time","167208049"="Half the Time", "793320798"="Sometimes","216450786"="Almost Never",  "417208949"="Most Days of the Week","797736697"="A Few Days per week","480609810"="One Day per Week", "667010122"="A Few days per Year","648960871"="Never", "174968750"="Less Than One Hour", "738454194"="1-2 Hours","229540444"="3-5 Hours",  "838981994"="6-9 Hours",  "464169461"="10-15 Hours", "683466918"="15+ Hours", "162693263"="Everyday, at least 2 hrs","924926068"="Everday, 0-2 Hours",   "485011582"="A Few Days per Month", "865134801"="One Day per Month",  "503218834"="0",   "759356722"="1",  "668407984"="2", "448069154"="3",  "485163252"="4", "160036380"="5+", "648665281"="1",   "420091116"="2", "412554346"="3", "475454159"="4", "312200270"="5","411022152"="6+", "249485680"="Blistering Sunburn",  "646918928"="Sunburn w/o Blisters", "692155653"="Mild Sunburn, Eventual Tan",  "899670578"="A Tan Without Sunburn", "455468743"="No Skin Color Change",   "961021302"="1-2", "953684708"="3-4", "922737557"="5-9", "945387130"="10+", "178420302"="Unknown",     "235613392"="Rarely",  "132099255"="Sometimes", "211590917"="Often",  "907579123"="Always", "905073380"="All exposed areas",  "223461539"="Some exposed areas", "901521065"="Face or Head Only", "445549128"="Less than 15","995736452"="15-20",  "120045322"="21-35", "190125431"="36-50",  "133730190"="51+", "102445389"="1-9 Times", "388196732"="10-49 Times", "649327523"="50-99 Times","587052987"="100-249", "838336013"="250+",  "511873578"="A few Days per Week",  "756470750"="A few Days per Month", "402335383"="Less than 12x per Year", "317312221"="Blue",  "858866416"="Green","696181630"="Hazel", "248624772"="Light Brown",  "777809207"="Dark Brown", "181769837"="Other", "230748315"="Blond",  "379848047"="Red", "224120697"="Reddish Brown", "270559240"="Medium Brown",  "469115418"="Black", "300633065"="Very Light", "834817071"="Light", "385246065"="Medium", "189414295"="Dark", "482157734"="Very dark", "259218831"="No Freckles",  "519761171"="A few", "800179850"="Some", "455684772"="A lot", "425604618"="1",  "914302382"="2", "835682347"="3", "562508684"="4", "180306463"="5", "413495952"="6+", "332226274"="1",  "549638643"="2", "939235325"="3", "473673527"="4", "290010251"="5","355205294"="6+", "968093023"="1",   "545630587"="2","526602834"="3", "905402667"="4", "900343645"="5","554549266"="6+", "437269318"="Recreation", "838317013"="As Medicine", "585672584"="Both", "807835037"="Other", "746038746"="Prefer Not to Answer", "351028096" = "1 to 5 times per year","690077051" = "6 to 11 times per year", "418361985" = "Twice per week","676516297" = "20-31 days per month")
+
+
+# #For response orders 
+# dict <- factor(dict,levels=c("Yes", "No", "Didn't Drink","A few times per Year","A few times per Month","Once per Week", "A few times per Week","Once per day","2-3 times per Day",
+#                              "4-5 times per Day","6+ times per Day","15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Never", "1 to 5 times per year", 
+#                              "6 to 11 times per year","Less Than once per Month", "Once a month","2-3 times per month","Once per week","1-2 times per week", "Twice per week","3-4 times per week", 
+#                              "5-6 times per Week", "All exposed areas","Some exposed areas","Face or Head Only", "Rarely","Sometimes", "Often","Always","Less than 15","15-20","21-35", "36-50","51+","Unknown","20-31 days per month","5-19 days per month", "1 to 4 days per month","0 to 11 days per year", "0-14 minutes", "16-30 min.", 
+#                              "31-59 min.","1 hr","2+ hrs","No, not at all", "Yes, but rarely","Yes, but some days","Yes, every day", "10 or less", "11-49","50-99","100+", "In the past month",
+#                              "In the past year", "More than a year", "Within 5 minutes", "6-30 min.", "Almost All the Time", "Most of the Time","Half the Time", "Almost Never", 
+#                              "Most Days of the Week","A Few Days per week","One Day per Week","A Few Days per Month", "A Few days per Year","Less Than One Hour", "1-2 Hours",
+#                              "3-5 Hours",  "6-9 Hours",  "10-15 Hours", "15+ Hours", "Everyday, at least 2 hrs","Everday, 0-2 Hours",    
+#                              "One Day per Month",   "0","1", "2", "3", "4", "5","5+",  "6+", "No Skin Color Change", "A Tan Without Sunburn","Mild Sunburn, Eventual Tan", "Sunburn w/o Blisters", "Blistering Sunburn",   "1-9 Times", "10-49 Times", "50-99 Times","100-249", "250+", "Less than 12x per Year", 
+#                              "A few Days per Month", "Once a Week", "A few Days per Week",  "Every Day", "Very Light", "Light", "Medium", "Dark", "Very dark", "No Freckles", "A few", "Some", "A lot", "Recreation", "As Medicine", "Both", "Other", "Prefer Not to Answer", "1-2", "3-4", "5-9", "10+", "Blue",  "Green","Hazel", "Light Brown",  "Dark Brown",  "Blond", "Red", "Reddish Brown", "Medium Brown",  "Black"))
+# 
+# 
+# # Error in `vec_assign()`:
+# # ! Can't convert from `replace$answer` <character> to `data$answer` <factor<8b6c5>> due to loss of generality.
 
 
 
@@ -1632,7 +1627,6 @@ dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #CHEWLIFEG
-#simple_funct3(D_995220236,"CHEWLIFEG: Time Chewing Tobacco/Dip Used per Day at Ages 60-69") #no one yet
 lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_D_424527685) & 
                                       (D_101710639==804785430 | D_785139115==353358909) & 
                                       as.numeric(data_tib_all3$D_257300783_D_424527685)<70 & 
