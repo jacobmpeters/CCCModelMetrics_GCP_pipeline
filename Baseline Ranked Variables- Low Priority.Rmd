@@ -61,7 +61,7 @@ billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be cons
 ##949302066 Flag for Baseline Module Background and Overall Health                        SrvBOH_BaseStatus_v1r0
 recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
                             d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935'")
-recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
+recr_m1 <- bq_table_download(recr_M1,bigint = "integer64",n_max = Inf, page_size = 1000)
 cnames <- names(recr_m1)
 # Check that it doesn't match any non-number
 numbers_only <- function(x) !grepl("\\D", x)
@@ -76,8 +76,8 @@ sql_M1_1 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect
 sql_M1_2 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
 
 
-M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64") #1436 #1436 vars: 1507 01112023 
-M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64") #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
+M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64",n_max = Inf) #1436 #1436 vars: 1507 01112023 
+M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64",n_max = Inf) #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
 
 mod1_v1 <- M1_V1
 cnames <- names(M1_V1)
@@ -155,7 +155,7 @@ d_663265240, d_878865966, d_684635302, d_167958071,
 d_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_914639140, d_311580100 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
 where Connect_ID IS NOT NULL"
 parts_table <- bq_project_query(project, parts)
-parts_data <- bq_table_download(parts_table, bigint = "integer64")
+parts_data <- bq_table_download(parts_table, bigint = "integer64",n_max = Inf, page_size = 1000)
 
 parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID)
 
@@ -1981,7 +1981,7 @@ billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be cons
 ##949302066 Flag for Baseline Module Background and Overall Health                        SrvBOH_BaseStatus_v1r0
 recr_m2 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379, 
                             d_536735468 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935'")
-recr_m2 <- bq_table_download(recr_m2,bigint = "integer64")
+recr_m2 <- bq_table_download(recr_m2,bigint = "integer64",n_max = Inf, page_size = 1000)
 cnames <- names(recr_m2)
 # Check that it doesn't match any non-number
 numbers_only <- function(x) !grepl("\\D", x)
@@ -1996,8 +1996,8 @@ sql_m2_1 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect
 sql_m2_2 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module2_v2_JP` where Connect_ID is not null")
 
 
-M2_V1 <- bq_table_download(sql_m2_1,bigint = "integer64") #1436 #1436 vars: 1507 01112023 
-M2_V2 <- bq_table_download(sql_m2_2,bigint = "integer64") #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
+M2_V1 <- bq_table_download(sql_m2_1,bigint = "integer64",n_max = Inf) #1436 #1436 vars: 1507 01112023 
+M2_V2 <- bq_table_download(sql_m2_2,bigint = "integer64",n_max = Inf) #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
 
 mod2_v1 <- M2_V1
 cnames <- names(M2_V1)
@@ -7520,8 +7520,8 @@ querymod3 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module3_
 parts3_table <- bq_project_query(project, parts3)
 mod3_table <- bq_project_query(project, querymod3)
 
-parts3_data <- bq_table_download(parts3_table, bigint = "integer64")
-mod3_data <- bq_table_download(mod3_table, bigint = "integer64")
+parts3_data <- bq_table_download(parts3_table, bigint = "integer64",n_max = Inf, page_size = 1000)
+mod3_data <- bq_table_download(mod3_table, bigint = "integer64",n_max = Inf)
 
 parts3_data$Connect_ID <- as.numeric(parts3_data$Connect_ID) ###need to convert type- m1... is double and parts is character
 mod3_data$Connect_ID <- as.numeric(mod3_data$Connect_ID)
@@ -7796,8 +7796,8 @@ querymod4 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module4_
 parts_table <- bq_project_query(project, parts)
 mod4_table <- bq_project_query(project, querymod4)
 
-parts_data <- bq_table_download(parts_table, bigint = "integer64")
-mod4_data <- bq_table_download(mod4_table, bigint = "integer64")
+parts_data <- bq_table_download(parts_table, bigint = "integer64",n_max = Inf, page_size = 1000)
+mod4_data <- bq_table_download(mod4_table, bigint = "integer64",n_max = Inf)
 
 parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID) ###need to convert type- m1... is double and parts is character
 mod4_data$Connect_ID <- as.numeric(mod4_data$Connect_ID)
