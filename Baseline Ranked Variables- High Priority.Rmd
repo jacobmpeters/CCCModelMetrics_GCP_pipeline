@@ -1015,7 +1015,7 @@ style= data_tib_base  %>%  mutate(descr= case_when(D_987107433==220083334 ~ "Ver
                                                D_987107433==510148951 ~ "Somewhat Masculine",
                                                TRUE ~ "Skipped this question"))
 
-style$descr <- factor(style$descr,levels=c("Very Feminine", "Mostly Feminine", "Somewhat Feminine", "Equally Feminine and Masculine", "Very masculine", "Mostly Masculine", "Somewhat Masculine", "Skipped this question"))
+style$descr <- factor(style$descr,levels=c("Very Feminine", "Mostly Feminine", "Somewhat Feminine", "Equally Feminine and Masculine", "Very Masculine", "Mostly Masculine", "Somewhat Masculine", "Skipped this question"))
 
 dt_appearence_summary <- style  %>% dplyr::group_by(descr) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(descr, n, percentage) 
 

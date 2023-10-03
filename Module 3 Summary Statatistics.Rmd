@@ -74,7 +74,7 @@ dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name'
 dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
 dd$CID <- rownames(dd)
 #https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
-devtools::install_github("tidyverse/reprex")
+#devtools::install_github("tidyverse/reprex")
 
 project <- "nih-nci-dceg-connect-prod-6d04"
 billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be consistent
