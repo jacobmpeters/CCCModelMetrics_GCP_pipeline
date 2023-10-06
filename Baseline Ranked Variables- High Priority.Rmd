@@ -150,12 +150,13 @@ table(m1_complete_nodup$version)
 
 
 
-parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
-D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
-D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, 
-d_663265240, d_878865966, d_684635302, d_167958071,
-d_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_914639140, d_311580100, d_371067537 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
-where Connect_ID IS NOT NULL"
+# parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
+# D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
+# D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, 
+# d_663265240, d_878865966, d_684635302, d_167958071,
+# d_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_914639140, d_311580100, d_371067537 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP`  
+# where Connect_ID IS NOT NULL"
+parts <- "SELECT Connect_ID, token, d_512820379, D_471593703, state_d_934298480, D_230663853,D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, d_663265240, d_878865966, d_684635302, d_167958071, d_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_914639140, d_311580100, d_371067537 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and (d_949302066='231311385')" 
 parts_table <- bq_project_query(project, parts)
 parts_data <- bq_table_download(parts_table, bigint = "integer64")
 
@@ -181,31 +182,31 @@ dim(merged)
 
 
 ```{r, warning=FALSE, echo=FALSE,  message=FALSE}
-#Has a recruitment flag[poi90]
-merged <- merged %>% filter(D_512820379==486306141 | D_512820379==854703046)
+# #Has a recruitment flag[poi90]
+# merged <- merged %>% filter(D_512820379==486306141 | D_512820379==854703046)
+# 
+# 
+# #User consent submitted
+# merged <- merged %>% filter(D_919254129==353358909)
+# 
+# 
+# #User profile submitted
+# merged <- merged %>% filter(D_699625233==353358909)
+# 
+# 
+# #Verified by site
+# #cat("Verified by site:", sum(merged$D_821247024==197316935, na.rm=TRUE))
+# merged <- merged %>% filter(D_821247024==197316935)
+# 
+# 
+# #Mod1 completed and M3 completed- this way N throughout stays the same 
+# base_vars <- merged %>% filter(d_949302066==231311385) # & d_976570371==231311385 & d_536735468==231311385 & d_663265240 ==231311385)
+# #cat("Module 1 completed:", dim(base_vars)[[1]])
 
 
-#User consent submitted
-merged <- merged %>% filter(D_919254129==353358909)
+#data_tib_base <- as_tibble(base_vars)
 
-
-#User profile submitted
-merged <- merged %>% filter(D_699625233==353358909)
-
-
-#Verified by site
-#cat("Verified by site:", sum(merged$D_821247024==197316935, na.rm=TRUE))
-merged <- merged %>% filter(D_821247024==197316935)
-
-
-#Mod1 completed and M3 completed- this way N throughout stays the same 
-base_vars <- merged %>% filter(d_949302066==231311385) # & d_976570371==231311385 & d_536735468==231311385 & d_663265240 ==231311385)
-#cat("Module 1 completed:", dim(base_vars)[[1]])
-
-
-data_tib_base <- as_tibble(base_vars)
-
-data_tib_merged <- as_tibble(merged)
+data_tib_base <- as_tibble(merged)
 #dim(base_vars)
 
 knitr::opts_chunk$set(comment = NA)
@@ -310,7 +311,7 @@ one_logic_funct <- function(CID, CID_prev, Prev_Answer, Title){
 
 boxp_funct <- function(CID,Title, Xlab) {
   CID_SYM <- rlang::ensym(CID)
-  base_vars %>% mutate(!!CID_SYM:=as.numeric(!!CID_SYM)) %>%
+  merged %>% mutate(!!CID_SYM:=as.numeric(!!CID_SYM)) %>%
     filter(!is.na(!!CID_SYM)) %>%
     ggplot(aes(x=!!CID_SYM, fill=as.character(D_407056417)))+
     xlab(Xlab) + geom_boxplot()+  ggtitle(Title)+
@@ -1177,7 +1178,7 @@ simple_funct1(D_537153788, "SKINCANC: Diagnosed with Non-Melanoma Skin Cancer")
 
 
 
-skincnc_type= base_vars %>%  filter(base_vars$D_537153788==353358909) %>%  mutate(Type= case_when(D_508846529_D_864052438==1 & D_508846529_D_323177352==0~"Basal Cell",
+skincnc_type= merged %>%  filter(merged$D_537153788==353358909) %>%  mutate(Type= case_when(D_508846529_D_864052438==1 & D_508846529_D_323177352==0~"Basal Cell",
                                                     D_508846529_D_323177352==1 & D_508846529_D_864052438==0 ~ "Squamous Cell",
                                                     D_508846529_D_323177352==1 & D_508846529_D_864052438==1 ~ "Both",
                                                     D_508846529_D_178420302==1 ~ "Unknown",
@@ -2960,31 +2961,18 @@ table(M2_complete_nodup$version)
 M2_complete_nodup$Connect_ID <- as.numeric(M2_complete_nodup$Connect_ID)
 
 
-merge_m2= left_join(base_vars, M2_complete_nodup, by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
+merge_m2= left_join(M2_complete_nodup,merged,  by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
+
+data_tib_all2 <- as_tibble(merge_m2)
 
 ```
-
-```{r, warning=FALSE, echo=FALSE,  message=FALSE, collapse=TRUE}
-
-
-
-#Mod1 completed
-#module2 <- merge_m2 %>% filter(d_949302066==231311385)
-#cat("Module 1 completed:", dim(module2)[[1]])
-
-#Mod2 completed
-module2 <- merge_m2 %>% filter(d_536735468==231311385)
-#cat("Module 2 Completed:", dim(module2)[[1]])
-
-data_tib_all2 <- as_tibble(module2)
-``` 
 
 
 ```{r, warning=FALSE, echo=FALSE,  message=FALSE, include=FALSE}
 
 hist_funct <- function(CID,Title, Xlab, Ylab) {
   CID_SYM <- rlang::ensym(CID)
-  module2 %>% mutate(!!CID_SYM:=round(as.numeric(as.character(!!CID_SYM)), digits=0)) %>% 
+  merge_m2 %>% mutate(!!CID_SYM:=round(as.numeric(as.character(!!CID_SYM)), digits=0)) %>% 
      filter(!is.na(!!CID_SYM)) %>%
     ggplot(aes(x=!!CID_SYM))+ #, fill=as.factor(D_407056417)
      xlab(Xlab) + ylab(Ylab) + geom_histogram(binwidth = 0.5)+  ggtitle(Title)+
@@ -2998,7 +2986,7 @@ hist_funct <- function(CID,Title, Xlab, Ylab) {
 #Histogram for female at birth only questions
 hist_funct_F <- function(CID,Title, Xlab, Ylab) {
   CID_SYM <- rlang::ensym(CID)
-  module2 %>% mutate(!!CID_SYM:=as.numeric(as.character(!!CID_SYM))) %>%
+  merge_m2 %>% mutate(!!CID_SYM:=as.numeric(as.character(!!CID_SYM))) %>%
     filter(!is.na(!!CID_SYM)) %>%
     ggplot(aes(x=!!CID_SYM))+
     xlab(Xlab) + ylab(Ylab) + geom_histogram()+   ggtitle(Title)+
@@ -3009,7 +2997,7 @@ hist_funct_F <- function(CID,Title, Xlab, Ylab) {
 
 hist_funct_D <- function(CID,Title, Xlab, Ylab) {
   #CID_SYM <- rlang::ensym(CID)
-  module2 %>% ggplot(aes(x=CID))+ #, fill=as.factor(D_407056417)
+  merge_m2 %>% ggplot(aes(x=CID))+ #, fill=as.factor(D_407056417)
      xlab(Xlab) + ylab(Ylab) + geom_histogram(binwidth = 0.5)+  ggtitle(Title)+
     geom_histogram(color="black")+ scale_y_continuous(breaks=pretty_breaks()) +
     #scale_fill_discrete(name = "Sex at Birth", labels=c("Female", "Male"))+
@@ -3163,9 +3151,9 @@ mod3_data <- bq_table_download(mod3_table, bigint = "integer64")
 mod3_data$Connect_ID <- as.numeric(mod3_data$Connect_ID)
 
 
-merge_m3P= left_join(base_vars, mod3_data, by="Connect_ID")
+data_all3= left_join( mod3_data,parts_data, by="Connect_ID")
 
-data_all3 <- merge_m3P %>% filter(d_976570371==231311385)
+data_all3 <- data_all3 %>% filter(d_976570371==231311385)
 
 data_tib_all3 <- as_tibble(data_all3)
 
@@ -3967,7 +3955,7 @@ dtOALC1_summary %>%  gt::gt(rowname_col = "row_lab") %>%
                                                                         # IF THEY NEVER STOPPED DRINKING, THEN AGE STARTED<ALCLIFE, IF STOPPED TEHN STARTED<ALCLIFE AND ALCLIFE<AGESTOPPED
 
 
-data_tib_all3$DOB <- paste0(str_sub(data_all3$d_371067537,1,4), "-", str_sub(data_all3$d_371067537,5,6), "-", str_sub(data_all3$d_371067537,7,8)) 
+data_tib_all3$DOB <- paste0(str_sub(data_all3$d_371067537_1,1,4), "-", str_sub(data_all3$d_371067537_1,5,6), "-", str_sub(data_all3$d_371067537_1,7,8)) 
 data_tib_all3$DOB <- as.Date(data_tib_all3$DOB) #, format='%y-%m-%d')
 currentDate <- as.Date(Sys.Date(), format='%y/%m/%d')
 
@@ -4258,7 +4246,7 @@ mod4_table <- bq_project_query(project, querymod4)
 mod4_data <- bq_table_download(mod4_table, bigint = "integer64")
 mod4_data$Connect_ID <- as.numeric(mod4_data$Connect_ID)
 
-merge_m4P= left_join(base_vars, mod4_data, by="Connect_ID") 
+merge_m4P= left_join(merged, mod4_data, by="Connect_ID") 
 
 data_all4 <- merge_m4P %>% filter(d_663265240==231311385)
 
@@ -4667,7 +4655,7 @@ Objectives of enrollment and survey operational metrics: Identify trends and iss
 
 
 
-ssn_surv = data_tib_merged %>%  mutate(started=case_when(d_126331570==615768760 ~ "Started",
+ssn_surv = data_tib_base %>%  mutate(started=case_when(d_126331570==615768760 ~ "Started",
                                                 d_126331570==231311385 ~ "Submitted",
                                                 TRUE ~ "Not Started"))
 
@@ -4708,7 +4696,7 @@ tab_footnote(
 # ssn_surv_summary[4,] <- c("Total", 1, 2)
 
 
-ssn_stsb= data_tib_merged %>%  filter(!is.na(d_914639140) | !is.na(d_311580100)) # (ssn_surv== 615768760 | ssn_surv==  231311385)
+ssn_stsb= data_tib_base %>%  filter(!is.na(d_914639140) | !is.na(d_311580100)) # (ssn_surv== 615768760 | ssn_surv==  231311385)
 
 
 gavePssn = ssn_stsb %>%  mutate(provided4=case_when(d_914639140==353358909 ~ "Partial SSN Given",
@@ -4943,15 +4931,22 @@ sibling_bd_canc
 ```{r, warning=FALSE, echo=FALSE, message=FALSE}
 
 #CHILDCANC
+# CHILDcanc1= data_tib_base  %>%  filter(as.numeric(D_446999144) >0) %>%  mutate(status= case_when((D_718867914_1_1==353358909 |D_718867914_2_2==353358909 | D_718867914_3_3==353358909 | 
+#                                                                                                     D_718867914_4_4==353358909 | D_718867914_5_5==353358909 |
+#                                       D_718867914_6_6==353358909 | D_718867914_7_7==353358909 | D_718867914_8_8==353358909 | D_718867914_9_9==353358909 |
+#                                       D_718867914_10_10==353358909) ~ "Child Diagnosed",
+#                                       (D_718867914_1_1==104430631  | D_718867914_2_2==104430631 | D_718867914_3_3==104430631 | D_718867914_4_4==104430631 | D_718867914_5_5==104430631 &
+#                                       D_718867914_6_6==104430631 | D_718867914_7_7==104430631 | D_718867914_8_8==104430631 | D_718867914_9_9==104430631 |
+#                                       D_718867914_10_10==104430631) ~ "No Child Diagnosed",
+#                                                     TRUE ~ "Skipped This Question"))
+
 CHILDcanc1= data_tib_base  %>%  filter(as.numeric(D_446999144) >0) %>%  mutate(status= case_when((D_718867914_1_1==353358909 |D_718867914_2_2==353358909 | D_718867914_3_3==353358909 | 
                                                                                                     D_718867914_4_4==353358909 | D_718867914_5_5==353358909 |
                                       D_718867914_6_6==353358909 | D_718867914_7_7==353358909 | D_718867914_8_8==353358909 | D_718867914_9_9==353358909 |
                                       D_718867914_10_10==353358909) ~ "Child Diagnosed",
-                                      (D_718867914_1_1==104430631 |D_718867914_2_2==104430631 | D_718867914_3_3==104430631 | 
-                                                                                                    D_718867914_4_4==104430631 | D_718867914_5_5==104430631 |
-                                      D_718867914_6_6==104430631 | D_718867914_7_7==104430631 | D_718867914_8_8==104430631 | D_718867914_9_9==104430631 |
-                                      D_718867914_10_10==104430631) ~ "No Child Diagnosed",
-                                                    TRUE ~ "Skipped This Question"))
+                                      (is.na(D_718867914_1_1) | (as.numeric(D_446999144) >1 & is.na(D_718867914_2_2)) | (as.numeric(D_446999144) >2 & is.na(D_718867914_3_3)) | (as.numeric(D_446999144) >3 & is.na(D_718867914_4_4)) | (as.numeric(D_446999144) >4 & is.na(D_718867914_5_5)) |(as.numeric(D_446999144) >5 & is.na(D_718867914_6_6)) | (as.numeric(D_446999144) >6 & is.na(D_718867914_7_7)) | (as.numeric(D_446999144) >7  & is.na(D_718867914_8_8))  | (as.numeric(D_446999144) >8 & is.na(D_718867914_9_9)) |
+                                      (as.numeric(D_446999144) >9 & is.na(D_718867914_10_10))) ~ "Skipped this Question",
+                                                    TRUE ~ "No Child Diagnosed"))
 
 dt_CHILDcanc1_summary <- CHILDcanc1 %>% dplyr::group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
 
@@ -5001,35 +4996,21 @@ body_kid= kid  %>%  mutate(bodyp= case_when((as.numeric(multc1)>1 | as.numeric(m
                                                      (D_812370563_1_1_D_812370563_1_1_D_489400183==1 | D_812370563_2_2_D_812370563_2_2_D_489400183==1 | D_812370563_3_3_D_812370563_3_3_D_489400183==1 | D_812370563_4_4_D_812370563_4_4_D_489400183==1) ~ "Head, Neck, and Shoulders",
                                                      (D_812370563_1_1_D_812370563_1_1_D_863246236==1 | D_812370563_2_2_D_812370563_2_2_D_863246236==1 | D_812370563_3_3_D_812370563_3_3_D_863246236==1 | D_812370563_4_4_D_812370563_4_4_D_863246236==1) ~ "Kidney",
                                                      (D_812370563_1_1_D_812370563_1_1_D_607793249==1 | D_812370563_2_2_D_812370563_2_2_D_607793249==1 | D_812370563_3_3_D_812370563_3_3_D_607793249==1 | D_812370563_4_4_D_812370563_4_4_D_607793249==1) ~ "Leukemia",
-                                                     (D_812370563_1_1_D_812370563_1_1_D_532172400==1 | D_812370563_2_2_D_812370563_2_2_D_532172400==1 | D_812370563_3_3_D_812370563_3_3_D_532172400==1 ) ~ "Liver", 
-                                            #| D_812370563_1_1_D_812370563_4_4_D_532172400==1
-                                                     (D_812370563_1_1_D_812370563_1_1_D_754745617==1 | D_812370563_2_2_D_812370563_2_2_D_754745617==1 | D_812370563_3_3_D_812370563_3_3_D_754745617==1 ) ~ "Lung",
-                                            #| D_812370563_1_1_D_812370563_4_4_D_754745617==1
-                                                     (D_812370563_1_1_D_812370563_1_1_D_665036297==1 | D_812370563_2_2_D_812370563_2_2_D_665036297==1 | D_812370563_3_3_D_812370563_3_3_D_665036297==1 ) ~ "Non-Hodgkin's Lymphoma", #| D_812370563_1_1_D_812370563_4_4_D_665036297==1
-                                                     (D_812370563_1_1_D_812370563_1_1_D_200837530==1 | D_812370563_2_2_D_812370563_2_2_D_200837530==1 | D_812370563_3_3_D_812370563_3_3_D_200837530==1 ) ~ "Lymphoma",
-                                            #| D_812370563_1_1_D_812370563_4_4_D_200837530==1
-                                                     (D_812370563_1_1_D_812370563_1_1_D_990319383==1 | D_812370563_2_2_D_812370563_2_2_D_990319383==1 | D_812370563_3_3_D_812370563_3_3_D_990319383==1 ) ~ "Melanoma Skin",
-                                            #| D_812370563_1_1_D_812370563_4_4_D_990319383==1
-                                                     (D_812370563_1_1_D_812370563_1_1_D_487917585==1 | D_812370563_2_2_D_812370563_2_2_D_487917585==1 | D_812370563_3_3_D_812370563_3_3_D_487917585==1 ) ~ "Non-Melanoma Skin",
-                                            #| D_812370563_1_1_D_812370563_4_4_D_487917585==1
-                                                     (D_812370563_1_1_D_812370563_1_1_D_603181162==1 | D_812370563_2_2_D_812370563_2_2_D_603181162==1 | D_812370563_3_3_D_812370563_3_3_D_603181162==1 ) ~ "Ovarian",
-                                            #| D_812370563_1_1_D_812370563_4_4_D_603181162==1
-                                                     (D_812370563_1_1_D_812370563_1_1_D_482225200==1 | D_812370563_2_2_D_812370563_2_2_D_482225200==1 | D_812370563_3_3_D_812370563_3_3_D_482225200==1 ) ~ "Pancreatic",
-                                            #| D_812370563_1_1_D_812370563_4_4_D_482225200==1
-                                                     (D_812370563_1_1_D_812370563_1_1_D_295976386==1 | D_812370563_2_2_D_812370563_2_2_D_295976386==1 | D_812370563_3_3_D_812370563_3_3_D_295976386==1 ) ~ "Prostate",
-                                            #| D_812370563_1_1_D_812370563_4_4_D_295976386==1
-                                                     (D_812370563_1_1_D_812370563_1_1_D_764891959==1 | D_812370563_2_2_D_812370563_2_2_D_764891959==1 | D_812370563_3_3_D_812370563_3_3_D_764891959==1 ) ~ "Stomach",
-                                            #| D_812370563_1_1_D_812370563_4_4_D_764891959==1
-                                                     (D_812370563_1_1_D_812370563_1_1_D_248374037==1 | D_812370563_2_2_D_812370563_2_2_D_248374037==1 | D_812370563_3_3_D_812370563_3_3_D_248374037==1 ) ~ "Testicular",
-                                            #| D_812370563_1_1_D_812370563_4_4_D_248374037==1
-                                                     (D_812370563_1_1_D_812370563_1_1_D_139822395==1 | D_812370563_2_2_D_812370563_2_2_D_139822395==1 | D_812370563_3_3_D_812370563_3_3_D_139822395==1 ) ~ "Thyroid",
-                                            #| D_812370563_1_1_D_812370563_4_4_D_139822395==1
-                                                     (D_812370563_1_1_D_812370563_1_1_D_723614811==1 | D_812370563_2_2_D_812370563_2_2_D_723614811==1 | D_812370563_3_3_D_812370563_3_3_D_723614811==1 ) ~ "Uterine",
-                                            #| D_812370563_1_1_D_812370563_4_4_D_723614811==1
-                                                     (D_812370563_1_1_D_812370563_1_1_D_807835037==1  | D_812370563_2_2_D_812370563_2_2_D_807835037==1  | D_812370563_3_3_D_812370563_3_3_D_807835037==1   | !is.na(D_812370563_1_1_D_933110091_1) | !is.na(D_812370563_2_2_D_933110091_2) | !is.na(D_812370563_3_3_D_933110091_3)) ~ "Other",
-                                            #| D_812370563_1_1_D_812370563_4_4_D_807835037==1  | !is.na(D_812370563_4_4_D_933110091_4)
-                                                     (D_812370563_1_1_D_812370563_1_1_D_178420302==1 | D_812370563_2_2_D_812370563_2_2_D_178420302==1 | D_812370563_3_3_D_812370563_3_3_D_178420302==1 ) ~ "Unknown",
-                                            #| D_812370563_1_1_D_812370563_4_4_D_178420302==1
+                                                     (D_812370563_1_1_D_812370563_1_1_D_532172400==1 | D_812370563_2_2_D_812370563_2_2_D_532172400==1 | D_812370563_3_3_D_812370563_3_3_D_532172400==1 | D_812370563_4_4_D_812370563_4_4_D_532172400==1 ) ~ "Liver", 
+                                                     (D_812370563_1_1_D_812370563_1_1_D_754745617==1 | D_812370563_2_2_D_812370563_2_2_D_754745617==1 | D_812370563_3_3_D_812370563_3_3_D_754745617==1 | D_812370563_4_4_D_812370563_4_4_D_754745617==1 ) ~ "Lung",
+                                                     (D_812370563_1_1_D_812370563_1_1_D_665036297==1 | D_812370563_2_2_D_812370563_2_2_D_665036297==1 | D_812370563_3_3_D_812370563_3_3_D_665036297==1 | D_812370563_4_4_D_812370563_4_4_D_665036297==1 ) ~ "Non-Hodgkin's Lymphoma", 
+                                                     (D_812370563_1_1_D_812370563_1_1_D_200837530==1 | D_812370563_2_2_D_812370563_2_2_D_200837530==1 | D_812370563_3_3_D_812370563_3_3_D_200837530==1 | D_812370563_4_4_D_812370563_4_4_D_200837530==1 ) ~ "Lymphoma",
+                                                     (D_812370563_1_1_D_812370563_1_1_D_990319383==1 | D_812370563_2_2_D_812370563_2_2_D_990319383==1 | D_812370563_3_3_D_812370563_3_3_D_990319383==1 | D_812370563_4_4_D_812370563_4_4_D_990319383==1) ~ "Melanoma Skin", 
+                                                     (D_812370563_1_1_D_812370563_1_1_D_487917585==1 | D_812370563_2_2_D_812370563_2_2_D_487917585==1 | D_812370563_3_3_D_812370563_3_3_D_487917585==1 | D_812370563_4_4_D_812370563_4_4_D_487917585==1) ~ "Non-Melanoma Skin", 
+                                                     (D_812370563_1_1_D_812370563_1_1_D_603181162==1 | D_812370563_2_2_D_812370563_2_2_D_603181162==1 | D_812370563_3_3_D_812370563_3_3_D_603181162==1  | D_812370563_4_4_D_812370563_4_4_D_603181162==1) ~ "Ovarian",
+                                                     (D_812370563_1_1_D_812370563_1_1_D_482225200==1 | D_812370563_2_2_D_812370563_2_2_D_482225200==1 | D_812370563_3_3_D_812370563_3_3_D_482225200==1 | D_812370563_4_4_D_812370563_4_4_D_482225200==1) ~ "Pancreatic",
+                                                     (D_812370563_1_1_D_812370563_1_1_D_295976386==1 | D_812370563_2_2_D_812370563_2_2_D_295976386==1 | D_812370563_3_3_D_812370563_3_3_D_295976386==1 | D_812370563_4_4_D_812370563_4_4_D_295976386==1) ~ "Prostate", 
+                                                     (D_812370563_1_1_D_812370563_1_1_D_764891959==1 | D_812370563_2_2_D_812370563_2_2_D_764891959==1 | D_812370563_3_3_D_812370563_3_3_D_764891959==1 | D_812370563_4_4_D_812370563_4_4_D_764891959==1) ~ "Stomach",
+                                                     (D_812370563_1_1_D_812370563_1_1_D_248374037==1 | D_812370563_2_2_D_812370563_2_2_D_248374037==1 | D_812370563_3_3_D_812370563_3_3_D_248374037==1 | D_812370563_4_4_D_812370563_4_4_D_248374037==1) ~ "Testicular",
+                                                     (D_812370563_1_1_D_812370563_1_1_D_139822395==1 | D_812370563_2_2_D_812370563_2_2_D_139822395==1 | D_812370563_3_3_D_812370563_3_3_D_139822395==1  | D_812370563_4_4_D_812370563_4_4_D_139822395==1) ~ "Thyroid",
+                                                     (D_812370563_1_1_D_812370563_1_1_D_723614811==1 | D_812370563_2_2_D_812370563_2_2_D_723614811==1 | D_812370563_3_3_D_812370563_3_3_D_723614811==1   | D_812370563_4_4_D_812370563_4_4_D_723614811==1) ~ "Uterine",
+                                                     (D_812370563_1_1_D_812370563_1_1_D_807835037==1  | D_812370563_2_2_D_812370563_2_2_D_807835037==1  | D_812370563_3_3_D_812370563_3_3_D_807835037==1  | D_812370563_4_4_D_812370563_4_4_D_807835037==1   | !is.na(D_812370563_1_1_D_933110091_1) | !is.na(D_812370563_2_2_D_933110091_2) | !is.na(D_812370563_3_3_D_933110091_3)) ~ "Other", #| !is.na(D_812370563_4_4_D_933110091_4)
+                                                     (D_812370563_1_1_D_812370563_1_1_D_178420302==1 | D_812370563_2_2_D_812370563_2_2_D_178420302==1 | D_812370563_3_3_D_812370563_3_3_D_178420302==1  | D_812370563_4_4_D_812370563_4_4_D_178420302==1) ~ "Unknown",
                                              TRUE ~ "Skipped this Question"))
                                  
 dt_body_kid_summary <- body_kid %>% dplyr::group_by(bodyp) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(bodyp, percentage)  
