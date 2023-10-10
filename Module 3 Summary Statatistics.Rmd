@@ -8,7 +8,7 @@ output:
     df_print: paged
 ---
 
-```{r, include=FALSE}
+```{r intro, include=FALSE}
 # This report analysis the responses of all Module 3 questions and visualizes the distributions of answers through graphs or tables.
 # All libraries are listed up top; authentication for BQ will be necessary
 # Functions used in the code are included before the start of the analysis
@@ -17,7 +17,7 @@ output:
 
 
 
-```{r, include=FALSE}
+```{r library, include=FALSE}
 #rm(list = ls())
 
 
@@ -64,7 +64,7 @@ bq_auth()
 ```
 
 
-```{r, include=FALSE, warning=FALSE}
+```{r M1merge, include=FALSE, warning=FALSE}
 
 dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
 dd <- dplyr::bind_rows(dictionary,.id="CID")
@@ -172,47 +172,24 @@ D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_
 D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, 
 d_663265240, d_878865966, d_684635302, d_167958071,d_371067537,
 d_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_914639140, d_311580100 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
-where Connect_ID IS NOT NULL"
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and (d_949302066='231311385')"
 parts_table <- bq_project_query(project, parts)
 parts_data <- bq_table_download(parts_table, bigint = "integer64")
 
 parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID)
 
 
-merged= left_join(m1_complete_nodup, parts_data, by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
-dim(merged)
+base_vars= left_join(m1_complete_nodup, parts_data, by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
+dim(base_vars)
 
 
 
-```
-
-```{r, warning=FALSE, echo=FALSE,  message=FALSE}
-#Has a recruitment flag
-merged <- merged %>% filter(D_512820379==486306141 | D_512820379==854703046)
 
 
-#User consent submitted
-merged <- merged %>% filter(D_919254129==353358909)
-
-
-#User profile submitted
-merged <- merged %>% filter(D_699625233==353358909)
-
-
-#Verified by site
-#cat("Verified by site:", sum(merged$D_821247024==197316935, na.rm=TRUE))
-merged <- merged %>% filter(D_821247024==197316935)
-
-
-#Mod1 completed 
-base_vars <- merged %>% filter(d_949302066==231311385) # & d_976570371==231311385 & d_536735468==231311385 & d_663265240 ==231311385)
-#cat("Module 1 completed:", dim(base_vars)[[1]])
 
 
 data_tib_base <- as_tibble(base_vars)
 
-data_tib_merged <- as_tibble(merged)
-#dim(base_vars)
 
 knitr::opts_chunk$set(comment = NA)
 #knitr::opts_chunk$set(message = NA)
@@ -223,7 +200,7 @@ knitr::opts_chunk$set(comment = NA)
 
 
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r M3, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 querymod3 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module3_v1_JP` where Connect_ID IS NOT NULL"
@@ -232,7 +209,7 @@ mod3_data <- bq_table_download(mod3_table, bigint = "integer64")
 mod3_data$Connect_ID <- as.numeric(mod3_data$Connect_ID)
 
 
-merge_m3P= left_join(merged, mod3_data, by="Connect_ID")
+merge_m3P= left_join(base_vars, mod3_data, by="Connect_ID")
 
 
 #Has a recruitment flag
@@ -272,7 +249,7 @@ data_tib_all3 <- as_tibble(module3)
 
 ```
 
-```{r, warning=FALSE, message=FALSE, include=FALSE}
+```{r fucntions, warning=FALSE, message=FALSE, include=FALSE}
 #Created Functions for this code
 
 #Histogram 
@@ -651,7 +628,7 @@ funct_10_11 <- function(CID, CID_prev1, CID_prev9b, CID_prev4, CID_prev8c, Title
 
 
 # General Take Aways from Module 3 Survey Responses
-```{r, echo=FALSE, message=FALSE, warning=FALSE, collapse=TRUE}
+```{r Intro3, echo=FALSE, message=FALSE, warning=FALSE, collapse=TRUE}
 data_tib_all3_CIG <- data_tib_all3 %>%  filter(data_tib_all3$D_763164658==486319890| data_tib_all3$D_763164658==132232896)
 data_tib_all3_SMMAR <- data_tib_all3 %>%  filter(data_tib_all3$D_319397722==486319890| data_tib_all3$D_319397722==132232896)
 data_tib_all3_tanbed3 <- data_tib_all3 %>%  filter(data_tib_all3$D_662762705==649327523| data_tib_all3$D_662762705==587052987 | data_tib_all3$D_662762705==838336013)
@@ -691,7 +668,7 @@ cat(ta6, "% of participants reported having used a tanning bed more than 50 time
 ## All Products
 
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r AllProducts, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 tob_pd= data_tib_all3 %>%  mutate(products= case_when(D_947205597_D_712653855==1 ~ "Cigarettes",
                                              D_947205597_D_706254326==1 ~ "Electronic Cigarettes",
@@ -766,7 +743,7 @@ tab_footnote(
 
 
 ## Cigarettes
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Cigarette, warning=FALSE, echo=FALSE, message=FALSE}
 #CIG1 
 one_logic_funct3(D_763164658,D_947205597_D_712653855,1,"CIG1: Total Cigarettes in a Lifetime")
 
@@ -934,7 +911,7 @@ hist_funct(D_434034366, "CIGLIFEG: Cigarette Smoked per Day at Ages 60-69", "Cig
 
 
 ## Electronic Cigarettes
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Ecig, warning=FALSE, echo=FALSE, message=FALSE}
 #ECIG1
 one_logic_funct3(D_624111331,D_947205597_D_706254326,1,"ECIG1: Total Days of Smoking E-Cigs/Vaping Devises in a Lifetime")
 
@@ -1179,7 +1156,7 @@ dt_surgery_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 ## Cigars
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Cigar, warning=FALSE, echo=FALSE, message=FALSE}
 #CIGAR1
 one_logic_funct3(D_182431332,D_947205597_D_198133418 ,1,"CIGAR1: Total Cigars in a Lifetime")
 
@@ -1334,7 +1311,7 @@ grid.arrange(cigrlfF, cigrlfG, nrow=2)
 
 
 ## Chewing Tobacco 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Chew, warning=FALSE, echo=FALSE, message=FALSE}
 #CHEW1
 one_logic_funct3(D_306320432,D_947205597_D_817381897 ,1,"CHEW1: Total Days of Using Chewing Tobacco/Dip in a Lifetime")
 
@@ -1667,7 +1644,7 @@ dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 ## Hookah 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Hookah, warning=FALSE, echo=FALSE, message=FALSE}
 #HOOKAH1
 one_logic_funct3(D_981755099,D_947205597_D_539648641 ,1,"HOOKAH1: Total Days of Smoking Hookah in a Lifetime")
 
@@ -1793,7 +1770,7 @@ funct_9b(D_981755099, D_472007171, D_787047261, D_585702271, D_720305356, "HOOKA
 
 
 ## Tobacco Pipe
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Pipe, warning=FALSE, echo=FALSE, message=FALSE}
 
 #PIPE1
 one_logic_funct3(D_559388168,D_947205597_D_686310465 ,1,"PIPE1: Total Days of Smoking Tobacco Pipes in a Lifetime")
@@ -1922,7 +1899,7 @@ hist_funct(D_550850568, "PIPELIFEF: Tobacco Pipes Smoked per Day at Ages 50-59",
 ```
 
 ## Secondhand Smoking
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r 2ndhandSmoke, warning=FALSE, echo=FALSE, message=FALSE}
 #CURRSM
 simple_funct3(D_337810964, "CURRSM: Frequency of Being Around Smokers in the Past Year")
 
@@ -1989,7 +1966,7 @@ simple_funct3(D_252017075_D_106272739, "SECSMD: Number of People in the Househol
 ## All products 
 
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r AllMairjuana, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 MJ_pd= data_tib_all3 %>%  mutate(products= case_when(D_830608495_D_760521319==1 ~ "Smoking",
                                              D_830608495_D_158841370==1 ~ "Smoking combined with Tobacco",
@@ -2063,7 +2040,7 @@ tab_footnote(
 
 
 ## Smoking Marijuana
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r SmokeMj, warning=FALSE, echo=FALSE, message=FALSE}
 #SMMAR1
 one_logic_funct3(D_319397722,D_830608495_D_760521319 ,1,"SMMAR1: Total Days of Smoking Marijuana in a Lifetime")
 
@@ -2398,7 +2375,7 @@ dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 ## Smoking Combination of Marijuana with Tobacco 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r SmokeTbMrj, warning=FALSE, echo=FALSE, message=FALSE}
 #TOMAR1
 one_logic_funct3(D_524914900,D_830608495_D_158841370 ,1,"TOMAR1: Total Majiuana & Tobacco Combined Products Smoked in a Lifetime")
 
@@ -2529,7 +2506,7 @@ grid.arrange(tomrlfD, tomrlfE, nrow=2)
 
 
 ## Electronic Delivery Devices
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r VapeMj, warning=FALSE, echo=FALSE, message=FALSE}
 #ELMAR1
 one_logic_funct3(D_325229459,D_830608495_D_349034127 ,1,"ELMAR1: Total Days of Vaping Marijuana in a Lifetime")
 
@@ -2784,7 +2761,7 @@ dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 ## Eating or Drinking
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r EatMj, warning=FALSE, echo=FALSE, message=FALSE}
 ##Consuming 
 #EAMAR1
 one_logic_funct3(D_101170268,D_830608495_D_713594719,1,"EAMAR1: Total Days of Consuming Marijuana in Food/Drinks in a Lifetime")
@@ -2949,7 +2926,7 @@ grid.arrange(eamlfF, eamlfG, nrow=2)
 ```
 
 ## THC Concentrates 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r THC, warning=FALSE, echo=FALSE, message=FALSE}
 #THMAR1
 one_logic_funct3(D_355689185,D_830608495_D_675129470 ,1,"THMAR1: Total Days of THC Dabbing in a Lifetime")
 
@@ -3111,7 +3088,7 @@ grid.arrange(thmlfF, thmlfG, nrow=2)
 \newpage
 
 # Section 3: Alcohol 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Alcohol, warning=FALSE, echo=FALSE, message=FALSE}
 #ALCOHOL1
 simple_funct3(D_448968121, "ALCOHOL1: Ever Consumed an Alcoholic Beverage")
 
@@ -3229,7 +3206,7 @@ dtALC7_summary %>%  gt(rowname_col = "row_lab") %>%
 
 ```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r Alcohol8, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 dtALC8= data_tib_all3 %>% filter(D_338467033==353358909)
 
@@ -3303,7 +3280,7 @@ tab_footnote(
 
 
 ## Beer and Hard Cider
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r beer, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 one_logic_funct3(D_726847824,D_447720598_D_549079588,1,"BEER1: Frequency of Drinking Beer/Hard Cider in the Last Year")
@@ -3314,7 +3291,7 @@ one_logic_funct3(D_481662464,D_447720598_D_549079588,1,"BEER2: Beers or Hard Cid
 
 
 ## Liquor and Mixed Drinks
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r liquor, warning=FALSE, echo=FALSE, message=FALSE}
 
 one_logic_funct3(D_411088265,D_447720598_D_896953195,1,"LIQUOR1: Frequency of Drinking Liquor or Mixed Drinks in the Last Year")
 one_logic_funct3(D_880067330,D_447720598_D_896953195,1,"LIQUOR2: Liquor or Mixed Drinks per Day")
@@ -3322,7 +3299,7 @@ one_logic_funct3(D_880067330,D_447720598_D_896953195,1,"LIQUOR2: Liquor or Mixed
 ```
 
 ## Wine
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r wine, warning=FALSE, echo=FALSE, message=FALSE}
 
 one_logic_funct3(D_178665310,D_447720598_D_889023234,1,"WINE1: Frequency of Drinking Wine in the Last Year")
 one_logic_funct3(D_242987943,D_447720598_D_889023234,1,"WINE2: Glasses of Wine per Day")
@@ -3330,7 +3307,7 @@ one_logic_funct3(D_242987943,D_447720598_D_889023234,1,"WINE2: Glasses of Wine p
 
 
 ## OTHERALC
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r otheralc, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 one_logic_funct3(D_228752045,D_447720598_D_181769837,1,"OTHERALC1: Frequency of Drinking Other Alcoholic Beverages in the Last Year")
@@ -3340,7 +3317,7 @@ one_logic_funct3(D_103045461,D_447720598_D_181769837,1,"OTHERALC2: Servings of O
 
 
 ## Frequency of Drinking 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r FreqAlc, warning=FALSE, echo=FALSE, message=FALSE}
 #ALCOHOL9
 alc9 <- data_tib_all3 %>%  filter(D_429228540==132232896 & (!is.na(D_556837046_D_141874857)| D_556837046_D_556837046_D_648960871!=1) & (D_338467033==353358909 | (D_338467033==104430631 & !is.na(D_480426504))))
 edu= alc9  %>%  mutate(edlevel= case_when(D_254739443==648960871 ~ "Never",
@@ -3376,7 +3353,7 @@ dt_edu_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 ## ALCLIFEA-H
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Alclife, warning=FALSE, echo=FALSE, message=FALSE}
 ##ALCLIFE2 GRID
 #ALCLIFE2A
 #alclife2_funct(D_633553324_D_294629316,"ALCLIFE2A: Frequency of Drinking: Ages 0-17")
@@ -3649,7 +3626,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 ### ALCLIFE4A: Beverages Drank from Ages 0-17
-```{r, message=FALSE, warning=FALSE, echo=FALSE}
+```{r Alclife4a, message=FALSE, warning=FALSE, echo=FALSE}
 ###ALCLIFE4 GRID
 
     ##ALCLLIFE2 variables won't go into tibble for some reason so can't turn into a function 
@@ -3678,7 +3655,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 ### ALCLIFE4B: Beverages Drank from Ages 18-24
-```{r, message=FALSE, warning=FALSE, echo=FALSE}
+```{r Alclife4b, message=FALSE, warning=FALSE, echo=FALSE}
 #ALCLIFE4B
 alcl4= dt_alclB  %>%  mutate(oth_age= case_when(D_470862706_D_643512687_D_789689151=="1"~"Drank Beer",
                                               D_470862706_D_643512687_D_663253668=="1"~"Drank Liquor",
@@ -3702,7 +3679,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 ### ALCLIFE4C: Beverages Drank from Ages 25-29
-```{r, message=FALSE, echo=FALSE, warning=FALSE}
+```{r Alclifec, message=FALSE, echo=FALSE, warning=FALSE}
 #ALCLIFE4C
 alcl4= dt_alclC  %>%  mutate(oth_age= case_when(D_470862706_D_688123102_D_789689151=="1"~"Drank Beer",
                                               D_470862706_D_688123102_D_663253668=="1"~"Drank Liquor",
@@ -3726,7 +3703,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 ### ALCLIFE4D: Beverages Drank from Ages 30-39
-```{r, message=FALSE, echo=FALSE, warning=FALSE}
+```{r Alclifed, message=FALSE, echo=FALSE, warning=FALSE}
 #ALCLIFE4D
 alcl4= dt_alclD  %>%  mutate(oth_age= case_when(D_470862706_D_356133766_D_789689151=="1"~"Drank Beer",
                                               D_470862706_D_356133766_D_663253668=="1"~"Drank Liquor",
@@ -3751,7 +3728,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 ### ALCLIFE4E: Beverages Drank from Ages 40-49
-```{r, message=FALSE, echo=FALSE, warning=FALSE}
+```{r Alclifee, message=FALSE, echo=FALSE, warning=FALSE}
 #ALCLIFE4E
 alcl4= dt_alclE  %>%  mutate(oth_age= case_when(D_470862706_D_690918725_D_789689151=="1"~"Drank Beer",
                                               D_470862706_D_690918725_D_663253668=="1"~"Drank Liquor",
@@ -3775,7 +3752,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 ### ALCLIFE4F: Beverages Drank from Ages 50-59
-```{r, message=FALSE, echo=FALSE, warning=FALSE}
+```{r Alclifef, message=FALSE, echo=FALSE, warning=FALSE}
 #ALCLIFE4F
 alcl4= dt_alclF  %>%  mutate(oth_age= case_when(D_470862706_D_178609656_D_789689151=="1"~"Drank Beer",
                                               D_470862706_D_178609656_D_663253668=="1"~"Drank Liquor",
@@ -3800,7 +3777,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 ### ALCLIFE4G: Beverages Drank from Ages 60-69 
-```{r, message=FALSE, echo=FALSE, warning=FALSE}
+```{r Alclifeg, message=FALSE, echo=FALSE, warning=FALSE}
 #ALCLIFE4G
 alcl4= dt_alclG  %>%  mutate(oth_age= case_when(D_470862706_D_261957180_D_789689151=="1"~"Drank Beer",
                                               D_470862706_D_261957180_D_663253668=="1"~"Drank Liquor",
@@ -3842,7 +3819,7 @@ dt_alcl_summary %>%  gt(rowname_col = "row_lab") %>%
 
 # Section 4: Sun Exposure 
 ## Sun Screen, Burning, Tanning 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Section4, warning=FALSE, echo=FALSE, message=FALSE}
 
 #SKINSUN   
 simple_funct3(D_863593410, "SKINSUN: Skin Reaction of Being in the Sun for an Hour Without Sunscreen")
@@ -3938,7 +3915,7 @@ simple_funct3(D_795761911, "COVERSKIN: Frequency of Wearing Clothes/Hats to Cove
 
 
 ## Tanning Beds
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Tanning, warning=FALSE, echo=FALSE, message=FALSE}
 
 #TANBED1
 simple_funct3(D_662762705, "TANBED1: Times Indoor Tanning Bed Used")
@@ -4028,7 +4005,7 @@ dttanbed5_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 ## Eye Color, Hair Color, Skin Colors, Freckles 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Colors, warning=FALSE, echo=FALSE, message=FALSE}
 #EYECOLOR
 simple_funct3(D_857219333, "EYECOLOR: Natural Color of your Eyes")
 

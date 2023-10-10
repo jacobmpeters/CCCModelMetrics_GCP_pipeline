@@ -6,7 +6,7 @@ output: pdf_document
 ---
 
 
-```{r, include=FALSE}
+```{r intro, include=FALSE}
 
 # This report analysis the responses of all Module 1 questions and visualizes the distributions of answers (ex: age at diagnosis)
 # All libraries are listed up top; authentication for BQ will be necessary
@@ -14,7 +14,7 @@ output: pdf_document
 ```
 
 
-```{r, include=FALSE}
+```{r vars, include=FALSE}
 # ##Recruitment Table variables added for merge:
 ##
 
@@ -49,7 +49,7 @@ output: pdf_document
 ```
 
 
-```{r, include=FALSE}
+```{r libraries, include=FALSE}
 
 #All libraries are listed up top; authentication for BQ will be necessary.
 #Functions used included before the start of the analysis .
@@ -93,7 +93,7 @@ options(tinytex.verbose = TRUE)
 bq_auth()
 ```
 
-```{r, include=FALSE}
+```{r M1merge, include=FALSE}
 dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
 dd <- dplyr::bind_rows(dictionary,.id="CID")
 dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
@@ -200,36 +200,36 @@ parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480,
 D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
 D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, 
 D_949302066 , D_517311251, D_205553981, D_117249500, d_430551721, d_517311251, d_544150384, d_564964481, d_117249500 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
-where Connect_ID IS NOT NULL"
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and (d_949302066='231311385')"
 parts_table <- bq_project_query(project, parts)
 parts_data <- bq_table_download(parts_table, bigint = "integer64")
 
 parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID) ###need to convert type- m1... is double and parts is character
 
-merged= left_join(m1_complete_nodup, parts_data, by="Connect_ID") 
-dim(merged)
+module1= left_join(m1_complete_nodup, parts_data, by="Connect_ID") 
+dim(module1)
 
 ```
 
 ```{r, warning=FALSE, echo=FALSE,  message=FALSE}
-#Has a recruitment flag
-merged <- merged %>% filter(D_512820379==486306141 | D_512820379==854703046)
-
-
-#User consent submitted
-merged <- merged %>% filter(D_919254129==353358909)
-
-
-#User profile submitted
-merged <- merged %>% filter(D_699625233==353358909)
-
-
-#Verified by site
-#cat("Verified by site:", sum(merged$D_821247024==197316935, na.rm=TRUE))
-
-
-#Mod1 completed
-module1 <- merged %>% filter(D_949302066==231311385)
+# #Has a recruitment flag
+# merged <- merged %>% filter(D_512820379==486306141 | D_512820379==854703046)
+# 
+# 
+# #User consent submitted
+# merged <- merged %>% filter(D_919254129==353358909)
+# 
+# 
+# #User profile submitted
+# merged <- merged %>% filter(D_699625233==353358909)
+# 
+# 
+# #Verified by site
+# #cat("Verified by site:", sum(merged$D_821247024==197316935, na.rm=TRUE))
+# 
+# 
+# #Mod1 completed
+# module1 <- merged %>% filter(D_949302066==231311385)
 cat("Module 1 completed:", dim(module1)[[1]])
 
 
@@ -243,7 +243,7 @@ knitr::opts_chunk$set(comment = NA)
 ```
 
 
-```{r, warning=FALSE, include=FALSE}
+```{r functions, warning=FALSE, include=FALSE}
 #Created Functions for this code
 
 #Histogram 
@@ -403,7 +403,7 @@ child_logic_funct <- function(CID, Child_Num, Title){
 \newpage
 # Section 1: Background Information 
 ## Age 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Age, warning=FALSE, echo=FALSE, message=FALSE}
 ##Age 
 #Derived Age
 #table(module1$D_117249500) #only going to be applied to participants finishing module 1 after derived variable implemented 
@@ -482,7 +482,7 @@ hist_funct(D_150344905, "Age if Age Verification Not Correct", "Age", "Frequency
 ```
 
 ## Marital Status 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r marital, warning=FALSE, echo=FALSE, message=FALSE}
 ##Marital Status 
 simple_funct(D_783167257, "MARITAL: Marital Status")
 
@@ -490,7 +490,7 @@ simple_funct(D_783167257, "MARITAL: Marital Status")
 ```
 
 ## Race, Ethnicity, and Language 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r race, warning=FALSE, echo=FALSE, message=FALSE}
 all_races <- data_tib_m1[ , c("Connect_ID", "D_384191091_D_384191091_D_583826374", "D_384191091_D_384191091_D_636411467", "D_384191091_D_384191091_D_458435048",
                                  "D_384191091_D_384191091_D_706998638", "D_384191091_D_384191091_D_973565052", "D_384191091_D_384191091_D_586825330",
                                  "D_384191091_D_384191091_D_412790539", "D_384191091_D_384191091_D_807835037", "D_384191091_D_747350323", "D_384191091_D_384191091_D_746038746")] 
@@ -586,7 +586,7 @@ dt_all_races_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   ) #%>% opt_row_striping()
 ```
 
-```{r, include=FALSE}
+```{r RacePieChart, include=FALSE}
 
 library(RColorBrewer)
 library(ggrepel)
@@ -622,7 +622,7 @@ dt_all_races_summary$pct <- paste0(round(as.numeric((dt_all_races_summary$percen
 ```
 
 
-```{r, echo=FALSE, warning=FALSE}
+```{r Ethnicity, echo=FALSE, warning=FALSE}
 
 # ALL RACES PIE CHART 
 race_M1plot
@@ -1004,7 +1004,7 @@ tab_footnote(
 
 
 ## LANG
-```{r, include=FALSE}
+```{r Language, include=FALSE}
 
 which_lang= data_tib_m1 %>%  mutate(language= case_when(D_588212264_D_588212264_D_163149180==1 ~ "English",
                                                           D_588212264_D_588212264_D_773342525==1 ~ "Spanish",
@@ -1122,7 +1122,7 @@ tab_footnote(
 
 
 ## Sex at Birth, Gender, Sexual Orientation and Style 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r SMG, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 simple_funct(D_407056417, "Sex at birth")
@@ -1267,7 +1267,7 @@ data_tib_m1 %>%  select(D_555481393_D_979809707) %>% filter(!is.na(D_555481393_D
 ```
 
 ### Specific Demographics 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Demogrpahics, warning=FALSE, echo=FALSE, message=FALSE}
 #Specific demographics (white, straight, married females)
 
 WMF = module1 %>% filter(D_555481393_D_555481393=="271882746") %>% filter(D_407056417==536341288) %>% filter(D_783167257==288321056) %>% 
@@ -1280,7 +1280,7 @@ cat("Number of White, Straight, Married, Female Participants", round(((dim(WMF)[
 
 # Section 2: Medical History 
 ## Cancer 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r SkinCancer, warning=FALSE, echo=FALSE, message=FALSE}
 simple_funct(D_537153788, "SKINCANC: Diagnosed with Non-Melanoma Skin Cancer")
 
 
@@ -1326,7 +1326,7 @@ boxp_funct(D_904550680_D_206625031, "Age Diagnosed with Skin Cancer", "Age")
 \newpage
 
 ## Cardiovascular Disease
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r MHGroup1, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 
 #mhgroup1= data_tib_m1 %>%  mutate(mult1= case_when()) -- add multiple choices 
@@ -1386,7 +1386,7 @@ cardio_dx$cardio_dx ### how are their race variables being assigned here?? wrong
 
 cardio_dx$cardio_dx <- c("Chest Pain","Abnormal Heart Rhythm","Blood Clots","None","Stroke","High Blood Pressure","B-12 Deficiency","High Cholesterol","Heart Attack","Heart Valve Problems","Congestive Heart Failure","Coronary Artery")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MHGroup1Table, warning=FALSE, echo=FALSE, message=FALSE}
 # colnames(cardio_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 # mgr1_1 <- cardio_dx[, c(4,1,2)]
 # 
@@ -1432,7 +1432,7 @@ tab_footnote(
 
 ```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MHGroup1Diagn, warning=FALSE, echo=FALSE, message=FALSE}
 ##Cardiovascular 
 
 #cat("B-12 Deficiency (Pernicious Anemia) Diagnosis")
@@ -1509,7 +1509,7 @@ grid.arrange(stroke_a_dg, stroke_y_dg, nrow=2)
 \newpage
 
 ## Respiratory Problems 
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r MHGroup2, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 mhgroup2= data_tib_m1 %>%  mutate(resp= case_when(D_894259747_D_359025642==1 ~ "Chronic Lung Disease",
                                              D_894259747_D_407340134==1 ~ "Asthma",
@@ -1555,7 +1555,7 @@ for (i in 1:4){
 
 lung_dx$lung_dx <- c("Chronic lung disease","Asthma", "Hay Fever", "None")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MHGroup2Table, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(lung_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "lung_dx")
 mgr2 <- lung_dx[, c(4,1,2)]
 
@@ -1597,7 +1597,7 @@ dt_mgr2
 
 ```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MHGroup2Diagn, warning=FALSE, echo=FALSE, message=FALSE}
 ###Respiratory
 
 
@@ -1626,7 +1626,7 @@ grid.arrange(hay_a_dg, hay_y_dg, nrow=2)
 \newpage
 
 ## Digestive System Problems 
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r MHGroup3, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 mhgroup3= data_tib_m1 %>%  mutate(digest= case_when(D_180961306_D_406890409==1 ~ "Esophageal Acid Reflex",
                                              D_180961306_D_704544306==1 ~ "Barrett's Esophagus",
@@ -1683,7 +1683,7 @@ dgst_dx$dgst_dx
 dgst_dx$dgst_dx <- c("Celiac Disease", "Inflammatory Bowel Disease","Esophageal Acid Reflex","None","Gallstones","Ulcerative Colitis","Irritable Bowel Syndrome","Barrett's Esophagus","Liver Cirrhosis","Diverticulitis or Diverticulosis","Pancreatitis","Crohn's Disease")
 
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MHGroup3Tables, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(dgst_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "dgst_dx")
 mgr3 <- dgst_dx[, c(4,1,2)]
 
@@ -1721,7 +1721,7 @@ tab_footnote(
 
 ```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MHGroup3Diagn, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 #cat("Esophageal Acid Reflux (GERD) Diagnosis")
@@ -1797,7 +1797,7 @@ grid.arrange(panc_a_dg, panc_y_dg, nrow=2)
 \newpage
 
 ## Thyroid, Dibetes, and Grave's Disease 
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r MHGroup4, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 mhgroup4= data_tib_m1 %>%  mutate(thy_d_g= case_when(D_900541533_D_726539692==1 ~ "Thyroid Disorder", 
                                              D_900541533_D_158044532==1 ~ "Diabetes",
@@ -1843,7 +1843,7 @@ for (i in 1:4){
 thyrd_dx$thyrd_dx
 thyrd_dx$thyrd_dx <- c("Diabetes",  "None", "Thyroid Disorder", "Graves' Disease")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MHGroup4Tables, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(thyrd_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "thyrd_dx")
 mgr4 <- thyrd_dx[, c(4,1, 2)]
 
@@ -1883,7 +1883,7 @@ tab_footnote(
 
 ```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MHGroup4Diagn, warning=FALSE, echo=FALSE, message=FALSE}
 #MHGROUP4
 
 
@@ -1912,7 +1912,7 @@ grid.arrange(graves_a_dg, graves_y_dg, nrow=2)
 \newpage
 
 ## Kidney 
-```{r, include=FALSE}
+```{r MHGroup5, include=FALSE}
 mhgroup5= data_tib_m1 %>%  mutate(kidn= case_when(D_874046190_D_827542780==1 ~ "Kidney Stones", 
                                              D_874046190_D_167238688==1 ~ "Chronic Kindey Disease",
                                              D_874046190_D_535003378==1 ~ "None",
@@ -1956,7 +1956,7 @@ for (i in 1:3){
 kidn_dx$kidn_dx
 kidn_dx$kidn_dx <- c("Chronic Kindey Disease",  "None", "Kidney Stones")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MHGroup5Table, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(kidn_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "kidn_dx")
 mgr5 <- kidn_dx[, c(4,1, 2)]
 
@@ -1994,7 +1994,7 @@ tab_footnote(
 
 ```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MHGroup5Diagn, warning=FALSE, echo=FALSE, message=FALSE}
 #MHGROUP5
 
 #cat("Kidney Stones Diagnosis")
@@ -2014,7 +2014,7 @@ grid.arrange(chk_a_dg, chk_y_dg, nrow=2)
 \newpage
 
 ## Systemic and Other Problems
-```{r, include=FALSE}
+```{r MHGroup6, include=FALSE}
 mhgroup6= data_tib_m1 %>%  mutate(sysoth= case_when(D_543728565_D_636030086==1 ~ "Rheumatoid Arthritis", 
                                              D_543728565_D_239687183==1 ~ "Lupus",
                                              D_543728565_D_134592375==1 ~ "Gout",
@@ -2060,7 +2060,7 @@ for (i in 1:4){
 systm_dx$systm_dx
 systm_dx$systm_dx <- c("Gout", "Lupus",  "None", "Rheumatoid Arthritis")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MHGroup6Table, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(systm_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "systm_dx")
 mgr6 <- systm_dx[, c(4,1, 2)]
 
@@ -2098,7 +2098,7 @@ tab_footnote(
 
 ```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MHGroup6Diagn, warning=FALSE, echo=FALSE, message=FALSE}
 #MHGROUP6 
 #cat("Rheumatoid Arthritis Diagnosis")
 ra_a_dg=boxp_funct(D_173101988_D_206625031,"Rheumatoid Arthritis Age at Diagnosis","Age") 
@@ -2123,7 +2123,7 @@ grid.arrange(gout_a_dg, gout_y_dg, nrow=2)
 \newpage
 
 ## Sexually Transmitted Diseases and Infections
-```{r, include=FALSE}
+```{r MHGroup7, include=FALSE}
 mhgroup7= data_tib_m1 %>%  mutate(sti_std= case_when(D_874709643_D_164910211==1 ~ "Mono",
                                              D_874709643_D_796616844==1 ~ "Shingles",
                                              D_874709643_D_436689514==1 ~ "Chronic Hepatitus B or C",
@@ -2174,7 +2174,7 @@ for (i in 1:11){
 sti_dx$sti_dx
 sti_dx$sti_dx <- c("Trich", "Genital Warts", "Mono","Gonorrhea", "Chronic Hepatitus B or C", "Syphilis", "None","HIV/AIDS","Shingles","HPV","Chlamydia")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MHGroup7Table, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(sti_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "sti_dx")
 mgr7 <- sti_dx[, c(4,1, 2)]
 
@@ -2213,7 +2213,7 @@ tab_footnote(
 
 ```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MHGroup7Diagn, warning=FALSE, echo=FALSE, message=FALSE}
 #MHGROUP7
 
 
@@ -2285,7 +2285,7 @@ grid.arrange(hiv_a_dg, hiv_y_dg, nrow=2)
 \newpage
 
 ## Urinary and Reproductive System Problems 
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r MHGroup8, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 mhgroup8= data_tib_m1 %>%  mutate(urn_repro= case_when(D_725626004_D_509721537==1 ~ "Uterine Fibroids",
                                              D_725626004_D_863286658==1 ~ "Endometriosis",
@@ -2333,7 +2333,7 @@ for (i in 1:7){
 urinrp_dx$urinrp_dx
 urinrp_dx$urinrp_dx <- c("Polycystic Ovary System", "Uterine Fibroids", "None", "Fibrocystic Breast or Benign Breast isease","Ductal Carcinoma in situ","Endometriosis","Enlarged Prostate")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MHGroup8Table, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(urinrp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "urinrp_dx")
 mgr8 <- urinrp_dx[, c(4,1, 2)]
 
@@ -2373,7 +2373,7 @@ tab_footnote(
 
 ```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MHGroup8Diagn, warning=FALSE, echo=FALSE, message=FALSE}
 ##Urinary and Reproductive 
 
 
@@ -2427,7 +2427,7 @@ cat("Proportion of DCIS Cases Confirmed with Biopsy:", ductal, "%")
 \newpage
 
 ## Depression 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Depress, warning=FALSE, echo=FALSE, message=FALSE}
 ###Depression
 simple_funct(D_347860896, "DEPRESS: Diagnosed with Clinical Depression")
   
@@ -2440,7 +2440,7 @@ grid.arrange(depress_a_dg, depress_y_dg, nrow=2)
 \newpage
 
 ## Surgery 
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r MHGroup9, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 mhgroup9= data_tib_m1 %>%  mutate(surgery= case_when(D_624179836_D_797189152==1 ~ "Tonsillectomy",
                                              D_624179836_D_633546100==1 ~ "Cholecystectomy",
@@ -2496,7 +2496,7 @@ for (i in 1:15){
 srgy_dx$srgy_dx
 srgy_dx$srgy_dx <- c("Liposuction", "Hysterectomy", "Tubal Ligation","Orchiectomy or Orchidectomy","Breast Surgery","None","Oophorectomy","Cholecystectomy","Vasectomy","Salpingectomy","Gastric Bypass","Prostatectomy", "Tonsillectomy","Appendectomy","Penectomy")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MHGroup9Table, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(srgy_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "srgy_dx")
 mgr9 <- srgy_dx[, c(4,1, 2)]
 
@@ -2538,7 +2538,7 @@ dt_mgr9
 
 ```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MHGroup9Diagn, warning=FALSE, echo=FALSE, message=FALSE}
 #	Tonsils removed (tonsillectomy)
 tonsil_a_sg=boxp_funct(D_367884741_D_206625031,"Age at Tonisllectomy Surgery","Age") 
 tonsil_y_sg=boxp_funct(D_367884741_D_261863326,"Year of Tonisllectomy Surgery","Year")
@@ -2569,7 +2569,7 @@ bar_sg_y_sg=boxp_funct(D_986613440_D_261863326,"Year of Gastric Bypass Surgery",
 grid.arrange(bar_sg_a_sg, bar_sg_y_sg, nrow=2)
 ```
 
-```{r, include=FALSE}
+```{r BreastSurgery, include=FALSE}
 
   #type of breast surgery
 mhgroup9= data_tib_m1  %>% filter(D_624179836_D_533491176==1) %>%  
@@ -2630,7 +2630,7 @@ for (i in 1:11){
 Bsurgnc_dx$Bsurgnc_dx <- c("Breast Implants","Mastectomy","Breast Reconstruction","Breast Reduction","Partial Mastectomy", "Mastectomy", "Double Mastectomy",  "Abscess","Removal of Lactiferous", "Other", "None of the Above")
 ```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r BreastSurgeryTable, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(Bsurgnc_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 surgeryBrst <- Bsurgnc_dx[, c(4,1,2)]
 
@@ -2669,7 +2669,7 @@ tab_footnote(
 ```
 
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r BreastSurgYear, warning=FALSE, echo=FALSE, message=FALSE}
 #cat("Breast Implants")
 implant_a_sg=boxp_funct(D_477690298_D_623218391,"Age at Breats Implants Surgery","Age")
 implant_y_sg=boxp_funct(D_477690298_D_802622485,"Year of Breats Implants Surgery","Year")
@@ -2795,7 +2795,7 @@ grid.arrange(penis_a_sg, penis_y_sg, nrow=2)
 \newpage
 
 ## Blood Transfusion 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r BloodTrans, warning=FALSE, echo=FALSE, message=FALSE}
 #Ever had a blood transfusion 
 simple_funct(D_453252072, "BLDTRANS: Ever have a Blood Transfusion")
 
@@ -2820,7 +2820,7 @@ grid.arrange(trans_a_last, trans_y_last, nrow=2)
 
 # Section 3: General Health 
 ## Overall 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Overall, warning=FALSE, echo=FALSE, message=FALSE}
 ##Overall
 dict <- c(dict,"131550264"="Fair","138752522"="Poor","565881164"="Very Good","670680466"="Excellent","719933364"="Good")
 
@@ -2851,7 +2851,7 @@ dt_overall_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ```
 
 ## Pain 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Pain, warning=FALSE, echo=FALSE, message=FALSE}
 ##Pain
 #Last 3 Months
 simple_funct(D_323512813, "PAIN: Felt Physial Pain Most Days of Last 3 Months")
@@ -2926,7 +2926,7 @@ dt_painaff_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ```
 
 ## Height and Weight 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r HeightWeight, warning=FALSE, echo=FALSE, message=FALSE}
 ##Height and weight
 #weight
   ##some people put weight in decimals and is causing issues with boxplot
@@ -3396,7 +3396,7 @@ module1 %>% mutate(D_207494582=as.numeric(as.character(D_207494582))) %>%
 
 ## Hair Patern 
 ### Feamle Hair Pattern 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r HairFem, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 #Female
@@ -3445,7 +3445,7 @@ dt_fem_hair_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 ### Male Hair Pattern 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r HairMale, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 
@@ -3495,12 +3495,12 @@ dt_male_hair_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ```
 
 ### Hair Thinning Medications
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r HairMeds, warning=FALSE, echo=FALSE, message=FALSE}
 #Taken meds for hair thinning?
 simple_funct(D_769668224, "HRMED: Ever Taken Hair Thinning Medication")
 ```
 
-```{r, include=FALSE}
+```{r HMedsType, include=FALSE}
 
 #What type?
 dt_hrmed_typ= data_tib_m1   %>%  filter(D_769668224==353358909)  
@@ -3529,7 +3529,7 @@ for (i in 1:3){
 hrm2_dx$hrm2_dx <- c("Rogaine, Minoxidil, or Ioniten","Finasteride","Other")
 ```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r HairMedTable, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(hrm2_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 hrm2 <- hrm2_dx[, c(4,1,2)]
 
@@ -3577,7 +3577,7 @@ grid.arrange(hairthin1, hairthin0, nrow=2)
 
 
 ## Acne 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Acne, warning=FALSE, echo=FALSE, message=FALSE}
 ##Acne
 #See doctor for severe/ongoing acne?
 simple_funct(D_283634623, "ACNE: Ever Seen a Doctor for Severe Acne")
@@ -3600,7 +3600,7 @@ grid.arrange(acne1, acne0, nrow=2)
 
 # Section 4: Family History
 ## Adopted, Fostered, Multiple Birth 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Section4, warning=FALSE, echo=FALSE, message=FALSE}
 #Foster/Adopted
 simple_funct(D_535621923, "ADOPTFOST: Adopted or Foster Child")
 
@@ -3612,7 +3612,7 @@ simple_funct(D_992987417, "MULTBIRTH: A Twin or Multiple")
 
 
 ## Mom 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Mom, warning=FALSE, echo=FALSE, message=FALSE}
 ##Mom
 #living
 simple_funct(D_170440011, "MOM1: Mother Living")
@@ -3633,7 +3633,7 @@ simple_funct(D_276353712, "MOMCANC: Mother Diagnosed with Cancer")
 ```
 
 
-```{r, include=FALSE}
+```{r MomCanc, include=FALSE}
 
 dt_mom_cnc= data_tib_m1 %>% filter(D_276353712==353358909) 
 
@@ -3691,7 +3691,7 @@ for (i in 1:23){
 momcnc_dx$momcnc_dx <- c("Anal", "Bladder", "Brain", "Breast", "Cervical", "Colon/Rectal", "Esophageal", "Head, Neck and Shoulders", "Kidney", "Leukemia", "Liver", "Lung", "Non-Hodgkin's Lymphoma", "Lymphoma", "Melanoma", "Non-Melanoma Skin", "Ovarian", "Pancreatic", "Stomach", "Thyroid", "Uterine", "Other", "Unknown")
 ```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MomCancTable, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(momcnc_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 mgr1 <- momcnc_dx[, c(4,1,2)]
 
@@ -3731,7 +3731,7 @@ tab_footnote(
 
 
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MomCancDiag, warning=FALSE, echo=FALSE, message=FALSE}
 #Age of Diagnosis
 #Anal
 anal_a_mdg=boxp_funct(D_259397450_D_206625031,"Mother's Age at Anal Cancer Diagnosis","Age") 
@@ -3858,7 +3858,7 @@ grid.arrange(ukn_a_mdg, ukn_y_mdg, nrow=2)
 \newpage
 
 ## Dad
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Dad, warning=FALSE, echo=FALSE, message=FALSE}
 ##Dad
 #living?
 simple_funct(D_367374606, "DAD: Father Living")
@@ -3951,7 +3951,7 @@ simple_funct(D_659784914, "DADCANC: Father Diagnosed with Cancer")
 ```
 
 
-```{r, include=FALSE}
+```{r DadCanc, include=FALSE}
 
 dt_dad_cnc= data_tib_m1 %>%   filter(D_659784914==353358909) 
 
@@ -4004,7 +4004,7 @@ for (i in 1:22){
 DADcnc_dx$DADcnc_dx <- c("Anal", "Bladder", "Brain", "Breast", "Colon/Rectal", "Esophageal", "Head, Neck and Shoulders", "Kidney", "Leukemia", "Liver", "Lung", "Non-Hodgkin's Lymphoma", "Lymphoma", "Melanoma", "Non-Melanoma Skin", "Pancreatic", "Prostate", "Stomach", "Testicular", "Thyroid",  "Other", "Unknown")
 ```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r DadCancTable, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(DADcnc_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 mgr1 <- DADcnc_dx[, c(4,1,2)]
 
@@ -4045,7 +4045,7 @@ tab_footnote(
 
 
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r DadCancDiagn, warning=FALSE, echo=FALSE, message=FALSE}
 # #Age at Diagnosis  
 # #anal--no one
 boxp_funct(D_345146692_D_206625031,"Father's Age at Anal Cancer Diagnosis","Age") 
@@ -4164,7 +4164,7 @@ grid.arrange(ukn_a_ddg, ukn_y_ddg, nrow=2)
 \newpage
 
 ## Siblings 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Sibling, warning=FALSE, echo=FALSE, message=FALSE}
 ###Siblings
 #how many siblings do you have
 hist_funct(D_694265648, "Number of Siblings", "Siblings", "Frequency")
@@ -5357,7 +5357,7 @@ grid.arrange(sib6_c33, sib6_c34, nrow=2)
 \newpage
 
 ## Children
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Children, warning=FALSE, echo=FALSE, message=FALSE}
 ##Children 
 #how many children do you have?
 hist_funct(D_446999144, "Number of Children", "Children", "Frequency")
@@ -6053,7 +6053,7 @@ grid.arrange(ch4_c5, ch4_c6, ch4_c7, ch4_c8, nrow=4)
 \newpage
 
 # Section 5: Education and Occupation 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Section5, warning=FALSE, echo=FALSE, message=FALSE}
 #Highest level of ed. achieved 
 
 edu= data_tib_m1  %>%  mutate(edlevel= case_when(D_367803647_D_367803647==978204320 ~ "Grade School(Grades 1-8)",

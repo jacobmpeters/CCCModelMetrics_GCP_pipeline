@@ -2286,7 +2286,7 @@ summary(as.numeric(tmp1T$Mod1completionT))
 
 ```
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #cat("Active(n=", dim(act_before)[[1]], ")")
 #summary(as.numeric(tmp1A$Mod1completionA))
@@ -2295,11 +2295,11 @@ summary(as.numeric(tmp1T$Mod1completionT))
 
 Table3a = tmp1A %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod1completionA,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod1completionA, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod1completionA,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod1completionA,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod1completionA,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod1completionA,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionA, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod1completionA, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod1completionA,na.rm = TRUE), digits=2), end = -1))
 
@@ -2311,11 +2311,11 @@ knitr::kable(Table3a,caption='BOH Active (Before)',row.names=FALSE, align=c("l",
 
 Table3b = tmp1P %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod1completionP,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod1completionP, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod1completionP,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod1completionP,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod1completionP,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod1completionP,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionP, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod1completionP, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod1completionP,na.rm = TRUE), digits=2), end = -1))
 
@@ -2328,11 +2328,11 @@ knitr::kable(Table3b,caption='BOH Passive (Before)',row.names=FALSE, align=c("l"
 
 Table3c = tmp1T %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod1completionT,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod1completionT, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod1completionT,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod1completionT,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod1completionT,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod1completionT,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionT, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod1completionT, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod1completionT,na.rm = TRUE), digits=2), end = -1))
 
@@ -2391,7 +2391,7 @@ tmp1T_A$Mod1completionT <- difftime(tmp1T_A$d_517311251, tmp1T_A$d_914594314, un
 summary(as.numeric(tmp1T_A$Mod1completionT))
 ```
 
-```{r, echo=FALSE}
+```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #cat("Active(n=", dim(act_after)[[1]], ")")
 #summary(as.numeric(tmp1A_A$Mod1completionA))
@@ -2399,11 +2399,11 @@ summary(as.numeric(tmp1T_A$Mod1completionT))
 
 Table3d = tmp1A_A %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod1completionA,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod1completionA, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod1completionA,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod1completionA,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod1completionA,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod1completionA,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionA, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod1completionA, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod1completionA,na.rm = TRUE), digits=2), end = -1))
 
@@ -2416,11 +2416,11 @@ knitr::kable(Table3d,caption='BOH Active (After)',row.names=FALSE, align=c("l","
 
 Table3e = tmp1P_A %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod1completionP,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod1completionP, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod1completionP,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod1completionP,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod1completionP,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod1completionP,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionP, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod1completionP, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod1completionP,na.rm = TRUE), digits=2), end = -1))
 
@@ -2433,11 +2433,11 @@ knitr::kable(Table3e,caption='BOH Passive (After)',row.names=FALSE, align=c("l",
 
 Table3f = tmp1T_A %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod1completionT,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod1completionT, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod1completionT,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod1completionT,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod1completionT,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod1completionT,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionT, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod1completionT, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod1completionT,na.rm = TRUE), digits=2), end = -1))
 
@@ -2494,7 +2494,7 @@ tmp1T_All$Mod1completionT <- difftime(tmp1T_All$d_517311251, tmp1T_All$d_9145943
 summary(as.numeric(tmp1T_All$Mod1completionT))
 ```
 
-```{r, echo=FALSE}
+```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #cat("Active(n=", dim(act_all)[[1]], ")")
 #summary(as.numeric(tmp1A_All$Mod1completionA))
@@ -2502,11 +2502,11 @@ summary(as.numeric(tmp1T_All$Mod1completionT))
 
 Table3g = tmp1A_All %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod1completionA,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod1completionA, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod1completionA,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod1completionA,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod1completionA,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod1completionA,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionA, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod1completionA, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod1completionA,na.rm = TRUE), digits=2), end = -1))
 
@@ -2519,11 +2519,11 @@ knitr::kable(Table3g,caption='All BOH Active',row.names=FALSE, align=c("l","c","
 
 Table3h = tmp1P_All %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod1completionP,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod1completionP, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod1completionP,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod1completionP,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod1completionP,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod1completionP,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionP, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod1completionP, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod1completionP,na.rm = TRUE), digits=2), end = -1))
  
@@ -2536,11 +2536,11 @@ knitr::kable(Table3h,caption='All BOH Passive',row.names=FALSE, align=c("l","c",
 
 Table3i = tmp1T_All %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod1completionT,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod1completionT, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod1completionT,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod1completionT,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod1completionT,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod1completionT,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionT, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod1completionT, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod1completionT,na.rm = TRUE), digits=2), end = -1))
 
@@ -2555,6 +2555,7 @@ knitr::kable(Table3i,caption='All BOH Total',row.names=FALSE, align=c("l","c","c
 
 \newpage
 ## MRE Section 
+\FloatBarrier
 
 ```{r, include=FALSE}
 
@@ -2615,7 +2616,7 @@ summary(as.numeric(tmp2T$Mod2completionT))
 ```
 
 
-```{r, echo=FALSE}
+```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #cat("Active(n=", dim(act2)[[1]], ")")
 #summary(as.numeric(tmp2A$Mod2completionA))
@@ -2623,11 +2624,11 @@ summary(as.numeric(tmp2T$Mod2completionT))
 
 Table3j = tmp2A %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod2completionA,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod2completionA, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod2completionA,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod2completionA,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod2completionA,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod2completionA,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod2completionA, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod2completionA, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod2completionA,na.rm = TRUE), digits=2), end = -1))
 
@@ -2639,11 +2640,11 @@ knitr::kable(Table3j,caption='MRE Active (After)',row.names=FALSE, align=c("l","
 
 Table3k = tmp2P %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod2completionP,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod2completionP, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod2completionP,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod2completionP,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod2completionP,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod2completionP,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod2completionP, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod2completionP, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod2completionP,na.rm = TRUE), digits=2), end = -1))
 
@@ -2655,11 +2656,11 @@ knitr::kable(Table3k,caption='All MRE Passive (After)',row.names=FALSE, align=c(
 
 Table3l = tmp2T %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod2completionT,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod2completionT, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod2completionT,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod2completionT,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod2completionT,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod2completionT,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod2completionT, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod2completionT, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod2completionT,na.rm = TRUE), digits=2), end = -1))
 
@@ -2672,6 +2673,7 @@ knitr::kable(Table3l,caption='MRE Total (After)',row.names=FALSE, align=c("l","c
 
 
 ## SAS Section
+\FloatBarrier
 ```{r, include=FALSE}
 
 # 3.	Time from verification to completion of each module (active, passive and total) 
@@ -2732,7 +2734,7 @@ data_ccc$Connect_ID[which.max(Ttmp3T$Mod3completionT)]
 data_ccc$Connect_ID[which.min(Ttmp3T$Mod3completionT)]
 ```
 
-```{r, echo=FALSE}
+```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #cat("Active(n=", dim(act3)[[1]], ")")
 #summary(as.numeric(tmp3A$Mod3completionA))
@@ -2740,11 +2742,11 @@ data_ccc$Connect_ID[which.min(Ttmp3T$Mod3completionT)]
 
 Table3m = tmp3A %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod3completionA,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod3completionA, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod3completionA,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod3completionA,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod3completionA,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod3completionA,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod3completionA, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod3completionA, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod3completionA,na.rm = TRUE), digits=2), end = -1))
 
@@ -2757,11 +2759,11 @@ knitr::kable(Table3m,caption='SAS Active (After)',row.names=FALSE, align=c("l","
 
 Table3n = Ptmp3A %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod3completionP,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod3completionP, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod3completionP,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod3completionP,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod3completionP,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod3completionP,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod3completionP, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod3completionP, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod3completionP,na.rm = TRUE), digits=2), end = -1))
 
@@ -2774,11 +2776,11 @@ knitr::kable(Table3n,caption='SAS Passive (After)',row.names=FALSE, align=c("l",
 
 Table3o = Ttmp3T %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod3completionT,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod3completionT, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod3completionT,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod3completionT,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod3completionT,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod3completionT,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod3completionT, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod3completionT, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod3completionT,na.rm = TRUE), digits=2), end = -1))
 
@@ -2848,7 +2850,7 @@ summary(as.numeric(Ttmp4$Mod4completionT))
 
 ```
 
-```{r, echo=FALSE, fig.cap=''}
+```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #cat("Active(n=", dim(act4)[[1]], ")")
 #summary(as.numeric(tmp4A$Mod4completionA))
@@ -2856,11 +2858,11 @@ summary(as.numeric(Ttmp4$Mod4completionT))
 
 Table3p = tmp4A %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod4completionA,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod4completionA, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod4completionA,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod4completionA,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod4completionA,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod4completionA,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod4completionA, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod4completionA, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod4completionA,na.rm = TRUE), digits=2), end = -1))
 
@@ -2872,11 +2874,11 @@ knitr::kable(Table3p,caption='LAW Active (After)',row.names=FALSE, align=c("l","
 
 Table3q = Ptmp4A %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod4completionP,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod4completionP, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod4completionP,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod4completionP,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod4completionP,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod4completionP,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod4completionP, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod4completionP, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod4completionP,na.rm = TRUE), digits=2), end = -1))
 
@@ -2888,11 +2890,11 @@ knitr::kable(Table3q,caption='LAW Passive (After)',row.names=FALSE, align=c("l",
 
 Table3r = Ttmp4 %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod4completionT,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod4completionT, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod4completionT,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod4completionT,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod4completionT,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod4completionT,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod4completionT, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod4completionT, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod4completionT,na.rm = TRUE), digits=2), end = -1))
 
@@ -3454,7 +3456,7 @@ ccc4_all_1$time_frame <- factor(ccc4_all_1$time_frame,levels=c("Completed in Und
 
 ```
 \FloatBarrier
-```{r, echo=FALSE}
+```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #summary(as.numeric(Atmp1$Mod1completionA))
 #st(Atmp1, vars = c('Mod1completionA', title='Table 5a. All BOH Active', add.median = T))-- no longer needed
@@ -3468,11 +3470,11 @@ ccc4_all_1$time_frame <- factor(ccc4_all_1$time_frame,levels=c("Completed in Und
 
 Table4a2 = Ttmp1a %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod1completionT.A,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod1completionT.A, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod1completionT.A,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod1completionT.A,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod1completionT.A,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod1completionT.A,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionT.A, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod1completionT.A, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod1completionT.A,na.rm = TRUE), digits=2), end = -1))
 
@@ -4078,7 +4080,7 @@ gt_print2A
 
 ```
 \FloatBarrier
-```{r, echo=FALSE}
+```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #summary(as.numeric(tmp$Mod2completionA))
 #st(tmp, vars = c('Mod2completionA', title='Table 7a. All MRE Active Participants', add.median = T))-- no longer needed
@@ -4091,11 +4093,11 @@ gt_print2A
 
 Table7c = Ttmp2A %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod2completionT.A,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod2completionT.A, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod2completionT.A,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod2completionT.A,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod2completionT.A,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod2completionT.A,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod2completionT.A, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod2completionT.A, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod2completionT.A,na.rm = TRUE), digits=2), end = -1))
 
@@ -4705,7 +4707,7 @@ gt_print2A
 
 ```
 \FloatBarrier
-```{r, echo=FALSE}
+```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #summary(as.numeric(tmp.3A$Mod3completionA))
 #cat("Active(n=", s4_3aA, ")")
@@ -4722,11 +4724,11 @@ gt_print2A
 
 Table9c = Ttmp3A %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod3completionT.A,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod3completionT.A, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod3completionT.A,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod3completionT.A,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod3completionT.A,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod3completionT.A,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod3completionT.A, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod3completionT.A, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod3completionT.A,na.rm = TRUE), digits=2), end = -1))
 
@@ -5326,7 +5328,7 @@ gt_print4A <- gt(ccc4_all_4_summary)
 gt_print4A
 ```
 \FloatBarrier
-```{r, echo=FALSE}
+```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #cat("Active(n=", s4_4aA, ")")
 #summary(as.numeric(tmp.4$Mod4completionA))
@@ -5342,11 +5344,11 @@ gt_print4A
 
 Table11c = Ttmp.4 %>% #biochk_outlier,
   dplyr::summarize('N'=n(),
+                   Min = str_sub(round(min(Mod4completionT.A,na.rm = TRUE), digits=2), end = -1),
+                   Q1 = str_sub(round(quantile(Mod4completionT.A, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Median = str_sub(round(median(Mod4completionT.A,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
                    Mean = str_sub(round(mean(Mod4completionT.A,na.rm = TRUE),digits=2), end = -1), 
                    SD= str_sub(round(sd(Mod4completionT.A,na.rm = TRUE), digits=2), end = -1),
-                   Min = str_sub(round(min(Mod4completionT.A,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod4completionT.A, 0.25,na.rm = TRUE), digits=2), end = -1),
                    Q3 = str_sub(round(quantile(Mod4completionT.A, 0.75,na.rm = TRUE), digits=2), end = -1),
                    Max = str_sub(round(max(Mod4completionT.A,na.rm = TRUE), digits=2), end = -1))
 

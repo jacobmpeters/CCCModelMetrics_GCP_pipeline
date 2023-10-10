@@ -6,7 +6,7 @@ output: pdf_document
 ---
 
 
-```{r, include=FALSE}
+```{r library, include=FALSE}
 #rm(list = ls())
 
 
@@ -43,7 +43,7 @@ bq_auth()
 ```
 
 
-```{r, include=FALSE, warning=FALSE}
+```{r merge1, include=FALSE, warning=FALSE}
 
 dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
 dd <- dplyr::bind_rows(dictionary,.id="CID")
@@ -166,9 +166,7 @@ dim(merged)
 
 
 
-```
 
-```{r, warning=FALSE, echo=FALSE,  message=FALSE}
 # #Has a recruitment flag
 # merged <- merged %>% filter(d_512820379==486306141 | d_512820379==854703046)
 # 
@@ -200,7 +198,7 @@ knitr::opts_chunk$set(comment = NA)
 
 ```
 
-```{r, warning=FALSE, echo=FALSE,  message=FALSE}
+```{r intro, warning=FALSE, echo=FALSE,  message=FALSE}
 
 base_vars1 <- merged %>% filter(d_949302066==231311385)
 base_vars2 <- merged %>% filter(d_536735468==231311385)
@@ -215,7 +213,7 @@ cat("Particpants with Module 4 completion: ", dim(base_vars4)[[1]])
 
 ```
 
-```{r, warning=FALSE, include=FALSE}
+```{r functions, warning=FALSE, include=FALSE}
 
 #Histogram 
 hist_funct <- function(CID,Title, Xlab, Ylab) {
@@ -378,7 +376,7 @@ child_logic_funct <- function(CID, Child_Num, Title){
 ## Priority Three Variables
 
 # AGECOR
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r agecor, warning=FALSE, echo=FALSE, message=FALSE}
 
 simple_funct1(D_479353866,"AGECOR: Age Reported Correct")
 
@@ -386,7 +384,7 @@ simple_funct1(D_479353866,"AGECOR: Age Reported Correct")
 ```
 
 # SEXORIENT- Other Selected
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r sexorient, warning=FALSE, echo=FALSE, message=FALSE}
 
 # orient= data_tib_base  %>%  mutate(sexuality= case_when(tolower(D_555481393_D_979809707)=="asexual" | tolower(D_555481393_D_979809707)=="a sexual" ~ "Asexual",
 #                                                            tolower(D_555481393_D_979809707)=="Pansexual" | tolower(D_555481393_D_979809707)=="Pan sexual"~ "Pansexual",
@@ -403,7 +401,7 @@ data_tib_base %>%  select(D_555481393_D_979809707) %>% filter(!is.na(D_555481393
 ```
 
 # MARTIAL 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r marital, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 simple_funct1(D_783167257, "MARITAL: Marital Status")
@@ -411,7 +409,7 @@ simple_funct1(D_783167257, "MARITAL: Marital Status")
 
 ```
 # BLDTRANS
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r bloodtrans, warning=FALSE, echo=FALSE, message=FALSE}
 
 simple_funct1(D_453252072, "BLDTRANS: Ever have a Blood Transfusion")
 
@@ -420,7 +418,7 @@ simple_funct1(D_453252072, "BLDTRANS: Ever have a Blood Transfusion")
 ```
 
 # PAIN1-3
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r pain, warning=FALSE, echo=FALSE, message=FALSE}
 
 ##Pain
 #Last 3 Months
@@ -488,7 +486,7 @@ dt_painaff_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 # HEIGHTFEET & ADUHEIGHT
-```{r, include=FALSE}
+```{r HeightSetUp, include=FALSE}
 
 #height- current
 data_tib_base$D_114314839_D_340854069=as.numeric(data_tib_base$D_114314839_D_340854069)
@@ -500,14 +498,12 @@ ifelse(is.na(data_tib_base$D_114314839_D_600462977), 0, (data_tib_base$D_1143148
 in_D_inches= (as.numeric(data_tib_base$D_114314839_D_340854069)*12)+ as.numeric(data_tib_base$D_114314839_D_600462977)
 ```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Ht, warning=FALSE, echo=FALSE, message=FALSE}
 hist_funct(in_D_inches, "Current Height Distribution (converted to inches)", "Inches", "Frequency")
 
 #ADUHEIGHT
 boxp_funct(D_677262300, "ADUHEIGHT: Age Adult Height Reached", "Age")
-```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
 
 #ADUWEIGHT (removed?)
 
@@ -516,7 +512,7 @@ boxp_funct(D_677262300, "ADUHEIGHT: Age Adult Height Reached", "Age")
 
 
 # WEIGHT3Y & WEIGHTHIS
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r weight3y, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Weight over the years 
 weight3=boxp_funct(D_724181652,"Weight 3 years ago","Weight")
@@ -531,7 +527,7 @@ grid.arrange(weight35,weight45, weight55, nrow=3)
 ```
 
 # WTLOSS1 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r weightloss, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 data_tib_base$D_912857732_D_821387277 <- as.numeric(data_tib_base$D_912857732_D_821387277, na.rm=T)
@@ -667,7 +663,7 @@ WGT4555_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 # WTLOSS2
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r weight loss how, warning=FALSE, echo=FALSE, message=FALSE}
 
 dt_wt1825= data_tib_base  %>%  filter(diff25<(-0.05)) # & D_514996698=="353358909"
 
@@ -821,7 +817,7 @@ dt_wt4555_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 # SHORTER1 & SHORTER2
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r shorter, warning=FALSE, echo=FALSE, message=FALSE}
 
 #shorter now than 20s/30s?
 simple_funct1(D_848580651, "SHORTER: Shorter now than 20's and 30's")
@@ -839,7 +835,7 @@ merged %>% mutate(D_207494582=as.numeric(as.character(D_207494582))) %>%
 ```
 
 # CARWEIGHT
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r carweight, warning=FALSE, echo=FALSE, message=FALSE}
 
 #where do you carry your body weight 
  
@@ -874,7 +870,7 @@ dt_wt_carry_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 # HAIRFEM & HAIRMALE
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r height, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Female
 
@@ -961,14 +957,14 @@ dt_male_hair_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 # HRMED1-4
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r hairmed, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Taken meds for hair thinning?
 simple_funct1(D_769668224, "HRMED: Ever Taken Hair Thinning Medication")
 
 ```
 
-```{r, include=FALSE}
+```{r hairmedtype, include=FALSE}
 
 #What type?
 dt_hrmed_typ= data_tib_base   %>%  filter(D_769668224==353358909)  
@@ -997,7 +993,7 @@ for (i in 1:3){
 hrm2_dx$hrm2_dx <- c("Rogaine, Minoxidil, or Ioniten","Finasteride","Other")
 ```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r  hairmedtypetable, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(hrm2_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 hrm2 <- hrm2_dx[, c(4,1,2)]
 
@@ -1033,7 +1029,7 @@ grid.arrange(hairthin1, hairthin0, nrow=2)
 ```
 
 # ACNE1, ACNE2
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r acne, warning=FALSE, echo=FALSE, message=FALSE}
 
 ##Acne
 #See doctor for severe/ongoing acne?
@@ -1047,7 +1043,7 @@ boxp_funct(D_164752169,"Age Doctor Visited for Acne","Age")
 ```
 
 # ACNEMED 1-3
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r acnemed, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Used prescription meds?
 one_logic_funct1(D_512167179, D_283634623, 353358909, "ACNEMED: Ever Taken Medication for Severe Acne")
@@ -1088,7 +1084,7 @@ grid.arrange(acne1, acne0, nrow=2)
 
 
 # ADOPFOST, MULTBIRTH 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r adoptmult, warning=FALSE, echo=FALSE, message=FALSE}
 #Foster/Adopted
 simple_funct1(D_535621923, "ADOPTFOST: Adopted or Foster Child")
 
@@ -1104,7 +1100,7 @@ simple_funct1(D_992987417, "MULTBIRTH: A Twin or Multiple")
 
 
 # MOM1
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r mom1, warning=FALSE, echo=FALSE, message=FALSE}
 
 ##Mom
 #living
@@ -1116,7 +1112,7 @@ simple_funct1(D_170440011, "MOM1: Mother Living")
 ```
 
 # MOMAGE & MOMDEATH
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r momagedeath, warning=FALSE, echo=FALSE, message=FALSE}
 
 #age now
 boxp_funct(D_354326265_D_378988419,"Mother's Current Age","Age")
@@ -1128,7 +1124,7 @@ boxp_funct(D_422714611_D_807765962,"Mother's Age at Death","Age")
 ```
 
 # DAD1
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r dad1, warning=FALSE, echo=FALSE, message=FALSE}
 
 ##Dad
 #living?
@@ -1139,7 +1135,7 @@ simple_funct1(D_367374606, "DAD: Father Living")
 ```
 
 # DADAGE & DADDEATH
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r dadagedeath, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 #age now)
@@ -1152,7 +1148,7 @@ boxp_funct(D_628078826_D_517670352,"Father's Age at Death","Age")
 ```
 
 # SIB, SIB2, SIB3
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r sib, warning=FALSE, echo=FALSE, message=FALSE}
 
 #how many siblings do you have
 hist_funct(D_694265648, "SIB1: Number of Siblings", "Siblings", "Frequency")
@@ -1223,7 +1219,7 @@ dtSIB3_1_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 # MULT2 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r sibmult, warning=FALSE, echo=FALSE, message=FALSE}
 
 ##sib_logic_funct(D_807431780_1_1, 1, "MULT2_1: Sibling 1 a Twin or Multiple")
 
@@ -1256,7 +1252,7 @@ MULT2_1_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 # SIB4
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r sib4, warning=FALSE, echo=FALSE, message=FALSE}
 
 ##sib_logic_funct(D_890637099_1_1, 1, "SIB4_1: Sibling 1 Still Living")
 
@@ -1290,7 +1286,7 @@ SIB4_1_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 # SIBAGE/SIBDEATH
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r sibagedeath, warning=FALSE, echo=FALSE, message=FALSE}
 
 sib1_age=boxp_funct(D_869387390_1_1_D_478706011_1,"SIBAGE1: Age of Sibling 1 Today", "Age")
 sib2_age=boxp_funct(D_869387390_2_2_D_478706011_2,"SIBAGE2: Age of Sibling 2 Today", "Age")
@@ -1320,7 +1316,7 @@ grid.arrange(sib1_death,sib2_death,sib3_death,sib4_death, nrow=2)
 ```
 
 # CHILD, CHILD2, CHILD3
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r child13, warning=FALSE, echo=FALSE, message=FALSE}
 
 #how many children do you have?
 #hist_funct(D_446999144, "Number of Children", "Children", "Frequency")
@@ -1425,7 +1421,7 @@ dtCHILD3_1_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 # CHILDMULT
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r childmult, warning=FALSE, echo=FALSE, message=FALSE}
 
 ##child_logic_funct(D_473529484_1_1, 1, "CHILDMULT_1: Child 1 a Twin or Multiple")
 
@@ -1459,7 +1455,7 @@ CHILDMULT_1_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 # CHILD4
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r child4, warning=FALSE, echo=FALSE, message=FALSE}
 
 ##child_logic_funct(D_418392907_1_1, 1, "CHILD4_1: Child 1 Still Living")
 
@@ -1494,7 +1490,7 @@ CHILD4_1_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 # CHILDAGE & CHILDDEATH
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r childagedeath, warning=FALSE, echo=FALSE, message=FALSE}
 
 ch1_age=boxp_funct(D_640010727_1_1_D_299300933_1,"Age of Child 1 Today", "Age")
 ch2_age=boxp_funct(D_640010727_2_2_D_299300933_2,"Age of Child 2 Today", "Age")
@@ -1518,14 +1514,14 @@ grid.arrange(ch1_age_d,ch2_age_d,ch3_age_d, ch4_age_d, nrow=2)
 
 
 # STUDENT
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r student, warning=FALSE, echo=FALSE, message=FALSE}
 simple_funct1(D_784967158, "STUDENT: Currently Enrolled in School")
 
 
 ```
 
 # WORK, WORK2, WORK3
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r work13, warning=FALSE, echo=FALSE, message=FALSE}
 
 # WORK
 
@@ -1569,7 +1565,7 @@ dt_work3_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 # OCCUPTN1
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r occup1, warning=FALSE, echo=FALSE, message=FALSE}
 
 #current ocupational category
 
@@ -1600,7 +1596,7 @@ dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 # EMPLYR1, EMPLYRSRVCE1
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r emplyr, warning=FALSE, echo=FALSE, message=FALSE}
 
 #name of current employer
 ##table(merged$D_434316600) #-- potentially identifying? And Very long with individual reponses
@@ -1661,7 +1657,7 @@ dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 # WORK4-7
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r work47, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 #data_tib_base$D_739294356=as.numeric(as.character(data_tib_base$D_739294356))
@@ -1761,7 +1757,7 @@ dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 # OCCUPTN2
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r occup2, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Occupational category for longest held job--OCCUPTN2
 
@@ -1792,7 +1788,7 @@ dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 # EMPLYR2 & EMPLYRSRVCE2
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r emplyr2, warning=FALSE, echo=FALSE, message=FALSE}
 
 #employers name for longest held job--EMPLYR2
 home1skip <- data_tib_base%>% filter(D_403258164==353358909 | D_847533056!=353358909) %>% select(D_988878019)
@@ -1849,7 +1845,7 @@ dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 # WORK8
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r work8, warning=FALSE, echo=FALSE, message=FALSE}
 
 #yrs at longest held position 
 merged %>% mutate(D_686172464=as.numeric(as.character(D_686172464))) %>%
@@ -1863,7 +1859,7 @@ merged %>% mutate(D_686172464=as.numeric(as.character(D_686172464))) %>%
 ```
 
 # PPLHOUSE
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r ppl, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Number of people in the house
 hist_funct(D_641651634_D_173508724, "Number of People in Household", "People", "Frequency")
@@ -1872,7 +1868,7 @@ cat("Don't know number of people in household:", sum(table(merged$D_641651634_D_
 ```
 
 # ALTADDRESS2- not in BQ
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r altadd2, warning=FALSE, echo=FALSE, message=FALSE}
 
 #ALTADDRESS1/ALTADDRESS2/ALTCONTACT1/ALTCONTACT2 won't list for PII reasons
 
@@ -1883,7 +1879,7 @@ cat("Don't know number of people in household:", sum(table(merged$D_641651634_D_
 ```
 
 # ALTCONTACT1,2
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r altcontact12, warning=FALSE, echo=FALSE, message=FALSE}
 
 #ALTADDRESS1/ALTADDRESS2/ALTCONTACT1/ALTCONTACT2 won't list for PII reasons
 
@@ -1944,7 +1940,7 @@ dt_altcont2_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 # QXAUTHOR1
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r author, warning=FALSE, echo=FALSE, message=FALSE}
 
 #merged survey 
 ##dict <- c(dict, "275706407"="Completed by someone else on behalf of the participant", "589702540"="Completed by Participant")
@@ -1962,7 +1958,7 @@ simple_funct1(D_431721131, "QXAUTHOR1: Who Completed this Survey")
 
 
 
-```{r, include=FALSE}
+```{r merge2, include=FALSE}
 
 library(data.table)
 
@@ -2080,7 +2076,7 @@ data_tib_all2 <- as_tibble(merge_m2)
 
 
 
-```{r, warning=FALSE, echo=FALSE,  message=FALSE, include=FALSE}
+```{r function2, warning=FALSE, echo=FALSE,  message=FALSE, include=FALSE}
 
 hist_funct <- function(CID,Title, Xlab, Ylab) {
   CID_SYM <- rlang::ensym(CID)
@@ -2216,7 +2212,7 @@ boxp_funct_F <- function(CID,Title, Xlab) {
 
 
 # PAINREL1
-```{r, include=FALSE}
+```{r painrel, include=FALSE}
 
 mds= data_tib_all2 %>%  mutate(medications= case_when( D_399982309_D_469512398==1 ~ "Baby Aspirin",
                                                           D_399982309_D_194424439==1 ~ "Regular Aspirin",
@@ -2293,7 +2289,7 @@ tab_footnote(
 
 # PAINREL2-7
 ## Baby Aspirin
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r painrel1, warning=FALSE, echo=FALSE, message=FALSE}
 
 #How often
 #hist_funct(D_861838892_D_765748316, "PAINREL2: Days per Week Baby aspirin Taken", "Days", "Frequency") 
@@ -2327,7 +2323,7 @@ hist_funct(D_564374538, "PAINREL6_1: Years Ago Baby aspirin Last Taken", "Years"
 ```
 
 
-```{r, include=FALSE}
+```{r  painrel1reason, include=FALSE}
 
 dt_reasons_P1= data_tib_all2  %>%   filter(D_399982309_D_469512398==1)
 
@@ -2357,7 +2353,7 @@ for (i in 1:8){
 
 medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevention","Headaches","Illness or Fever","Muscle Joint Pain","Toothache")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Painrel1Table, warning=FALSE, echo=FALSE, message=FALSE}
 # colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 # mgr1_1 <- medsp_dx[, c(4,1,2)]
 # 
@@ -2400,7 +2396,7 @@ tab_footnote(
 
 
 ## Regular aspirin 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r painrel2, warning=FALSE, echo=FALSE, message=FALSE}
 #How often taken
 bar_rplc_funct(D_837412550_D_765748316, "PAINREL2_2: Days per Week of Regular aspirin", "Days", "Frequency") 
 
@@ -2427,7 +2423,7 @@ hist_funct(D_265428345, "PAINREL6_2: Years Ago Regular aspirin Last Taken", "Yea
 
 ```
 
-```{r, include=FALSE}
+```{r painrel2reason, include=FALSE}
 
 #Reasons taken
 dt_reasons_P2= data_tib_all2 %>%  filter(D_399982309_D_194424439==1) 
@@ -2500,7 +2496,7 @@ tab_footnote(
 
 
 ## Ibuprofen
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r painrel3, warning=FALSE, echo=FALSE, message=FALSE}
 
 #How often taken
 bar_rplc_funct(D_388804810_D_765748316, "PAINREL2_3: Days per Week Ibuprofen Taken", "Days", "Frequency")
@@ -2530,7 +2526,7 @@ hist_funct(D_491549803 , "PAINREL6_3: Years Ago Ibuprofen Last Taken", "Years", 
 
 
 ```
-```{r, include=FALSE}
+```{r painrel3reason, include=FALSE}
 
 #Reasons taken
 dt_reasons_P3= data_tib_all2  %>%  filter(D_399982309_D_422188606==1) 
@@ -2562,7 +2558,7 @@ for (i in 1:8){
 
 medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevention","Headaches","Illness or Fever","Muscle Joint Pain","Toothache")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r PainRel3Table, warning=FALSE, echo=FALSE, message=FALSE}
 # colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 # mgr1_1 <- medsp_dx[, c(4,1,2)]
 # 
@@ -2604,7 +2600,7 @@ tab_footnote(
 
 
 ## Acetaminophen 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r painrel4, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 
@@ -2634,7 +2630,7 @@ hist_funct(D_846227588, "PAINREL6_4: Years Ago Tylenol Taken", "Years", "Frequen
 
 
 ```
-```{r, include=FALSE}
+```{r Painrel4Reason, include=FALSE}
 
 #Reasons taken
 dt_reasons_P4 <- data_tib_all2 %>%   filter(D_399982309_D_555555502==1)
@@ -2664,7 +2660,7 @@ for (i in 1:8){
 
 medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevention","Headaches","Illness or Fever","Muscle Joint Pain","Toothache")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Painrel4Table, warning=FALSE, echo=FALSE, message=FALSE}
 # colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 # mgr1_1 <- medsp_dx[, c(4,1,2)]
 # 
@@ -2704,7 +2700,7 @@ tab_footnote(
 ```
 
 ## Naproxen 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r painrel5, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 
@@ -2738,7 +2734,7 @@ hist_funct(D_798182168, "PAINREL6_5: Years Ago Aleve Last Taken", "Years", "Freq
 
 
 ```
-```{r, include=FALSE}
+```{r Painrel5Reason, include=FALSE}
 
 #Reasons taken
 dt_reasons_P5 <- data_tib_all2 %>%   filter(D_399982309_D_800410166==1)
@@ -2768,7 +2764,7 @@ for (i in 1:8){
 
 medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevention","Headaches","Illness or Fever","Muscle Joint Pain","Toothache")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Painrel5Table, warning=FALSE, echo=FALSE, message=FALSE}
 # colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 # mgr1_1 <- medsp_dx[, c(4,1,2)]
 # 
@@ -2808,7 +2804,7 @@ tab_footnote(
 ```
 
 ## Celebrex 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r painrel6, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 
@@ -2839,7 +2835,7 @@ hist_funct(D_322479862, "PAINREL6_6: Years Ago Celebrex Last Taken", "Years", "F
 
 
 ```
-```{r, include=FALSE}
+```{r Painrel6Reason, include=FALSE}
 
 #Reasons taken
 dt_reasons_P6 <- data_tib_all2 %>%   filter(D_399982309_D_221645137==1)
@@ -2869,7 +2865,7 @@ for (i in 1:8){
 
 medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevention","Headaches","Illness or Fever","Muscle Joint Pain","Toothache")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Painrel6Table, warning=FALSE, echo=FALSE, message=FALSE}
 # colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 # mgr1_1 <- medsp_dx[, c(4,1,2)]
 # 
@@ -2910,7 +2906,7 @@ tab_footnote(
 
 
 # PAINREL7 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r painrel7, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 #How often taken 
@@ -2943,7 +2939,7 @@ hist_funct(D_737490587, "PAINREL6_7: Years Ago Prescription Opiods Last Taken", 
 
 
 ```
-```{r, include=FALSE}
+```{r painrel7reason, include=FALSE}
 
 #Reasons taken
 dt_reasons_P7= data_tib_all2 %>%  filter(D_399982309_D_974248369==1)
@@ -2974,7 +2970,7 @@ for (i in 1:8){
 
 medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevention","Headaches","Illness or Fever","Muscle Joint Pain","Toothache")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r painrel7table, warning=FALSE, echo=FALSE, message=FALSE}
 # colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 # mgr1_1 <- medsp_dx[, c(4,1,2)]
 # 
@@ -3015,7 +3011,7 @@ tab_footnote(
 
 
 # PAINREL8
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r painrel8, warning=FALSE, echo=FALSE, message=FALSE}
 #Ever taken not prescr.  
 
 simple_funct2(D_414005872, "PAINREL8: Taken Opioids Not Prescribed")
@@ -3025,7 +3021,7 @@ simple_funct2(D_414005872, "PAINREL8: Taken Opioids Not Prescribed")
 
 
 # CHOLHTN1-6
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r CHOLHTN, warning=FALSE, echo=FALSE, message=FALSE}
 chlot= data_tib_all2 %>%  mutate(answer= case_when(D_614123836_D_480724806==1 & D_614123836_D_819373917==1~ "Both",
                                                      D_614123836_D_480724806==1 ~ "Statins",
                                                      D_614123836_D_819373917==1 ~ "Anti-hypertensive medication",
@@ -3058,7 +3054,7 @@ chlot_summary %>%  gt() %>%
   ) 
 ```
 ## Statins
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Statins, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 
@@ -3095,7 +3091,7 @@ hist_funct(D_297084062, "CHOLHTN6_1: Years Ago Statins Last Taken", "Years", "Fr
 
 
 ## Anti-Hyertension 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r AntiHyertension, warning=FALSE, echo=FALSE, message=FALSE}
 #How often
 #hist_funct(D_305292465_D_765748316, "CHOLHTN2_2: How often Anti-Hypertensive Meds Taken (per week)", "Years", "Frequency")
 bar_rplc_funct(D_305292465_D_765748316, "CHOLHTN2_2: How often Anti-Hypertensive Meds Taken (per week)", "Days", "Frequency")
@@ -3131,7 +3127,7 @@ hist_funct(D_991427384, "CHOLHTN6_2: Years Ago Anti-Hypertensive Meds Last Taken
 
 
 # METFOR1-6
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r METFOR, warning=FALSE, echo=FALSE, message=FALSE}
 
 ##Metformin
 simple_funct2(D_112024853, "METFOR: Ever Used Anti-Hypertensive Meds 4x/month for 6+ Months")
@@ -3168,7 +3164,7 @@ hist_funct(D_371176229, "METFOR6: Years Ago Metformin Taken", "Years", "Frequenc
 ```
 
 # INSULIN1-7
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r INSULIN, warning=FALSE, echo=FALSE, message=FALSE}
 
 ##Insulin
 simple_funct2(D_982448213, "INSULIN1: Ever Used Insulin 4x/month for 6+ Months")
@@ -3213,7 +3209,7 @@ hist_funct(D_556235252,"INSULIN7: Years Ago Insulin Last Taken", "Years", "Frequ
 
 # ACIDSUP1-6
 ## Prescription Proton Pump Inhibitors
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r ACIDSUP, warning=FALSE, echo=FALSE, message=FALSE}
 
 brand= data_tib_all2  %>%  mutate(med= case_when(D_643361372_D_933374659==1 ~ "Prescription Proton Pump Inhibitors",
                                             D_643361372_D_920460744==1 ~ "Over the Counter Proton Pump Inhibitors",
@@ -3274,7 +3270,7 @@ hist_funct(D_889053435, "ACIDSUP6_1: Years Ago Prescription Proton Pump Inhibito
 
 
 ## Over the Counter Proton Pump Inhibitors
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r OTCPump, warning=FALSE, echo=FALSE, message=FALSE}
 #How Often
 #hist_funct(D_416865817_D_765748316,"ACIDSUP2_2: How Often Over the Counter Proton Pump Inhibitors Taken (per week)", "Days", "Frequency")
 bar_rplc_funct(D_416865817_D_765748316, "ACIDSUP2_2: How Often Over the Counter Proton Pump Inhibitors Taken (per week)", "Days", "Frequency")
@@ -3309,7 +3305,7 @@ hist_funct(D_497904005,"ACIDSUP6_2: Years Ago over-the-counter proton pump inhib
 
 
 ## Over the Counter H2 Receptor Blockers
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r RecpBlockers, warning=FALSE, echo=FALSE, message=FALSE}
 #How often 
 #hist_funct(D_266752903_D_765748316,"ACIDSUP2_3: How often over-the-counter H2 receptor blockers Taken (per week)", "Days", "Frequency")
 bar_rplc_funct(D_266752903_D_765748316, "ACIDSUP2_3: How often over-the-counter H2 receptor blockers Taken (per week)", "Days", "Frequency")
@@ -3343,7 +3339,7 @@ hist_funct(D_889053435,"ACIDSUP6_3: Years Ago over-the-counter H2 Receptor Block
 
 
 # MENSHIS 1-9
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MENSHIS19, warning=FALSE, echo=FALSE, message=FALSE}
 
 data_tib_all2$D_496539718_D_969451837 <- round(as.numeric(data_tib_all2$D_496539718_D_969451837), digits=0)
 hist_funct_F(D_496539718_D_969451837,"MENSHIS: Age at First Menstrual Period", "Age", "Frequency")
@@ -3508,7 +3504,7 @@ hist_funct_F(D_534920374,"MENSHIS8: Age at Last Period", "Age", "Frequency")
 
 
 ```
-```{r, include=FALSE}
+```{r MENSHIS9Answ, include=FALSE}
 
 expr= fb %>%  mutate(symptoms= case_when(D_547633480_D_801183888==1 ~ "Spotting between Periods",
                                          D_547633480_D_825584471==1 ~ "Spotting after sex",
@@ -3538,7 +3534,7 @@ mens9_dx$mens9_dx ### how are their race variables being assigned here?? wrong v
 mens9_dx$mens9_dx <- c("Spotting between Periods","Spotting after sex","Heavy bleeding during period", "Irregular period","Bleeding after menopause","None of the Above")
 
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MENSHISTable, warning=FALSE, echo=FALSE, message=FALSE}
 # colnames(mens9_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 # mgr1_1 <- mens9_dx[, c(4,1,2)]
 # 
@@ -3582,7 +3578,7 @@ tab_footnote(
 
 
 # PREG 2-11
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r PREG211, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 
@@ -4378,7 +4374,7 @@ dtpreg11_4_summary %>%  gt() %>%
 ```
 
 # FERT 1-9
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Fert, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Ever tried to get pregnant for over a year but did not
 one_logic_funct2(D_939897560, D_407056417, 536341288, "FERT1: Tried to get pregant for over a year but did not")
@@ -4397,7 +4393,7 @@ one_logic_funct2(D_424047361, D_939897560, 353358909, "FERT3: Sought medical adv
 
 ```
 
-```{r, include=FALSE}
+```{r Fert4, include=FALSE}
 
 dtfert4= fb %>% filter(D_424047361==353358909) 
 
@@ -4427,7 +4423,7 @@ for (i in 1:8){
 
 medsp_dx$medsp_dx <- c("Tubal blockage","Ovary or hormone problem","Endometriosis","Cervical mucus","Partner's infertility","Not looked into","No cause found","Other")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Fert4Table, warning=FALSE, echo=FALSE, message=FALSE}
 # colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 # mgr1_1 <- medsp_dx[, c(4,1,2)]
 # 
@@ -4474,7 +4470,7 @@ one_logic_funct2(D_224681201, D_407056417, 536341288, "FERT5: Ever used fertilit
 
 
 
-```{r, include=FALSE}
+```{r fert6, include=FALSE}
 dtFERT6= fb %>% filter(D_224681201==353358909)
 
 
@@ -4521,7 +4517,7 @@ for (i in 1:13){
 fert6_dx$fert6_dx <- c("Clomid","Gonadotropins","Danazol","Danocrine","hCG","Milophene","Lupron depot","Nolvadex","Pergonal","Seophene","Synarel nasal solution", "Other Medication", "None of the above")
 ```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Fert6Table, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(fert6_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 mgr1 <- fert6_dx[, c(4,1,2)]
 
@@ -4556,7 +4552,7 @@ tab_footnote(
 
 
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r fert17, warning=FALSE, echo=FALSE, message=FALSE}
 #how many months/cycles taken     
 hist_funct_F(D_139673389,"FERT17_1: Months/Cycles taking Chlomid", "Months", "Frequency")
 
@@ -4596,7 +4592,7 @@ hist_funct_F(D_875135634,"FERT9: Cycles of IVF", "Cycles", "Frequency")
 ```
 
 # HORMED1-5
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r hormed, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 
@@ -4776,7 +4772,7 @@ hist_funct_F(D_139348254_D_970604592,"HORMED5_9: Years an Other Medication was U
 
 # MENOHOR
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE }
+```{r MENOHOR, warning=FALSE, echo=FALSE, message=FALSE }
 #Used prescribed hormones
 one_logic_funct2(D_621744463, D_407056417, 536341288, "MENOHOR: Used Prescribed Hormones")
 
@@ -4786,7 +4782,7 @@ one_logic_funct2(D_621744463, D_407056417, 536341288, "MENOHOR: Used Prescribed 
 ```
 
 # ESTROHOR1-5
-```{r, include=FALSE}
+```{r ESTROHOR, include=FALSE}
 
 dtESTROHOR= fb  %>% filter(D_621744463==353358909)
 
@@ -4927,7 +4923,7 @@ grid.arrange(ESTROHOR4_1, ESTROHOR4_2, ESTROHOR4_3, ESTROHOR4_4, ESTROHOR4_5, nr
 
 # PROGHOR 1-6_2
 ## Progestin
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r PROGHOR, warning=FALSE, echo=FALSE, message=FALSE}
 #Ever taken
 
 dtPROGHOR= data_tib_all2  %>% filter(D_621744463==353358909 & D_407056417==536341288)
@@ -5058,7 +5054,7 @@ dtCOMBHOR_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 # COMBHOR1-6
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r COMBHOR, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Ever taken
 
@@ -5175,7 +5171,7 @@ dtCOMBHOR_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 # SEPHOR, 2
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r SEPHOR, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Days per cycle used (separate pills)
 dtCOMBHOR= data_tib_all2  %>%   filter(D_263785082_D_263785082_D_944874693==1)
@@ -5241,13 +5237,13 @@ dtseph2_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 # TESTHER1-5
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r TESTHER, warning=FALSE, echo=FALSE, message=FALSE}
 #Ever used
 one_logic_funct2(D_111235606, D_621744463, 353358909, "TESTTHER1: Used Testosterone Therapy")
 
 
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r TESTHER2, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 dtTESTTHER2= data_tib_all2  %>% filter(D_111235606==353358909)
 
@@ -5274,7 +5270,7 @@ testtr2_dx$testtr2_dx ### how are their race variables being assigned here?? wro
 
 testtr2_dx$testtr2_dx <- c("Gel/Cream Testosterone","Testosterone Injection","Testosterone Skin Patch","Testosterone Pills","Gum or Inner-cheek Patch Testosterone","Slow Release Implant Testosterone")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r TESTHER2Table, warning=FALSE, echo=FALSE, message=FALSE}
 # colnames(testtr2_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 # testt2_1 <- testtr2_dx[, c(4,1,2)]
 # 
@@ -5314,7 +5310,7 @@ tab_footnote(
 
 
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r TESTHER35, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 
@@ -5373,7 +5369,7 @@ boxp_funct_F(D_414663452,"TESTTHER5: Age Testosterone Last Used", "Age")
 ```
 
 # PRESHOR1-6
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r PRESHOR, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Taken other types
 one_logic_funct2(D_570187182, D_621744463, 353358909, "PRESHOR: Ever taken Other Prescription Medication")
@@ -5406,7 +5402,7 @@ hist_funct(D_305195766_D_970604592,"PRESHOR6: Total Years Other Testosterone Use
 ```
 
 
-```{r, include=FALSE}
+```{r WorkActGrids, include=FALSE}
 
 #warning=FALSE, echo=FALSE, message=FALSE
 
@@ -5569,7 +5565,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 # SITTINGA-D 
-```{r, include=FALSE}
+```{r SittingGrids, include=FALSE}
 #warning=FALSE, echo=FALSE, message=FALSE
 
  ##simple_funct1(D_649352910_D_654385712, "SITTINGA: Driving or Sitting in a Car, Bus, or Train") 
@@ -5716,7 +5712,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
 ``` 
 
 # HOUSE1A-2E 
-```{r, include=FALSE}
+```{r houre1a2e, include=FALSE}
 #warning=FALSE, echo=FALSE, message=FALSE
 
  ##simple_funct1(D_733547268_D_980120253, "HOUSE1A: Frequency of Light Household Chores") 
@@ -6067,7 +6063,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
 ``` 
 
 # LAWN1, LAWN2A-LAWN4C 
-```{r, include=FALSE}
+```{r Lawn, include=FALSE}
 #warning=FALSE, echo=FALSE, message=FALSE
 
 
@@ -6420,7 +6416,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 # SLEEPSCHB 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r SLEEPSCHB, warning=FALSE, echo=FALSE, message=FALSE}
 
  ##one_logic_funct(D_168431681,D_591723682,"353358909","SLEEPSCHB: Days per Week Sleep Determined by Job or School") 
  SLEEPSCHB <- data_tib_all2 %>%  filter(D_591723682==353358909) 
@@ -6457,7 +6453,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
 ``` 
 
 # SLEEP1A, D, F, I, K, L, M 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r SLEEP1, warning=FALSE, echo=FALSE, message=FALSE}
 
  #Time you go to bed workdays/most days   #DO NOT CHANGE TO AS NUMERIC 
  merge_m2 %>% filter(!is.na(merge_m2$D_636757313)) %>% ggplot(aes(x=D_636757313))+ ylab("Count") +  
@@ -6502,7 +6498,7 @@ simple_funct2(D_392629868, "SLEEP1K: Using an Alarm Clock on Most Days")
 ``` 
 
 # SLEEP2A, D, F, I, K, L, M, N 
-```{r, warning=FALSE, echo=FALSE, message=FALSE} 
+```{r SLEEP2, warning=FALSE, echo=FALSE, message=FALSE} 
 
  #Time you go to bed non-workdays 
  merge_m2$hour_nw <- as.numeric(ifelse(as.numeric(str_sub(merge_m2$D_823919522,1,2))>9, str_sub(merge_m2$D_823919522,1,2), str_sub(merge_m2$D_823919522,2,2))) #clock times, so 0=00, 1=01, ect.
@@ -6554,7 +6550,7 @@ one_logic_funct2(D_823541843, D_591723682,353358909, "SLEEP2M: Ability to Choose
 ``` 
 
 # SLHABIT1A-G
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r SLHABIT1, warning=FALSE, echo=FALSE, message=FALSE}
 
 ##simple_funct1(D_421859821_D_220238240, "SLHABIT1A: Having Trouble Falling Asleep")
 
@@ -6818,7 +6814,7 @@ dtSLHABIT1G_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ```
 
 # SLHABIT2
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r SLHABIT2, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Sleep last 4 weeks
 ##simple_funct1(D_910856756, "SLHABIT2: Sleep Quality in the Last Four Weeks")
@@ -6854,7 +6850,7 @@ dtSLHABIT2_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 # SLHABIT3A-I
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r SLHABIT3, warning=FALSE, echo=FALSE, message=FALSE}
 
 ##Chance of Falling asleep while:
 #sitting and reading
@@ -7136,7 +7132,7 @@ dtSLHABIT3I_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ```
 
 # SLHABIT4
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r SLHABIT4, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Fallen asleep while driving
 simple_funct2(D_471018082, "SLHABIT4: Ever Fallen Asleep while Driving")
@@ -7145,7 +7141,7 @@ simple_funct2(D_471018082, "SLHABIT4: Ever Fallen Asleep while Driving")
 ```
 
 # SNORING1-5
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r snoring, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Do you snore
 simple_funct2(D_940733450, "SNORING1: Do you Snore?")
@@ -7253,7 +7249,7 @@ dtSNORING5_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 # SLPROB1, 2
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r SleepProb, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 slp_cond= data_tib_all2 %>%  mutate(cond= case_when(D_479628567_D_370923702==1 ~ "Sleep Apnea",
                                              D_479628567_D_495144424==1 ~ "Insomnia",
@@ -7319,7 +7315,7 @@ tab_footnote(
 
 
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r SleepProb2, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 dtSLPROB2= data_tib_all2 %>% filter(D_479628567_D_370923702==1) 
 
@@ -7345,7 +7341,7 @@ sleep_prob1$sleep_prob1 ### how are their race variables being assigned here?? w
 
 sleep_prob1$sleep_prob1 <- c("Sleep Apnea","Insomnia","Restless Legs", "Narcolepsy","None of the above")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r SleepProb2Table, warning=FALSE, echo=FALSE, message=FALSE}
 # colnames(sleep_prob1) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 # testt2_1 <- sleep_prob1[, c(4,1,2)]
 # 
@@ -7391,7 +7387,7 @@ tab_footnote(
 
 
 # SHIFTWORK1, 2, 5, 8, 9, 10
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r ShiftWork, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Ever
 #simple_funct2(D_674976924, "SHIFTWORK: Worked as a Shift Worker")
@@ -7509,7 +7505,7 @@ hist_funct(D_199254974_D_120485458,"SHIFTWORK10: Year When You were Last a Shift
 
 
 
-```{r, include=FALSE}
+```{r query3, include=FALSE}
 
 
 querymod3 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module3_v1_JP` where Connect_ID IS NOT NULL"
@@ -7527,7 +7523,7 @@ data_tib_all3 <- as_tibble(data_all3)
 
 ```
 
-```{r, warning=FALSE, include=FALSE}
+```{r fucntion3, warning=FALSE, include=FALSE}
 #Created Functions for this code
 
 #Histogram 
@@ -7644,19 +7640,19 @@ one_logic_funct3 <- function(CID, CID_prev, Prev_Answer, Title){
 
 
 # SKINSUN
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r skinsun, warning=FALSE, echo=FALSE, message=FALSE}
 
 #SKINSUN   #Adjust to Age Chart Filter
 simple_funct3(D_863593410, "SKINSUN: Skin Reaction of Being in the Sun for an Hour Without Sunscreen")
 ```
 # BLISTERING
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r blister, warning=FALSE, echo=FALSE, message=FALSE}
 
 #BLISTERING
 simple_funct3(D_525152373, "BLISTERING: Number of Blistering Sunburns over Lifetime")
 ```
 # TANOUT12, TANOUTADU
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r tanout, warning=FALSE, echo=FALSE, message=FALSE}
 
 #TANOUT12
 simple_funct3(D_146319128, "TANOUT12: Frequency of Sunbathing to Get a Tan in the past Year")
@@ -7667,7 +7663,7 @@ simple_funct3(D_146319128, "TANOUT12: Frequency of Sunbathing to Get a Tan in th
 simple_funct3(D_910501158, "TANOUTADU: Frequency of Sunbathing to Get a Tan During Your Adult Life")
 ```
 # SUNCREEN1-4
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r sunscreen, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 #SUNCREEN1
@@ -7744,7 +7740,7 @@ dt_sscreen4 %>%  gt(rowname_col = "row_lab") %>%
 
 
 # COVERSKIN
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r coverskin, warning=FALSE, echo=FALSE, message=FALSE}
 simple_funct3(D_795761911, "COVERSKIN: Frequency of Wearing Clothes/Hats to Cover Skin in the Sun")
 ```
 
@@ -7762,7 +7758,7 @@ simple_funct3(D_795761911, "COVERSKIN: Frequency of Wearing Clothes/Hats to Cove
 
 
 
-```{r, include=FALSE}
+```{r query4, include=FALSE}
 
 querymod4 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module4_v1_JP` where Connect_ID IS NOT NULL"
 mod4_table <- bq_project_query(project, querymod4)
@@ -7853,7 +7849,7 @@ one_logic_funct4 <- function(CID, CID_prev, Prev_Answer, Title){
 
 
 # WORK2019
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r work19, warning=FALSE, echo=FALSE, message=FALSE}
 
 simple_funct4(D_694113343, "WORK2019: Work for Pay in 2019")
 
@@ -7861,7 +7857,7 @@ simple_funct4(D_694113343, "WORK2019: Work for Pay in 2019")
 ```
 
 # WORKRES
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r workres, warning=FALSE, echo=FALSE, message=FALSE}
 
 one_logic_funct4(D_374639590,D_694113343,353358909, "WORKRES: Daily Work Tasks Include Driving")
 
@@ -7869,7 +7865,7 @@ one_logic_funct4(D_374639590,D_694113343,353358909, "WORKRES: Daily Work Tasks I
 
 
 # NUMWORK
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r numwork, warning=FALSE, echo=FALSE, message=FALSE}
 
 one_logic_funct4(D_828801156, D_374639590,104430631, "NUMWORK: Number of Workplaces Commuted to")
 
@@ -7877,7 +7873,7 @@ one_logic_funct4(D_828801156, D_374639590,104430631, "NUMWORK: Number of Workpla
 ```
 
 # PREWORK, RREWORKRES
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r prework, warning=FALSE, echo=FALSE, message=FALSE}
 
 simple_funct4(D_995620555, "PREWORK: Commute From Home to Job in the Last 20 Years")
 
