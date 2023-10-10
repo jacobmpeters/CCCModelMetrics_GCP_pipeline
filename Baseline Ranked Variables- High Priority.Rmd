@@ -168,39 +168,6 @@ dim(merged)
 
 
 
-# m3 <- "SELECT Connect_ID, D_947205597_D_712653855, D_947205597_D_706254326, D_947205597_D_198133418, D_947205597_D_817381897, D_947205597_D_539648641, 
-# D_947205597_D_686310465, D_448968121  FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module3_v1_JP`
-# where Connect_ID IS NOT NULL"
-# m3_table <- bq_project_query(project, m3)
-# m3_data <- bq_table_download(m3_table, bigint = "integer64")
-# 
-# m3_data$Connect_ID <- as.numeric(m3_data$Connect_ID)
-
-
-# #Has a recruitment flag[poi90]
-# merged <- merged %>% filter(D_512820379==486306141 | D_512820379==854703046)
-# 
-# 
-# #User consent submitted
-# merged <- merged %>% filter(D_919254129==353358909)
-# 
-# 
-# #User profile submitted
-# merged <- merged %>% filter(D_699625233==353358909)
-# 
-# 
-# #Verified by site
-# #cat("Verified by site:", sum(merged$D_821247024==197316935, na.rm=TRUE))
-# merged <- merged %>% filter(D_821247024==197316935)
-# 
-# 
-# #Mod1 completed and M3 completed- this way N throughout stays the same 
-# base_vars <- merged %>% filter(d_949302066==231311385) # & d_976570371==231311385 & d_536735468==231311385 & d_663265240 ==231311385)
-# #cat("Module 1 completed:", dim(base_vars)[[1]])
-
-
-#data_tib_base <- as_tibble(base_vars)
-
 data_tib_base <- as_tibble(merged)
 #dim(base_vars)
 
@@ -4248,10 +4215,6 @@ data_all4 <- merge_m4P %>% filter(d_663265240==231311385)
 data_tib_all4 <- as_tibble(data_all4)
 
 
-library(naniar)
-library(UpSetR)
-library(tidyverse)
-
 
 
 Mod4 <- as_tibble(data_tib_all4)
@@ -4566,8 +4529,8 @@ dtPREWORKRES_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ```
 
 
-## Home1 Address
-```{r home1add, warning=FALSE, echo=FALSE, message=FALSE}
+## Home Addresses
+```{r HomeAddress, warning=FALSE, echo=FALSE, message=FALSE}
 Mod4$Street_Number <- Mod4$D_121490150_D_255248624
 Mod4$Street_Name <- Mod4$D_121490150_D_945532934
 Mod4$Apt_Number <- Mod4$D_121490150_D_469838242
@@ -4576,48 +4539,282 @@ Mod4$State <- Mod4$D_121490150_D_195068098
 Mod4$ZIP <- Mod4$D_121490150_D_202784871
 Mod4$Country <- Mod4$D_121490150_D_831127170
 
-#home_add1_1= Mod4 %>% select(Street_Number, Street_Name, City, State, ZIP, Country)
 
-#vis_miss(home_add1_1)+labs(y= "Participants", title="Home 1 Address Missingness")
-#gg_miss_var(home_add1_1, show_pct=T)+labs(y= "Percent of Participants That Skipped")
-
-
-#for( i in 1:nrow(Mod4)){
   home1skip <- Mod4 %>% select(Connect_ID, Street_Number, Street_Name, City, State, ZIP, Country)
-  home1skip= home1skip %>%  mutate(Address1= case_when(is.na(Street_Number)~"Skipped Street Number"))
+  home1skip= home1skip %>%  mutate(Address1= case_when(!is.na(Street_Number) | !is.na(Street_Name) | !is.na(City) | !is.na(State) | !is.na(ZIP) |!is.na(Country)~"Provided Current Address",
+                                                       TRUE ~ "Skipped All Address Components"))
 
 dt_home1skip_summary <- home1skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
-dt_home1skip_summary <- dt_home1skip_summary[1,]
-
-dt_home1skip_summary[2,1] <- "Skipped Street Name" #c("Skipped Street Name", sum(is.na(home1skip$Street_Name)), sum(is.na(home1skip$Street_Name))/dim(home1skip$Street_Name)[[1]])
-dt_home1skip_summary[2,2] <- sum(is.na(home1skip$Street_Name))
-dt_home1skip_summary[2,3] <- (sum(is.na(home1skip$Street_Name))/dim(home1skip)[[1]])*100
-
-dt_home1skip_summary[3,1] <- "Skipped City"
-dt_home1skip_summary[3,2] <- sum(is.na(home1skip$City))
-dt_home1skip_summary[3,3] <- (sum(is.na(home1skip$City))/dim(home1skip)[[1]])*100
-
-dt_home1skip_summary[4,1] <- "Skipped State"
-dt_home1skip_summary[4,2] <- sum(is.na(home1skip$State))
-dt_home1skip_summary[4,3] <- (sum(is.na(home1skip$State))/dim(home1skip)[[1]])*100
-
-dt_home1skip_summary[5,1] <- "Skipped ZIP"
-dt_home1skip_summary[5,2] <- sum(is.na(home1skip$ZIP))
-dt_home1skip_summary[5,3] <- (sum(is.na(home1skip$ZIP))/dim(home1skip)[[1]])*100
-
-dt_home1skip_summary[6,1] <- "Skipped Country"
-dt_home1skip_summary[6,2] <- sum(is.na(home1skip$Country))
-dt_home1skip_summary[6,3] <- (sum(is.na(home1skip$Country))/dim(home1skip)[[1]])*100
 
 dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Address 1 Components Skipped")) %>% 
+  tab_header(title = md("Address 1- Current Address")) %>% 
   cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(participants,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+
+
+home2 <- Mod4 %>% filter(D_290969423==353358909| D_869829679==270752953) %>% 
+  mutate(Address1= case_when(!is.na(D_574985342_D_985267931) | !is.na(D_574985342_D_111275683) | !is.na(D_574985342_D_536516743) | 
+                                                     !is.na(D_574985342_D_283900560) | !is.na(D_574985342_D_467947502) |!is.na(D_574985342_D_368486703)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home2_summary <- home2 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home2_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 2- First Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+
+
+home3 <- Mod4 %>% filter(D_862052821==353358909| D_845483079==270752953) %>%  
+  mutate(Address1= case_when(!is.na(D_828086036_D_875706715) | !is.na(D_828086036_D_645150792) | !is.na(D_828086036_D_588699608) | 
+                                                     !is.na(D_828086036_D_544692849) | !is.na(D_828086036_D_335435992) |!is.na(D_828086036_D_337088272)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home3_summary <- home3 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home3_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 3- Second Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+
+home4 <- Mod4 %>%  filter(D_593146348==353358909 | D_736086261==270752953) %>%  
+  mutate(Address1= case_when(!is.na(D_680046149_D_130174162) | !is.na(D_680046149_D_563832508) | !is.na(D_680046149_D_930511603) | 
+                                                     !is.na(D_680046149_D_756548442) | !is.na(D_680046149_D_455968200) |!is.na(D_680046149_D_728704613)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home4_summary <- home4 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home4_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 4- Third Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+
+home5 <- Mod4 %>% filter(D_983592172==353358909 | D_294308065==270752953) %>%  
+  mutate(Address1= case_when(!is.na(D_274189667_D_838725845) | !is.na(D_274189667_D_565515774) | !is.na(D_274189667_D_742177990) | 
+                                                     !is.na(D_274189667_D_843508307) | !is.na(D_274189667_D_554901696) |!is.na(D_274189667_D_819429013)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home5_summary <- home5 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home5_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 5- Fourth Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+home6 <- Mod4 %>% filter(D_776406200==353358909 | D_385583361==270752953) %>%  
+  mutate(Address1= case_when(!is.na(D_113930886_D_306805272) | !is.na(D_113930886_D_819844467) | !is.na(D_113930886_D_418702418) | 
+                                                     !is.na(D_113930886_D_101219440) | !is.na(D_113930886_D_127963610) |!is.na(D_113930886_D_882731998)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home6_summary <- home6 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home6_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 6- Fifth Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+
+home7 <- Mod4 %>% filter(D_135207939==353358909 | D_768802173==270752953) %>%  
+  mutate(Address1= case_when(!is.na(D_809728747_D_351559015) | !is.na(D_809728747_D_903490632) | !is.na(D_809728747_D_703944664) | 
+                                                     !is.na(D_809728747_D_390463636) | !is.na(D_809728747_D_256790385) |!is.na(D_809728747_D_915222355)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home7_summary <- home7 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home7_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 7- Sixth Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+home8 <- Mod4 %>% filter(D_647612167==353358909 | D_150560299==270752953) %>%  
+  mutate(Address1= case_when(!is.na(D_539057792_D_893639464) | !is.na(D_539057792_D_438475588) | !is.na(D_539057792_D_744290061) | 
+                                                     !is.na(D_539057792_D_516936572) | !is.na(D_539057792_D_673034401) |!is.na(D_539057792_D_489019597)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home8_summary <- home8 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home8_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 8- Seventh Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+home9 <- Mod4 %>% filter(D_532944666==353358909 | D_122054737==270752953) %>%  
+  mutate(Address1= case_when(!is.na(D_537011756_D_988266183) | !is.na(D_537011756_D_709374950) | !is.na(D_537011756_D_351559021) | 
+                                                     !is.na(D_537011756_D_290370013) | !is.na(D_537011756_D_453691095) |!is.na(D_537011756_D_202104231)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home9_summary <- home9 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home9_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 9- Eighth Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+home10 <- Mod4 %>% filter(D_548863580==353358909 | D_948492967==270752953) %>%  
+  mutate(Address1= case_when(!is.na(D_171937884_D_264707783) | !is.na(D_171937884_D_666011940) | !is.na(D_171937884_D_282089547) | 
+                                                     !is.na(D_171937884_D_612617245) | !is.na(D_171937884_D_674024553) |!is.na(D_171937884_D_886247195)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home10_summary <- home10 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home10_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 10- Ninth Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+home11 <- Mod4 %>% filter(D_124320444==353358909 | D_805353966==270752953) %>%  
+  mutate(Address1= case_when(!is.na(D_828766803_D_622968789) | !is.na(D_828766803_D_696874548) | !is.na(D_828766803_D_309461541) | 
+                                                     !is.na(D_828766803_D_789637860) | !is.na(D_828766803_D_795253129) |!is.na(D_828766803_D_780298998)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home11_summary <- home11 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home11_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 11- Tenth Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
