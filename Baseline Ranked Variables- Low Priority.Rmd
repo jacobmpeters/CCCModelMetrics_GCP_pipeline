@@ -407,6 +407,7 @@ data_tib_base %>%  select(D_555481393_D_979809707) %>% filter(!is.na(D_555481393
 simple_funct1(D_783167257, "MARITAL: Marital Status")
 
 
+
 ```
 # BLDTRANS
 ```{r bloodtrans, warning=FALSE, echo=FALSE, message=FALSE}
@@ -2070,9 +2071,8 @@ M2_complete_nodup$Connect_ID <- as.numeric(M2_complete_nodup$Connect_ID)
 
 merge_m2= left_join(M2_complete_nodup,merged,  by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
 
-data_tib_all2 <- as_tibble(merge_m2)
 
-```
+data_tib_all2 <- as_tibble(merge_m2)
 
 
 
@@ -6552,6 +6552,7 @@ one_logic_funct2(D_823541843, D_591723682,353358909, "SLEEP2M: Ability to Choose
 # SLHABIT1A-G
 ```{r SLHABIT1, warning=FALSE, echo=FALSE, message=FALSE}
 
+
 ##simple_funct1(D_421859821_D_220238240, "SLHABIT1A: Having Trouble Falling Asleep")
 
 SLHABIT1A_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_220238240==104430631 ~ "No",
@@ -7505,8 +7506,8 @@ hist_funct(D_199254974_D_120485458,"SHIFTWORK10: Year When You were Last a Shift
 
 
 
-```{r query3, include=FALSE}
 
+```{r query3, include=FALSE}
 
 querymod3 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module3_v1_JP` where Connect_ID IS NOT NULL"
 mod3_table <- bq_project_query(project, querymod3)
@@ -7514,9 +7515,11 @@ mod3_data <- bq_table_download(mod3_table, bigint = "integer64")
 mod3_data$Connect_ID <- as.numeric(mod3_data$Connect_ID)
 
 
+
 data_all3= left_join(merged, mod3_data, by="Connect_ID")
 
 data_all3 <- data_all3 %>% filter(d_976570371==231311385)
+
 
 data_tib_all3 <- as_tibble(data_all3)
 
@@ -7758,7 +7761,9 @@ simple_funct3(D_795761911, "COVERSKIN: Frequency of Wearing Clothes/Hats to Cove
 
 
 
+
 ```{r query4, include=FALSE}
+
 
 querymod4 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module4_v1_JP` where Connect_ID IS NOT NULL"
 mod4_table <- bq_project_query(project, querymod4)
