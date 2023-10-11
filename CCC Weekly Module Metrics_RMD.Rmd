@@ -15,7 +15,7 @@ output:
 ---
 
 
-```{r, include=FALSE, warning=FALSE}
+```{r libraries, include=FALSE, warning=FALSE}
 
  # \usepackage{caption}
  # \captionsetup[figure]{labelformat=empty}
@@ -52,7 +52,7 @@ bq_auth()
 ```
 
 
-```{r, include=FALSE}
+```{r querystatus, include=FALSE}
 
 # ##Make sure SQL queries are properly running
 # 
@@ -118,7 +118,7 @@ bq_auth()
 ```
 
 
-```{r, include=FALSE}
+```{r BQPull, include=FALSE}
 ## CCC WEEKLY METRICS REPORT 
 
 
@@ -181,7 +181,7 @@ knitr::opts_chunk$set(comment = NA)
 
 
 
-```{r, echo=FALSE}
+```{r Attrition, echo=FALSE}
 cat("Verified Participants:", dim(data_ccc)[[1]])
 cat("Date all sections available in prod: July 5, 2022")
 cat("Participants Verified Before All Sections Available:", dim(data_ccc_before)[[1]])
@@ -189,7 +189,7 @@ cat("Participants Verified On or After All Sections Available:", dim(data_ccc_af
 ```
 Some of the metrics below are stratified into separate tables by whether the participant was verified before all modules were available in prod verses on or after. These are denoted by 'Before' and 'After'.
 
-```{r, include=FALSE}
+```{r test, include=FALSE}
 
 #```{css, echo=FALSE}
 # <!-- pre { -->
@@ -215,7 +215,7 @@ Some of the metrics below are stratified into separate tables by whether the par
 # 1.	% Submission of surveys by verified participants (including impossible scenarios)
 # 
 
-```{r, include=FALSE, warning=FALSE, message=FALSE}
+```{r SteupTable1a, include=FALSE, warning=FALSE, message=FALSE}
 ####### ALL MODULES ########
 
 ##BEFORE
@@ -287,7 +287,7 @@ tab1(modules1$process, decimal=2,sort.group = "decreasing", cum.percent = TRUE)$
 
 ```
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r Table1a, echo=FALSE, warning=FALSE, message=FALSE}
 #Make the automated table
 
 completion_summary <- modules1  %>% dplyr::group_by(process) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(process, n, percentage) 
@@ -328,7 +328,7 @@ completion_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 
-```{r, include=FALSE, warning=FALSE, message=FALSE}
+```{r SetupTable1b, include=FALSE, warning=FALSE, message=FALSE}
 
 ##AFTER 
 
@@ -385,7 +385,7 @@ tab1(modules1$process, decimal=2,sort.group = "decreasing", cum.percent = TRUE)$
 
 ```
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r Table1b, echo=FALSE, warning=FALSE, message=FALSE}
 #Make the automated table
 
 completion_summary <- modules1  %>% dplyr::group_by(process) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(process, n, percentage) 
@@ -423,7 +423,7 @@ completion_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 
-```{r, include=FALSE, warning=FALSE, message=FALSE}
+```{r SetupTable1c, include=FALSE, warning=FALSE, message=FALSE}
 
 ##ALL PARTICIPANTS 
 
@@ -478,7 +478,7 @@ tab1(modules1$process, decimal=2,sort.group = "decreasing", cum.percent = TRUE)$
  
  \newpage
  
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r Table1c, echo=FALSE, warning=FALSE, message=FALSE}
 #Make the automated table
 
 completion_summary <- modules1  %>% dplyr::group_by(process) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(process, n, percentage) 
@@ -524,7 +524,7 @@ completion_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 
-```{r, include=FALSE}
+```{r 2aSetUp, include=FALSE}
 
 ############### MODULE 1 ########################################
 ### Before all modules available 
@@ -609,7 +609,7 @@ gt_print2A <- gt(ccc2b_summary)
 
 
 
-```{r, warning=FALSE, echo=FALSE,  max.width='80px', inlcude=FALSE}
+```{r Table2a, warning=FALSE, echo=FALSE,  max.width='80px', inlcude=FALSE}
 
 
 #Num2_M1=
@@ -702,7 +702,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 
 
 
-```{r, include=FALSE}
+```{r 2bSetup, include=FALSE}
   ### AFTER ALL MODULES AV'L 
 dim(active_c_after)
 dim(passive_c_after)
@@ -770,7 +770,7 @@ gt_print2A <- gt(ccc2a_summary)
 gt_print2A
 ```
 
-```{r, echo=FALSE, warning=FALSE}
+```{r Table2b, echo=FALSE, warning=FALSE}
 
 
 
@@ -841,7 +841,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 ```
 
 
-```{r, include=FALSE}
+```{r 2cSetup, include=FALSE}
   ### TOTAL 
 dim(active_all)
 dim(passive_all)
@@ -909,7 +909,7 @@ gt_print2A <- gt(ccc2_all_summary)
 gt_print2A
 ```
 
-```{r, echo=FALSE, warning=FALSE}
+```{r Table 2c, echo=FALSE, warning=FALSE}
 
 
 
@@ -980,7 +980,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 \newpage
 ## MRE Section
 
-```{r, include=FALSE}
+```{r 2dSetUp, include=FALSE}
 ### BEFORE ALL MODULES AV'L
 sum(active_c_before$d_536735468==972455046, na.rm=TRUE)
 round((sum(active_c_before$d_536735468==972455046, na.rm=TRUE)/length(active_c_before$d_536735468))*100, digits=2) #not started
@@ -1043,7 +1043,7 @@ gt_print2A <- gt(ccc2b_summary)
 gt_print2A
 ```
 
-```{r, echo=FALSE, warning=FALSE}
+```{r Table2d, echo=FALSE, warning=FALSE}
 #Make the automated table
 
 
@@ -1116,7 +1116,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 ```
 
 
-```{r, include=FALSE}
+```{r 2eSetup, include=FALSE}
 
 ### AFTER ALL MODULES AV'L
 dim(active_c_after)
@@ -1185,7 +1185,7 @@ gt_print2A
 
 ```
 
-```{r, echo=FALSE, warning=FALSE}
+```{r Table2e, echo=FALSE, warning=FALSE}
 
 
 ccc2a_summary %>%  gt(rowname_col = "row_lab") %>%  
@@ -1255,7 +1255,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 ```
 
 
-```{r, include=FALSE}
+```{r 2fSetup, include=FALSE}
 
 ### ALL PARTICIPANTS 
 dim(active_all)
@@ -1324,7 +1324,7 @@ gt_print2A
 
 ```
 
-```{r, echo=FALSE, warning=FALSE}
+```{r Table2f, echo=FALSE, warning=FALSE}
 
 
 ccc2_all_summary %>%  gt(rowname_col = "row_lab") %>%  
@@ -1395,7 +1395,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 # 
 ## SAS Section
 
-```{r, include=FALSE}
+```{r 2gSetup, include=FALSE}
 
 ### BEFORE ALL MODULES AV'L
 sum(active_c_before$d_976570371==972455046, na.rm=TRUE)
@@ -1459,7 +1459,7 @@ gt_print2A <- gt(ccc2b_summary)
 gt_print2A
 ```
 
-```{r, echo=FALSE, warning=FALSE}
+```{r Table2g, echo=FALSE, warning=FALSE}
 #Make the automated table
 
 
@@ -1531,7 +1531,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 ```
 
 
-```{r, include=FALSE}
+```{r 2hSetup, include=FALSE}
 
 ### AFTER ALL MODULES AV'L 
 sum(active_c_after$d_976570371==972455046, na.rm=TRUE)
@@ -1597,7 +1597,7 @@ gt_print2A
 
 ```
 
-```{r, echo=FALSE, warning=FALSE}
+```{r Table2h, echo=FALSE, warning=FALSE}
 
 
 
@@ -1667,7 +1667,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 
 ```
 
-```{r, include=FALSE}
+```{r 2iSetup, include=FALSE}
 
 ### ALL PARTICIPANTS  
 sum(active_all$d_976570371==972455046, na.rm=TRUE)
@@ -1733,7 +1733,7 @@ gt_print2A
 
 ```
 
-```{r, echo=FALSE, warning=FALSE}
+```{r Table2i, echo=FALSE, warning=FALSE}
 
 
 
@@ -1805,7 +1805,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 # 
 ## LAW Section
 
-```{r, include=FALSE}
+```{r 2jSetup, include=FALSE}
 # 2.	Completion of baseline tasks with number and % not started, started, submitted of each module (active_c, passive_c and total)  
 
 ###BEFORE ALL MODULES AV'L
@@ -1872,7 +1872,7 @@ gt_print2A
 
 ```
 
-```{r, echo=FALSE, warning=FALSE}
+```{r Table2j, echo=FALSE, warning=FALSE}
 
 
 
@@ -1944,7 +1944,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 ```
 
 
-```{r, include=FALSE}
+```{r 2kSetup, include=FALSE}
 ### AFTER ALL MODULES AV'L 
 sum(active_c_after$d_663265240==972455046, na.rm=TRUE)
 round((sum(active_c_after$d_663265240==972455046, na.rm=TRUE)/length(active_c_after$d_663265240))*100, digits=2) #not started
@@ -2008,7 +2008,7 @@ gt_print2A
 
 ```
 
-```{r, echo=FALSE, warning=FALSE}
+```{r Table2k, echo=FALSE, warning=FALSE}
 
 
 
@@ -2080,7 +2080,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 ```
 
 
-```{r, include=FALSE}
+```{r 2lSetup, include=FALSE}
 ### ALL PARTICIPANTS 
 sum(active_all$d_663265240==972455046, na.rm=TRUE)
 round((sum(active_all$d_663265240==972455046, na.rm=TRUE)/length(active_all$d_663265240))*100, digits=2) #not started
@@ -2144,7 +2144,7 @@ gt_print2A
 
 ```
 
-```{r, echo=FALSE, warning=FALSE}
+```{r Table2l, echo=FALSE, warning=FALSE}
 
 
 
@@ -2221,7 +2221,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 # 
 ## BOH Section 
 
-```{r, include=FALSE}
+```{r Setup3, include=FALSE}
 
 
 # 3.	Time from verification to completion of each module- Hours 25, 50, 75 percentile (active_c, passive_c and total)  
@@ -2286,7 +2286,7 @@ summary(as.numeric(tmp1T$Mod1completionT))
 
 ```
 
-```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
+```{r Table3a_c,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #cat("Active(n=", dim(act_before)[[1]], ")")
 #summary(as.numeric(tmp1A$Mod1completionA))
@@ -2341,7 +2341,7 @@ knitr::kable(Table3c,caption='BOH Total (Before)',row.names=FALSE, align=c("l","
 ```
 
 
-```{r, include=FALSE}
+```{r Tabl3dfSetup, include=FALSE}
 
 ###AFTER
 #All verified participant totals that have completed mod1
@@ -2391,7 +2391,7 @@ tmp1T_A$Mod1completionT <- difftime(tmp1T_A$d_517311251, tmp1T_A$d_914594314, un
 summary(as.numeric(tmp1T_A$Mod1completionT))
 ```
 
-```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
+```{r Table3d_f,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #cat("Active(n=", dim(act_after)[[1]], ")")
 #summary(as.numeric(tmp1A_A$Mod1completionA))
@@ -2445,7 +2445,7 @@ knitr::kable(Table3f,caption='BOH Total (After)',row.names=FALSE, align=c("l","c
 ```
 
 
-```{r, include=FALSE}
+```{r 3giSetup, include=FALSE}
 
 #####ALL PARTICIPANTS 
 act_all= active_c %>% filter(d_949302066==231311385)
@@ -2494,7 +2494,7 @@ tmp1T_All$Mod1completionT <- difftime(tmp1T_All$d_517311251, tmp1T_All$d_9145943
 summary(as.numeric(tmp1T_All$Mod1completionT))
 ```
 
-```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
+```{r Table3g_3i,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #cat("Active(n=", dim(act_all)[[1]], ")")
 #summary(as.numeric(tmp1A_All$Mod1completionA))
@@ -2557,7 +2557,7 @@ knitr::kable(Table3i,caption='All BOH Total',row.names=FALSE, align=c("l","c","c
 ## MRE Section 
 \FloatBarrier
 
-```{r, include=FALSE}
+```{r 3j_lSetp, include=FALSE}
 
 
 # 3.	Time from verification to completion of each module (active, passive and total) 
@@ -2616,7 +2616,7 @@ summary(as.numeric(tmp2T$Mod2completionT))
 ```
 
 
-```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
+```{r Table3j_l,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #cat("Active(n=", dim(act2)[[1]], ")")
 #summary(as.numeric(tmp2A$Mod2completionA))
@@ -2674,7 +2674,7 @@ knitr::kable(Table3l,caption='MRE Total (After)',row.names=FALSE, align=c("l","c
 
 ## SAS Section
 \FloatBarrier
-```{r, include=FALSE}
+```{r 3m_oSetup, include=FALSE}
 
 # 3.	Time from verification to completion of each module (active, passive and total) 
 #d_770257102 completed
@@ -2734,7 +2734,7 @@ data_ccc$Connect_ID[which.max(Ttmp3T$Mod3completionT)]
 data_ccc$Connect_ID[which.min(Ttmp3T$Mod3completionT)]
 ```
 
-```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
+```{r Table3m_o,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #cat("Active(n=", dim(act3)[[1]], ")")
 #summary(as.numeric(tmp3A$Mod3completionA))
@@ -2794,7 +2794,7 @@ knitr::kable(Table3o,caption='SAS Total (After)',row.names=FALSE, align=c("l","c
 
 ## LAW Section 
 
-```{r, include=FALSE}
+```{r 3p_rSetup, include=FALSE}
 
 # 3.	Time from verification to completion of each module (active, passive and total)  
 #264644252 completion
@@ -2850,7 +2850,7 @@ summary(as.numeric(Ttmp4$Mod4completionT))
 
 ```
 
-```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
+```{r Table3p_r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #cat("Active(n=", dim(act4)[[1]], ")")
 #summary(as.numeric(tmp4A$Mod4completionA))
@@ -2914,7 +2914,7 @@ knitr::kable(Table3r,caption='LAW Total (After)',row.names=FALSE, align=c("l","c
 ## BOH Section 
 
 
-```{r, include=FALSE, warning = FALSE}
+```{r BOHtimeB, include=FALSE, warning = FALSE}
 #4.	Duration from start to submitted for each module (active_c, passive_c and total)  
 #d_205553981 time stamp started
 #d_517311251 time stamp finished 
@@ -3132,7 +3132,7 @@ gt_print2A
 
 
 
-```{r, include=FALSE}
+```{r BOHTimeA, include=FALSE}
 ##AFTER
 #All participant totals, active_c total and passive_c total
 sum(active_c_after$d_949302066==231311385, na.rm=TRUE)
@@ -3338,7 +3338,7 @@ gt_print2A
 ```
 
 
-```{r, include=FALSE}
+```{r BOHSetUp, include=FALSE}
 ##All Participants
 sum(active_all$d_949302066==231311385, na.rm=TRUE)
 sum(passive_all$d_949302066==231311385, na.rm=TRUE)
@@ -3456,7 +3456,7 @@ ccc4_all_1$time_frame <- factor(ccc4_all_1$time_frame,levels=c("Completed in Und
 
 ```
 \FloatBarrier
-```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
+```{r BOHTable,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #summary(as.numeric(Atmp1$Mod1completionA))
 #st(Atmp1, vars = c('Mod1completionA', title='Table 5a. All BOH Active', add.median = T))-- no longer needed
@@ -3482,7 +3482,7 @@ knitr::kable(Table4a2,caption='All BOH Total Participants',row.names=FALSE, alig
 
 ```
 
-```{r, echo=FALSE, warning = FALSE}
+```{r Table4a, echo=FALSE, warning = FALSE}
 ccc4_all_1_summary %>%  gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage.Active", decimals = 2) %>% 
   fmt_number(columns = "percentage.Passive", decimals = 2) %>%
@@ -3559,7 +3559,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 ## MRE Section
 
 
-```{r, include=FALSE, warning = FALSE}
+```{r 6dSetup, include=FALSE, warning = FALSE}
 time.var.2 <- c("d_541836531","d_832139544")
 
 ##BEFORE
@@ -3697,7 +3697,7 @@ gt_print4B
 
 ```
 
-```{r, echo=FALSE, warning = FALSE}
+```{r Table6d, echo=FALSE, warning = FALSE}
 table6d <- ccc4_b2_summary %>%  gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage.Active", decimals = 2) %>% 
   fmt_number(columns = "percentage.Passive", decimals = 2) %>%
@@ -3767,7 +3767,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 ```
 
 
-```{r, include=FALSE, warning = FALSE}
+```{r 6hSetUp, include=FALSE, warning = FALSE}
 ##AFTER
 #All participant totals, active total and passive total
 sum(active_c_after$d_536735468==231311385, na.rm=TRUE)
@@ -3898,7 +3898,7 @@ gt_print2A
 #st(Ttmp2A, vars = c('Mod2completionT.A', title='Table 6g. MRE Total (After)', add.median = T))--no longer needed
 ```
 
-```{r, echo=FALSE, warning = FALSE}
+```{r Table6h, echo=FALSE, warning = FALSE}
 
 table6h <- ccc4_a2_summary %>%  gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage.Active", decimals = 2) %>% 
@@ -3969,7 +3969,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 ```
 
 
-```{r, include=FALSE, warning = FALSE}
+```{r AllMRE, include=FALSE, warning = FALSE}
 ##All Participants 
 sum(active_all$d_536735468==231311385, na.rm=TRUE)
 sum(passive_all$d_536735468==231311385, na.rm=TRUE)
@@ -4080,7 +4080,7 @@ gt_print2A
 
 ```
 \FloatBarrier
-```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
+```{r MRETime,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #summary(as.numeric(tmp$Mod2completionA))
 #st(tmp, vars = c('Mod2completionA', title='Table 7a. All MRE Active Participants', add.median = T))-- no longer needed
@@ -4104,7 +4104,7 @@ Table7c = Ttmp2A %>% #biochk_outlier,
 knitr::kable(Table7c,caption='All MRE Total Participants',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #caption='Table 7c. All MRE Total Participants'
 ```
 
-```{r, echo=FALSE, warning = FALSE}
+```{r MRE4b, echo=FALSE, warning = FALSE}
 
 ccc4_all_2_summary %>%  gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage.Active", decimals = 2) %>% 
@@ -4175,7 +4175,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 # 
 ## SAS Section
 
-```{r, include= FALSE, warning=FALSE}
+```{r SASSetup, include= FALSE, warning=FALSE}
 #d_770257102 completed
 #d_386488297 start 
 
@@ -4316,7 +4316,7 @@ gt_print4B
 
 ```
 
-```{r, echo=FALSE, warning = FALSE}
+```{r SAS8d, echo=FALSE, warning = FALSE}
 table8d <- ccc4_b3_summary %>%  gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage.Active", decimals = 2) %>% 
   fmt_number(columns = "percentage.Passive", decimals = 2) %>%
@@ -4386,7 +4386,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 ```
 
 
-```{r, include= FALSE, warning=FALSE}
+```{r SASAfter, include= FALSE, warning=FALSE}
 ##AFTER
 #All participant totals, active total and passive total
 sum(active_c_after$d_976570371==231311385, na.rm=TRUE)
@@ -4520,7 +4520,7 @@ gt_print2A
 #st(Ttmp3A, vars = c('Mod3completionT.A', title='Table 8g. SAS Total (After)', add.median = T))--no longer needed
 ```
 
-```{r, echo=FALSE, warning = FALSE}
+```{r SAS8h, echo=FALSE, warning = FALSE}
 table8h <- ccc4_a3_summary %>%  gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage.Active", decimals = 2) %>% 
   fmt_number(columns = "percentage.Passive", decimals = 2) %>%
@@ -4591,7 +4591,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 
 
 
-```{r, include= FALSE, warning=FALSE}
+```{r All_SAS, include= FALSE, warning=FALSE}
 ##All Participants 
 sum(active_all$d_976570371==231311385, na.rm=TRUE)
 sum(passive_all$d_976570371==231311385, na.rm=TRUE)
@@ -4707,7 +4707,7 @@ gt_print2A
 
 ```
 \FloatBarrier
-```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
+```{r SASTiming,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #summary(as.numeric(tmp.3A$Mod3completionA))
 #cat("Active(n=", s4_3aA, ")")
@@ -4735,7 +4735,7 @@ Table9c = Ttmp3A %>% #biochk_outlier,
 knitr::kable(Table9c,caption='All SAS Total Participants',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #caption='Table 9c. All SAS Total Participants'
 ```
 
-```{r, echo=FALSE, warning = FALSE}
+```{r SAS4c, echo=FALSE, warning = FALSE}
 ccc4_all_3_summary %>%  gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage.Active", decimals = 2) %>% 
   fmt_number(columns = "percentage.Active", decimals = 2) %>% 
@@ -4804,7 +4804,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 
 ## LAW Section
 
-```{r, include= FALSE, warning=FALSE}
+```{r LAW_Setup, include= FALSE, warning=FALSE}
 # 4.	Duration from start to submitted for each module (active, passive and total) 
 #264644252 completion
 #452942800 start 
@@ -4942,7 +4942,7 @@ gt_print4B
 #st(Ttmp.4, vars = c('Mod4completionT.B', title='Table 10c. LAW Active (Before)', add.median = T))--no longer needed
 ```
 
-```{r, echo=FALSE, warning = FALSE}
+```{r LAW10d, echo=FALSE, warning = FALSE}
 
 table10d <- ccc4_b4_summary %>%  gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage.Active", decimals = 2) %>% 
@@ -5014,7 +5014,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 
 
 
-```{r, include= FALSE, warning=FALSE}
+```{r LAW10h_Setup, include= FALSE, warning=FALSE}
 ##AFTER
 #All participant totals, active total and passive total
 sum(active_c_after$d_663265240==231311385, na.rm=TRUE)
@@ -5144,7 +5144,7 @@ gt_print4A
 #st(Ttmp.4, vars = c('Mod4completionT.A', title='Table 10g. LAW Active (After)', add.median = T))--no longer needed
 ```
 
-```{r, echo=FALSE, warning = FALSE}
+```{r LAW10h, echo=FALSE, warning = FALSE}
 table10h <- ccc4_a4_summary %>%  gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage.Active", decimals = 2) %>% 
   fmt_number(columns = "percentage.Passive", decimals = 2) %>%
@@ -5213,7 +5213,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 ```
 
 
-```{r, include= FALSE, warning=FALSE}
+```{r AllLAW, include= FALSE, warning=FALSE}
 ##AFTER
 #All participant totals, active total and passive total
 sum(active_all$d_663265240==231311385, na.rm=TRUE)
@@ -5328,7 +5328,7 @@ gt_print4A <- gt(ccc4_all_4_summary)
 gt_print4A
 ```
 \FloatBarrier
-```{r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
+```{r AllLAWTable,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 #cat("Active(n=", s4_4aA, ")")
 #summary(as.numeric(tmp.4$Mod4completionA))
@@ -5355,7 +5355,7 @@ Table11c = Ttmp.4 %>% #biochk_outlier,
 knitr::kable(Table9c,caption='All LAW Total Participants',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #caption='Table 11c. All LAW Total Participants'
 ```
 
-```{r, echo=FALSE, warning = FALSE}
+```{r LAW_4d, echo=FALSE, warning = FALSE}
 
 ccc4_all_4_summary %>%  gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage.Active", decimals = 2) %>% 
@@ -5425,7 +5425,7 @@ grand_summary_rows(columns=c(freq.Active, freq.Passive, freq, percentage, percen
 \newpage
 
 # 5.	% Submission of surveys sections by active recruits who cannot be verified
-```{r, include=FALSE}
+```{r Section5, include=FALSE}
 # 5.	% Submission of surveys modules by active recruits who cannot be verified   
 #d_512820379==486306141 <-- active
 
@@ -5448,7 +5448,7 @@ dim(active_c_NV_SB)
 dim(active_c_NV_SB)[[1]]/dim(cannot_verify)[[1]]
 ```
 
-```{r, echo=FALSE, include=FALSE}
+```{r Section5Freq, echo=FALSE, include=FALSE}
 
 Numb5= cannot_verify %>%  mutate(freq=rep(1, dim(cannot_verify)[[1]]))
 Numb5$percentage= (Numb5$freq/dim(Numb5)[[1]])*100 
@@ -5465,7 +5465,7 @@ Numb5_summary <- Numb5 %>%  group_by(submit)  %>% arrange(submit) %>% summarize_
 ```
 
 
-```{r, echo=FALSE, warning = FALSE}
+```{r NonVerified, echo=FALSE, warning = FALSE}
 Numb5_summary %>%  gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>%
   fmt_number(columns = "freq", decimals = 0) %>%
@@ -5505,7 +5505,7 @@ Numb5_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 
-```{r, echo=FALSE, include=FALSE}
+```{r VerifStatement, echo=FALSE, include=FALSE}
 cat("Number of Active Participants that cannot be verified:", dim(cannot_verify)[[1]])
 cat("\n", "Percent of no Surveys Completed by these Participants (N=", dim(active_c_NV_NS)[[1]] ,")") 
 cat("\t", 100*(dim(active_c_NV_NS)[[1]]/dim(cannot_verify)[[1]]), "%")
@@ -5514,7 +5514,7 @@ cat("\t", (100*(dim(active_c_NV_SB)[[1]]/dim(cannot_verify)[[1]])), "%")
 ```
 
 
-```{r, include=FALSE}
+```{r Section6Test, include=FALSE}
 
 #######################################################################################################
 ##### ALL MODULES #####  
@@ -5703,7 +5703,7 @@ summary(as.numeric(Ttmp1_2_3_4$Mod1_2_3_4completionT))
 \newpage
 
 # 6. Menstrual Cycle Survey Completion Status for Eligible Participants
-```{r, include=FALSE}
+```{r Section6, include=FALSE}
 #8. Connect_IDs of those who completed the menstrual cycle survey---need to convert to SQL code since d_459098666 and D_299215535.D_112151599 are in participants table and aren't flattened
 
 mens_ccc <- "SELECT Connect_ID, D_112151599
@@ -5737,7 +5737,7 @@ round(100*(dim(mens_complete)[[1]]/dim(menstrual)[[1]]), digits=2)
 
 ```
 
-```{r, include=FALSE}
+```{r Section6Table, include=FALSE}
 
 Numb6= menstrual %>%  mutate(freq=rep(1, dim(menstrual)[[1]]))
 
@@ -5757,7 +5757,7 @@ Numb6_summary <- Numb6 %>%  group_by(menst)  %>% arrange(menst) %>% summarize_at
 ```
 
 
-```{r, echo=FALSE, warning = FALSE}
+```{r Menstrual, echo=FALSE, warning = FALSE}
 Numb6_summary %>%  gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>%
   fmt_number(columns = "freq", decimals = 0) %>%
@@ -5796,7 +5796,7 @@ Numb6_summary %>%  gt(rowname_col = "row_lab") %>%
 
 ```
 
-```{r, echo=FALSE, include=FALSE}
+```{r MensComp, echo=FALSE, include=FALSE}
 cat('Number of participants who have completed:', dim(mens_complete)[[1]])
 cat('Number of participans who are eligiible:', dim(menstrual)[[1]])
 cat('Percent completed:', round(100*(dim(mens_complete)[[1]]/dim(menstrual)[[1]]), digits=2), "%")
@@ -5805,7 +5805,7 @@ cat('Percent completed:', round(100*(dim(mens_complete)[[1]]/dim(menstrual)[[1]]
 \newpage
 
 # 7.	Presence of survey completion time stamp, survey start time stamp, and survey completion flag for those who have completed a section. 
-```{r, include=FALSE}
+```{r Section7, include=FALSE}
 #M1
 m1_cf=sum(data_ccc$d_949302066==231311385) #COMPLETION FLAGS
 m1_done= data_ccc %>% filter(d_949302066==231311385)
@@ -5839,7 +5839,7 @@ bum_cts=sum(!is.na(bum_done$d_222161762)) #COMPLETION TIME STAMP
 ```
 
 
-```{r, echo=FALSE}
+```{r Flags, echo=FALSE}
 #ifelse(m1_cf==m1_sts & m1_sts==m1_cts, "BOH Section completion flags, start time stamps and completion time stamps are all equal as they should be", cat(m1_cf, "BOH Section Completion Flags", sep="\n", m1_sts,"BOH Section Start Time Stamps",  m1_cts, "BOH Section Completion Time Stamps"  ))
 cat("\t","BOH Section Completion Flags:", m1_cf)
 cat("\t","BOH Section Start Time Stamps:", m1_sts)
@@ -5905,7 +5905,7 @@ cat("\t",if(bum_cf!=bum_sts | bum_cts!=bum_sts | bum_cf!=bum_cts){"Not equal!!"}
 
 
 
-```{r, include=FALSE}
+```{r Section8, include=FALSE}
 mensBUM_ccc <- "SELECT Connect_ID, D_112151599 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.bioSurvey_v1_JP`  where Connect_ID is not null and D_112151599='353358909'"
 mensBU_ccc <- "SELECT Connect_ID, D_112151599 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.clinicalBioSurvey_v1_JP` where Connect_ID is not null and D_112151599='353358909'"
 # prts_ccc <- "SELECT Connect_ID,  d_265193023,  d_459098666, d_827220437, d_253883960 from `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP`  where Connect_ID is not null"
@@ -5939,7 +5939,7 @@ menstrualBU <- left_join(prts_data_ccc ,mensBU_data_ccc, by="Connect_ID")
 
 
 
-```{r, echo=FALSE}
+```{r MensSite, echo=FALSE}
 
 # table(menstrual$d_827220437)
 # table(menstrual$d_265193023[menstrual$D_112151599==353358909])
@@ -6059,7 +6059,7 @@ RMens_summ1 %>%  gt(rowname_col = "row_lab") %>%
 
 
 
-```{r, echo=FALSE}
+```{r, Table8b echo=FALSE}
 
 CMens_summary <-clin_mens %>%  group_by(Site)  %>% arrange(Site) %>%  summarize_at(c("Not_Started" , "Started" , "Submitted"), sum, na.rm = TRUE) 
 
