@@ -14,7 +14,7 @@ Using the skip logic from Qx:https://nih.app.box.com/file/923661036132?s=o816d68
 To avoid confusion, these tables will NOT have sums of missing responses at the bottom. Participants are able to skip one or all components of a question in Module 4.
 
 
-```{r, include=FALSE}
+```{r libraries, include=FALSE}
 
 ##  MUST RUN FIRST BEFORE KNITTING
 
@@ -41,7 +41,7 @@ bq_auth()
 ```
 
 
-```{r, include=FALSE}
+```{r QueryStatus, include=FALSE}
 
 ##Make sure SQL queries are properly running
 
@@ -133,7 +133,7 @@ bq_auth()
 ```
 
 
-```{r, include=FALSE}
+```{r M1Merge, include=FALSE}
 project = "nih-nci-dceg-connect-prod-6d04"
 
 dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
@@ -292,7 +292,7 @@ dim(module4)
 
 ```
 
-```{r, warning=FALSE, include=FALSE}
+```{r MissingnessLibraries, warning=FALSE, include=FALSE}
 #Missingness Analysis Set Up
 
 #install.packages("naniar")
@@ -310,7 +310,7 @@ Mod4 <- as_tibble(module4)
 
 # Section 1: Residential History 
 ## Home 1 Address
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Home1, warning=FALSE, echo=FALSE, message=FALSE}
 
 Mod4$Street_Number <- Mod4$D_121490150_D_255248624
 Mod4$Street_Name <- Mod4$D_121490150_D_945532934
@@ -508,7 +508,7 @@ dt_home_addsum1 %>%  gt(rowname_col = "row_lab") %>%
 
 
 ## Home 2 Address
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Home2, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 Mod4$Street_Number <- Mod4$D_574985342_D_985267931
@@ -706,7 +706,7 @@ dt_home_addsum2 %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 ## Home 3 Address 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Home3, warning=FALSE, echo=FALSE, message=FALSE}
 
 Mod4$Street_Number <- Mod4$D_828086036_D_875706715
 Mod4$Street_Name <- Mod4$D_828086036_D_645150792
@@ -902,7 +902,7 @@ dt_home_addsum3 %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 ## Home 4 Address
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Home4, warning=FALSE, echo=FALSE, message=FALSE}
 
 Mod4$Street_Number <- Mod4$D_680046149_D_130174162
 Mod4$Street_Name <- Mod4$D_680046149_D_563832508
@@ -1097,7 +1097,7 @@ dt_home_addsum4 %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 ## Home 5 Address
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Home5, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 Mod4$Street_Number <- Mod4$D_274189667_D_838725845
@@ -1294,7 +1294,7 @@ dt_home_addsum5 %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 ## Home 6 Address
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Home6, warning=FALSE, echo=FALSE, message=FALSE}
 
 Mod4$Street_Number <- Mod4$D_113930886_D_306805272
 Mod4$Street_Name <- Mod4$D_113930886_D_819844467
@@ -1487,7 +1487,7 @@ dt_home_addsum6 %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 ## Home Move In Move Out
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MoveInOut, warning=FALSE, echo=FALSE, message=FALSE}
 
 #HOME1
 home1_inout= Mod4 %>%  mutate(Answer= case_when(is.na(D_590222838)~"Skipped Home 1 Move-In Year"))
@@ -1686,7 +1686,7 @@ dt_home6_inout_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 ## Home Water Source
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r HomeWater, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Home 1
 home1_water= Mod4 %>%  mutate(Address1= case_when(is.na(D_958419506_D_958419506) & is.na(D_958419506_D_799451743)~"Skipped HOMEWTR1_1"))
@@ -1911,7 +1911,7 @@ dt_home6_water_summary %>%  gt(rowname_col = "row_lab") %>%
 
 ## Seasonal Homes
 ### Season Home 1
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Seasonal, warning=FALSE, echo=FALSE, message=FALSE}
 ## Sea Home Address ##
 sea_home= Mod4 %>%  
   mutate(Address1= case_when(is.na(D_342677547)~"Skipped SEASHOME"))
@@ -2138,7 +2138,7 @@ dt_seaaddsum1_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 ### Seasonal Home Move in and Move Out
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r SeaInOut, warning=FALSE, echo=FALSE, message=FALSE}
   #SEASADDSUM2_1
 
 SEASADDYRS= seahome_add1_1 %>%  mutate(Address1= case_when(is.na(D_379754686)~"Skipped First Year"))
@@ -2176,7 +2176,7 @@ dt_SEASADDYRS_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 ### Seasonal Home Water Source
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r SeaWater, warning=FALSE, echo=FALSE, message=FALSE}
 ## Sea Home Water ##
 seahome_water= seahome_add1_1 %>%  
   mutate(Address1= case_when(is.na(D_426743354_D_426743354) & is.na(D_426743354_D_490504789)~"Skipped SEASWTR1_1"))
@@ -2215,7 +2215,7 @@ dt_seahome_water_summary %>%  gt(rowname_col = "row_lab") %>%
 
 ## Childhood Home
 ### Childhood Address
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Childhood, warning=FALSE, echo=FALSE, message=FALSE}
 #Home1
 childhome= Mod4 %>%  filter(Mod4$D_277348878==751569137) %>% 
   mutate(Address1= case_when(is.na(D_632533534_D_284547539)~"Skipped Street Number"))
@@ -2340,7 +2340,7 @@ child_add3_1__skip %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 ### Childhood move in and move out
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r ChildInOut, warning=FALSE, echo=FALSE, message=FALSE}
 #CHILDADD5_1_YEAR Move In/move out
 childinout= Mod4 %>%  filter(Mod4$D_277348878==751569137) %>% 
   mutate(Address1= case_when(is.na(D_191221569_D_948416598) & is.na(D_191221569_D_858353109)~"Skipped Year Moved in or Since Birth"))
@@ -2375,7 +2375,7 @@ dt_childinout_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 ### Childhood Water Source
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r ChildWater, warning=FALSE, echo=FALSE, message=FALSE}
 childwater= Mod4 %>%  filter(Mod4$D_277348878==751569137) %>% 
   mutate(Address1= case_when(is.na(D_714365367_D_714365367) & is.na(D_714365367_D_158518077)~"Skipped Main Water Source"))
 
@@ -2409,7 +2409,7 @@ dt_childwater_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 ## Adult Tap Water Intake and Use
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r AdultWater, warning=FALSE, echo=FALSE, message=FALSE}
 ## Adult Tap Water Intake ##
 adultwater= Mod4 %>%   
   mutate(Address1= case_when(is.na(D_285545471_D_285545471) & is.na(D_285545471_D_936382173)~"Skipped Frequency of Drinking Tap Water"))
@@ -2557,7 +2557,7 @@ dt_work19_summary %>%  gt(rowname_col = "row_lab") %>%
 ```
 
 # Section 2: Commuting
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Commuting, warning=FALSE, echo=FALSE, message=FALSE}
 
 work19= Mod4 %>%  
   mutate(Address1= case_when(is.na(D_694113343)~"Skipped WORK2019"))
@@ -2615,7 +2615,7 @@ dt_days_work19_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 ## Work Commute Before the COVID-19 Pandemic
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r PreCOVID, warning=FALSE, echo=FALSE, message=FALSE}
 days_work19= Mod4 %>%  filter(Mod4$D_694113343==353358909) %>%  
   mutate(Address1= case_when(is.na(D_374639590)~"Skipped WORKRES"))
 
@@ -3438,7 +3438,7 @@ dt_CURWORKT14_summary %>%  gt() %>%
 ```
 
 ## Work Commutes in the Past
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r PastCommute, warning=FALSE, echo=FALSE, message=FALSE}
 
 PREWORK= Mod4 %>%  mutate(Address1= case_when(is.na(D_995620555) ~"Skipped PREWORK"))
 
@@ -4217,7 +4217,7 @@ dt_PREWORKT8_summary %>%  gt() %>%
 ```
 
 ## Commute School Commute
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r School, warning=FALSE, echo=FALSE, message=FALSE}
 
 STU= Mod4 %>% filter(Mod4$D_784967158==551525967 | Mod4$D_784967158==738284740)
 

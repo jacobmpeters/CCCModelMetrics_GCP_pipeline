@@ -12,7 +12,7 @@ output:
 
 
 
-```{r, include=FALSE}
+```{r libraries, include=FALSE}
 
 
 #  pdf-engine: xelatex
@@ -43,7 +43,7 @@ bq_auth()
 ```
 
 
-```{r, include=FALSE, warning=FALSE}
+```{r merge1, include=FALSE, warning=FALSE}
 
 ## MERGE MOD1V1, MOD1V2
 
@@ -168,43 +168,6 @@ dim(merged)
 
 
 
-# m3 <- "SELECT Connect_ID, D_947205597_D_712653855, D_947205597_D_706254326, D_947205597_D_198133418, D_947205597_D_817381897, D_947205597_D_539648641, 
-# D_947205597_D_686310465, D_448968121  FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module3_v1_JP`
-# where Connect_ID IS NOT NULL"
-# m3_table <- bq_project_query(project, m3)
-# m3_data <- bq_table_download(m3_table, bigint = "integer64")
-# 
-# m3_data$Connect_ID <- as.numeric(m3_data$Connect_ID)
-
-```
-
-
-
-
-```{r, warning=FALSE, echo=FALSE,  message=FALSE}
-# #Has a recruitment flag[poi90]
-# merged <- merged %>% filter(D_512820379==486306141 | D_512820379==854703046)
-# 
-# 
-# #User consent submitted
-# merged <- merged %>% filter(D_919254129==353358909)
-# 
-# 
-# #User profile submitted
-# merged <- merged %>% filter(D_699625233==353358909)
-# 
-# 
-# #Verified by site
-# #cat("Verified by site:", sum(merged$D_821247024==197316935, na.rm=TRUE))
-# merged <- merged %>% filter(D_821247024==197316935)
-# 
-# 
-# #Mod1 completed and M3 completed- this way N throughout stays the same 
-# base_vars <- merged %>% filter(d_949302066==231311385) # & d_976570371==231311385 & d_536735468==231311385 & d_663265240 ==231311385)
-# #cat("Module 1 completed:", dim(base_vars)[[1]])
-
-
-#data_tib_base <- as_tibble(base_vars)
 
 data_tib_base <- as_tibble(merged)
 #dim(base_vars)
@@ -215,7 +178,7 @@ knitr::opts_chunk$set(comment = NA)
 ```
 
 
-```{r, warning=FALSE, echo=FALSE,  message=FALSE}
+```{r Intro, warning=FALSE, echo=FALSE,  message=FALSE}
 
 base_vars1 <- merged %>% filter(d_949302066==231311385)
 base_vars2 <- merged %>% filter(d_536735468==231311385)
@@ -231,7 +194,7 @@ cat("Particpants with Module 4 completion: ", dim(base_vars4)[[1]])
 ```
 
 
-```{r, warning=FALSE, include=FALSE}
+```{r function1, warning=FALSE, include=FALSE}
 
 #Boxplot
 boxp_funct <- function(CID,Title, Xlab) {
@@ -391,7 +354,7 @@ Objectives of Stakeholder Metrics: Quantify representativeness of self-reported 
 
 
 ## RACE
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Race, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 ## Multi-racial
@@ -485,7 +448,7 @@ dt_all_races_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 ## RACEETH2-8 (Ethnicity)
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Ethnicity, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 #American Indian/Native American
@@ -905,7 +868,7 @@ tab_footnote(
 
 
 ## SEX/ SEX2/ GENDER/ SEXORIENT
-```{r, warning=FALSE,echo=FALSE}
+```{r SGM, warning=FALSE,echo=FALSE}
 
 simple_funct1(D_407056417, "Sex at birth")
 
@@ -1056,7 +1019,7 @@ simple_funct1(D_555481393_D_555481393, "SEXORIETNT: Sexual Orienation")
 
 
 ## LANG
-```{r, include=FALSE}
+```{r Language, include=FALSE}
 
 which_lang= data_tib_base %>%  mutate(language= case_when(D_588212264_D_588212264_D_163149180==1 ~ "English",
                                                           D_588212264_D_588212264_D_773342525==1 ~ "Spanish",
@@ -1123,7 +1086,7 @@ lang_dx$lang_dx ### how are their race variables being assigned here?? wrong var
 lang_dx$lang_dx <- c("English", "Spanish", "Spanish Creole", "French", "French Creole", "Italian", "Portuguese", "German", "Russian", "Polish", "Hindi", "Chinese","Korean", "Vietnamese", "Tagalog", "Ilocano", "Japanese", "Arabic", "Other")
 
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r LanguageTable, warning=FALSE, echo=FALSE, message=FALSE}
 # colnames(lang_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 # mgr1_1 <- lang_dx[, c(4,1,2)]
 # 
@@ -1171,7 +1134,7 @@ tab_footnote(
 
 
 ## SKINCANC, SKINCANC2 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r skincancer, warning=FALSE, echo=FALSE, message=FALSE}
 ##Cancer
 #Ever diagnosed
 simple_funct1(D_537153788, "SKINCANC: Diagnosed with Non-Melanoma Skin Cancer")
@@ -1217,7 +1180,7 @@ boxp_funct(D_904550680_D_206625031, "Age Diagnosed with Skin Cancer", "Age")
 
 
 ## MH GROUP1
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r MhGroup1, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 
 mhgroup1COUNT= data_tib_base %>%  mutate(cardiov= case_when(D_167101091_D_698944820==1 ~ "B-12 Deficiency",
@@ -1275,7 +1238,7 @@ cardio_dx$cardio_dx ### how are their race variables being assigned here?? wrong
 
 cardio_dx$cardio_dx <- c("Chest Pain","Abnormal Heart Rhythm","Blood Clots","None","Stroke","High Blood Pressure","B-12 Deficiency","High Cholesterol","Heart Attack","Heart Valve Problems","Congestive Heart Failure","Coronary Artery")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MhGroup1Table, warning=FALSE, echo=FALSE, message=FALSE}
 # colnames(cardio_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 # mgr1_1 <- cardio_dx[, c(4,1,2)]
 # 
@@ -1467,7 +1430,7 @@ tab_footnote(
 
 
 ## MH GROUP2
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r MhGroup2, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 mhgroup2= data_tib_base %>%  mutate(resp= case_when(D_894259747_D_359025642==1 ~ "Chronic Lung Disease",
                                              D_894259747_D_407340134==1 ~ "Asthma",
@@ -1513,7 +1476,7 @@ for (i in 1:4){
 
 lung_dx$lung_dx <- c("Chronic lung disease","Asthma", "Hay Fever", "None")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MhGroup2Table, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(lung_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "lung_dx")
 mgr2 <- lung_dx[, c(4,1,2)]
 
@@ -1558,7 +1521,7 @@ dt_mgr2
 
 
 ## MH GROUP3
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r MhGroup3, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 mhgroup3= data_tib_base %>%  mutate(digest= case_when(D_180961306_D_406890409==1 ~ "Esophageal Acid Reflex",
                                              D_180961306_D_704544306==1 ~ "Barrett's Esophagus",
@@ -1615,7 +1578,7 @@ dgst_dx$dgst_dx
 dgst_dx$dgst_dx <- c("Celiac Disease", "Inflammatory Bowel Disease","Esophageal Acid Reflex","None","Gallstones","Ulcerative Colitis","Irritable Bowel Syndrome","Barrett's Esophagus","Liver Cirrhosis","Diverticulitis or Diverticulosis","Pancreatitis","Crohn's Disease")
 
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MhGroup3Table, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(dgst_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "dgst_dx")
 mgr3 <- dgst_dx[, c(4,1,2)]
 
@@ -1656,7 +1619,7 @@ tab_footnote(
 
 
 ## MH GROUP4
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r MhGroup4, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 mhgroup4= data_tib_base %>%  mutate(thy_d_g= case_when(D_900541533_D_726539692==1 ~ "Thyroid Disorder", 
                                              D_900541533_D_158044532==1 ~ "Diabetes",
@@ -1702,7 +1665,7 @@ for (i in 1:4){
 thyrd_dx$thyrd_dx
 thyrd_dx$thyrd_dx <- c("Diabetes",  "None", "Thyroid Disorder", "Graves' Disease")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MhGroup4Table, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(thyrd_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "thyrd_dx")
 mgr4 <- thyrd_dx[, c(4,1, 2)]
 
@@ -1745,7 +1708,7 @@ tab_footnote(
 
 
 ## DM
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r DM, warning=FALSE, echo=FALSE, message=FALSE}
 dict <- c(dict, "146477090"="Type 1", "573635975"="Type 2")
 one_logic_funct(D_494032093, D_900541533_D_158044532, 1, "Type of Diabetes")
 
@@ -1784,7 +1747,7 @@ one_logic_funct(D_494032093, D_900541533_D_158044532, 1, "Type of Diabetes")
 ```
 
 ## MH GROUP5
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r MhGroup5, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 mhgroup5= data_tib_base %>%  mutate(kidn= case_when(D_874046190_D_827542780==1 ~ "Kidney Stones", 
                                              D_874046190_D_167238688==1 ~ "Chronic Kindey Disease",
                                              D_874046190_D_535003378==1 ~ "None",
@@ -1828,7 +1791,7 @@ for (i in 1:3){
 kidn_dx$kidn_dx
 kidn_dx$kidn_dx <- c("Chronic Kindey Disease",  "None", "Kidney Stones")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MhGroup5Table, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(kidn_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "kidn_dx")
 mgr5 <- kidn_dx[, c(4,1, 2)]
 
@@ -1869,7 +1832,7 @@ tab_footnote(
 
 
 ## MH GROUP6
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r MhGroup6, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 mhgroup6= data_tib_base %>%  mutate(sysoth= case_when(D_543728565_D_636030086==1 ~ "Rheumatoid Arthritis", 
                                              D_543728565_D_239687183==1 ~ "Lupus",
@@ -1916,7 +1879,7 @@ for (i in 1:4){
 systm_dx$systm_dx
 systm_dx$systm_dx <- c("Gout", "Lupus",  "None", "Rheumatoid Arthritis")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MhGroup6Table, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(systm_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "systm_dx")
 mgr6 <- systm_dx[, c(4,1, 2)]
 
@@ -1957,7 +1920,7 @@ tab_footnote(
 
 
 ## MH GROUP7
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r MhGroup7, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 mhgroup7= data_tib_base %>%  mutate(sti_std= case_when(D_874709643_D_164910211==1 ~ "Mono",
                                              D_874709643_D_796616844==1 ~ "Shingles",
@@ -2009,7 +1972,7 @@ for (i in 1:11){
 sti_dx$sti_dx
 sti_dx$sti_dx <- c("Trich", "Genital Warts", "Mono","Gonorrhea", "Chronic Hepatitus B or C", "Syphilis", "None","HIV/AIDS","Shingles","HPV","Chlamydia")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MhGroup7Table, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(sti_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "sti_dx")
 mgr7 <- sti_dx[, c(4,1, 2)]
 
@@ -2051,7 +2014,7 @@ tab_footnote(
 
 
 ## MH GROUP8
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r MhGroup8, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 mhgroup8= data_tib_base %>%  mutate(urn_repro= case_when(D_725626004_D_509721537==1 ~ "Uterine Fibroids",
                                              D_725626004_D_863286658==1 ~ "Endometriosis",
@@ -2099,7 +2062,7 @@ for (i in 1:7){
 urinrp_dx$urinrp_dx
 urinrp_dx$urinrp_dx <- c("Polycystic Ovary System", "Uterine Fibroids", "None", "Fibrocystic Breast or Benign Breast isease","Ductal Carcinoma in situ","Endometriosis","Enlarged Prostate")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MhGroup8Table, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(urinrp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "urinrp_dx")
 mgr8 <- urinrp_dx[, c(4,1, 2)]
 
@@ -2142,7 +2105,7 @@ tab_footnote(
 
 
 ## BREASTDISC4
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r breastdis4, warning=FALSE, echo=FALSE, message=FALSE}
 
 one_logic_funct(D_852236900, D_725626004_D_854945381, 1, "BREASTDIS4: DCIS Confirmed with Biopsy")
 
@@ -2179,7 +2142,7 @@ one_logic_funct(D_852236900, D_725626004_D_854945381, 1, "BREASTDIS4: DCIS Confi
 
 ```
 ## DEPRESS
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r depress, warning=FALSE, echo=FALSE, message=FALSE}
 
 simple_funct1(D_347860896, "DEPRESS: Diagnosed with Clinical Depression")
 
@@ -2217,7 +2180,7 @@ simple_funct1(D_347860896, "DEPRESS: Diagnosed with Clinical Depression")
 
 
 ## MH GROUP9
-```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r MhGroup9, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 mhgroup9= data_tib_base %>%  mutate(surgery= case_when(D_624179836_D_797189152==1 ~ "Tonsillectomy",
                                              D_624179836_D_633546100==1 ~ "Cholecystectomy",
@@ -2273,7 +2236,7 @@ for (i in 1:15){
 srgy_dx$srgy_dx
 srgy_dx$srgy_dx <- c("Liposuction", "Hysterectomy", "Tubal Ligation","Orchiectomy or Orchidectomy","Breast Surgery","None","Oophorectomy","Cholecystectomy","Vasectomy","Salpingectomy","Gastric Bypass","Prostatectomy", "Tonsillectomy","Appendectomy","Penectomy")
 ```
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MhGroup9Table, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(srgy_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "srgy_dx")
 mgr9 <- srgy_dx[, c(4,1, 2)]
 
@@ -2317,7 +2280,7 @@ dt_mgr9
 ```
 
 ## OVERHEALTH
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r overall, warning=FALSE, echo=FALSE, message=FALSE}
 
 ##Overall
 #dict <- c(dict,"131550264"="Fair","138752522"="Poor","565881164"="Very Good","670680466"="Excellent","719933364"="Good")
@@ -2350,7 +2313,7 @@ dt_overall_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 ## BMI
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r bmi, echo=FALSE, warning=FALSE, message=FALSE}
 data_tib_base$D_114314839_D_340854069=as.numeric(data_tib_base$D_114314839_D_340854069)
 data_tib_base$D_114314839_D_600462977=as.numeric(data_tib_base$D_114314839_D_600462977)
 
@@ -2372,7 +2335,7 @@ bmi_box
 
 ## Primary Relative Diagnosed with Cancer
 ### This Inludes Parents, Siblings, and Children
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r PrimRelCancer, echo=FALSE, warning=FALSE, message=FALSE}
 
 # degree1_cancer= module3 %>%  filter(ifelse(D_276353712==353358909 | D_659784914==353358909 | D_607773106_1_1==353358909 | D_607773106_2_2==353358909 | 
 #                                       D_607773106_3_3==353358909 | D_607773106_4_4==353358909 | D_607773106_5_5==353358909 | D_607773106_6_6==353358909 |
@@ -2451,7 +2414,7 @@ dt_fam_canc_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 ## MOMCANC & MOMCANC2
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MomCancer, warning=FALSE, echo=FALSE, message=FALSE}
 #cancer? 
 simple_funct1(D_276353712, "MOMCANC: Mother Diagnosed with Cancer")
 
@@ -2514,7 +2477,7 @@ dt___mom_cnc_summary <- dt_mom_cnc_summary %>%  gt::gt(rowname_col = "row_lab") 
 
 ```
 
-```{r, include=FALSE}
+```{r MomCancerTable, include=FALSE}
 
 tmpMOMCANC <- data_tib_base %>%  filter(data_tib_base$D_276353712==353358909)
 tmpMC2<- tmpMOMCANC[, grepl("814510313", colnames(tmpMOMCANC))]
@@ -2546,7 +2509,7 @@ for (i in 1:23){
 momcnc_dx$momcnc_dx <- c("Anal", "Bladder", "Brain", "Breast", "Cervical", "Colon/Rectal", "Esophageal", "Head, Neck and Shoulders", "Kidney", "Leukemia", "Liver", "Lung", "Non-Hodgkin's Lymphoma", "Lymphoma", "Melanoma", "Non-Melanoma Skin", "Ovarian", "Pancreatic", "Stomach", "Thyroid", "Uterine", "Other", "Unknown")
 ```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r MomCancerFinalT, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(momcnc_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 mgr1 <- momcnc_dx[, c(4,1,2)]
 
@@ -2588,7 +2551,7 @@ tab_footnote(
 
 
 ## DADCANC & DADCANC2
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r DadCancer, warning=FALSE, echo=FALSE, message=FALSE}
 #cancer? 
 simple_funct1(D_659784914, "DADCANC: Father Diagnosed with Cancer")
 
@@ -2653,7 +2616,7 @@ dt___dad_cnc_summary <- dt_dad_cnc_summary %>%  gt::gt(rowname_col = "row_lab") 
 ```
 
 
-```{r, include=FALSE}
+```{r DadCancSetUp, include=FALSE}
 
 tmpDADCANC <- data_tib_base %>%  filter(data_tib_base$D_659784914==353358909)
 tmpMC2<- tmpDADCANC[, grepl("173240848", colnames(tmpDADCANC))]
@@ -2676,7 +2639,7 @@ for (i in 1:22){
 DADcnc_dx$DADcnc_dx <- c("Anal", "Bladder", "Brain", "Breast", "Colon/Rectal", "Esophageal", "Head, Neck and Shoulders", "Kidney", "Leukemia", "Liver", "Lung", "Non-Hodgkin's Lymphoma", "Lymphoma", "Melanoma", "Non-Melanoma Skin", "Pancreatic", "Prostate", "Stomach", "Testicular", "Thyroid",  "Other", "Unknown")
 ```
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r DadCancTable, warning=FALSE, echo=FALSE, message=FALSE}
 colnames(DADcnc_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 mgr1 <- DADcnc_dx[, c(4,1,2)]
 
@@ -2718,7 +2681,7 @@ tab_footnote(
 
 
 ## EDU
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Edu, warning=FALSE, echo=FALSE, message=FALSE}
 
 edu= data_tib_base  %>%  mutate(edlevel= case_when(D_367803647_D_367803647==978204320 ~ "Grade School(Grades 1-8)",
                                                   D_367803647_D_367803647==935502060 ~ "Some High School, No Diploma",
@@ -2748,7 +2711,7 @@ dt_edu_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ```
 
 ## INCOME
-```{r,  warning=FALSE, echo=FALSE}
+```{r income,  warning=FALSE, echo=FALSE}
 
 inc= data_tib_base  %>%  mutate(status= case_when(D_759004335==209571450 ~ "35,000-49,000",
                                                   D_759004335==212249150 ~ "50,000-74,000",
@@ -2783,7 +2746,7 @@ dt_income_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 ## ALTADDRESS1
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r altadd1, warning=FALSE, echo=FALSE, message=FALSE}
 
 simple_funct1(D_646504105, "ALTADDRESS1: Any Other Mailing Address")
 
@@ -2851,7 +2814,7 @@ simple_funct1(D_646504105, "ALTADDRESS1: Any Other Mailing Address")
 
 
 
-```{r, include=FALSE}
+```{r merge2, include=FALSE}
 
 library(data.table)
 
@@ -2968,7 +2931,7 @@ data_tib_all2 <- as_tibble(merge_m2)
 ```
 
 
-```{r, warning=FALSE, echo=FALSE,  message=FALSE, include=FALSE}
+```{r funct2, warning=FALSE, echo=FALSE,  message=FALSE, include=FALSE}
 
 hist_funct <- function(CID,Title, Xlab, Ylab) {
   CID_SYM <- rlang::ensym(CID)
@@ -3080,7 +3043,7 @@ one_logic_funct <- function(CID, CID_prev, Prev_Answer, Title){
 
 
 ## HORNONCISWOM
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r HORNONCISWOM, warning=FALSE, echo=FALSE, message=FALSE}
 #Used hormones to reflect gender
 
 hormn <- data_tib_all2 %>%  filter((D_407056417==654207589 | D_407056417==576796184) & (D_289664241_D_289664241==536341288 | D_289664241_D_289664241==218837028 | D_289664241_D_289664241==873138103 | D_289664241_D_289664241==805712793 | D_289664241_D_289664241==486192236 | D_289664241_D_289664241==807835037))
@@ -3121,7 +3084,7 @@ dt_agep_summary %>%  gt::gt() %>%
 
 
 ## PREG 1
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r preg, warning=FALSE, echo=FALSE, message=FALSE}
 #Currently pregnant
 
 one_logic_funct(D_849945160,  D_407056417, 536341288, "PREG: Currently Pregnant")
@@ -3142,7 +3105,7 @@ one_logic_funct(D_849945160,  D_407056417, 536341288, "PREG: Currently Pregnant"
 
 \newpage
 
-```{r, include=FALSE}
+```{r query3, include=FALSE}
 
 
 querymod3 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module3_v1_JP` where Connect_ID IS NOT NULL"
@@ -3160,7 +3123,7 @@ data_tib_all3 <- as_tibble(data_all3)
 
 ```
 
-```{r, warning=FALSE, include=FALSE}
+```{r funct3, warning=FALSE, include=FALSE}
 #Created Functions for this code
 
 #Histogram 
@@ -3513,7 +3476,7 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 ## Frequency of Cigarette Smoking
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r cigerette, echo=FALSE, warning=FALSE, message=FALSE}
 
 cig_frequency= data_tib_all3  %>% 
   mutate(often= case_when((D_947205597_D_712653855==0 | (D_947205597_D_712653855==1 & (D_763164658==151488193| D_763164658==805449318)))~"Never a Cigarette Smoker",
@@ -3553,7 +3516,7 @@ dt_cig_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 ## Frequency of Cigar Smoking
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r cigar, echo=FALSE, warning=FALSE, message=FALSE}
 
 
 cigar_frequency= data_tib_all3  %>% 
@@ -3596,7 +3559,7 @@ dt_cigar_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 ## Frequency of E-cig Smoking
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r ecig, echo=FALSE, warning=FALSE, message=FALSE}
 
 
 e_cig_frequency= data_tib_all3  %>% 
@@ -3640,7 +3603,7 @@ dt_e_cig_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 ## Frequency of Cannabis Use
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r cannabis, echo=FALSE, warning=FALSE, message=FALSE}
 
 
 mj_frequency= data_tib_all3  %>% 
@@ -3690,7 +3653,7 @@ dt_mj_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 ## ALCLIFE2, ALCLIFE5
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r alclife25, warning=FALSE, echo=FALSE, message=FALSE}
 
 #ALCOHOL2
 
@@ -3763,7 +3726,7 @@ dtALC5_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ```
 
 ## BEER1
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r beer1, warning=FALSE, echo=FALSE, message=FALSE}
 
 #simple_funct3(D_726847824, "BEER1: Frequency of Drinking Beer/Hard Cider in the Last Year")
 
@@ -3808,7 +3771,7 @@ dtBEER1_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ```
 
 ## LIQUOR1
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r liquor1, warning=FALSE, echo=FALSE, message=FALSE}
 
 #simple_funct3(D_411088265, "LIQUOR1: Frequency of Drinking Liquor of Mixed Drinks in the Last Year")
 
@@ -3853,7 +3816,7 @@ dtLIQ1_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ```
 
 ## WINE1
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r wine1, warning=FALSE, echo=FALSE, message=FALSE}
 
 #simple_funct3(D_178665310, "WINE1: Frequency of Drinking Wine in the Last Year")
 
@@ -3898,7 +3861,7 @@ dtWINE1_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ```
 
 ## OTHERALC1
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r otheralc1, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 #simple_funct3(D_228752045, "OTHERALC1: Frequency of Drinking Other Alcoholic Beverages in the Last Year")
@@ -3943,7 +3906,7 @@ dtOALC1_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 ## ALCLIFEA-H
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r alclife, warning=FALSE, echo=FALSE, message=FALSE}
 ##ALCLIFE2 GRID
 #ALCLIFE2A
 #alclife2_funct(D_633553324_D_294629316,"ALCLIFE2A: Frequency of Drinking: Ages 0-17")
@@ -4239,7 +4202,7 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 \newpage
 
-```{r, include=FALSE}
+```{r query4, include=FALSE}
 
 querymod4 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module4_v1_JP` where Connect_ID IS NOT NULL"
 mod4_table <- bq_project_query(project, querymod4)
@@ -4253,10 +4216,6 @@ data_all4 <- merge_m4P %>% filter(d_663265240==231311385)
 data_tib_all4 <- as_tibble(data_all4)
 
 
-library(naniar)
-library(UpSetR)
-library(tidyverse)
-
 
 
 Mod4 <- as_tibble(data_tib_all4)
@@ -4265,7 +4224,7 @@ Mod4 <- as_tibble(data_tib_all4)
 
 
 ## WORK2019
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r work19, echo=FALSE, warning=FALSE, message=FALSE}
 
 
 WORK2019= data_tib_all4 %>%  mutate(meds= case_when(D_694113343==353358909 ~ "Yes",
@@ -4302,7 +4261,7 @@ dtWORK2019_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 ## WORKRES
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r workres, echo=FALSE, warning=FALSE, message=FALSE}
 
 dt_WORKRES= data_tib_all4 %>%  filter(D_694113343==353358909)
 
@@ -4342,7 +4301,7 @@ dtWORKRES_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 ## NUMWORK
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r numwork, echo=FALSE, warning=FALSE, message=FALSE}
 
 dt_NUMWORK= data_tib_all4 %>%  filter(D_374639590!=353358909)
 
@@ -4381,7 +4340,7 @@ dtNUMWORK_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 ## PREWORK
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r prework, echo=FALSE, warning=FALSE, message=FALSE}
 
 
 PREWORK= data_tib_all4 %>%  mutate(meds= case_when(D_995620555==353358909 ~ "Yes",
@@ -4419,7 +4378,7 @@ dtPREWORK_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 ## PREWORKRES
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r preworkres, echo=FALSE, warning=FALSE, message=FALSE}
 
 dt_PREWORKRES= data_tib_all4 %>%  filter(D_995620555==353358909)
 
@@ -4468,7 +4427,7 @@ dtPREWORKRES_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r map4, echo=FALSE, warning=FALSE, message=FALSE}
 ## Map of Current Addresses-- currently removing as it breaks the automation 
 
 
@@ -4571,8 +4530,8 @@ dtPREWORKRES_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ```
 
 
-## Home1 Address
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+## Home Addresses
+```{r HomeAddress, warning=FALSE, echo=FALSE, message=FALSE}
 Mod4$Street_Number <- Mod4$D_121490150_D_255248624
 Mod4$Street_Name <- Mod4$D_121490150_D_945532934
 Mod4$Apt_Number <- Mod4$D_121490150_D_469838242
@@ -4581,48 +4540,282 @@ Mod4$State <- Mod4$D_121490150_D_195068098
 Mod4$ZIP <- Mod4$D_121490150_D_202784871
 Mod4$Country <- Mod4$D_121490150_D_831127170
 
-#home_add1_1= Mod4 %>% select(Street_Number, Street_Name, City, State, ZIP, Country)
 
-#vis_miss(home_add1_1)+labs(y= "Participants", title="Home 1 Address Missingness")
-#gg_miss_var(home_add1_1, show_pct=T)+labs(y= "Percent of Participants That Skipped")
-
-
-#for( i in 1:nrow(Mod4)){
   home1skip <- Mod4 %>% select(Connect_ID, Street_Number, Street_Name, City, State, ZIP, Country)
-  home1skip= home1skip %>%  mutate(Address1= case_when(is.na(Street_Number)~"Skipped Street Number"))
+  home1skip= home1skip %>%  mutate(Address1= case_when(!is.na(Street_Number) | !is.na(Street_Name) | !is.na(City) | !is.na(State) | !is.na(ZIP) |!is.na(Country)~"Provided Current Address",
+                                                       TRUE ~ "Skipped All Address Components"))
 
 dt_home1skip_summary <- home1skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
-dt_home1skip_summary <- dt_home1skip_summary[1,]
-
-dt_home1skip_summary[2,1] <- "Skipped Street Name" #c("Skipped Street Name", sum(is.na(home1skip$Street_Name)), sum(is.na(home1skip$Street_Name))/dim(home1skip$Street_Name)[[1]])
-dt_home1skip_summary[2,2] <- sum(is.na(home1skip$Street_Name))
-dt_home1skip_summary[2,3] <- (sum(is.na(home1skip$Street_Name))/dim(home1skip)[[1]])*100
-
-dt_home1skip_summary[3,1] <- "Skipped City"
-dt_home1skip_summary[3,2] <- sum(is.na(home1skip$City))
-dt_home1skip_summary[3,3] <- (sum(is.na(home1skip$City))/dim(home1skip)[[1]])*100
-
-dt_home1skip_summary[4,1] <- "Skipped State"
-dt_home1skip_summary[4,2] <- sum(is.na(home1skip$State))
-dt_home1skip_summary[4,3] <- (sum(is.na(home1skip$State))/dim(home1skip)[[1]])*100
-
-dt_home1skip_summary[5,1] <- "Skipped ZIP"
-dt_home1skip_summary[5,2] <- sum(is.na(home1skip$ZIP))
-dt_home1skip_summary[5,3] <- (sum(is.na(home1skip$ZIP))/dim(home1skip)[[1]])*100
-
-dt_home1skip_summary[6,1] <- "Skipped Country"
-dt_home1skip_summary[6,2] <- sum(is.na(home1skip$Country))
-dt_home1skip_summary[6,3] <- (sum(is.na(home1skip$Country))/dim(home1skip)[[1]])*100
 
 dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Address 1 Components Skipped")) %>% 
+  tab_header(title = md("Address 1- Current Address")) %>% 
   cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(participants,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+
+
+home2 <- Mod4 %>% filter(D_290969423==353358909| D_869829679==270752953) %>% 
+  mutate(Address1= case_when(!is.na(D_574985342_D_985267931) | !is.na(D_574985342_D_111275683) | !is.na(D_574985342_D_536516743) | 
+                                                     !is.na(D_574985342_D_283900560) | !is.na(D_574985342_D_467947502) |!is.na(D_574985342_D_368486703)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home2_summary <- home2 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home2_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 2- First Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+
+
+home3 <- Mod4 %>% filter(D_862052821==353358909| D_845483079==270752953) %>%  
+  mutate(Address1= case_when(!is.na(D_828086036_D_875706715) | !is.na(D_828086036_D_645150792) | !is.na(D_828086036_D_588699608) | 
+                                                     !is.na(D_828086036_D_544692849) | !is.na(D_828086036_D_335435992) |!is.na(D_828086036_D_337088272)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home3_summary <- home3 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home3_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 3- Second Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+
+home4 <- Mod4 %>%  filter(D_593146348==353358909 | D_736086261==270752953) %>%  
+  mutate(Address1= case_when(!is.na(D_680046149_D_130174162) | !is.na(D_680046149_D_563832508) | !is.na(D_680046149_D_930511603) | 
+                                                     !is.na(D_680046149_D_756548442) | !is.na(D_680046149_D_455968200) |!is.na(D_680046149_D_728704613)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home4_summary <- home4 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home4_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 4- Third Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+
+home5 <- Mod4 %>% filter(D_983592172==353358909 | D_294308065==270752953) %>%  
+  mutate(Address1= case_when(!is.na(D_274189667_D_838725845) | !is.na(D_274189667_D_565515774) | !is.na(D_274189667_D_742177990) | 
+                                                     !is.na(D_274189667_D_843508307) | !is.na(D_274189667_D_554901696) |!is.na(D_274189667_D_819429013)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home5_summary <- home5 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home5_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 5- Fourth Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+home6 <- Mod4 %>% filter(D_776406200==353358909 | D_385583361==270752953) %>%  
+  mutate(Address1= case_when(!is.na(D_113930886_D_306805272) | !is.na(D_113930886_D_819844467) | !is.na(D_113930886_D_418702418) | 
+                                                     !is.na(D_113930886_D_101219440) | !is.na(D_113930886_D_127963610) |!is.na(D_113930886_D_882731998)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home6_summary <- home6 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home6_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 6- Fifth Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+
+home7 <- Mod4 %>% filter(D_135207939==353358909 | D_768802173==270752953) %>%  
+  mutate(Address1= case_when(!is.na(D_809728747_D_351559015) | !is.na(D_809728747_D_903490632) | !is.na(D_809728747_D_703944664) | 
+                                                     !is.na(D_809728747_D_390463636) | !is.na(D_809728747_D_256790385) |!is.na(D_809728747_D_915222355)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home7_summary <- home7 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home7_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 7- Sixth Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+home8 <- Mod4 %>% filter(D_647612167==353358909 | D_150560299==270752953) %>%  
+  mutate(Address1= case_when(!is.na(D_539057792_D_893639464) | !is.na(D_539057792_D_438475588) | !is.na(D_539057792_D_744290061) | 
+                                                     !is.na(D_539057792_D_516936572) | !is.na(D_539057792_D_673034401) |!is.na(D_539057792_D_489019597)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home8_summary <- home8 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home8_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 8- Seventh Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+home9 <- Mod4 %>% filter(D_532944666==353358909 | D_122054737==270752953) %>%  
+  mutate(Address1= case_when(!is.na(D_537011756_D_988266183) | !is.na(D_537011756_D_709374950) | !is.na(D_537011756_D_351559021) | 
+                                                     !is.na(D_537011756_D_290370013) | !is.na(D_537011756_D_453691095) |!is.na(D_537011756_D_202104231)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home9_summary <- home9 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home9_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 9- Eighth Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+home10 <- Mod4 %>% filter(D_548863580==353358909 | D_948492967==270752953) %>%  
+  mutate(Address1= case_when(!is.na(D_171937884_D_264707783) | !is.na(D_171937884_D_666011940) | !is.na(D_171937884_D_282089547) | 
+                                                     !is.na(D_171937884_D_612617245) | !is.na(D_171937884_D_674024553) |!is.na(D_171937884_D_886247195)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home10_summary <- home10 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home10_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 10- Ninth Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) %>% opt_row_striping()
+
+
+home11 <- Mod4 %>% filter(D_124320444==353358909 | D_805353966==270752953) %>%  
+  mutate(Address1= case_when(!is.na(D_828766803_D_622968789) | !is.na(D_828766803_D_696874548) | !is.na(D_828766803_D_309461541) | 
+                                                     !is.na(D_828766803_D_789637860) | !is.na(D_828766803_D_795253129) |!is.na(D_828766803_D_780298998)~"Provided Address",
+                                                       TRUE ~ "Skipped All Address Components"))
+
+dt_home11_summary <- home11 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+
+dt_home11_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 11- Tenth Previous Home")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -4649,7 +4842,7 @@ dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 Objectives of enrollment and survey operational metrics: Identify trends and issues related to enrollment and the completion of baseline activities that require prompt resolution by the Operations team, Qx Subcommittee, DevOps team, and sites. 
 
 ## SSN
-```{r, warning=FALSE,echo=FALSE, message=FALSE}
+```{r ssn, warning=FALSE,echo=FALSE, message=FALSE}
 
 
 
@@ -4780,7 +4973,7 @@ dt_gavePssn_summary <- gavePssn_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 ## Age at Enrollment
-```{r, warning=FALSE,echo=FALSE}
+```{r age, warning=FALSE,echo=FALSE}
 
 which_age= data_tib_base %>%  mutate(age= case_when(state_d_934298480==124276120 ~ "Age 40-45",
                                              state_d_934298480==450985724 ~ "Age 46-50",
@@ -4819,7 +5012,7 @@ dt_all_ages_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 ## SIBCANC & SIBCANC2
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r sibcan, warning=FALSE, echo=FALSE, message=FALSE}
 #SIBCANC
 
 
@@ -4928,7 +5121,7 @@ sibling_bd_canc
 
 
 ## CHILDCANC & CHILDCANC2
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r childcanc, warning=FALSE, echo=FALSE, message=FALSE}
 
 #CHILDCANC
 # CHILDcanc1= data_tib_base  %>%  filter(as.numeric(D_446999144) >0) %>%  mutate(status= case_when((D_718867914_1_1==353358909 |D_718867914_2_2==353358909 | D_718867914_3_3==353358909 | 
@@ -5045,8 +5238,7 @@ kid_bd_canc
 
 
 ## BSNSSTYP1 & BSNSSTYP2
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
-
+```{r BuisType, warning=FALSE, echo=FALSE, message=FALSE}
 dt_curr_bus= data_tib_base %>% filter(D_613744428=="353358909")
 
 dt_curr_bus= dt_curr_bus  %>%  mutate(multb1 = ifelse(D_700374192_D_700374192_D_641572847==1, 1, 0) + ifelse(D_700374192_D_700374192_D_592592455==1, 1, 0) + ifelse(D_700374192_D_700374192_D_711138281==1, 1, 0) + ifelse(D_700374192_D_700374192_D_596792238==1, 1, 0) + ifelse(D_700374192_D_700374192_D_133362151==1, 1, 0) + ifelse(D_700374192_D_700374192_D_372993567==1, 1, 0) + ifelse(D_700374192_D_700374192_D_620577362==1, 1, 0) + ifelse(D_700374192_D_700374192_D_580409149==1, 1, 0) + ifelse(D_700374192_D_700374192_D_867237640==1, 1, 0) + ifelse(D_700374192_D_700374192_D_698814077==1, 1, 0) + ifelse(D_700374192_D_700374192_D_751475124==1, 1, 0) + ifelse(D_700374192_D_700374192_D_308286913==1, 1, 0) + ifelse(D_700374192_D_700374192_D_807835037==1, 1, 0) + ifelse(D_700374192_D_700374192_D_178420302==1, 1, 0))
@@ -5106,7 +5298,7 @@ dt_curr_bus_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Business2, warning=FALSE, echo=FALSE, message=FALSE}
 
 dt_curr_bus2= data_tib_base %>% filter(D_403258164==353358909 | D_847533056!=353358909)
 
