@@ -6059,7 +6059,9 @@ RMens_summ1 %>%  gt(rowname_col = "row_lab") %>%
 
 
 
+
 ```{r, Table8b, echo=FALSE}
+
 
 CMens_summary <-clin_mens %>%  group_by(Site)  %>% arrange(Site) %>%  summarize_at(c("Not_Started" , "Started" , "Submitted"), sum, na.rm = TRUE) 
 
