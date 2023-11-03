@@ -109,7 +109,7 @@ billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be cons
 ##517311251 Date/time Status of Completion of Background and Overall Health                         SrvBOH_TmComplete_v1r0
 ##949302066 Flag for Baseline Module Background and Overall Health                        SrvBOH_BaseStatus_v1r0
 recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
-                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935'")
+                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935' and d_949302066 ='231311385'")
 recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
 cnames <- names(recr_m1)
 # Check that it doesn't match any non-number
@@ -276,7 +276,7 @@ boxp_funct <- function(CID,Title, Xlab) {
 
 ##GT TABLE: Questions that all participants asked, update dictionary as new answer options come up
 
-dict <- list("104430631"="No", "353358909"="Yes", "589959753"="A little shorter", "623310018"="A lot shorter", "978204320"= "Grade School(Grades 1-8)", "935502060"="Some High School, No Diploma", "404564707"= "High School Graduate or GED", "432193665"="Some College, No Degree", "890756124"="Technical or Trade School After High School", "766964355"="Associate's Degree", "875342283"="Bachelor's Degree", "598242454"="Advanced Degree", "709650750"="Biological Child", "810290359"="Adopted Child", "509607548"="Step Child", "784922042"="Related to me in some other way", "288105839"=" Yes, fraternal twins", "626558982"="Yes, triplets or higher multiple birth", "178420302"="Do not Know", "536341288"="Female", "576796184"="Intersex or Other", "654207589"="Male","555374628"="Full Sibling", "871673221"="Half Sibling, Same Mother",  "198654048"="Half Sibling, Same Father", "807835037"="Other", "274062548"="More than 3 months ago", "958538953"="In the past 3 months", "317567178"="In the past month", "484055234"="In the past year",  "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago","958538953"="In the past 3 months",  "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible", "764708931"="Very flexible","0"="No", "1"="Yes", "536341288"="Female", "218837028"="Woman (New Response)", "983318667"="Man (New Response)"  , "654207589"="Male","746038746"="Prefer Not to Answer", "805712793"="Genderqueer","486192236"="Non-Binary", "807835037"="Other","873138103"="Transgender Woman","405267600"="Transgender Man", "220083334"="Very Feminine","541300533"="Mostly Feminine","878286618"="Somewhat Feminine","910745276"="Equally feminine and masculine","915528806"="Very masculine","265452386"="Mostly Masculine","510148951"="Somewhat Masculine","271882746"="Straight or heterosexual", "903084185"="Lesbian, gay, or homosexual", "999994434"="Bisexual", "584368278"="Retired", "475665841"="Homemaker", "656816477"="Unemployed", "756948639"="Unble to Work (Disabled)", "181769837"="Other Employment Status","551525967"="Yes, Full-Time Student", "738284740"="Yes, Part Time Student", "288321056"="Married", "514080822"="Never Married","522680498"="Never Married but living with Partner","649436542"="Divorced","522680498"="Partner", "741094625"="Separated","733527132"="Widow" )
+dict <- list("104430631"="No", "353358909"="Yes", "589959753"="A little shorter", "623310018"="A lot shorter", "978204320"= "Grade School(Grades 1-8)", "935502060"="Some High School, No Diploma", "404564707"= "High School Graduate or GED", "432193665"="Some College, No Degree", "890756124"="Technical or Trade School After High School", "766964355"="Associate's Degree", "875342283"="Bachelor's Degree", "598242454"="Advanced Degree", "709650750"="Biological Child", "810290359"="Adopted Child", "509607548"="Step Child", "784922042"="Related to me in some other way", "288105839"=" Yes, fraternal twins", "626558982"="Yes, triplets or higher multiple birth", "178420302"="Do not Know", "536341288"="Female", "576796184"="Intersex or Other", "654207589"="Male","555374628"="Full Sibling", "871673221"="Half Sibling, Same Mother",  "198654048"="Half Sibling, Same Father", "807835037"="Other", "274062548"="More than 3 months ago", "958538953"="In the past 3 months", "317567178"="In the past month", "484055234"="In the past year",  "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago","958538953"="In the past 3 months",  "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible", "764708931"="Very flexible","0"="No", "1"="Yes", "536341288"="Female", "218837028"="Woman", "983318667"="Man"  , "654207589"="Male","746038746"="Prefer Not to Answer", "805712793"="Genderqueer","486192236"="Non-Binary", "807835037"="Other","873138103"="Transgender Woman","405267600"="Transgender Man", "220083334"="Very Feminine","541300533"="Mostly Feminine","878286618"="Somewhat Feminine","910745276"="Equally feminine and masculine","915528806"="Very masculine","265452386"="Mostly Masculine","510148951"="Somewhat Masculine","271882746"="Straight or heterosexual", "903084185"="Lesbian, gay, or homosexual", "999994434"="Bisexual", "584368278"="Retired", "475665841"="Homemaker", "656816477"="Unemployed", "756948639"="Unble to Work (Disabled)", "181769837"="Other Employment Status","551525967"="Yes, Full-Time Student", "738284740"="Yes, Part Time Student", "288321056"="Married", "514080822"="Never Married","522680498"="Never Married but living with Partner","649436542"="Divorced","522680498"="Partner", "741094625"="Separated","733527132"="Widow" )
 
 
 
@@ -1127,7 +1127,7 @@ tab_footnote(
 
 simple_funct(D_407056417, "Sex at birth")
 
-
+#levels=c("Woman", "Man", "Transgender Man", "Transgender Woman", "Genderqueer", "Non-binary", "Other", "Prefer Not to Answer") #, "Skipped this question")
 #simple_funct(D_289664241_D_289664241, "Gender")
 
 style= data_tib_m1  %>%  mutate(descr= case_when(D_289664241_D_289664241==536341288 | D_289664241_D_289664241==218837028 ~ "Woman",
@@ -1220,42 +1220,8 @@ dt_sex2_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 #Appearance/Style
-style= data_tib_m1  %>%  mutate(descr= case_when(D_987107433==220083334 ~ "Very Feminine",
-                                               D_987107433==541300533 ~ "Mostly Feminine",
-                                               D_987107433==878286618 ~ "Somewhat Feminine",
-                                               D_987107433==910745276 ~ "Equally feminine and masculine",
-                                               D_987107433==915528806 ~ "Very masculine",
-                                               D_987107433==265452386 ~ "Mostly Masculine",
-                                               D_987107433==510148951 ~ "Somewhat Masculine",
-                                               TRUE ~ "Skipped this question"))
-
-style$descr <- factor(style$descr,levels=c("Very Feminine", "Mostly Feminine", "Somewhat Feminine", "Equally feminine and masculine", "Very masculine", "Mostly Masculine", "Somewhat Masculine", "Skipped this question"))
-
-dt_appearence_summary <- style  %>% dplyr::group_by(descr) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(descr, n, percentage) 
-
-
-dt_appearence_summary %>%  gt::gt(rowname_col = "row_lab") %>%
-  fmt_number(columns = "percentage", decimals = 2) %>%
-  tab_header(title = md("STYLE: Appearence, Style, Dress, Mannerisms")) %>%
-  cols_label(n= md("**Number of Participants**"),descr = md("**Description**"), percentage = md("**Percentage of Participants**")) %>%
-    # summary_rows( groups=F,
-    # column = c(participants,percentage),
-    # fns= list(
-    #   Sum= ~sum(.)
-    # ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = descr,
-    )
-   ) %>% opt_row_striping()
-
+levels=c("Very Feminine", "Mostly Feminine", "Somewhat Feminine", "Equally feminine and masculine", "Very masculine", "Mostly Masculine", "Somewhat Masculine", "Skipped this question")
+simple_funct(D_987107433, "STYLE: Appearence, Style, Dress, Mannerisms")
 
 
 
@@ -2821,8 +2787,10 @@ grid.arrange(trans_a_last, trans_y_last, nrow=2)
 # Section 3: General Health 
 ## Overall 
 ```{r Overall, warning=FALSE, echo=FALSE, message=FALSE}
-##Overall
-dict <- c(dict,"131550264"="Fair","138752522"="Poor","565881164"="Very Good","670680466"="Excellent","719933364"="Good")
+##Overall <--- come back to this one
+# dict <- c(dict,"138752522"="Poor","131550264"="Fair","719933364"="Good", "565881164"="Very Good","670680466"="Excellent")
+# levels=c("Poor","Fair","Good","Very Good","Excellent")
+# simple_funct(D_875208305, "OVERHEALTH: General Health Rating")
 
 health= data_tib_m1   %>%  mutate(status= case_when(D_875208305==131550264 ~ "Fair",
                                                   D_875208305==138752522 ~ "Poor", 
@@ -2857,6 +2825,10 @@ dt_overall_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 simple_funct(D_323512813, "PAIN: Felt Physial Pain Most Days of Last 3 Months")
 
 #Scale
+#dict <- list(dict, "988858078" = "1","156095877" = "2","162668459" = "3","278139969" = "4", "676824724" = "5", "512144428" = "6", "125674414" = "7", "406650257" = "8", "700080862" = "9", "616621065" = "10")
+#levels=c("1","2","3","4","5","6","7","8","9","10")#, "Skipped This Question")
+#one_logic_funct(D_338924834, D_323512813, "353358909", "PAIN2: Rank of Pain")
+
 dt_painsc= data_tib_m1   %>%  filter(D_323512813==353358909)
 
 plevel= dt_painsc  %>%  mutate(descr= case_when(D_338924834==988858078 ~ "1",
@@ -2868,7 +2840,7 @@ plevel= dt_painsc  %>%  mutate(descr= case_when(D_338924834==988858078 ~ "1",
                                                 D_338924834==125674414 ~ "7", 
                                                 D_338924834==406650257 ~ "8", 
                                                 D_338924834==700080862 ~ "9", 
-                                                D_338924834==616621065 ~ "10 ",
+                                                D_338924834==616621065 ~ "10",
                                                 TRUE ~ "Skipped This Question"))
 
 plevel$descr <- factor(plevel$descr,levels=c("1","2","3","4","5","6","7","8","9","10 ", "Skipped This Question"))
@@ -2899,6 +2871,9 @@ dt_painsc_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 #Affected Work?
+# levels=c("Not At All", "A Little Bit","A Lot", "Skipped this question")
+# one_logic_funct(D_338924834, D_323512813, "353358909", "PAIN3: Pain Affected Work")
+
 dt_painaff= data_tib_m1   %>%  filter(D_323512813==353358909)
   
 
@@ -2950,6 +2925,7 @@ boxp_funct(D_677262300,"Age Adult Height Reached","Age")
 
 #height at 10
 dict <- c(dict, "325478778"="Shorter than average","730757606"="About avg", "897599966"="Taller than average")
+levels=c("Shorter than average","About avg", "Taller than average")
 simple_funct(D_650399623, "AVEHIGHT: Height at Age 10")
 
 #weight at 10
@@ -3400,6 +3376,12 @@ module1 %>% mutate(D_207494582=as.numeric(as.character(D_207494582))) %>%
 
 
 #Female
+# dict <- list(dict, "927925620" = "(0)No hair loss", "552278254"= "(1) Mild Loss on Sides", "267104669"= "(2) Mild Loss on Top", "619337179"= "(3) Mild to Moderate",
+#              "601381820"= "(4) Moderate Loss on Top", "151394571"= "(5) Severe Loss on Top", "917379905"= "(6) Severe Loss and Thinning", 
+#              "746328729"= "(7) Severe Loss Top and Forehead", "452963767"= "(8) All over Loss")
+# levels=c("(0)No hair loss", "(1) Mild Loss on Sides", "(2) Mild Loss on Top", "(3) Mild to Moderate", "(4) Moderate Loss on Top", "(5) Severe Loss on Top", "(6) Severe Loss and Thinning", "(7) Severe Loss Top and Forehead","(8) All over Loss", "Skipped this question")
+# one_logic_funct(D_365851428, D_407056417, "536341288" ,"Level of Hair Loss (Female)")
+
 
 dt_fem_hair= data_tib_m1   %>% filter(D_407056417==536341288) 
 

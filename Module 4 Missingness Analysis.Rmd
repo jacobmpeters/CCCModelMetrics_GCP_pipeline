@@ -323,30 +323,38 @@ Mod4$Country <- Mod4$D_121490150_D_831127170
 
 
 home1skip <- Mod4 %>% select(Connect_ID, Street_Number, Street_Name, City, State, ZIP, Country)
-home1skip= home1skip %>%  mutate(Address1= case_when(is.na(Street_Number)~"Skipped Street Number"))
+home1skip= home1skip %>%  mutate(Address1= case_when(is.na(Street_Number) & is.na(Street_Name) & 
+                                                       is.na(City) & is.na(State) & is.na(ZIP)& is.na(Country)~"Skipped Entire Home 1 Address "))
 
 dt_home1skip_summary <- home1skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
 dt_home1skip_summary <- dt_home1skip_summary[1,]
 
-dt_home1skip_summary[2,1] <- "Skipped Street Name" 
-dt_home1skip_summary[2,2] <- sum(is.na(home1skip$Street_Name))
-dt_home1skip_summary[2,3] <- (sum(is.na(home1skip$Street_Name))/dim(home1skip)[[1]])*100
 
-dt_home1skip_summary[3,1] <- "Skipped City"
-dt_home1skip_summary[3,2] <- sum(is.na(home1skip$City))
-dt_home1skip_summary[3,3] <- (sum(is.na(home1skip$City))/dim(home1skip)[[1]])*100
+dt_home1skip_summary[2,1] <- "Skipped Street_Number" 
+dt_home1skip_summary[2,2] <- sum(is.na(home1skip$Street_Number))
+dt_home1skip_summary[2,3] <- (sum(is.na(home1skip$Street_Number))/dim(home1skip)[[1]])*100
 
-dt_home1skip_summary[4,1] <- "Skipped State"
-dt_home1skip_summary[4,2] <- sum(is.na(home1skip$State))
-dt_home1skip_summary[4,3] <- (sum(is.na(home1skip$State))/dim(home1skip)[[1]])*100
+dt_home1skip_summary[3,1] <- "Skipped Street Name" 
+dt_home1skip_summary[3,2] <- sum(is.na(home1skip$Street_Name))
+dt_home1skip_summary[3,3] <- (sum(is.na(home1skip$Street_Name))/dim(home1skip)[[1]])*100
 
-dt_home1skip_summary[5,1] <- "Skipped ZIP"
-dt_home1skip_summary[5,2] <- sum(is.na(home1skip$ZIP))
-dt_home1skip_summary[5,3] <- (sum(is.na(home1skip$ZIP))/dim(home1skip)[[1]])*100
+dt_home1skip_summary[4,1] <- "Skipped City"
+dt_home1skip_summary[4,2] <- sum(is.na(home1skip$City))
+dt_home1skip_summary[4,3] <- (sum(is.na(home1skip$City))/dim(home1skip)[[1]])*100
 
-dt_home1skip_summary[6,1] <- "Skipped Country"
-dt_home1skip_summary[6,2] <- sum(is.na(home1skip$Country))
-dt_home1skip_summary[6,3] <- (sum(is.na(home1skip$Country))/dim(home1skip)[[1]])*100
+dt_home1skip_summary[5,1] <- "Skipped State"
+dt_home1skip_summary[5,2] <- sum(is.na(home1skip$State))
+dt_home1skip_summary[5,3] <- (sum(is.na(home1skip$State))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[6,1] <- "Skipped ZIP"
+dt_home1skip_summary[6,2] <- sum(is.na(home1skip$ZIP))
+dt_home1skip_summary[6,3] <- (sum(is.na(home1skip$ZIP))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[7,1] <- "Skipped Country"
+dt_home1skip_summary[7,2] <- sum(is.na(home1skip$Country))
+dt_home1skip_summary[7,3] <- (sum(is.na(home1skip$Country))/dim(home1skip)[[1]])*100
+
+
 
 dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
@@ -369,19 +377,31 @@ dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 
-Followup1_skip= Mod4 %>%  filter(Mod4$D_920576363_D_920576363!="[178420302]") %>% 
-  mutate(Address= case_when(is.na(D_920576363_D_725583683) & is.na(D_121490150_D_303500597)~"Skipped City Follow-up"))
+Followup1_skip= Mod4 %>%  filter(Mod4$D_920576363_D_920576363!="[178420302]" & 
+                                   (is.na(D_920576363_D_725583683) & is.na(D_121490150_D_303500597)) | 
+                             (is.na(D_920576363_D_917021073) & is.na(D_121490150_D_195068098)) | 
+                              (is.na(D_920576363_D_970000442) & is.na(D_121490150_D_202784871)) | 
+                             (is.na(D_920576363_D_500100435) & is.na(D_121490150_D_831127170))) %>% 
+  mutate(Address= case_when(is.na(D_920576363_D_725583683) & is.na(D_121490150_D_303500597) & 
+                             is.na(D_920576363_D_917021073) & is.na(D_121490150_D_195068098) & 
+                              is.na(D_920576363_D_970000442) & is.na(D_121490150_D_202784871) & 
+                             is.na(D_920576363_D_500100435) & is.na(D_121490150_D_831127170) ~"Skipped All Follow-up"))
 
 Followup1__skip <- Followup1_skip %>% dplyr::group_by(Address) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address, n, percentage)
 Followup1__skip <- Followup1__skip[1,]
 
-Followup1__skip[2,1] <- "Skipped State Follow-up" 
-Followup1__skip[2,2] <- sum(is.na(Followup1_skip$D_920576363_D_917021073) & is.na(Followup1_skip$D_121490150_D_195068098))
-Followup1__skip[2,3] <- (sum(is.na(Followup1_skip$D_920576363_D_917021073) & is.na(Followup1_skip$D_121490150_D_195068098))/dim(Followup1_skip)[[1]])*100
 
-Followup1__skip[3,1] <- "Skipped ZIP Follow-up"
-Followup1__skip[3,2] <- sum(is.na(Followup1_skip$D_920576363_D_970000442) & is.na(Followup1_skip$D_121490150_D_202784871))
-Followup1__skip[3,3] <- (sum(is.na(Followup1_skip$D_920576363_D_970000442) & is.na(Followup1_skip$D_121490150_D_202784871))/dim(Followup1_skip)[[1]])*100
+Followup1__skip[2,1] <- "Skipped State Follow-up" 
+Followup1__skip[2,2] <- sum(is.na(Followup1_skip$D_920576363_D_725583683) & is.na(Followup1_skip$D_121490150_D_303500597))
+Followup1__skip[2,3] <- (sum(is.na(Followup1_skip$D_920576363_D_725583683) & is.na(Followup1_skip$D_121490150_D_303500597))/dim(Followup1_skip)[[1]])*100
+
+Followup1__skip[3,1] <- "Skipped State Follow-up" 
+Followup1__skip[3,2] <- sum(is.na(Followup1_skip$D_920576363_D_917021073) & is.na(Followup1_skip$D_121490150_D_195068098))
+Followup1__skip[3,3] <- (sum(is.na(Followup1_skip$D_920576363_D_917021073) & is.na(Followup1_skip$D_121490150_D_195068098))/dim(Followup1_skip)[[1]])*100
+
+Followup1__skip[4,1] <- "Skipped ZIP Follow-up"
+Followup1__skip[4,2] <- sum(is.na(Followup1_skip$D_920576363_D_970000442) & is.na(Followup1_skip$D_121490150_D_202784871))
+Followup1__skip[4,3] <- (sum(is.na(Followup1_skip$D_920576363_D_970000442) & is.na(Followup1_skip$D_121490150_D_202784871))/dim(Followup1_skip)[[1]])*100
 
 Followup1__skip[4,1] <- "Skipped Country Follow-up"
 Followup1__skip[4,2] <- sum(is.na(Followup1_skip$D_920576363_D_500100435) & is.na(Followup1_skip$D_121490150_D_831127170))
@@ -412,7 +432,7 @@ Followup1__skip %>%  gt(rowname_col = "row_lab") %>%
 
 
 home_add3_1= Mod4 %>% #select(D_804504024_D_105043152, D_804504024_D_543135391) %>% 
-  filter(Mod4$D_804504024_D_804504024!="[178420302]" & 
+  filter((is.na(Mod4$D_804504024_D_105043152) | is.na(Mod4$D_804504024_D_543135391)) & Mod4$D_804504024_D_804504024!="[178420302]" & 
             is.na(Mod4$D_121490150_D_255248624) & is.na(Mod4$D_121490150_D_945532934) & ((!is.na(Mod4$D_121490150_D_303500597) | !is.na(Mod4$D_121490150_D_195068098) | 
                                                                                             !is.na(Mod4$D_121490150_D_202784871) | !is.na(Mod4$D_121490150_D_831127170)) | 
                                                                                    (!is.na(Mod4$D_920576363_D_725583683) | !is.na(Mod4$D_920576363_D_917021073) |
@@ -521,30 +541,35 @@ Mod4$Country <- Mod4$D_574985342_D_368486703
 
 
 home2 <- Mod4 %>% filter(Mod4$D_290969423==353358909| Mod4$D_869829679==270752953)
-home2skip= home2 %>%  mutate(Address1= case_when(is.na(Street_Number)~"Skipped Street Number"))
+home2skip= home2 %>%  mutate(Address1= case_when(is.na(Street_Number) & is.na(Street_Name) & is.na(Apt_Number)& 
+                                                       is.na(City) & is.na(State) & is.na(ZIP)& is.na(Country)~"Skipped Entire Address"))
 
 dt_home2skip_summary <- home2skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
 dt_home2skip_summary <- dt_home2skip_summary[1,]
 
-dt_home2skip_summary[2,1] <- "Skipped Street Name" 
-dt_home2skip_summary[2,2] <- sum(is.na(home2skip$Street_Name))
-dt_home2skip_summary[2,3] <- (sum(is.na(home2skip$Street_Name))/dim(home2skip)[[1]])*100
+dt_home2skip_summary[2,1] <- "Skipped Street Number" 
+dt_home2skip_summary[2,2] <- sum(is.na(home2skip$Street_Number))
+dt_home2skip_summary[2,3] <- (sum(is.na(home2skip$Street_Number))/dim(home2skip)[[1]])*100
 
-dt_home2skip_summary[3,1] <- "Skipped City"
-dt_home2skip_summary[3,2] <- sum(is.na(home2skip$City))
-dt_home2skip_summary[3,3] <- (sum(is.na(home2skip$City))/dim(home2skip)[[1]])*100
+dt_home2skip_summary[3,1] <- "Skipped Street Name" 
+dt_home2skip_summary[3,2] <- sum(is.na(home2skip$Street_Name))
+dt_home2skip_summary[3,3] <- (sum(is.na(home2skip$Street_Name))/dim(home2skip)[[1]])*100
 
-dt_home2skip_summary[4,1] <- "Skipped State"
-dt_home2skip_summary[4,2] <- sum(is.na(home2skip$State))
-dt_home2skip_summary[4,3] <- (sum(is.na(home2skip$State))/dim(home2skip)[[1]])*100
+dt_home2skip_summary[4,1] <- "Skipped City"
+dt_home2skip_summary[4,2] <- sum(is.na(home2skip$City))
+dt_home2skip_summary[4,3] <- (sum(is.na(home2skip$City))/dim(home2skip)[[1]])*100
 
-dt_home2skip_summary[5,1] <- "Skipped ZIP"
-dt_home2skip_summary[5,2] <- sum(is.na(home2skip$ZIP))
-dt_home2skip_summary[5,3] <- (sum(is.na(home2skip$ZIP))/dim(home2skip)[[1]])*100
+dt_home2skip_summary[5,1] <- "Skipped State"
+dt_home2skip_summary[5,2] <- sum(is.na(home2skip$State))
+dt_home2skip_summary[5,3] <- (sum(is.na(home2skip$State))/dim(home2skip)[[1]])*100
 
-dt_home2skip_summary[6,1] <- "Skipped Country"
-dt_home2skip_summary[6,2] <- sum(is.na(home2skip$Country))
-dt_home2skip_summary[6,3] <- (sum(is.na(home2skip$Country))/dim(home2skip)[[1]])*100
+dt_home2skip_summary[6,1] <- "Skipped ZIP"
+dt_home2skip_summary[6,2] <- sum(is.na(home2skip$ZIP))
+dt_home2skip_summary[6,3] <- (sum(is.na(home2skip$ZIP))/dim(home2skip)[[1]])*100
+
+dt_home2skip_summary[7,1] <- "Skipped Country"
+dt_home2skip_summary[7,2] <- sum(is.na(home2skip$Country))
+dt_home2skip_summary[7,3] <- (sum(is.na(home2skip$Country))/dim(home2skip)[[1]])*100
 
 dt_home2skip_summary %>%  gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
@@ -568,23 +593,36 @@ dt_home2skip_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 
-Followup2_skip= home2 %>%  filter(home2$D_444145120_D_444145120!="[178420302]") %>% 
-  mutate(Address= case_when(is.na(D_444145120_D_288498031) & is.na(D_574985342_D_536516743)~"Skipped City Follow-up"))
+Followup2_skip= home2 %>%  filter(home2$D_444145120_D_444145120!="[178420302]" & 
+                                   (is.na(D_444145120_D_288498031) & is.na(D_574985342_D_536516743)) | 
+                              (is.na(D_444145120_D_288498031) & is.na(D_574985342_D_536516743)) | 
+                             (is.na(D_444145120_D_195845897) & is.na(D_574985342_D_283900560)) | 
+                             (is.na(D_444145120_D_936129960) & is.na(D_574985342_D_467947502)) | 
+                              (is.na(D_444145120_D_924583345) & is.na(D_574985342_D_368486703)) ) %>% 
+  mutate(Address= case_when(is.na(D_444145120_D_288498031) & is.na(D_574985342_D_536516743) & 
+                              is.na(D_444145120_D_288498031) & is.na(D_574985342_D_536516743) & 
+                             is.na(D_444145120_D_195845897) & is.na(D_574985342_D_283900560) & 
+                             is.na(D_444145120_D_936129960) & is.na(D_574985342_D_467947502) & 
+                              is.na(D_444145120_D_924583345) & is.na(D_574985342_D_368486703)~"Skipped Entire Follow-up"))
 
 Followup2__skip <- Followup2_skip %>% dplyr::group_by(Address) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address, n, percentage)
 Followup2__skip <- Followup2__skip[1,]
 
-Followup2__skip[2,1] <- "Skipped State Follow-up" 
-Followup2__skip[2,2] <- sum(is.na(Followup2_skip$D_444145120_D_195845897) & is.na(Followup2_skip$D_574985342_D_283900560))
-Followup2__skip[2,3] <- (sum(is.na(Followup2_skip$D_444145120_D_195845897) & is.na(Followup2_skip$D_574985342_D_283900560))/dim(Followup2_skip)[[1]])*100
+Followup2__skip[2,1] <- "Skipped City Follow-up" 
+Followup2__skip[2,2] <- sum(is.na(Followup2_skip$D_444145120_D_288498031) & is.na(Followup2_skip$D_574985342_D_536516743))
+Followup2__skip[2,3] <- (sum(is.na(Followup2_skip$D_444145120_D_288498031) & is.na(Followup2_skip$D_574985342_D_536516743))/dim(Followup2_skip)[[1]])*100
 
-Followup2__skip[3,1] <- "Skipped ZIP Follow-up"
-Followup2__skip[3,2] <- sum(is.na(Followup2_skip$D_444145120_D_936129960) & is.na(Followup2_skip$D_574985342_D_467947502))
-Followup2__skip[3,3] <- (sum(is.na(Followup2_skip$D_444145120_D_936129960) & is.na(Followup2_skip$D_574985342_D_467947502))/dim(Followup2_skip)[[1]])*100
+Followup2__skip[3,1] <- "Skipped State Follow-up" 
+Followup2__skip[3,2] <- sum(is.na(Followup2_skip$D_444145120_D_195845897) & is.na(Followup2_skip$D_574985342_D_283900560))
+Followup2__skip[3,3] <- (sum(is.na(Followup2_skip$D_444145120_D_195845897) & is.na(Followup2_skip$D_574985342_D_283900560))/dim(Followup2_skip)[[1]])*100
 
-Followup2__skip[4,1] <- "Skipped Country Follow-up"
-Followup2__skip[4,2] <- sum(is.na(Followup2_skip$D_444145120_D_924583345) & is.na(Followup2_skip$D_574985342_D_368486703))
-Followup2__skip[4,3] <- (sum(is.na(Followup2_skip$D_444145120_D_924583345) & is.na(Followup2_skip$D_574985342_D_368486703))/dim(Followup2_skip)[[1]])*100
+Followup2__skip[4,1] <- "Skipped ZIP Follow-up"
+Followup2__skip[4,2] <- sum(is.na(Followup2_skip$D_444145120_D_936129960) & is.na(Followup2_skip$D_574985342_D_467947502))
+Followup2__skip[4,3] <- (sum(is.na(Followup2_skip$D_444145120_D_936129960) & is.na(Followup2_skip$D_574985342_D_467947502))/dim(Followup2_skip)[[1]])*100
+
+Followup2__skip[5,1] <- "Skipped Country Follow-up"
+Followup2__skip[5,2] <- sum(is.na(Followup2_skip$D_444145120_D_924583345) & is.na(Followup2_skip$D_574985342_D_368486703))
+Followup2__skip[5,3] <- (sum(is.na(Followup2_skip$D_444145120_D_924583345) & is.na(Followup2_skip$D_574985342_D_368486703))/dim(Followup2_skip)[[1]])*100
 
 
 Followup2__skip %>%  gt(rowname_col = "row_lab") %>%  
@@ -609,7 +647,7 @@ Followup2__skip %>%  gt(rowname_col = "row_lab") %>%
 
 
 home_add3_2= home2 %>% #select(D_804504024_D_105043152, D_804504024_D_543135391) %>% 
-  filter(home2$D_398762737_D_398762737!="[178420302]" & 
+  filter((is.na(home2$D_398762737_D_553357862) | is.na(home2$D_398762737_D_474541595)) & home2$D_398762737_D_398762737!="[178420302]" & 
             is.na(home2$D_574985342_D_985267931) & is.na(home2$D_574985342_D_111275683) & ((!is.na(home2$D_574985342_D_536516743) | !is.na(home2$D_574985342_D_283900560) | 
                                                                                             !is.na(home2$D_574985342_D_467947502) | !is.na(home2$D_574985342_D_368486703)) | 
                                                                                    (!is.na(home2$D_444145120_D_288498031) | !is.na(home2$D_444145120_D_195845897) |
@@ -718,26 +756,30 @@ Mod4$Country <- Mod4$D_828086036_D_337088272
 
 
 home3 <- Mod4 %>% filter(Mod4$D_862052821==353358909| Mod4$D_845483079==270752953)
-home3skip= home3 %>%  mutate(Address1= case_when(is.na(Street_Number)~"Skipped Street Number"))
+home3skip= home3 %>%  mutate(Address1= case_when(is.na(Street_Number) & is.na(Street_Name) & is.na(City) & is.na(State)& is.na(ZIP)& is.na(Country) ~"Skipped Entire Address"))
 
 dt_home3skip_summary <- home3skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
 dt_home3skip_summary <- dt_home3skip_summary[1,]
 
-dt_home3skip_summary[2,1] <- "Skipped Street Name" 
-dt_home3skip_summary[2,2] <- sum(is.na(home3skip$Street_Name))
-dt_home3skip_summary[2,3] <- (sum(is.na(home3skip$Street_Name))/dim(home3skip)[[1]])*100
+dt_home3skip_summary[2,1] <- "Skipped Street Number" 
+dt_home3skip_summary[2,2] <- sum(is.na(home3skip$Street_Number))
+dt_home3skip_summary[2,3] <- (sum(is.na(home3skip$Street_Number))/dim(home3skip)[[1]])*100
 
-dt_home3skip_summary[3,1] <- "Skipped City"
-dt_home3skip_summary[3,2] <- sum(is.na(home3skip$City))
-dt_home3skip_summary[3,3] <- (sum(is.na(home3skip$City))/dim(home3skip)[[1]])*100
+dt_home3skip_summary[3,1] <- "Skipped Street Name" 
+dt_home3skip_summary[3,2] <- sum(is.na(home3skip$Street_Name))
+dt_home3skip_summary[3,3] <- (sum(is.na(home3skip$Street_Name))/dim(home3skip)[[1]])*100
 
-dt_home3skip_summary[4,1] <- "Skipped State"
-dt_home3skip_summary[4,2] <- sum(is.na(home3skip$State))
-dt_home3skip_summary[4,3] <- (sum(is.na(home3skip$State))/dim(home3skip)[[1]])*100
+dt_home3skip_summary[4,1] <- "Skipped City"
+dt_home3skip_summary[4,2] <- sum(is.na(home3skip$City))
+dt_home3skip_summary[4,3] <- (sum(is.na(home3skip$City))/dim(home3skip)[[1]])*100
 
-dt_home3skip_summary[5,1] <- "Skipped ZIP"
-dt_home3skip_summary[5,2] <- sum(is.na(home3skip$ZIP))
-dt_home3skip_summary[5,3] <- (sum(is.na(home3skip$ZIP))/dim(home3skip)[[1]])*100
+dt_home3skip_summary[5,1] <- "Skipped State"
+dt_home3skip_summary[5,2] <- sum(is.na(home3skip$State))
+dt_home3skip_summary[5,3] <- (sum(is.na(home3skip$State))/dim(home3skip)[[1]])*100
+
+dt_home3skip_summary[6,1] <- "Skipped ZIP"
+dt_home3skip_summary[6,2] <- sum(is.na(home3skip$ZIP))
+dt_home3skip_summary[6,3] <- (sum(is.na(home3skip$ZIP))/dim(home3skip)[[1]])*100
 
 dt_home3skip_summary[6,1] <- "Skipped Country"
 dt_home3skip_summary[6,2] <- sum(is.na(home3skip$Country))
@@ -766,22 +808,26 @@ dt_home3skip_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 Followup3_skip= home3 %>%  filter(home3$D_752101258_D_752101258!="[178420302]") %>% 
-  mutate(Address= case_when(is.na(D_752101258_D_648495207) & is.na(D_828086036_D_588699608)~"Skipped City Follow-up"))
+  mutate(Address= case_when(is.na(D_752101258_D_648495207) & is.na(D_828086036_D_588699608)~"Skipped All  Follow-up"))
 
 Followup3__skip <- Followup3_skip %>% dplyr::group_by(Address) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address, n, percentage)
 Followup3__skip <- Followup3__skip[1,]
 
-Followup3__skip[2,1] <- "Skipped State Follow-up" 
-Followup3__skip[2,2] <- sum(is.na(Followup3_skip$D_752101258_D_300933270) & is.na(Followup3_skip$D_828086036_D_544692849))
-Followup3__skip[2,3] <- (sum(is.na(Followup3_skip$D_752101258_D_300933270) & is.na(Followup3_skip$D_828086036_D_544692849))/dim(Followup3_skip)[[1]])*100
+Followup3__skip[2,1] <- "Skipped City Follow-up" 
+Followup3__skip[2,2] <- sum(is.na(Followup3_skip$D_752101258_D_648495207) & is.na(Followup3_skip$D_828086036_D_588699608))
+Followup3__skip[2,3] <- (sum(is.na(Followup3_skip$D_752101258_D_648495207) & is.na(Followup3_skip$D_828086036_D_588699608))/dim(Followup3_skip)[[1]])*100
 
-Followup3__skip[3,1] <- "Skipped ZIP Follow-up"
-Followup3__skip[3,2] <- sum(is.na(Followup3_skip$D_752101258_D_649864362) & is.na(Followup3_skip$D_828086036_D_335435992))
-Followup3__skip[3,3] <- (sum(is.na(Followup3_skip$D_752101258_D_649864362) & is.na(Followup3_skip$D_828086036_D_335435992))/dim(Followup3_skip)[[1]])*100
+Followup3__skip[3,1] <- "Skipped State Follow-up" 
+Followup3__skip[3,2] <- sum(is.na(Followup3_skip$D_752101258_D_300933270) & is.na(Followup3_skip$D_828086036_D_544692849))
+Followup3__skip[3,3] <- (sum(is.na(Followup3_skip$D_752101258_D_300933270) & is.na(Followup3_skip$D_828086036_D_544692849))/dim(Followup3_skip)[[1]])*100
 
-Followup3__skip[4,1] <- "Skipped Country Follow-up"
-Followup3__skip[4,2] <- sum(is.na(Followup3_skip$D_752101258_D_723108194) & is.na(Followup3_skip$D_828086036_D_337088272))
-Followup3__skip[4,3] <- (sum(is.na(Followup3_skip$D_752101258_D_723108194) & is.na(Followup3_skip$D_828086036_D_337088272))/dim(Followup3_skip)[[1]])*100
+Followup3__skip[4,1] <- "Skipped ZIP Follow-up"
+Followup3__skip[4,2] <- sum(is.na(Followup3_skip$D_752101258_D_649864362) & is.na(Followup3_skip$D_828086036_D_335435992))
+Followup3__skip[4,3] <- (sum(is.na(Followup3_skip$D_752101258_D_649864362) & is.na(Followup3_skip$D_828086036_D_335435992))/dim(Followup3_skip)[[1]])*100
+
+Followup3__skip[5,1] <- "Skipped Country Follow-up"
+Followup3__skip[5,2] <- sum(is.na(Followup3_skip$D_752101258_D_723108194) & is.na(Followup3_skip$D_828086036_D_337088272))
+Followup3__skip[5,3] <- (sum(is.na(Followup3_skip$D_752101258_D_723108194) & is.na(Followup3_skip$D_828086036_D_337088272))/dim(Followup3_skip)[[1]])*100
 
 
 Followup3__skip %>%  gt(rowname_col = "row_lab") %>%  
@@ -806,7 +852,7 @@ Followup3__skip %>%  gt(rowname_col = "row_lab") %>%
 
 
 home_add3_3= home3 %>% #select(D_804504024_D_105043152, D_804504024_D_543135391) %>% 
-  filter(home3$D_961572487_D_961572487!="[178420302]" & 
+  filter((is.na(home3$D_961572487_D_469679476) | is.na(home3$D_961572487_D_216954796)) & home3$D_961572487_D_961572487!="[178420302]" & 
             is.na(home3$D_828086036_D_875706715) & is.na(home3$D_828086036_D_645150792) & 
            ((!is.na(home3$D_828086036_D_588699608) | !is.na(home3$D_828086036_D_544692849) | 
                !is.na(home3$D_828086036_D_335435992) | !is.na(home3$D_828086036_D_337088272)) |
@@ -914,30 +960,35 @@ Mod4$Country <- Mod4$D_680046149_D_728704613
 
 
 home4 <- Mod4 %>% filter(Mod4$D_593146348==353358909 | Mod4$D_736086261==270752953)
-home4skip= home4 %>%  mutate(Address1= case_when(is.na(Street_Number)~"Skipped Street Number"))
+home4skip= home4 %>%  mutate(Address1= case_when(is.na(Street_Number) & is.na(Street_Name)& is.na(City)& 
+                                                   is.na(State)& is.na(ZIP)& is.na(Country)~"Skipped Entire Address"))
 
 dt_home4skip_summary <- home4skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
 dt_home4skip_summary <- dt_home4skip_summary[1,]
 
-dt_home4skip_summary[2,1] <- "Skipped Street Name" 
-dt_home4skip_summary[2,2] <- sum(is.na(home4skip$Street_Name))
-dt_home4skip_summary[2,3] <- (sum(is.na(home4skip$Street_Name))/dim(home4skip)[[1]])*100
+dt_home4skip_summary[2,1] <- "Skipped Street Number" 
+dt_home4skip_summary[2,2] <- sum(is.na(home4skip$Street_Number))
+dt_home4skip_summary[2,3] <- (sum(is.na(home4skip$Street_Number))/dim(home4skip)[[1]])*100
 
-dt_home4skip_summary[3,1] <- "Skipped City"
-dt_home4skip_summary[3,2] <- sum(is.na(home4skip$City))
-dt_home4skip_summary[3,3] <- (sum(is.na(home4skip$City))/dim(home4skip)[[1]])*100
+dt_home4skip_summary[3,1] <- "Skipped Street Name" 
+dt_home4skip_summary[3,2] <- sum(is.na(home4skip$Street_Name))
+dt_home4skip_summary[3,3] <- (sum(is.na(home4skip$Street_Name))/dim(home4skip)[[1]])*100
 
-dt_home4skip_summary[4,1] <- "Skipped State"
-dt_home4skip_summary[4,2] <- sum(is.na(home4skip$State))
-dt_home4skip_summary[4,3] <- (sum(is.na(home4skip$State))/dim(home4skip)[[1]])*100
+dt_home4skip_summary[4,1] <- "Skipped City"
+dt_home4skip_summary[4,2] <- sum(is.na(home4skip$City))
+dt_home4skip_summary[4,3] <- (sum(is.na(home4skip$City))/dim(home4skip)[[1]])*100
 
-dt_home4skip_summary[5,1] <- "Skipped ZIP"
-dt_home4skip_summary[5,2] <- sum(is.na(home4skip$ZIP))
-dt_home4skip_summary[5,3] <- (sum(is.na(home4skip$ZIP))/dim(home4skip)[[1]])*100
+dt_home4skip_summary[5,1] <- "Skipped State"
+dt_home4skip_summary[5,2] <- sum(is.na(home4skip$State))
+dt_home4skip_summary[5,3] <- (sum(is.na(home4skip$State))/dim(home4skip)[[1]])*100
 
-dt_home4skip_summary[6,1] <- "Skipped Country"
-dt_home4skip_summary[6,2] <- sum(is.na(home4skip$Country))
-dt_home4skip_summary[6,3] <- (sum(is.na(home4skip$Country))/dim(home4skip)[[1]])*100
+dt_home4skip_summary[6,1] <- "Skipped ZIP"
+dt_home4skip_summary[6,2] <- sum(is.na(home4skip$ZIP))
+dt_home4skip_summary[6,3] <- (sum(is.na(home4skip$ZIP))/dim(home4skip)[[1]])*100
+
+dt_home4skip_summary[7,1] <- "Skipped Country"
+dt_home4skip_summary[7,2] <- sum(is.na(home4skip$Country))
+dt_home4skip_summary[7,3] <- (sum(is.na(home4skip$Country))/dim(home4skip)[[1]])*100
 
 dt_home4skip_summary %>%  gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
@@ -1002,7 +1053,7 @@ Followup4__skip %>%  gt(rowname_col = "row_lab") %>%
 
 
 home_add3_4= home4 %>% #select(D_804504024_D_105043152, D_804504024_D_543135391) %>% 
-  filter(home4$D_746604821_D_746604821!="[178420302]" & 
+  filter((is.na(home4$D_746604821_D_423713680) | is.na(home4$D_746604821_D_555767576)) & home4$D_746604821_D_746604821!="[178420302]" & 
             is.na(home4$D_680046149_D_130174162) & is.na(home4$D_680046149_D_563832508) & ((!is.na(home4$D_680046149_D_930511603) | !is.na(home4$D_680046149_D_756548442) | 
                                                                                             !is.na(home4$D_680046149_D_455968200) | !is.na(home4$D_680046149_D_728704613)) | 
                                                                                    (!is.na(home4$D_879180101_D_931999203) | !is.na(home4$D_879180101_D_486511102) |
@@ -1110,30 +1161,34 @@ Mod4$Country <- Mod4$D_274189667_D_819429013
 
 
 home5 <- Mod4 %>% filter(Mod4$D_983592172==353358909 | Mod4$D_294308065==270752953)
-home5skip= home5 %>%  mutate(Address1= case_when(is.na(Street_Number)~"Skipped Street Number"))
+home5skip= home5 %>%  mutate(Address1= case_when(is.na(Street_Number) & is.na(Street_Name) & is.na(City) & is.na(State) & is.na(ZIP) & is.na(Country)~"Skipped Entire Address"))
 
 dt_home5skip_summary <- home5skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
 dt_home5skip_summary <- dt_home5skip_summary[1,]
 
-dt_home5skip_summary[2,1] <- "Skipped Street Name" 
-dt_home5skip_summary[2,2] <- sum(is.na(home5skip$Street_Name))
-dt_home5skip_summary[2,3] <- (sum(is.na(home5skip$Street_Name))/dim(home5skip)[[1]])*100
+dt_home5skip_summary[2,1] <- "Skipped Street Number" 
+dt_home5skip_summary[2,2] <- sum(is.na(home5skip$Street_Number))
+dt_home5skip_summary[2,3] <- (sum(is.na(home5skip$Street_Number))/dim(home5skip)[[1]])*100
 
-dt_home5skip_summary[3,1] <- "Skipped City"
-dt_home5skip_summary[3,2] <- sum(is.na(home5skip$City))
-dt_home5skip_summary[3,3] <- (sum(is.na(home5skip$City))/dim(home5skip)[[1]])*100
+dt_home5skip_summary[3,1] <- "Skipped Street Name" 
+dt_home5skip_summary[3,2] <- sum(is.na(home5skip$Street_Name))
+dt_home5skip_summary[3,3] <- (sum(is.na(home5skip$Street_Name))/dim(home5skip)[[1]])*100
 
-dt_home5skip_summary[4,1] <- "Skipped State"
-dt_home5skip_summary[4,2] <- sum(is.na(home5skip$State))
-dt_home5skip_summary[4,3] <- (sum(is.na(home5skip$State))/dim(home5skip)[[1]])*100
+dt_home5skip_summary[4,1] <- "Skipped City"
+dt_home5skip_summary[4,2] <- sum(is.na(home5skip$City))
+dt_home5skip_summary[4,3] <- (sum(is.na(home5skip$City))/dim(home5skip)[[1]])*100
 
-dt_home5skip_summary[5,1] <- "Skipped ZIP"
-dt_home5skip_summary[5,2] <- sum(is.na(home5skip$ZIP))
-dt_home5skip_summary[5,3] <- (sum(is.na(home5skip$ZIP))/dim(home5skip)[[1]])*100
+dt_home5skip_summary[5,1] <- "Skipped State"
+dt_home5skip_summary[5,2] <- sum(is.na(home5skip$State))
+dt_home5skip_summary[5,3] <- (sum(is.na(home5skip$State))/dim(home5skip)[[1]])*100
 
-dt_home5skip_summary[6,1] <- "Skipped Country"
-dt_home5skip_summary[6,2] <- sum(is.na(home5skip$Country))
-dt_home5skip_summary[6,3] <- (sum(is.na(home5skip$Country))/dim(home5skip)[[1]])*100
+dt_home5skip_summary[6,1] <- "Skipped ZIP"
+dt_home5skip_summary[6,2] <- sum(is.na(home5skip$ZIP))
+dt_home5skip_summary[6,3] <- (sum(is.na(home5skip$ZIP))/dim(home5skip)[[1]])*100
+
+dt_home5skip_summary[7,1] <- "Skipped Country"
+dt_home5skip_summary[7,2] <- sum(is.na(home5skip$Country))
+dt_home5skip_summary[7,3] <- (sum(is.na(home5skip$Country))/dim(home5skip)[[1]])*100
 
 dt_home5skip_summary %>%  gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
@@ -1459,7 +1514,7 @@ dt_home_addoth6 %>%  gt(rowname_col = "row_lab") %>%
 
 
 
-home_addsum6 <- home6 %>% filter(home6$d_452942800>=as.Date("2022-12-14") & (home6$D_135207939==104430631 | is.na(home6$D_135207939))) %>%  
+home_addsum6 <- home6 %>% filter(home6$d_452942800>=as.Date("2022-12-14") & (home6$D_135207939==104430631 | is.na(home6$D_135207939)) & is.na(D_768802173) ) %>%  
   mutate(Address= case_when(is.na(D_768802173)~"Skipped if All Homes Lived In Were Reported"))
 
 dt_home_addsum6 <- home_addsum6 %>% dplyr::group_by(Address) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address, n, percentage)
@@ -2218,10 +2273,15 @@ dt_seahome_water_summary %>%  gt(rowname_col = "row_lab") %>%
 ```{r Childhood, warning=FALSE, echo=FALSE, message=FALSE}
 #Home1
 childhome= Mod4 %>%  filter(Mod4$D_277348878==751569137) %>% 
-  mutate(Address1= case_when(is.na(D_632533534_D_284547539)~"Skipped Street Number"))
+  mutate(Address1= case_when(is.na(D_632533534_D_284547539) & is.na(D_632533534_D_802585033) & is.na(D_632533534_D_128827522) & is.na(D_632533534_D_439447560) & 
+                             is.na(D_632533534_D_286781627) & is.na(D_632533534_D_733929451) ~"Skipped Entire Address"))
 
 dt_childhome_summary <- childhome %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
 dt_childhome_summary <- dt_childhome_summary[1,]
+
+dt_childhome_summary[2,1] <- "Skipped Street Number" 
+dt_childhome_summary[2,2] <- sum(is.na(childhome$D_632533534_D_284547539))
+dt_childhome_summary[2,3] <- (sum(is.na(childhome$D_632533534_D_284547539))/dim(childhome)[[1]])*100
 
 dt_childhome_summary[2,1] <- "Skipped Street Name" 
 dt_childhome_summary[2,2] <- sum(is.na(childhome$D_632533534_D_802585033))
@@ -2668,34 +2728,39 @@ dt_commute_num_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 curwork= Mod4 %>%  filter(Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360)) %>%  
-  mutate(Address1= case_when(is.na(D_596318751_D_411791779) ~"Skipped Employer Name"))
+  mutate(Address1= case_when(is.na(D_596318751_D_411791779) & is.na(D_596318751_D_493984171)& is.na(D_596318751_D_253017624) & is.na(D_596318751_D_959804472)& 
+                               is.na(D_596318751_D_774707280)& is.na(D_596318751_D_182144476)& is.na(D_596318751_D_294634899) ~"Skipped All Employer Info"))
 
 dt_curwork_summary <- curwork %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
 dt_curwork_summary <- dt_curwork_summary[1,]
 
-dt_curwork_summary[2,1] <- "Skipped Employer Street Number" 
-dt_curwork_summary[2,2] <- sum(is.na(curwork$D_596318751_D_493984171))
-dt_curwork_summary[2,3] <- (sum(is.na(curwork$D_596318751_D_493984171))/dim(curwork)[[1]])*100
+dt_curwork_summary[2,1] <- "Skipped Employer Street Name" 
+dt_curwork_summary[2,2] <- sum(is.na(curwork$D_596318751_D_411791779))
+dt_curwork_summary[2,3] <- (sum(is.na(curwork$D_596318751_D_411791779))/dim(curwork)[[1]])*100
 
-dt_curwork_summary[3,1] <- "Skipped Employer Street Name" 
-dt_curwork_summary[3,2] <- sum(is.na(curwork$D_596318751_D_253017624))
-dt_curwork_summary[3,3] <- (sum(is.na(curwork$D_596318751_D_253017624))/dim(curwork)[[1]])*100
+dt_curwork_summary[3,1] <- "Skipped Employer Street Number" 
+dt_curwork_summary[3,2] <- sum(is.na(curwork$D_596318751_D_493984171))
+dt_curwork_summary[3,3] <- (sum(is.na(curwork$D_596318751_D_493984171))/dim(curwork)[[1]])*100
 
-dt_curwork_summary[4,1] <- "Skipped Employer City" 
-dt_curwork_summary[4,2] <- sum(is.na(curwork$D_596318751_D_959804472))
-dt_curwork_summary[4,3] <- (sum(is.na(curwork$D_596318751_D_959804472))/dim(curwork)[[1]])*100
+dt_curwork_summary[4,1] <- "Skipped Employer Street Name" 
+dt_curwork_summary[4,2] <- sum(is.na(curwork$D_596318751_D_253017624))
+dt_curwork_summary[4,3] <- (sum(is.na(curwork$D_596318751_D_253017624))/dim(curwork)[[1]])*100
 
-dt_curwork_summary[5,1] <- "Skipped Employer State" 
-dt_curwork_summary[5,2] <- sum(is.na(curwork$D_596318751_D_774707280))
-dt_curwork_summary[5,3] <- (sum(is.na(curwork$D_596318751_D_774707280))/dim(curwork)[[1]])*100
+dt_curwork_summary[5,1] <- "Skipped Employer City" 
+dt_curwork_summary[5,2] <- sum(is.na(curwork$D_596318751_D_959804472))
+dt_curwork_summary[5,3] <- (sum(is.na(curwork$D_596318751_D_959804472))/dim(curwork)[[1]])*100
 
-dt_curwork_summary[6,1] <- "Skipped Employer ZIP" 
-dt_curwork_summary[6,2] <- sum(is.na(curwork$D_596318751_D_182144476 ))
-dt_curwork_summary[6,3] <- (sum(is.na(curwork$D_596318751_D_182144476 ))/dim(curwork)[[1]])*100
+dt_curwork_summary[6,1] <- "Skipped Employer State" 
+dt_curwork_summary[6,2] <- sum(is.na(curwork$D_596318751_D_774707280))
+dt_curwork_summary[6,3] <- (sum(is.na(curwork$D_596318751_D_774707280))/dim(curwork)[[1]])*100
 
-dt_curwork_summary[7,1] <- "Skipped Employer Country" 
-dt_curwork_summary[7,2] <- sum(is.na(curwork$D_596318751_D_294634899))
-dt_curwork_summary[7,3] <- (sum(is.na(curwork$D_596318751_D_294634899))/dim(curwork)[[1]])*100
+dt_curwork_summary[7,1] <- "Skipped Employer ZIP" 
+dt_curwork_summary[7,2] <- sum(is.na(curwork$D_596318751_D_182144476 ))
+dt_curwork_summary[7,3] <- (sum(is.na(curwork$D_596318751_D_182144476 ))/dim(curwork)[[1]])*100
+
+dt_curwork_summary[8,1] <- "Skipped Employer Country" 
+dt_curwork_summary[8,2] <- sum(is.na(curwork$D_596318751_D_294634899))
+dt_curwork_summary[8,3] <- (sum(is.na(curwork$D_596318751_D_294634899))/dim(curwork)[[1]])*100
 
 
 
@@ -2901,7 +2966,15 @@ dt_CURWORKT1_summary %>%  gt() %>%
 
 
 CURWORKT2A_H= Mod4 %>%   
-  filter(Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) & 
+  filter( (is.na(D_440093675_D_593010802) & D_635467479_D_635467479_D_158795242==1 | 
+             is.na(D_440093675_D_453004768) & D_635467479_D_635467479_D_443596662==1 |
+             is.na(D_440093675_D_511991969) & D_635467479_D_635467479_D_892894242==1 |
+             is.na(D_440093675_D_546570171) & D_635467479_D_635467479_D_177539753==1 |
+             is.na(D_440093675_D_242761203) & D_635467479_D_635467479_D_107659596==1 |
+             is.na(D_440093675_D_587434250) & D_635467479_D_635467479_D_575883949==1 |
+             is.na(D_440093675_D_569993305) & D_635467479_D_635467479_D_248168118==1 |
+             is.na(D_440093675_D_662584384) & D_635467479_D_635467479_D_902077989==1 ) &
+            Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) & 
            (Mod4$D_635467479_D_635467479_D_443596662==1 | Mod4$D_635467479_D_635467479_D_158795242==1 | Mod4$D_635467479_D_635467479_D_892894242==1 |
               Mod4$D_635467479_D_635467479_D_177539753==1 | is.na(Mod4$D_440093675_D_453004768) | is.na(Mod4$D_440093675_D_453004768)))
 
@@ -2967,7 +3040,8 @@ dt_CURWORKT2A_H_summary %>%  gt() %>%
 
 
 
-CURWORKT3_4_5= Mod4 %>%  filter( Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) &
+CURWORKT3_4_5= Mod4 %>%  filter( (is.na(Mod4$D_155199731) | is.na(Mod4$D_181422361) | is.na(Mod4$D_333362587)) & 
+                                   Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) &
             (Mod4$D_440093675_D_593010802!=428999623 & !is.na(Mod4$D_440093675_D_593010802)) | (Mod4$D_440093675_D_453004768!=428999623 & !is.na(Mod4$D_440093675_D_453004768)) |
             (Mod4$D_440093675_D_511991969!=428999623 & !is.na(Mod4$D_440093675_D_511991969)) | (Mod4$D_440093675_D_546570171!=428999623 & !is.na(Mod4$D_440093675_D_546570171)) |
             (Mod4$D_440093675_D_242761203!=428999623 & !is.na(Mod4$D_440093675_D_242761203)) | (Mod4$D_440093675_D_587434250!=428999623 & !is.na(Mod4$D_440093675_D_587434250)) |
@@ -3005,7 +3079,7 @@ dt_CURWORKT3_4_5_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 
-CURWORKT6_summary <- Mod4 %>% filter(Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360)) %>% 
+CURWORKT6_summary <- Mod4 %>% filter(Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) & is.na(D_839454121) ) %>% 
   mutate(Address1= case_when(is.na(D_839454121) ~"Skipped CURWORKT6"))
 CURWORKT6 <- CURWORKT6_summary %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
 CURWORKT6 <- CURWORKT6[1,]
@@ -3029,7 +3103,7 @@ CURWORKT6 %>%  gt(rowname_col = "row_lab") %>%
   )
 
 
-CURWORKT7_summary <- Mod4 %>% filter(Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360)) %>% 
+CURWORKT7_summary <- Mod4 %>% filter(Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) & is.na(D_684542266)) %>% 
   mutate(Address1= case_when(is.na(D_684542266) ~"Skipped CURWORKT7"))
 CURWORKT7 <- CURWORKT7_summary %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
 CURWORKT7 <- CURWORKT7[1,]
@@ -3138,7 +3212,7 @@ dt_CURWORKT9_summary %>%  gt() %>%
 
 
 CURWORKT10A= Mod4 %>%   
-  filter(Mod4$D_203943120!=353358909 & Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) &
+  filter(is.na(Mod4$D_786253125_D_659799855) & Mod4$D_203943120!=353358909 & Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) &
            ifelse(Mod4$D_684542266==104430631, Mod4$D_404697804_D_404697804_D_581991828==1,
                   ifelse(is.na(Mod4$D_684542266), Mod4$D_404697804_D_404697804_D_581991828==1,
                          ifelse(Mod4$D_203943120==104430631, Mod4$D_635467479_D_635467479_D_158795242==1,
@@ -3146,7 +3220,7 @@ CURWORKT10A= Mod4 %>%
 CURWORKT10A= CURWORKT10A %>%  mutate(Address1= case_when(is.na(D_786253125_D_659799855) ~"Skipped CURWORKT10A"))
 
 dt_CURWORKT10A_summary <- CURWORKT10A %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
-dt_CURWORKT10A_summary <- dt_CURWORKT10A_summary[1,]
+
 
 dt_CURWORKT10A_summary %>%  gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
@@ -3169,7 +3243,7 @@ dt_CURWORKT10A_summary %>%  gt() %>%
 
 
 CURWORKT10B= Mod4 %>%   
-  filter(Mod4$D_203943120!=353358909 & Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) &
+  filter(is.na(Mod4$D_786253125_D_552410034) & Mod4$D_203943120!=353358909 & Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) &
            ifelse(Mod4$D_684542266==104430631, Mod4$D_404697804_D_404697804_D_846844103==1,
                   ifelse(is.na(Mod4$D_684542266), Mod4$D_404697804_D_404697804_D_846844103==1,
                          ifelse(Mod4$D_203943120==104430631, Mod4$D_635467479_D_635467479_D_443596662==1,
@@ -3177,7 +3251,7 @@ CURWORKT10B= Mod4 %>%
 CURWORKT10B= CURWORKT10B %>%  mutate(Address1= case_when(is.na(D_786253125_D_552410034) ~"Skipped CURWORKT10B"))
 
 dt_CURWORKT10B_summary <- CURWORKT10B %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
-dt_CURWORKT10B_summary <- dt_CURWORKT10B_summary[1,]
+
 
 dt_CURWORKT10B_summary %>%  gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
@@ -3200,7 +3274,7 @@ dt_CURWORKT10B_summary %>%  gt() %>%
 
 
 CURWORKT10C= Mod4 %>%  
-  filter(Mod4$D_203943120!=353358909 & Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) &
+  filter(is.na(Mod4$D_786253125_D_772382520)  & Mod4$D_203943120!=353358909 & Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) &
            ifelse(Mod4$D_684542266==104430631, Mod4$D_404697804_D_404697804_D_660927579==1,
                   ifelse(is.na(Mod4$D_684542266), Mod4$D_404697804_D_404697804_D_660927579==1,
                          ifelse(Mod4$D_203943120==104430631, Mod4$D_635467479_D_635467479_D_892894242==1,
@@ -3208,7 +3282,7 @@ CURWORKT10C= Mod4 %>%
 CURWORKT10C= CURWORKT10C %>%  mutate(Address1= case_when(is.na(D_786253125_D_772382520) ~"Skipped CURWORKT10C"))
 
 dt_CURWORKT10C_summary <- CURWORKT10C %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
-dt_CURWORKT10C_summary <- dt_CURWORKT10C_summary[1,]
+
 
 # dt_CURWORKT10C_summary %>%  gt() %>%  
 #   fmt_number(columns = "percentage", decimals = 2) %>% 
@@ -3231,7 +3305,7 @@ dt_CURWORKT10C_summary <- dt_CURWORKT10C_summary[1,]
 
 
 CURWORKT10D= Mod4 %>%   
-  filter(Mod4$D_203943120!=353358909 & Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) &
+  filter(is.na(Mod4$D_786253125_D_146307133) & Mod4$D_203943120!=353358909 & Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) &
            ifelse(Mod4$D_684542266==104430631, Mod4$D_404697804_D_404697804_D_940452831==1,
                   ifelse(is.na(Mod4$D_684542266), Mod4$D_404697804_D_404697804_D_940452831==1,
                          ifelse(Mod4$D_203943120==104430631, Mod4$D_635467479_D_635467479_D_177539753==1,
@@ -3239,7 +3313,7 @@ CURWORKT10D= Mod4 %>%
 CURWORKT10D= CURWORKT10D %>%  mutate(Address1= case_when(is.na(D_786253125_D_146307133) ~"Skipped CURWORKT10D"))
 
 dt_CURWORKT10D_summary <- CURWORKT10D %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
-dt_CURWORKT10D_summary <- dt_CURWORKT10D_summary[1,]
+
 
 dt_CURWORKT10D_summary %>%  gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
@@ -3262,7 +3336,7 @@ dt_CURWORKT10D_summary %>%  gt() %>%
 
 
 CURWORKT10E= Mod4 %>%  
-  filter(Mod4$D_203943120!=353358909 & Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) &
+  filter(is.na(Mod4$D_786253125_D_100591237) & Mod4$D_203943120!=353358909 & Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) &
            ifelse(Mod4$D_684542266==104430631, Mod4$D_404697804_D_404697804_D_669359763==1,
                   ifelse(is.na(Mod4$D_684542266), Mod4$D_404697804_D_404697804_D_669359763==1,
                          ifelse(Mod4$D_203943120==104430631, Mod4$D_635467479_D_635467479_D_107659596==1,
@@ -3270,7 +3344,7 @@ CURWORKT10E= Mod4 %>%
 CURWORKT10E= CURWORKT10E %>%  mutate(Address1= case_when(is.na(D_786253125_D_100591237) ~"Skipped CURWORKT10E"))
 
 dt_CURWORKT10E_summary <- CURWORKT10E %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
-dt_CURWORKT10E_summary <- dt_CURWORKT10E_summary[1,]
+
 
 dt_CURWORKT10E_summary %>%  gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
@@ -3293,7 +3367,7 @@ dt_CURWORKT10E_summary %>%  gt() %>%
 
 
 CURWORKT10F= Mod4 %>%   
-  filter(Mod4$D_203943120!=353358909 & Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) &
+  filter(is.na(Mod4$D_786253125_D_823402922) & Mod4$D_203943120!=353358909 & Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) &
            ifelse(Mod4$D_684542266==104430631, Mod4$D_404697804_D_404697804_D_950972496==1,
                   ifelse(is.na(Mod4$D_684542266), Mod4$D_404697804_D_404697804_D_950972496==1,
                          ifelse(Mod4$D_203943120==104430631, Mod4$D_635467479_D_635467479_D_575883949==1,
@@ -3301,7 +3375,7 @@ CURWORKT10F= Mod4 %>%
 CURWORKT10F= CURWORKT10F %>%  mutate(Address1= case_when(is.na(D_786253125_D_823402922) ~"Skipped CURWORKT10F"))
 
 dt_CURWORKT10F_summary <- CURWORKT10F %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
-dt_CURWORKT10F_summary <- dt_CURWORKT10F_summary[1,]
+
 
 dt_CURWORKT10F_summary %>%  gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
@@ -3324,7 +3398,7 @@ dt_CURWORKT10F_summary %>%  gt() %>%
 
 
 CURWORKT10G= Mod4 %>%  
-  filter(Mod4$D_203943120!=353358909 & Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) &
+  filter(is.na(Mod4$D_786253125_D_289302451) & Mod4$D_203943120!=353358909 & Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) &
            ifelse(Mod4$D_684542266==104430631, Mod4$D_404697804_D_404697804_D_137216656==1,
                   ifelse(is.na(Mod4$D_684542266), Mod4$D_404697804_D_404697804_D_137216656==1,
                          ifelse(Mod4$D_203943120==104430631, Mod4$D_635467479_D_635467479_D_248168118==1,
@@ -3332,7 +3406,7 @@ CURWORKT10G= Mod4 %>%
 CURWORKT10F= CURWORKT10F %>%  mutate(Address1= case_when(is.na(D_786253125_D_289302451) ~"Skipped CURWORKT10F"))
 
 dt_CURWORKT10F_summary <- CURWORKT10F %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
-dt_CURWORKT10F_summary <- dt_CURWORKT10F_summary[1,]
+
 
 dt_CURWORKT10F_summary %>%  gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
@@ -3463,7 +3537,7 @@ dt_PREWORK_summary %>%  gt() %>%
   )
 
 
-PREWORKRES= Mod4 %>%  filter(Mod4$D_995620555==353358909) %>%  mutate(Address1= case_when(is.na(D_980007418) ~"Skipped PREWORKRES",
+PREWORKRES= Mod4 %>%  filter(Mod4$D_995620555==353358909 & is.na(DMod4$_980007418) ) %>%  mutate(Address1= case_when(is.na(D_980007418) ~"Skipped PREWORKRES",
                                                                                           TRUE ~ "Answered"))
 
 
@@ -3569,7 +3643,11 @@ dt_PREWORK1B_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 
-PREWORK2= Mod4 %>%  filter(Mod4$D_291959537==104430631 & Mod4$D_350394531_D_350394531!="[178420302]") %>%  
+PREWORK2= Mod4 %>%  filter(Mod4$D_291959537==104430631 & Mod4$D_350394531_D_350394531!="[178420302]" & 
+                             (is.na(Mod4$D_350394531_D_652022112) & is.na(Mod4$D_992180692_D_962868433)) |
+                             (is.na(Mod4$D_350394531_D_730666903) & is.na(Mod4$D_992180692_D_108530997)) |
+                             (is.na(Mod4$D_350394531_D_168091937) & is.na(Mod4$D_992180692_D_110852652)) |
+                             (is.na(Mod4$D_350394531_D_132779701) & is.na(Mod4$D_992180692_D_867109611))) %>%  
   mutate(Address1= case_when(is.na(D_350394531_D_652022112) & is.na(D_992180692_D_962868433) ~"Skipped Employer City"))
 
 dt_PREWORK2_summary <- PREWORK2 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
@@ -4567,7 +4645,7 @@ dt_CURSCHT6_summary %>%  gt() %>%
 
 
 
-CURSCHT7= STU %>%  filter(STU$D_449752653==353358909) %>%  
+CURSCHT7= STU %>%  filter(STU$D_449752653==353358909 & is.na(D_496801729)) %>%  
   mutate(Address1= case_when(is.na(D_496801729) ~"Skipped CURSCHT7"))
 
 dt_CURSCHT7_summary <- CURSCHT7 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
@@ -4759,7 +4837,7 @@ dt_CURSCHT11_12_13_summary %>%  gt() %>%
 
 
 
-CURSCHT14= STU %>% filter(STU$D_449752653==353358909) %>%   
+CURSCHT14= STU %>% filter(STU$D_449752653==353358909 & is.na(D_849811593)) %>%   
   mutate(Address1= case_when(is.na(D_849811593) ~"Skipped CURSCHT14"))
 
 dt_CURSCHT14_summary <- CURSCHT14 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
