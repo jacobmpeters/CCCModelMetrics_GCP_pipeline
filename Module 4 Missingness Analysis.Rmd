@@ -3537,7 +3537,7 @@ dt_PREWORK_summary %>%  gt() %>%
   )
 
 
-PREWORKRES= Mod4 %>%  filter(Mod4$D_995620555==353358909 & is.na(DMod4$_980007418) ) %>%  mutate(Address1= case_when(is.na(D_980007418) ~"Skipped PREWORKRES",
+PREWORKRES= Mod4 %>%  filter(Mod4$D_995620555==353358909 & is.na(Mod4$D_980007418)) %>%  mutate(Address1= case_when(is.na(D_980007418) ~"Skipped PREWORKRES",
                                                                                           TRUE ~ "Answered"))
 
 
