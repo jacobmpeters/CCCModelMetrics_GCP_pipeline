@@ -147,7 +147,7 @@ table(m1_complete_nodup$version)
 
 
 
-parts <- "SELECT Connect_ID, token, d_512820379, D_471593703, state_d_934298480, D_230663853,D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, d_663265240, d_878865966, d_684635302, d_167958071, d_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_914639140, d_311580100 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and (d_949302066='231311385')" 
+parts <- "SELECT Connect_ID, token, d_512820379, D_471593703, state_d_934298480, D_230663853,D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, d_663265240, d_878865966, d_684635302, d_167958071, d_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_914639140, d_311580100, FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and (d_949302066='231311385')" 
 
 # parts <- "SELECT Connect_ID, token, d_512820379, D_471593703, state_d_934298480, D_230663853,
 # D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
@@ -247,7 +247,7 @@ boxp_funct <- function(CID,Title, Xlab) {
 
 
 ##GT TABLE: Questions that all participants asked, update dictionary as new answer options come up
-dict <- list("104430631"="No", "353358909"="Yes", "589959753"="A little shorter", "623310018"="A lot shorter", "978204320"= "Grade School(Grades 1-8)", "935502060"="Some High School, No Diploma", "404564707"= "High School Graduate or GED", "432193665"="Some College, No Degree", "890756124"="Technical or Trade School After High School", "766964355"="Associate's Degree", "875342283"="Bachelor's Degree", "598242454"="Advanced Degree", "709650750"="Biological Child", "810290359"="Adopted Child", "509607548"="Step Child","784922042"="Related to me in some other way", "288105839"=" Yes, fraternal twins", "626558982"="Yes, triplets or higher multiple birth", "178420302"="Do not Know", "536341288"="Female", "576796184"="Intersex or Other", "654207589"="Male","555374628"="Full Sibling", "871673221"="Half Sibling, Same Mother",  "198654048"="Half Sibling, Same Father", "807835037"="Other", "274062548"="More than 3 months ago", "958538953"="In the past 3 months", "317567178"="In the past month", "484055234"="In the past year",  "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago","958538953"="In the past 3 months",  "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible", "764708931"="Very flexible","0"="No", "1"="Yes", "536341288"="Female", "218837028"="Woman (New Response)", "983318667"="Man (New Response)"  , "654207589"="Male","746038746"="Prefer Not to Answer", "805712793"="Genderqueer","486192236"="Non-Binary", "807835037"="Other","873138103"="Transgender Woman","405267600"="Transgender Man", "220083334"="Very Feminine","541300533"="Mostly Feminine","878286618"="Somewhat Feminine","910745276"="Equally feminine and masculine","915528806"="Very masculine","265452386"="Mostly Masculine","510148951"="Somewhat Masculine","271882746"="Straight or heterosexual", "903084185"="Lesbian, gay, or homosexual", "999994434"="Bisexual", "584368278"="Retired", "475665841"="Homemaker", "656816477"="Unemployed", "756948639"="Unble to Work (Disabled)", "181769837"="Other Employment Status","551525967"="Yes, Full-Time Student", "738284740"="Yes, Part Time Student", "275706407"="Someone on behalf of Participant", "589702540"="Completed by Participant", "288321056"="Married", "514080822"="Never Married","522680498"="Never Married but living with Partner","649436542"="Divorced","522680498"="Partner", "741094625"="Separated","733527132"="Widow"  )
+dict <- list("104430631"="No", "353358909"="Yes", "589959753"="A little shorter", "623310018"="A lot shorter", "978204320"= "Grade School(Grades 1-8)", "935502060"="Some High School, No Diploma", "404564707"= "High School Graduate or GED", "432193665"="Some College, No Degree", "890756124"="Technical or Trade School After High School", "766964355"="Associate's Degree", "875342283"="Bachelor's Degree", "598242454"="Advanced Degree", "709650750"="Biological Child", "810290359"="Adopted Child", "509607548"="Step Child","784922042"="Related to me in some other way", "288105839"=" Yes, fraternal twins", "626558982"="Yes, triplets or higher multiple birth", "178420302"="Do not Know", "536341288"="Female", "576796184"="Intersex or Other", "654207589"="Male","555374628"="Full Sibling", "871673221"="Half Sibling, Same Mother",  "198654048"="Half Sibling, Same Father", "807835037"="Other", "274062548"="More than 3 months ago", "958538953"="In the past 3 months", "317567178"="In the past month", "484055234"="In the past year",  "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago","958538953"="In the past 3 months",  "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible", "764708931"="Very flexible","0"="No", "1"="Yes", "536341288"="Female", "218837028"="Woman (New Response)", "983318667"="Man (New Response)"  , "654207589"="Male","746038746"="Prefer Not to Answer", "805712793"="Genderqueer","486192236"="Non-Binary", "807835037"="Other","873138103"="Transgender Woman","405267600"="Transgender Man", "220083334"="Very Feminine","541300533"="Mostly Feminine","878286618"="Somewhat Feminine","910745276"="Equally feminine and masculine","915528806"="Very masculine","265452386"="Mostly Masculine","510148951"="Somewhat Masculine","271882746"="Straight or heterosexual", "903084185"="Lesbian, gay, or homosexual", "999994434"="Bisexual", "584368278"="Retired", "475665841"="Homemaker", "656816477"="Unemployed", "756948639"="Unble to Work (Disabled)", "181769837"="Other Employment Status","551525967"="Yes, Full-Time Student", "738284740"="Yes, Part Time Student", "275706407"="Someone on behalf of Participant", "589702540"="Completed by Participant", "288321056"="Married", "514080822"="Never Married","522680498"="Never Married but living with Partner","649436542"="Divorced","522680498"="Partner", "741094625"="Separated","733527132"="Widow", "988858078" = "1","156095877" = "2","162668459" = "3", "278139969" = "4", "676824724" = "5", "512144428" = "6","125674414" = "7", "406650257" = "8",  "700080862" = "9", "616621065" = "10", "927925620" = "(0)No hair loss", "552278254"= "(1) Mild Loss on Sides", "267104669"= "(2) Mild Loss on Top", "619337179"= "(3) Mild to Moderate","601381820"= "(4) Moderate Loss on Top", "151394571"= "(5) Severe Loss on Top", "917379905"= "(6) Severe Loss and Thinning",  "746328729"= "(7) Severe Loss Top and Forehead", "452963767"= "(8) All over Loss" , "927925620"  = "(0)No hair loss", "629452816" = "(1) Mild Loss on Sides", "915557297" = "(2) Moderate Loss on Side","103565678" = "(3) Mild Loss and Thinning","381878591" = "(4) Moderate w/Crown Balding","446794016" = "(5) Thin Hair Strip Left Only","526238862" = "(6) Moderate to Severe", '173625583' = "(7) Thin Hair Strip Around the Head","782282163" = "(8) Mild Loss at Forehead","693010445" = "(9) Moderate Loss at Forehead","732008197" = "(10) Severe Loss at Forehead","734998477" = "(11) Mild Loss at Forehead, Beyond Ears")
 
 simple_funct1 <- function(CID, Title){
   CID_SYM <- rlang::ensym(CID)
@@ -258,11 +258,7 @@ simple_funct1 <- function(CID, Title){
   fmt_number(columns = "percentage", decimals = 2) %>%
   tab_header(title = md(Title)) %>%
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
-  # summary_rows(
-  #   columns = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
     ) %>%
@@ -305,34 +301,30 @@ one_logic_funct1 <- function(CID, CID_prev, Prev_Answer, Title){
 
 
 # 
-# #GT table for siblings
-# sib_logic_funct <- function(CID, Sib_Num, Title){  
-#   CID_SYM <- rlang::ensym(CID)
-#   data_tib_base$D_694265648 <- as.numeric(data_tib_base$D_694265648)
-#   dt_select <- data_tib_base %>%  filter(D_694265648 >= Sib_Num) %>%  select(Connect_ID, !!CID_SYM) 
-#   gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
-#   
-#   gt_yn %>%  gt::gt()  %>%  
-#   fmt_number(columns = "percentage", decimals = 2) %>% 
-#   tab_header(title = md(Title)) %>% 
-#   cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-#   summary_rows( groups=F,
-#     column = c(n,percentage),
-#     fns= list(
-#       Sum= ~sum(.)
-#     ), decimals=0) %>%
-#   tab_options(
-#       stub.font.weight = "bold"
-#     ) %>%
-#   tab_style(
-#     style = list(
-#       cell_text(weight = "bold")
-#     ),
-#     locations = cells_body(
-#       columns = answer,
-#     )
-#   ) 
-# }
+#GT table for siblings
+sib_logic_funct <- function(CID, Sib_Num, Title){
+  CID_SYM <- rlang::ensym(CID)
+  data_tib_base$D_694265648 <- as.numeric(data_tib_base$D_694265648)
+  dt_select <- data_tib_base %>%  filter(D_694265648 >= Sib_Num) %>%  select(Connect_ID, !!CID_SYM)
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+
+  gt_yn %>%  gt::gt()  %>%
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md(Title)) %>%
+  cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  )
+}
 # 
 # 
 #GT table for children
@@ -346,11 +338,7 @@ child_logic_funct <- function(CID, Child_Num, Title){
   fmt_number(columns = "percentage", decimals = 2) %>%
   tab_header(title = md(Title)) %>%
   cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
-  summary_rows( groups=F,
-    column = c(n,percentage),
-    fns= list(
-      Sum= ~sum(.)
-    ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
     ) %>%
@@ -383,20 +371,179 @@ simple_funct1(D_479353866,"AGECOR: Age Reported Correct")
 
 ```
 
-# SEXORIENT- Other Selected
+# SEXORIENT- 'Other' Selected
 ```{r sexorient, warning=FALSE, echo=FALSE, message=FALSE}
 
-# orient= data_tib_base  %>%  mutate(sexuality= case_when(tolower(D_555481393_D_979809707)=="asexual" | tolower(D_555481393_D_979809707)=="a sexual" ~ "Asexual",
-#                                                            tolower(D_555481393_D_979809707)=="Pansexual" | tolower(D_555481393_D_979809707)=="Pan sexual"~ "Pansexual",
-#                                                            tolower(D_555481393_D_979809707)=="Queer"~ "Queer",
-#                                                            tolower(D_555481393_D_979809707)=="Straight"~ "Straight",
+
+#Need table that looks at responses by race
+multi_race=0    
+for (i in 1:length(data_tib_base$Connect_ID)){
+  AI=ifelse((data_tib_base$D_384191091_D_384191091_D_583826374[[i]]==1 & (data_tib_base$D_384191091_D_384191091_D_636411467[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_458435048[[i]]==1|
+                                               data_tib_base$D_384191091_D_384191091_D_706998638[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                               data_tib_base$D_384191091_D_384191091_D_586825330[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                               data_tib_base$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  As=ifelse((data_tib_base$D_384191091_D_384191091_D_636411467[[i]]==1 & (data_tib_base$D_384191091_D_384191091_D_583826374[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_458435048[[i]]==1|
+                                                        data_tib_base$D_384191091_D_384191091_D_706998638[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        data_tib_base$D_384191091_D_384191091_D_586825330[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        data_tib_base$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Bl=ifelse((data_tib_base$D_384191091_D_384191091_D_458435048[[i]]==1 & (data_tib_base$D_384191091_D_384191091_D_583826374[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        data_tib_base$D_384191091_D_384191091_D_706998638[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        data_tib_base$D_384191091_D_384191091_D_586825330[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        data_tib_base$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Hs=ifelse((data_tib_base$D_384191091_D_384191091_D_706998638[[i]]==1 & (data_tib_base$D_384191091_D_384191091_D_583826374[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        data_tib_base$D_384191091_D_384191091_D_458435048[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        data_tib_base$D_384191091_D_384191091_D_586825330[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        data_tib_base$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Me=ifelse((data_tib_base$D_384191091_D_384191091_D_973565052[[i]]==1 & (data_tib_base$D_384191091_D_384191091_D_583826374[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        data_tib_base$D_384191091_D_384191091_D_458435048[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        data_tib_base$D_384191091_D_384191091_D_586825330[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        data_tib_base$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Hw=ifelse((data_tib_base$D_384191091_D_384191091_D_586825330[[i]]==1 & (data_tib_base$D_384191091_D_384191091_D_583826374[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        data_tib_base$D_384191091_D_384191091_D_458435048[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        data_tib_base$D_384191091_D_384191091_D_973565052[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        data_tib_base$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Wh=ifelse((data_tib_base$D_384191091_D_384191091_D_412790539[[i]]==1 & (data_tib_base$D_384191091_D_384191091_D_583826374[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        data_tib_base$D_384191091_D_384191091_D_458435048[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        data_tib_base$D_384191091_D_384191091_D_586825330[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        data_tib_base$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Ot=ifelse((data_tib_base$D_384191091_D_384191091_D_807835037[[i]]==1 & (data_tib_base$D_384191091_D_384191091_D_583826374[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        data_tib_base$D_384191091_D_384191091_D_458435048[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        data_tib_base$D_384191091_D_384191091_D_586825330[[i]]==1 | data_tib_base$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        data_tib_base$D_384191091_D_384191091_D_412790539[[i]]==1)), 1, 0)
+  multi_race= multi_race + sum(AI+As+Bl+Hs+Me+Hw+Wh+Ot, na.rm=T)
+
+}
+   
+
+data_tib_base$multi_racial <- c(rep(1, times=multi_race), rep(0, times=(dim(data_tib_base)[1]- multi_race)))
+
+data_tib_base= data_tib_base %>%  mutate(race= case_when(multi_racial==1 ~ "Multi-Racial",
+                                                     D_384191091_D_384191091_D_583826374==1 ~ "American Indian or Native American",
+                                                     D_384191091_D_384191091_D_636411467==1 ~ "Asian/Asian American",
+                                                     D_384191091_D_384191091_D_458435048==1 ~ "Black, African American, or African",
+                                                     D_384191091_D_384191091_D_706998638==1 ~ "Hispanic, Latino, or Spanish",
+                                                     D_384191091_D_384191091_D_973565052==1 ~ "Middle Eastern or North African",
+                                                     D_384191091_D_384191091_D_586825330==1 ~ "Hawaiian or Pacific Islander",
+                                                     D_384191091_D_384191091_D_412790539==1 ~ "White",
+                                                     (D_384191091_D_384191091_D_807835037==1 | !is.na(D_384191091_D_747350323)) ~ "Other",
+                                                     D_384191091_D_384191091_D_746038746==1 ~ "Prefer Not to Answer",
+                                                     TRUE  ~ "Skipped this question"))
+
+
+#Also need table to look at age ranges (934298480 recruitment ranges )
+data_tib_base= data_tib_base %>%  mutate(age=case_when(state_d_934298480==124276120 ~ "40-45",
+                                         state_d_934298480==450985724 ~ "46-50",
+                                         state_d_934298480==363147933 ~ "51-55",
+                                         state_d_934298480==636706443 ~ "56-50",
+                                         state_d_934298480==771230670 ~ "61-65",
+                                                     TRUE  ~ "Skipped this question"))
+
+
+
+sexorient_raceage_table <- data_tib_base %>% filter(!is.na(D_555481393_D_979809707) & age!="Skipped this question" & race!="Skipped this question") %>% dplyr::group_by(age, race) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup()  %>%  dplyr::select(age, race, n, percentage)
+
+sexorient_raceage_table_gt <- sexorient_raceage_table %>%  gt::gt(rowname_col = "row_lab") %>%  
+  cols_label(n= md("**Number of Participants**"), age="Age", race="Race", percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) 
+
+
+
+
+sexorient <- data_tib_base %>%  filter(!is.na(D_555481393_D_979809707))
+sexorient$sexuality=tolower(sexorient$D_555481393_D_979809707)
+sexorient$sexuality_no_spaces = gsub(" ", "", sexorient$D_555481393_D_979809707)
+
+
+# orient= sexorient  %>%  mutate(sexuality= case_when(length(grep("asexual", sexorient$D_555481393_D_979809707)) ~ "Asexual",
+#                                                            length(grep("pansexual", sexorient$D_555481393_D_979809707))~ "Pansexual",
+#                                                            length(grep("queer", sexorient$D_555481393_D_979809707)) ~ "Queer",
+#                                                            length(grep("straight", sexorient$D_555481393_D_979809707)) ~ "Straight",
 #                                                           is.na(D_555481393_D_979809707)~ "Skipped this Question",
 #                                                       TRUE ~ D_555481393_D_979809707))
+
+# sexorient= sexorient  %>%  mutate(sexuality= case_when(gsub(" ", "", sexorient$gsub(" ", "", sexorient$D_555481393_D_979809707))=="asexual" ~ "Asexual",
+#                                                     gsub(" ", "", sexorient$D_555481393_D_979809707)=="pansexual" | gsub(" ", "", sexorient$D_555481393_D_979809707)=="pan" ~ "Pansexual",
+#                                                     gsub(" ", "", sexorient$D_555481393_D_979809707)=="queer"~ "Queer",
+#                                                     gsub(" ", "", sexorient$D_555481393_D_979809707)=="straight" | gsub(" ", "", sexorient$D_555481393_D_979809707)=="hetero"~ "Straight",
+#                                                     is.na(gsub(" ", "", sexorient$D_555481393_D_979809707))~ "Skipped this Question",
+#                                                       TRUE ~ D_555481393_D_979809707))
+# 
+# 
+# sexorient= sexorient  %>%  mutate(sexuality= case_when(grep("asexual",  sexorient$sexuality_no_spaces, value=TRUE) ~ "Asexual",
+#                                                            grep("pan",  sexorient$sexuality_no_spaces, value=TRUE)~ "Pansexual",
+#                                                            grep("queer",  sexorient$sexuality_no_spaces, value=TRUE)~ "Queer",
+#                                                            grep("straight",  sexorient$sexuality_no_spaces, value=TRUE) ~ "Straight",
+#                                                           is.na(D_555481393_D_979809707)~ "Skipped this Question",
+#                                                       TRUE ~ "Other"))
+
+sexorient= sexorient  %>%  mutate(sexuality= case_when(tolower(D_555481393_D_979809707)=="asexual" | tolower(D_555481393_D_979809707)=="a sexual" ~ "Asexual",
+                                                           tolower(D_555481393_D_979809707)=="pansexual" | tolower(D_555481393_D_979809707)=="pan sexual" | tolower(D_555481393_D_979809707)=="pan"~ "Pansexual",
+                                                           tolower(D_555481393_D_979809707)=="queer"~ "Queer",
+                                                           tolower(D_555481393_D_979809707)=="straight" | D_555481393_D_979809707=="hetero" ~ "Straight",
+                                                          is.na(D_555481393_D_979809707)~ "Skipped this Question",
+                                                      TRUE ~ "Other"))
+
+
+# sexorient= sexorient  %>%  mutate(sexuality= case_when(D_555481393_D_979809707=="asexual" | D_555481393_D_979809707=="a sexual" ~ "Asexual",
+#                                                            D_555481393_D_979809707=="pansexual" | D_555481393_D_979809707=="pan sexual" | D_555481393_D_979809707=="pan"~ "Pansexual",
+#                                                            D_555481393_D_979809707=="queer"~ "Queer",
+#                                                            D_555481393_D_979809707=="straight" | D_555481393_D_979809707=="hetero" ~ "Straight",
+#                                                           is.na(D_555481393_D_979809707)~ "Skipped this Question",
+#                                                       TRUE ~ "Other"))
+
+
+
 # 
 # dt_sexorient_summary <- orient %>% group_by(sexuality) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(sexuality, n, percentage)
 
-data_tib_base %>%  select(D_555481393_D_979809707) %>% filter(!is.na(D_555481393_D_979809707)) %>% gt() %>% cols_label(D_555481393_D_979809707= md("**Response for 'Other' Sexual Orientation**"))
+#gsub(" ", "", x) <- remove spaces so its easier to find any version of pansexual, ect. 
+#length(grep("corn", dataset)) <- grab all versions of asexual or pansexual, and count them
+ 
+
+
+
+# sexorient %>%  select(D_555481393_D_979809707) %>% filter(!is.na(D_555481393_D_979809707)) %>% gt() %>% cols_label(D_555481393_D_979809707= md("**Response for 'Other' Sexual Orientation**"))
+
+#sexorient_table <- sexorient %>%  select(age, race, sexuality) %>%  group_by(age, race) %>% filter(!is.na(sexuality) & age!="Skipped this question" & race!="Skipped this question") %>% ungroup() %>% gt() %>% cols_label(age="Age", race="Race", sexuality= md("**Response for 'Other' Sexual Orientation**")) 
 #group by removes title and doesn't group them together
+
+
+
+sexorient_table1 <- sexorient %>% filter(!is.na(D_555481393_D_979809707) & age!="Skipped this question" & race!="Skipped this question") %>% dplyr::group_by(age, race, sexuality) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup()  %>%  dplyr::select(age, race, sexuality, n, percentage)
+
+sexorient_age_race_gt <-  sexorient_table1 %>%  gt::gt(rowname_col = "row_lab") %>%  
+  cols_label(n= md("**Number of Participants**"), age="Age", race="Race", sexuality="'Other Sexuality' Response", percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) 
+
+
+
+sexorient_table2 <- sexorient %>% filter(!is.na(D_555481393_D_979809707) & age!="Skipped this question") %>% dplyr::group_by(age,  sexuality) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup()  %>%  dplyr::select(age, sexuality, n, percentage)
+
+sexorient_age_gt <- sexorient_table2 %>%  gt::gt(rowname_col = "row_lab") %>%  
+  cols_label(n= md("**Number of Participants**"), age="Age", sexuality="'Other Sexuality' Response", percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) 
+
+
+sexorient_table <- sexorient %>% filter(!is.na(D_555481393_D_979809707) & age!="Skipped this question") %>% dplyr::group_by(sexuality) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup()  %>%  dplyr::select(sexuality, n, percentage)
+
+sexorient_table %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  cols_label(n= md("**Number of Participants**"), sexuality=md("**'Other Sexuality' Response**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) 
+
+
 
 ```
 
@@ -426,6 +573,10 @@ simple_funct1(D_453252072, "BLDTRANS: Ever have a Blood Transfusion")
 simple_funct1(D_323512813, "PAIN: Felt Physial Pain Most Days of Last 3 Months")
 
 #Scale
+levels=c("1","2","3","4","5","6","7","8","9","10", "Skipped This Question")
+one_logic_funct1(D_338924834, D_323512813,"353358909", "PAIN2: Rank of Pain")
+
+
 dt_painsc= data_tib_base   %>%  filter(D_323512813==353358909)
 
 plevel= dt_painsc  %>%  mutate(descr= case_when(D_338924834==988858078 ~ "1",
@@ -463,6 +614,9 @@ dt_painsc_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #Affected Work?
+levels=c("111520945"="Not At All", "548628123"="A Little Bit", "597477164"="A Lot","Skipped this Question")
+one_logic_funct1(D_952682839, D_323512813,"353358909", "PAIN3: Pain Affected Work")
+
 dt_painaff= data_tib_base   %>%  filter(D_323512813==353358909)
 
 
@@ -874,6 +1028,8 @@ dt_wt_carry_summary %>%  gt(rowname_col = "row_lab") %>%
 ```{r height, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Female
+levels=c("(0)No hair loss", "(1) Mild Loss on Sides", "(2) Mild Loss on Top", "(3) Mild to Moderate", "(4) Moderate Loss on Top", "(5) Severe Loss on Top", "(6) Severe Loss and Thinning", "(7) Severe Loss Top and Forehead","(8) All over Loss", "Skipped this Question")
+one_logic_funct1(D_952682839, D_407056417, "536341288", "Level of Hair Loss (Female)")
 
 dt_fem_hair= data_tib_base   %>% filter(D_407056417==536341288) 
 
@@ -915,7 +1071,8 @@ dt_fem_hair_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 
-
+levels=c("(0)No hair loss", "(1) Mild Loss on Sides", "(2) Moderate Loss on Side", "(3) Mild Loss and Thinning", "(4) Moderate w/Crown Balding", "(5) Thin Hair Strip Left Only", "(6) Moderate to Severe", "(7) Thin Hair Strip Around the Head","(8) Mild Loss at Forehead", "(9) Moderate Loss at Forehead", "(10) Severe Loss at Forehead", "(11) Mild Loss at Forehead, Beyond Ears", "Skipped this Question")
+one_logic_funct1(D_206319592, D_407056417, "654207589", "Level of Hair Loss (Male)")
 
 dt_male_hair= data_tib_base   %>% filter(D_407056417==654207589) 
 
@@ -968,9 +1125,9 @@ simple_funct1(D_769668224, "HRMED: Ever Taken Hair Thinning Medication")
 ```{r hairmedtype, include=FALSE}
 
 #What type?
-dt_hrmed_typ= data_tib_base   %>%  filter(D_769668224==353358909)  
 
-brand= dt_hrmed_typ  %>%  mutate(med= case_when(D_814664694_D_814664694_D_903825143==1 ~ "Rogaine, Minoxidil, or Ioniten",
+dt_hrmed_typ= data_tib_base   %>%  filter(D_769668224==353358909)    %>%  
+                          mutate(med= case_when(D_814664694_D_814664694_D_903825143==1 ~ "Rogaine, Minoxidil, or Ioniten",
                                                 D_814664694_D_814664694_D_567365088==1 ~ "Finasteride",
                                                 (D_814664694_D_814664694_D_807835037==1 | !is.na(D_814664694_D_787193493)) ~ "Other",
                                                 TRUE ~ "Skipped this question"))
@@ -998,7 +1155,7 @@ hrm2_dx$hrm2_dx <- c("Rogaine, Minoxidil, or Ioniten","Finasteride","Other")
 colnames(hrm2_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
 hrm2 <- hrm2_dx[, c(4,1,2)]
 
-skipped_mhg1 <- sum(table(brand$med=="Skipped this question")[2])
+skipped_mhg1 <- sum(table(dt_hrmed_typ$med=="Skipped this question")[2])
 hrm2[as.numeric(dim(hrm2)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(data_tib_base)[[1]])*100,2))
 
 dt_hrm2 <- hrm2 %>%  gt(rowname_col = "row_lab") %>%
@@ -1049,31 +1206,6 @@ boxp_funct(D_164752169,"Age Doctor Visited for Acne","Age")
 #Used prescription meds?
 one_logic_funct1(D_512167179, D_283634623, 353358909, "ACNEMED: Ever Taken Medication for Severe Acne")
 
-ACNEMED= data_tib_base %>% filter(D_283634623==353358909)
-ACNEMED= ACNEMED %>%  mutate(meds= case_when(D_512167179==353358909 ~ "Yes",
-                                             D_512167179==104430631 ~ "No",
-                                             TRUE ~ "Skipped this question"))
-
-
-ACNEMED_summary <- ACNEMED %>% group_by(meds) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
-
-
-ACNEMED_summary %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("ACNEMEDMED: Ever Taken Medication for Severe ACNEMED")) %>% 
-  cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-    stub.font.weight = "bold"
-  ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = meds,
-    )
-  ) 
 
 
 #Acne meds timeframe
@@ -1155,74 +1287,22 @@ boxp_funct(D_628078826_D_517670352,"Father's Age at Death","Age")
 hist_funct(D_694265648, "SIB1: Number of Siblings", "Siblings", "Frequency")
 
 
+levels=c("Female", "Male", "Intersex", "Unknown", "Skipped this Question")
+sib_logic_funct(D_579563781_1_1, 1, "SIB2_1: Sibling 1 Sex at Birth")
 
-##sib_logic_funct(D_579563781_1_1, 1, "SIB2_1: Sibling 1 Sex at Birth")
-SIB2_1= data_tib_base %>% filter(as.numeric(D_694265648 ) >=1)
-SIB2_1= SIB2_1 %>%  mutate(meds= case_when(D_579563781_1_1==536341288 ~ "Female",
-                                           D_579563781_1_1==654207589 ~ "Male",
-                                           D_579563781_1_1==576796184 ~ "Intersex",
-                                           D_579563781_1_1==178420302 ~ "Unknown",
-                                           TRUE ~ "Skipped this question"))
-
-
-SIB2_1_summary <- SIB2_1 %>% group_by(meds) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
-
-
-SIB2_1_summary %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("SIB2_1: Sibling 1 Sex at Birth")) %>% 
-  cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-    stub.font.weight = "bold"
-  ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = meds,
-    )
-  ) 
 
 # Full or half
-##sib_logic_funct(D_589588769_1_1, 1, "SIB3_1: Sibling 1 a Full or Half Sibling")
+#factor(data_tib_base$D_589588769_1_1, levels=c("Full Sibling", "Half sibling, same mother", "Half sibling, same father", "Skipped this Question"))
+levels=c("Full Sibling", "Half sibling, same mother", "Half sibling, same father", "Skipped this Question")
+sib_logic_funct(D_589588769_1_1, 1, "SIB3_1: Sibling 1 a Full or Half Sibling")
 
-dtSIB3_1= data_tib_base  %>%   filter(D_694265648!=0 & !is.na(D_694265648))
-
-
-est_med= dtSIB3_1 %>%  mutate(meds= case_when(D_589588769_1_1==555374628 ~ "Full Sibling",
-                                               D_589588769_1_1==871673221 ~ "Half sibling, same mother",
-                                              D_589588769_1_1==198654048 ~ "Half sibling, same father",
-                                               TRUE  ~ "Skipped this question"))
-
-
-dtSIB3_1_summary <- est_med %>% group_by(meds) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
-
-
-dtSIB3_1_summary %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("SIB3_1: Sibling 1 a Full or Half Sibling")) %>% 
-  cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-    stub.font.weight = "bold"
-  ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = meds,
-    )
-  ) 
 
 ```
 
 # MULT2 
 ```{r sibmult, warning=FALSE, echo=FALSE, message=FALSE}
 
-##sib_logic_funct(D_807431780_1_1, 1, "MULT2_1: Sibling 1 a Twin or Multiple")
+
 
 MULT2_1= data_tib_base %>% filter(as.numeric(D_694265648 ) >=1 & (D_992987417==353358909 | D_992987417==288105839 | D_992987417==626558982))
 MULT2_1= MULT2_1 %>%  mutate(meds= case_when(D_807431780_1_1==353358909 ~ "Yes",
@@ -1255,34 +1335,9 @@ MULT2_1_summary %>%  gt(rowname_col = "row_lab") %>%
 # SIB4
 ```{r sib4, warning=FALSE, echo=FALSE, message=FALSE}
 
-##sib_logic_funct(D_890637099_1_1, 1, "SIB4_1: Sibling 1 Still Living")
+levels=c("Yes", "No", "Unknown", "Skipped this Question")
+sib_logic_funct(D_890637099_1_1, 1, "SIB4_1: Sibling 1 Still Living")
 
-SIB4_1= data_tib_base %>% filter(as.numeric(D_694265648 ) >=1)
-SIB4_1= SIB4_1 %>%  mutate(meds= case_when(D_890637099_1_1==353358909 ~ "Yes",
-                                           D_890637099_1_1==104430631 ~ "No",
-                                           D_890637099_1_1==178420302 ~ "Unknown",
-                                           TRUE ~ "Skipped this question"))
-
-
-SIB4_1_summary <- SIB4_1 %>% group_by(meds) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
-
-
-SIB4_1_summary %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("SIB4_1: Sibling 1 Still Living")) %>% 
-  cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-    stub.font.weight = "bold"
-  ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = meds,
-    )
-  ) 
 
 ```
 
@@ -1351,72 +1406,15 @@ CHILD_summary %>%  gt(rowname_col = "row_lab") %>%
   ) 
 
 
+levels=c("Female", "Male", "Intersex", "Unknown", "Skipped this Question")
+child_logic_funct(D_887697329_1_1, 1, "CHILD2_1: Child 1 Sex at Birth")
 
-##child_logic_funct(D_887697329_1_1, 1, "CHILD2_1: Child 1 Sex at Birth")
-
-CHILD2_1= data_tib_base %>% filter(as.numeric(D_446999144 ) >=1)
-CHILD2_1= CHILD2_1 %>%  mutate(meds= case_when(D_887697329_1_1==536341288 ~ "Female",
-                                               D_887697329_1_1==654207589 ~ "Male",
-                                               D_887697329_1_1==576796184 ~ "Intersex",
-                                               D_887697329_1_1==178420302 ~ "Unknown",
-                                               TRUE ~ "Skipped this question"))
-CHILD2_1$meds <- factor(CHILD2_1$meds,levels=c("Female","Male","Intersex","Unknown","Skipped this question"))
-
-
-CHILD2_1_summary <- CHILD2_1 %>% group_by(meds) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
-
-
-CHILD2_1_summary %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("CHILD2_1: Child 1 Sex at Birth")) %>% 
-  cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-    stub.font.weight = "bold"
-  ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = meds,
-    )
-  ) 
 
 
 #full/half
-#child_logic_funct(D_873968217_1_1, 1, "CHILD3_1: Child 1 Family Relation")
+levels=c("Your biological child","Adopted","A Step Child","Related to me in some other way","Skipped this Question")
+child_logic_funct(D_873968217_1_1, 1, "CHILD3_1: Child 1 Family Relation")
 
-dtCHILD3_1= data_tib_base  %>%   filter(as.numeric(D_446999144) >=1)
-
-
-cld3= dtCHILD3_1 %>%  mutate(relation= case_when(D_873968217_1_1==709650750 ~ "Your biological child",
-                                               D_873968217_1_1==810290359 ~ "Adopted",
-                                              D_873968217_1_1==509607548 ~ "A Step Child",
-                                              D_873968217_1_1==784922042 ~ "Related to me in some other way",
-                                               TRUE  ~ "Skipped this question"))
-cld3$relation <- factor(cld3$relation,levels=c("Your biological child","Adopted","A Step Child","Related to me in some other way","Skipped this question"))
-
-
-dtCHILD3_1_summary <- cld3 %>% group_by(relation) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(relation, n, percentage)
-
-
-dtCHILD3_1_summary %>%  gt(rowname_col = "row_lab") %>%
-  fmt_number(columns = "percentage", decimals = 2) %>%
-  tab_header(title = md("CHILD3_1: Child 1 Relation")) %>%
-  cols_label(n= md("**Number of Participants**"), relation = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-    stub.font.weight = "bold"
-  ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = relation,
-    )
-  )
 
 ```
 
@@ -1424,33 +1422,9 @@ dtCHILD3_1_summary %>%  gt(rowname_col = "row_lab") %>%
 # CHILDMULT
 ```{r childmult, warning=FALSE, echo=FALSE, message=FALSE}
 
-##child_logic_funct(D_473529484_1_1, 1, "CHILDMULT_1: Child 1 a Twin or Multiple")
+levels=c("Yes", "No", "Skipped this Question")
+child_logic_funct(D_473529484_1_1, 1, "CHILDMULT_1: Child 1 a Twin or Multiple")
 
-CHILDMULT_1= data_tib_base %>% filter(as.numeric(D_446999144 ) >=1)
-CHILDMULT_1= CHILDMULT_1 %>%  mutate(meds= case_when(D_473529484_1_1==353358909 ~ "Yes",
-                                                     D_473529484_1_1==104430631 ~ "No",
-                                                     TRUE ~ "Skipped this question"))
-
-
-CHILDMULT_1_summary <- CHILDMULT_1 %>% group_by(meds) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
-
-
-CHILDMULT_1_summary %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("CHILDMULT_1: Child 1 a Twin or Multiple")) %>% 
-  cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-    stub.font.weight = "bold"
-  ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = meds,
-    )
-  ) 
 
 ```
 
@@ -1458,34 +1432,10 @@ CHILDMULT_1_summary %>%  gt(rowname_col = "row_lab") %>%
 # CHILD4
 ```{r child4, warning=FALSE, echo=FALSE, message=FALSE}
 
-##child_logic_funct(D_418392907_1_1, 1, "CHILD4_1: Child 1 Still Living")
-
-CHILD4_1= data_tib_base %>% filter(as.numeric(D_446999144 ) >=1)
-CHILD4_1= CHILD4_1 %>%  mutate(meds= case_when(D_418392907_1_1==353358909 ~ "Yes",
-                                               D_418392907_1_1==104430631 ~ "No",
-                                               D_418392907_1_1==178420302 ~ "Unknown",
-                                               TRUE ~ "Skipped this question"))
+levels=c("Yes", "No", "Unknown", "Skipped this Question")
+child_logic_funct(D_418392907_1_1, 1, "CHILD4_1: Child 1 Still Living")
 
 
-CHILD4_1_summary <- CHILD4_1 %>% group_by(meds) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
-
-
-CHILD4_1_summary %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("CHILD4_1: Child 1 Still Living")) %>% 
-  cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-    stub.font.weight = "bold"
-  ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = meds,
-    )
-  ) 
 
 ```
 
@@ -1533,9 +1483,10 @@ simple_funct1(D_613744428, "WORK: Currently Work for Pay")
 
 #work status
 simple_funct1(D_114529380, "WORK2: Employment Status")
+one_logic_funct1(D_114529380, D_613744428, 104430631, "WORK2: Employment Status")
 
 
-#current job title
+#current job title  
 work3 <- data_tib_base %>% select(D_627122657) %>%  filter(data_tib_base$D_613744428==353358909)
 work3= work3 %>%  mutate(Address1= case_when(is.na(D_627122657)~"Skipped this Question",
                                                      TRUE ~ "Provided a Response"))
@@ -1662,7 +1613,8 @@ dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #data_tib_base$D_739294356=as.numeric(as.character(data_tib_base$D_739294356))
-WORK4= data_tib_base %>%  filter(data_tib_base$D_613744428==353358909) %>% mutate(answer= case_when(as.numeric(D_739294356)==0 ~ "0",
+WORK4= data_tib_base %>%  filter(data_tib_base$D_613744428==353358909 & !is.na(D_868232409)) %>% 
+                mutate(answer= case_when(as.numeric(D_739294356)==0 ~ "0",
                                          as.numeric(D_739294356)<11 & as.numeric(D_739294356)>0 ~ "1-10",
                                          as.numeric(D_739294356)<21 & as.numeric(D_739294356)>10 ~ "11-20",
                                          as.numeric(D_739294356)<30 & as.numeric(D_739294356)>20 ~ "21-30",
@@ -2073,7 +2025,7 @@ merge_m2= left_join(M2_complete_nodup,merged,  by="Connect_ID") #%>%  left_join(
 
 
 data_tib_all2 <- as_tibble(merge_m2)
-
+```
 
 
 ```{r function2, warning=FALSE, echo=FALSE,  message=FALSE, include=FALSE}
@@ -2129,8 +2081,8 @@ dict <- list("353358909"="Yes", "104430631"="No",  "178420302"="Do not Know", "5
              "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago",
              "958538953"="In the past 3 months", "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible",
              "764708931"="Very flexible", "211590917"="Often", "132099255"="Sometimes", "746038746"="Prefer Not to Answer", "239152340"="Once a month or Less", "582006876"="2-3 days/month",
-             "645894551"= "1-2 days/week","647504893"="Every day", "671267928"="5-6 days/week","996315715"= "3-4 days/week", "206020811"="31-44 min.", "248303092"="16-30 min.",
-             "264163865"= "45-59 min.","428999623"= "0-15 min.","628177728"="2 hrs", "638092100"="1 hr","805918496"= "3+ hrs", "223216393"="Single Live Infant", "628445697"="Multiple Live Infants",
+             "645894551"= "1-2 days/week","647504893"="Every day", "671267928"="5-6 days/week","996315715"= "3-4 days/week", "206020811"="31 to 44 minutes", "248303092"="16 to 30 minutes",
+             "264163865"= "45 to 59 minutes","428999623"= "15 minutes or less","628177728"="2 hours", "638092100"="1 hour","805918496"= "3 hours or more", "223216393"="Single Live Infant", "628445697"="Multiple Live Infants",
              "419220239"="Still birth","306890578"="Live Birth and Still Birth","858244199"="Miscariage","434041171"="Termination", "550615107"="Ectopic or tubal pregnancy", "201002865"="9+ hours",
              "258023209"="45 min.","464753847"="0-29 min.","503218834"="None","729681071"= "30 min.","755558825"= "5-6 hrs","919739344"= "3-4 hrs","949555271"= "7-8 hrs", "349122068"="1 Day per Week",
              "156095877"="2 Days per Week", "162668459"="3 Days per Week", "278139969"="4 Days per Week", "676824724"="5 Days per Week", "512144428"="6 Days per Week", "125674414"="7 Days per Week",
@@ -2138,7 +2090,14 @@ dict <- list("353358909"="Yes", "104430631"="No",  "178420302"="Do not Know", "5
              "774439579"= "Slight Chance","977681388"= "High Chance", "303095574"="Sound and Restful", "462478011"="Very Sound and Restful", "522143286"= "Restless","621370621"= "Very Restless",
              "838403733"= "Average Quality", "137254299"="As Loud as Talking","178420302"="Unknown","624808470"="Slightly Louder than Breathing","954318357"="Louder than Talking",
              "198347104"="1-2 times per week","471294296"="3-4 times per week","520089841"="0-1 times per month","632512449"="1-2 times per month","648960871"="Never","718687985"="Almost Every Day",
-             "200323667"="In the past yes","249673703"="Currently yes", "310201523"="100 Units per ml", "290716491"="500 unit per ml")
+             "200323667"="In the past yes","249673703"="Currently yes", "310201523"="100 Units per ml", "290716491"="500 unit per ml","862918284"="0-9 per month","275059825"="10-14 per month",
+             "481217808"="15-19 per month","565450397"="20-25 per month", "503218834" = "None","464753847" = "Less than 30 minutes","729681071" = "30 minutes","258023209" = "45 minutes","638092100" = "1 hour",
+             "628177728" = "2 hour", "919739344" = "3 to 4 hours", "755558825" = "5 to 6 hours","949555271" = "7 to 8 hours","201002865" = "9 hours or more",
+             "525779785" = "Yes, less than once per week","565036180" = "Yes, 1 or 2 times per week","284343405"= "Yes, 3 or 4 times per week","270994579" = "Yes, 5 or more times per week",
+             "462478011" = "Very sound or restful","303095574"= "Sound and restful","838403733" = "Average quality","522143286" ="Restless","621370621" = "Very restless", "958538953"= "Yes, in Last 3 months",
+             "274062548" = "Yes, Over 3 months Ago","330745988"="Premenopausal Hormones","582425113"="Menopause", "655309065"="Hormonal Med/Devise","868504994"="Endometrial Ablation","909774794"="Rem. of uterus/ovaries",
+             "757609794"="Pregnant or Breastfed in the Last Year","585076356"="Radtiation or Chemotherapy","351584248"="Gender Affirming Hormones")
+
 
 
 
@@ -2197,6 +2156,33 @@ one_logic_funct2 <- function(CID, CID_prev, Prev_Answer, Title){
 
 
 
+# Pregnancy questions
+preg_funct <- function(CID, Preg_Num, Title){
+  CID_SYM <- rlang::ensym(CID)
+  data_tib_all2$D_405571048 <- as.numeric(data_tib_all2$D_405571048)
+  dt_select <- data_tib_all2 %>%  filter(D_405571048 >= Preg_Num) %>%  select(Connect_ID, !!CID_SYM)
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+
+  gt_yn %>%  gt::gt()  %>%
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md(Title)) %>%
+  cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  )
+}
+
+
+
 
 #Boxplot for female at birth only questions
 boxp_funct_F <- function(CID,Title, Xlab) {
@@ -2210,7 +2196,7 @@ boxp_funct_F <- function(CID,Title, Xlab) {
 
 ``` 
 
-
+\newpage
 # PAINREL1
 ```{r painrel, include=FALSE}
 
@@ -2325,9 +2311,9 @@ hist_funct(D_564374538, "PAINREL6_1: Years Ago Baby aspirin Last Taken", "Years"
 
 ```{r  painrel1reason, include=FALSE}
 
-dt_reasons_P1= data_tib_all2  %>%   filter(D_399982309_D_469512398==1)
 
-bby_asp= dt_reasons_P1 %>%  mutate(reasons= case_when(D_643807999_D_323106499==1 ~ "Arthritis",
+dt_reasons_P1= data_tib_all2  %>%   filter(D_399982309_D_469512398==1) %>%  
+                          mutate(reasons= case_when(D_643807999_D_323106499==1 ~ "Arthritis",
                                              D_643807999_D_769901710==1 ~ "Back Pain",
                                              D_643807999_D_727773491==1 ~ "Menstrual Pain",
                                              D_643807999_D_283652434==1 ~ "Disease Prevention",
@@ -2363,7 +2349,7 @@ medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevent
 colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
 pain7_1 <- medsp_dx[, c(4,1,2)]
 
-skipped_mhg1 <- sum(table(bby_asp$reasons=="Skipped this question")[2])
+skipped_mhg1 <- sum(table(dt_reasons_P1$reasons=="Skipped this question")[2])
 pain7_1[as.numeric(dim(pain7_1)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P1)[[1]])*100,2))
 
 
@@ -2426,9 +2412,8 @@ hist_funct(D_265428345, "PAINREL6_2: Years Ago Regular aspirin Last Taken", "Yea
 ```{r painrel2reason, include=FALSE}
 
 #Reasons taken
-dt_reasons_P2= data_tib_all2 %>%  filter(D_399982309_D_194424439==1) 
-
-reg_asp= dt_reasons_P2 %>%  filter(D_399982309_D_194424439==1) %>%  mutate(reasons= case_when(D_275143071_D_323106499==1 ~ "Arthritis",
+dt_reasons_P2= data_tib_all2 %>%  filter(D_399982309_D_194424439==1)  %>%  filter(D_399982309_D_194424439==1) %>%  
+                  mutate(reasons= case_when(D_275143071_D_323106499==1 ~ "Arthritis",
                                              D_275143071_D_769901710==1 ~ "Back Pain",
                                              D_275143071_D_727773491==1 ~ "Menstrual Pain",
                                              D_275143071_D_283652434==1 ~ "Disease Prevention",
@@ -2464,7 +2449,7 @@ medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevent
 colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
 pain7_2 <- medsp_dx[, c(4,1,2)]
 
-skipped_mhg1 <- sum(table(reg_asp$reasons=="Skipped this question")[2])
+skipped_mhg1 <- sum(table(dt_reasons_P2$reasons=="Skipped this question")[2])
 pain7_2[as.numeric(dim(pain7_2)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P2)[[1]])*100,2))
 
 
@@ -2529,10 +2514,8 @@ hist_funct(D_491549803 , "PAINREL6_3: Years Ago Ibuprofen Last Taken", "Years", 
 ```{r painrel3reason, include=FALSE}
 
 #Reasons taken
-dt_reasons_P3= data_tib_all2  %>%  filter(D_399982309_D_422188606==1) 
-
-
-ibu= dt_reasons_P3 %>%  mutate(reasons= case_when(D_152138929_D_323106499==1 ~ "Arthritis",
+dt_reasons_P3= data_tib_all2  %>%  filter(D_399982309_D_422188606==1)  %>%  
+                    mutate(reasons= case_when(D_152138929_D_323106499==1 ~ "Arthritis",
                                              D_152138929_D_769901710==1 ~ "Back Pain",
                                              D_152138929_D_727773491==1 ~ "Menstrual Pain",
                                              D_152138929_D_283652434==1 ~ "Disease Prevention",
@@ -2568,7 +2551,7 @@ medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevent
 colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
 pain7_3 <- medsp_dx[, c(4,1,2)]
 
-skipped_mhg1 <- sum(table(ibu$reasons=="Skipped this question")[2])
+skipped_mhg1 <- sum(table(dt_reasons_P3$reasons=="Skipped this question")[2])
 pain7_3[as.numeric(dim(pain7_3)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P3)[[1]])*100,2))
 
 
@@ -2633,8 +2616,8 @@ hist_funct(D_846227588, "PAINREL6_4: Years Ago Tylenol Taken", "Years", "Frequen
 ```{r Painrel4Reason, include=FALSE}
 
 #Reasons taken
-dt_reasons_P4 <- data_tib_all2 %>%   filter(D_399982309_D_555555502==1)
-acet= dt_reasons_P4 %>%  mutate(reasons= case_when(D_630231395_D_323106499==1 ~ "Arthritis",
+dt_reasons_P4= data_tib_all2 %>%   filter(D_399982309_D_555555502==1) %>%  
+                    mutate(reasons= case_when(D_630231395_D_323106499==1 ~ "Arthritis",
                                              D_630231395_D_769901710==1 ~ "Back Pain",
                                              D_630231395_D_727773491==1 ~ "Menstrual Pain",
                                              D_630231395_D_283652434==1 ~ "Disease Prevention",
@@ -2670,7 +2653,7 @@ medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevent
 colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
 pain7_4 <- medsp_dx[, c(4,1,2)]
 
-skipped_mhg1 <- sum(table(acet$reasons=="Skipped this question")[2])
+skipped_mhg1 <- sum(table(dt_reasons_P4$reasons=="Skipped this question")[2])
 pain7_4[as.numeric(dim(pain7_4)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P4)[[1]])*100,2))
 
 
@@ -2737,8 +2720,8 @@ hist_funct(D_798182168, "PAINREL6_5: Years Ago Aleve Last Taken", "Years", "Freq
 ```{r Painrel5Reason, include=FALSE}
 
 #Reasons taken
-dt_reasons_P5 <- data_tib_all2 %>%   filter(D_399982309_D_800410166==1)
-napx= dt_reasons_P5 %>%  mutate(reasons= case_when(D_655266993_D_323106499==1 ~ "Arthritis",
+dt_reasons_P5= data_tib_all2 %>%   filter(D_399982309_D_800410166==1) %>%  
+                  mutate(reasons= case_when(D_655266993_D_323106499==1 ~ "Arthritis",
                                              D_655266993_D_769901710==1 ~ "Back Pain",
                                              D_655266993_D_727773491==1 ~ "Menstrual Pain",
                                              D_655266993_D_283652434==1 ~ "Disease Prevention",
@@ -2774,7 +2757,7 @@ medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevent
 colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
 pain7_5 <- medsp_dx[, c(4,1,2)]
 
-skipped_mhg1 <- sum(table(napx$reasons=="Skipped this question")[2])
+skipped_mhg1 <- sum(table(dt_reasons_P5$reasons=="Skipped this question")[2])
 pain7_5[as.numeric(dim(pain7_5)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P5)[[1]])*100,2))
 
 
@@ -2838,8 +2821,8 @@ hist_funct(D_322479862, "PAINREL6_6: Years Ago Celebrex Last Taken", "Years", "F
 ```{r Painrel6Reason, include=FALSE}
 
 #Reasons taken
-dt_reasons_P6 <- data_tib_all2 %>%   filter(D_399982309_D_221645137==1)
-cbx= dt_reasons_P6 %>%  mutate(reasons= case_when(D_509383583_D_323106499==1 ~ "Arthritis",
+dt_reasons_P6= data_tib_all2 %>%   filter(D_399982309_D_221645137==1) %>%  
+                  mutate(reasons= case_when(D_509383583_D_323106499==1 ~ "Arthritis",
                                              D_509383583_D_769901710==1 ~ "Back Pain",
                                              D_509383583_D_727773491==1 ~ "Menstrual Pain",
                                              D_509383583_D_283652434==1 ~ "Disease Prevention",
@@ -2875,7 +2858,7 @@ medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevent
 colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
 pain7_6 <- medsp_dx[, c(4,1,2)]
 
-skipped_mhg1 <- sum(table(cbx$reasons=="Skipped this question")[2])
+skipped_mhg1 <- sum(table(dt_reasons_P6$reasons=="Skipped this question")[2])
 pain7_6[as.numeric(dim(pain7_6)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P6)[[1]])*100,2))
 
 
@@ -2942,10 +2925,10 @@ hist_funct(D_737490587, "PAINREL6_7: Years Ago Prescription Opiods Last Taken", 
 ```{r painrel7reason, include=FALSE}
 
 #Reasons taken
-dt_reasons_P7= data_tib_all2 %>%  filter(D_399982309_D_974248369==1)
 
 
-opd= dt_reasons_P7 %>%  mutate(reasons= case_when(D_887435355_D_323106499==1 ~ "Arthritis",
+dt_reasons_P7= data_tib_all2 %>%  filter(D_399982309_D_974248369==1) %>%  
+                  mutate(reasons= case_when(D_887435355_D_323106499==1 ~ "Arthritis",
                                              D_887435355_D_769901710==1 ~ "Back Pain",
                                              D_887435355_D_727773491==1 ~ "Menstrual Pain",
                                              D_887435355_D_283652434==1 ~ "Disease Prevention",
@@ -2980,7 +2963,7 @@ medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevent
 colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
 pain7_7 <- medsp_dx[, c(4,1,2)]
 
-skipped_mhg1 <- sum(table(opd$reasons=="Skipped this question")[2])
+skipped_mhg1 <- sum(table(dt_reasons_P7$reasons=="Skipped this question")[2])
 pain7_7[as.numeric(dim(pain7_7)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P7)[[1]])*100,2))
 
 
@@ -3463,6 +3446,8 @@ hist_funct_F(D_263114971,"MENSHIS6: Days of menstrual Cycle in the last 12 month
 
 #Why haven't had one
 
+one_logic_funct2(D_614145455_D_614145455, D_164595895,"650420270", "MENSHIS7: Reason You Haven't Had Period")
+
 nopd <- fb %>%  filter(D_164595895==650420270)
 
 reasonpd= nopd %>%  mutate(length= case_when(D_614145455_D_614145455=="330745988"~"Premenopausal Hormones",
@@ -3470,6 +3455,9 @@ reasonpd= nopd %>%  mutate(length= case_when(D_614145455_D_614145455=="330745988
                                              D_614145455_D_614145455== "655309065"~"Hormonal Med/Devise",
                                              D_614145455_D_614145455=="868504994"~"Endometrial Ablation",
                                              D_614145455_D_614145455=="909774794"~"Rem. of uterus/ovaries",
+                                             D_614145455_D_614145455=="757609794"~"Pregnant or Breastfed in the Last Year",
+                                             D_614145455_D_614145455=="585076356"~"Radtiation or Chemotherapy",
+                                             D_614145455_D_614145455=="351584248"~"Gender Affirming Hormones",
                                              TRUE~ "Skipped this question"))
 
 
@@ -3604,6 +3592,9 @@ grid.arrange(preg1, preg2, preg3, preg4, nrow=2)
 #Outcome of each pregnancy #remove NA column
 
 ##1
+
+preg_funct(D_391951010_1_1, 1, "PREG5_1: Outcome of First Pregnancy")
+
 out_preg1=fem_birth %>% filter(as.numeric(D_405571048)>0)
 out_preg1= out_preg1 %>%  mutate(outcome= case_when(D_391951010_1_1=="223216393"~"Single Live Infant",
                                                      D_391951010_1_1=="628445697"~"Multiple Live Infants",
@@ -3640,6 +3631,8 @@ dt_out_preg1_summary %>%  gt() %>%
 
 
 ##2
+preg_funct(D_391951010_2_2, 1, "PREG5_2: Outcome of Second Pregnancy")
+
 out_preg2=fem_birth %>% filter(as.numeric(D_405571048)>1)
 out_preg2= out_preg2 %>%  mutate(outcome= case_when(D_391951010_2_2=="223216393"~"Single Live Infant",
                                                      D_391951010_2_2=="628445697"~"Multiple Live Infants",
@@ -3677,6 +3670,8 @@ dt_out_preg2_summary %>%  gt() %>%
 
 
 ##3
+preg_funct(D_391951010_3_3, 3, "PREG5_3: Outcome of Third Pregnancy")
+
 out_preg3=fem_birth %>% filter(as.numeric(D_405571048)>2)
 out_preg3= out_preg3 %>%  mutate(outcome= case_when(D_391951010_3_3=="223216393"~"Single Live Infant",
                                                      D_391951010_3_3=="628445697"~"Multiple Live Infants",
@@ -3713,6 +3708,8 @@ dt_out_preg3_summary %>%  gt() %>%
 
 
 ##4
+preg_funct(D_391951010_4_4, 4, "PREG5_4: Outcome of Fourth Pregnancy")
+
 out_preg4=fem_birth %>% filter(as.numeric(D_405571048)>3)
 out_preg4= out_preg4 %>%  mutate(outcome= case_when(D_391951010_4_4=="223216393"~"Single Live Infant",
                                                      D_391951010_4_4=="628445697"~"Multiple Live Infants",
@@ -3882,9 +3879,37 @@ dtpreg6_4_summary %>%  gt() %>%
 ##Method 
 
 #First Pregnancy 
-fb_preg7_1 <- fb %>%  filter(fb$D_391951010_1_1==628445697 | fb$D_391951010_1_1==419220239 | fb$D_391951010_1_1==223216393)
 
-preg7_1_ans= fb_preg7_1 %>%  mutate(answer= case_when(D_771528780_1_1==660308254 ~ "Cesarean",
+preg7_1_ans= fb %>%  filter(fb$D_391951010_1_1==628445697 | fb$D_391951010_1_1==419220239 | fb$D_391951010_1_1==223216393) %>%  
+  mutate(answer= case_when(D_771528780_1_1==660308254 ~ "Cesarean",
+                           D_771528780_1_1==936573532 ~ "Vaginal",
+                           TRUE ~ "Skipped this question"))
+
+dtpreg7_1_summary <- preg7_1_ans %>% group_by(answer) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtpreg7_1_summary %>%  gt() %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("PREG7_1: Method of delivery during first pregnancy")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  )
+
+
+
+
+
+preg7_1_ans=  fb %>%  filter(fb$D_391951010_1_1==628445697 | fb$D_391951010_1_1==419220239 | fb$D_391951010_1_1==223216393) %>%  
+  mutate(answer= case_when(D_771528780_1_1==660308254 ~ "Cesarean",
                                              D_771528780_1_1==936573532 ~ "Vaginal",
                                              TRUE ~ "Skipped this question"))
 
@@ -3905,13 +3930,13 @@ dtpreg7_1_summary %>%  gt() %>%
     locations = cells_body(
       columns = answer,
     )
-  ) 
+  )
 
 
 #Second Pregnancy 
-fb_preg7_2 <- fb %>%  filter(fb$D_391951010_2_2==628445697 | fb$D_391951010_2_2==419220239 | fb$D_391951010_2_2==223216393)
 
-preg7_2_ans= fb_preg7_2 %>%  mutate(answer= case_when(D_771528780_2_2==660308254 ~ "Cesarean",
+preg7_2_ans= fb %>%  filter(fb$D_391951010_2_2==628445697 | fb$D_391951010_2_2==419220239 | fb$D_391951010_2_2==223216393) %>%  
+  mutate(answer= case_when(D_771528780_2_2==660308254 ~ "Cesarean",
                                              D_771528780_2_2==936573532 ~ "Vaginal",
                                              TRUE ~ "Skipped this question"))
 
@@ -3937,10 +3962,9 @@ dtpreg7_2_summary %>%  gt() %>%
 
 
 #Third Pregnancy 
-fb_preg7_3 <- fb %>%  filter(fb$D_391951010_3_3==628445697 | fb$D_391951010_3_3==419220239 | fb$D_391951010_3_3==223216393)
 
-
-preg7_3_ans= fb_preg7_3 %>%  mutate(answer= case_when(D_771528780_3_3==660308254 ~ "Cesarean",
+preg7_3_ans= fb %>%  filter(fb$D_391951010_3_3==628445697 | fb$D_391951010_3_3==419220239 | fb$D_391951010_3_3==223216393) %>%  
+  mutate(answer= case_when(D_771528780_3_3==660308254 ~ "Cesarean",
                                              D_771528780_3_3==936573532 ~ "Vaginal",
                                              TRUE ~ "Skipped this question"))
 
@@ -3965,9 +3989,8 @@ dtpreg7_3_summary %>%  gt() %>%
 
 
 #Fourth Pregnancy 
-fb_preg7_4 <- fb %>%  filter(fb$D_391951010_4_4==628445697 | fb$D_391951010_4_4==419220239 | fb$D_391951010_4_4==223216393)
-
-preg7_4_ans= fb_preg7_4 %>%  mutate(answer= case_when(D_771528780_4_4==660308254 ~ "Cesarean",
+preg7_4_ans= fb %>%  filter(fb$D_391951010_4_4==628445697 | fb$D_391951010_4_4==419220239 | fb$D_391951010_4_4==223216393) %>%  
+  mutate(answer= case_when(D_771528780_4_4==660308254 ~ "Cesarean",
                                              D_771528780_4_4==936573532 ~ "Vaginal",
                                              TRUE ~ "Skipped this question"))
 
@@ -3995,10 +4018,36 @@ dtpreg7_4_summary %>%  gt() %>%
 ##Did you/are you breast feeding 
 
 #First Pregnancy 
+
+preg8_1_ans= fb %>%  filter(fb$D_391951010_1_1==628445697 | fb$D_391951010_1_1==419220239 | fb$D_391951010_1_1==223216393) %>%  
+  mutate(answer= case_when(D_486574018_1_1==353358909 ~ "Yes",
+                           D_486574018_1_1==104430631 ~ "No",
+                           TRUE ~ "Skipped this question"))
+
+dtpreg8_1_summary <- preg8_1_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
+
+dtpreg8_1_summary %>%  gt() %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Preg8_1: Breast fed during first pregnancy")) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  )
+
 fb_preg8_1 <- fb %>%  filter(fb$D_391951010_1_1==628445697 | fb$D_391951010_1_1==419220239 | fb$D_391951010_1_1==223216393)
 
 
-preg8_1_ans= fb_preg8_1 %>%  mutate(answer= case_when(D_486574018_1_1==353358909 ~ "Yes",
+preg8_1_ans= fb %>%  filter(fb$D_391951010_1_1==628445697 | fb$D_391951010_1_1==419220239 | fb$D_391951010_1_1==223216393) %>%  
+  mutate(answer= case_when(D_486574018_1_1==353358909 ~ "Yes",
                                              D_486574018_1_1==104430631 ~ "No",
                                              TRUE ~ "Skipped this question"))
 
@@ -4019,15 +4068,15 @@ dtpreg8_1_summary %>%  gt() %>%
     locations = cells_body(
       columns = answer,
     )
-  ) 
+  )
 
 
 
 #Second Pregnancy 
-fb_preg8_2 <- fb %>%  filter(fb$D_391951010_2_2==628445697 | fb$D_391951010_2_2==419220239 | fb$D_391951010_2_2==223216393)
 
 
-preg8_2_ans= fb_preg8_2  %>%  mutate(answer= case_when(D_486574018_2_2==353358909 ~ "Yes",
+preg8_2_ans= fb %>%  filter(fb$D_391951010_2_2==628445697 | fb$D_391951010_2_2==419220239 | fb$D_391951010_2_2==223216393)  %>%  
+  mutate(answer= case_when(D_486574018_2_2==353358909 ~ "Yes",
                                              D_486574018_2_2==104430631 ~ "No",
                                              TRUE ~ "Skipped this question"))
 
@@ -4051,10 +4100,9 @@ dtpreg8_2_summary %>%  gt() %>%
   ) 
 
 #Third Pregnancy 
-fb_preg8_3 <- fb %>%  filter(fb$D_391951010_3_3==628445697 | fb$D_391951010_3_3==419220239 | fb$D_391951010_3_3==223216393)
 
-
-preg8_3_ans= fb_preg8_3 %>%  mutate(answer= case_when(D_486574018_3_3==353358909 ~ "Yes",
+preg8_3_ans= fb %>%  filter(fb$D_391951010_3_3==628445697 | fb$D_391951010_3_3==419220239 | fb$D_391951010_3_3==223216393) %>%  
+  mutate(answer= case_when(D_486574018_3_3==353358909 ~ "Yes",
                                              D_486574018_3_3==104430631 ~ "No",
                                              TRUE ~ "Skipped this question"))
 
@@ -4078,10 +4126,10 @@ dtpreg8_3_summary %>%  gt() %>%
   ) 
 
 #Fourth Pregnancy
-fb_preg8_4 <- fb %>%  filter(fb$D_391951010_4_4==628445697 | fb$D_391951010_4_4==419220239 | fb$D_391951010_4_4==223216393)
 
 
-preg8_4_ans= fb_preg8_4 %>%  mutate(answer= case_when(D_486574018_4_4==353358909 ~ "Yes",
+preg8_4_ans= fb %>%  filter(fb$D_391951010_4_4==628445697 | fb$D_391951010_4_4==419220239 | fb$D_391951010_4_4==223216393) %>%  
+  mutate(answer= case_when(D_486574018_4_4==353358909 ~ "Yes",
                                              D_486574018_4_4==104430631 ~ "No",
                                              TRUE ~ "Skipped this question"))
 
@@ -4248,11 +4296,11 @@ dtpreg10_4_summary %>%  gt() %>%
 
 ##Diagnosed with eclampsia during preg
 #First Pregnancy 
-fb_preg11_1 <- fb %>%  filter(fb$D_391951010_1_1==628445697 | fb$D_391951010_1_1==419220239 | 
-                              fb$D_391951010_1_1==223216393 |  fb$D_391951010_1_1==858244199)
 
 
-preg11_1_ans= fb_preg11_1 %>%  mutate(answer= case_when(D_133297530_1_1==353358909 ~ "Yes",
+preg11_1_ans= fb %>%  filter(fb$D_391951010_1_1==628445697 | fb$D_391951010_1_1==419220239 | 
+                              fb$D_391951010_1_1==223216393 |  fb$D_391951010_1_1==858244199) %>%  
+                    mutate(answer= case_when(D_133297530_1_1==353358909 ~ "Yes",
                                              D_133297530_1_1==104430631 ~ "No",
                                              TRUE ~ "Skipped this question"))
 
@@ -4277,10 +4325,10 @@ dtpreg11_1_summary %>%  gt() %>%
 
 
 #Second Pregnancy
-fb_preg11_2 <- fb %>%  filter(fb$D_391951010_2_2==628445697 | fb$D_391951010_2_2==419220239 | 
-                              fb$D_391951010_2_2==223216393 |  fb$D_391951010_2_2==858244199)
 
-preg11_2_ans= fb_preg11_2 %>%  mutate(answer= case_when(D_133297530_2_2==353358909 ~ "Yes",
+preg11_2_ans= fb %>%  filter(fb$D_391951010_2_2==628445697 | fb$D_391951010_2_2==419220239 | 
+                              fb$D_391951010_2_2==223216393 |  fb$D_391951010_2_2==858244199) %>%  
+                    mutate(answer= case_when(D_133297530_2_2==353358909 ~ "Yes",
                                              D_133297530_2_2==104430631 ~ "No",
                                              TRUE ~ "Skipped this question"))
 
@@ -4309,11 +4357,11 @@ dtpreg11_2_summary %>%  gt() %>%
 
 
 #Third Pregnancy 
-fb_preg11_3 <- fb %>%  filter(fb$D_391951010_3_3==628445697 | fb$D_391951010_3_3==419220239 | 
-                              fb$D_391951010_3_3==223216393 |  fb$D_391951010_3_3==858244199)
 
 
-preg11_3_ans= fb_preg11_3 %>%  mutate(answer= case_when(D_133297530_3_3==353358909 ~ "Yes",
+preg11_3_ans= fb %>%  filter(fb$D_391951010_3_3==628445697 | fb$D_391951010_3_3==419220239 | 
+                              fb$D_391951010_3_3==223216393 |  fb$D_391951010_3_3==858244199) %>% 
+                    mutate(answer= case_when(D_133297530_3_3==353358909 ~ "Yes",
                                              D_133297530_3_3==104430631 ~ "No",
                                              TRUE ~ "Skipped this question"))
 
@@ -4342,11 +4390,11 @@ dtpreg11_3_summary %>%  gt() %>%
 
 
 #Fourth Pregnancy 
-fb_preg11_4 <- fb %>%  filter(fb$D_391951010_4_4==628445697 | fb$D_391951010_4_4==419220239 | 
-                              fb$D_391951010_4_4==223216393 |  fb$D_391951010_4_4==858244199)
 
 
-preg11_4_ans= fb_preg11_4 %>%  mutate(answer= case_when(D_133297530_4_4==353358909 ~ "Yes",
+preg11_4_ans= fb %>%  filter(fb$D_391951010_4_4==628445697 | fb$D_391951010_4_4==419220239 | 
+                              fb$D_391951010_4_4==223216393 |  fb$D_391951010_4_4==858244199) %>% 
+                    mutate(answer= case_when(D_133297530_4_4==353358909 ~ "Yes",
                                              D_133297530_4_4==104430631 ~ "No",
                                              TRUE ~ "Skipped this question"))
 
@@ -4395,10 +4443,8 @@ one_logic_funct2(D_424047361, D_939897560, 353358909, "FERT3: Sought medical adv
 
 ```{r Fert4, include=FALSE}
 
-dtfert4= fb %>% filter(D_424047361==353358909) 
-
-
-preg_iss= dtfert4 %>%  mutate(issue= case_when(D_548355426_D_548355426_D_342735868==1 ~ "Tubal blockage",
+preg_iss= fb %>% filter(D_424047361==353358909) %>%  
+                      mutate(issue= case_when(D_548355426_D_548355426_D_342735868==1 ~ "Tubal blockage",
                                              D_548355426_D_548355426_D_990599372==1 ~ "Ovary or hormone problem",
                                              D_548355426_D_548355426_D_863286658==1 ~ "Endometriosis",
                                              D_548355426_D_548355426_D_202355614==1 ~ "Cervical mucus",
@@ -4409,7 +4455,7 @@ preg_iss= dtfert4 %>%  mutate(issue= case_when(D_548355426_D_548355426_D_3427358
                                              TRUE~ "Skipped this question"))
 
  
-preg_issues<- dtfert4[, grepl("548355426", colnames(dtfert4))]
+preg_issues<- preg_iss[, grepl("548355426", colnames(preg_iss))]
 painmds <- preg_issues[, c(3,9,8,2,1,5,4,6 )]
 
 medsp_dx <- NULL
@@ -4434,7 +4480,7 @@ colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
 fert4 <- medsp_dx[, c(4,1,2)]
 
 skipped_mhg1 <- sum(table(preg_iss$issue=="Skipped this question")[2])
-fert4[as.numeric(dim(fert4)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dtfert4)[[1]])*100,2))
+fert4[as.numeric(dim(fert4)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(preg_iss)[[1]])*100,2))
 
 
 fert4 <- fert4 %>%  gt() %>%  
@@ -4471,10 +4517,9 @@ one_logic_funct2(D_224681201, D_407056417, 536341288, "FERT5: Ever used fertilit
 
 
 ```{r fert6, include=FALSE}
-dtFERT6= fb %>% filter(D_224681201==353358909)
 
-
-fert_med= dtFERT6 %>%  mutate(meds= case_when(D_881200765_D_881200765_D_619799524==1 ~ "Chlomid",
+fert_med=  fb %>% filter(D_224681201==353358909) %>%  
+                      mutate(meds= case_when(D_881200765_D_881200765_D_619799524==1 ~ "Chlomid",
                                              D_881200765_D_881200765_D_663814928==1 ~ "Injectables",
                                              D_881200765_D_881200765_D_642004888==1 ~ "Danazol",
                                              D_881200765_D_881200765_D_454641975==1 ~ "Danocrine",
@@ -4784,10 +4829,10 @@ one_logic_funct2(D_621744463, D_407056417, 536341288, "MENOHOR: Used Prescribed 
 # ESTROHOR1-5
 ```{r ESTROHOR, include=FALSE}
 
-dtESTROHOR= fb  %>% filter(D_621744463==353358909)
 
 
-est_med= dtESTROHOR %>%  mutate(meds= case_when(D_668834883_D_668834883_D_246843973==1 ~ "Oral Estrogen",
+est_med=  fb  %>% filter(D_621744463==353358909) %>%  
+                      mutate(meds= case_when(D_668834883_D_668834883_D_246843973==1 ~ "Oral Estrogen",
                                              D_668834883_D_668834883_D_854184254==1 ~ "Patch Estrgen",
                                              D_668834883_D_668834883_D_515434780==1 ~ "Vaginal Ring/Vaginal Cream/Tablet Estrogen",
                                              D_668834883_D_668834883_D_674148137==1 ~ "Estrogen only Skin Gel/Cream/Spray-on",
@@ -4796,7 +4841,7 @@ est_med= dtESTROHOR %>%  mutate(meds= case_when(D_668834883_D_668834883_D_246843
                                              TRUE ~ "Skipped this question"))
 
  
-painmeds<- dtESTROHOR[, grepl("668834883", colnames(dtESTROHOR))]
+painmeds<- est_med[, grepl("668834883", colnames(est_med))]
 painmds <- painmeds[, c(2,8, 3,6, 7,4)]
 
 medsp_dx <- NULL
@@ -4821,7 +4866,7 @@ colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
 estro <- medsp_dx[, c(4,1,2)]
 
 skipped_mhg1 <- sum(table(est_med$meds=="Skipped this question")[2])
-estro[as.numeric(dim(estro)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dtESTROHOR)[[1]])*100,2))
+estro[as.numeric(dim(estro)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(est_med)[[1]])*100,2))
 
 
 estro <- estro %>%  gt() %>%  
@@ -4925,12 +4970,9 @@ grid.arrange(ESTROHOR4_1, ESTROHOR4_2, ESTROHOR4_3, ESTROHOR4_4, ESTROHOR4_5, nr
 ## Progestin
 ```{r PROGHOR, warning=FALSE, echo=FALSE, message=FALSE}
 #Ever taken
-
-dtPROGHOR= data_tib_all2  %>% filter(D_621744463==353358909 & D_407056417==536341288)
-
-
-prog_med= dtPROGHOR %>%  mutate(meds= case_when(D_800943768_D_800943768_D_687050279==1 & D_800943768_D_800943768_D_807835037==1 ~ "Both",
-                                                D_800943768_D_800943768_D_687050279==1 ~ "Oral Progestin",
+prog_med= data_tib_all2  %>% filter(D_621744463==353358909 & D_407056417==536341288) %>%  
+                      mutate(meds= case_when(D_800943768_D_800943768_D_687050279==1 & D_800943768_D_800943768_D_807835037==1 ~ "Both",
+                                             D_800943768_D_800943768_D_687050279==1 ~ "Oral Progestin",
                                              D_800943768_D_800943768_D_807835037==1 ~ "Other Progestin",
                                              D_800943768_D_800943768_D_535003378==1 ~ "None of the Above",
                                              TRUE ~ "Skipped this question"))
@@ -4989,6 +5031,8 @@ hist_funct_F(D_597869478_D_970604592,"PROGHOR5_2: Years Other Progestin was Used
 
 #Days per cycle used (oral)
 
+one_logic_funct2(D_563663099, D_800943768_D_800943768_D_687050279, 1, "PROGHOR6_1: Days per Cycle Oral Progestin Used")
+
 dtCOMBHOR= data_tib_all2  %>%   filter(D_800943768_D_800943768_D_687050279==1)
 prog_med= dtCOMBHOR %>%  mutate(meds= case_when(D_563663099=="647504893"~"Everyday",
                                                 D_563663099=="862918284"~"0-9 per month",
@@ -5020,6 +5064,7 @@ dtCOMBHOR_summary %>%  gt(rowname_col = "row_lab") %>%
 
 #Days per cycle used (prescription)
 
+one_logic_funct2(D_949663397, D_800943768_D_800943768_D_807835037, 1, "PROGHOR6_2: Days per Cycle Other Progestin Used")
 
 dtCOMBHOR= data_tib_all2  %>%   filter(D_800943768_D_800943768_D_807835037==1)
 prog_med= dtCOMBHOR %>%  mutate(meds= case_when(D_949663397=="647504893"~"Everyday",
@@ -5058,10 +5103,9 @@ dtCOMBHOR_summary %>%  gt(rowname_col = "row_lab") %>%
 
 #Ever taken
 
-dtCOMBHOR= fb  %>%   filter(D_621744463==353358909)
 
-
-est_med= dtCOMBHOR %>%  mutate(meds= case_when(D_263785082_D_263785082_D_837393880==1 ~ "Combined oral estrogen plus progestin pill",
+est_med= fb  %>%   filter(D_621744463==353358909) %>%  
+                      mutate(meds= case_when(D_263785082_D_263785082_D_837393880==1 ~ "Combined oral estrogen plus progestin pill",
                                              D_263785082_D_263785082_D_944874693==1 ~ "Two separate pills",
                                              D_263785082_D_263785082_D_837393880==1 & D_263785082_D_263785082_D_944874693==1 ~ "Both",
                                              D_263785082_D_263785082_D_807835037==1 ~ "Other combined estrogen plus progestin hormones",
@@ -5137,6 +5181,8 @@ hist_funct_F(D_824251330_D_970604592,"COMBHOR5_3: Total Years Other Estrogen & P
 
 
 #Days per cycle used (combined pill)
+one_logic_funct2(D_912818075, D_263785082_D_263785082_D_837393880, 1, "COMBHOR6_1: Days per Cycle Separate Pill Estrogen & Progestin Used")
+
 dtCOMBHOR= data_tib_all2  %>%   filter(D_263785082_D_263785082_D_837393880==1)
 prog_med= dtCOMBHOR %>%  mutate(meds= case_when(D_912818075=="647504893"~"Everyday",
                                          D_912818075=="862918284"~"0-9 per month",
@@ -5174,6 +5220,8 @@ dtCOMBHOR_summary %>%  gt(rowname_col = "row_lab") %>%
 ```{r SEPHOR, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Days per cycle used (separate pills)
+one_logic_funct2(D_138836502, D_263785082_D_263785082_D_944874693, 1, "SEPHOR: Days per Cycle Separate Pill Estrogen & Progestin Used")
+
 dtCOMBHOR= data_tib_all2  %>%   filter(D_263785082_D_263785082_D_944874693==1)
 seph_med= dtCOMBHOR %>%  mutate(meds= case_when(D_138836502=="647504893"~"Everyday",
                                          D_138836502=="862918284"~"0-9 per month",
@@ -5204,6 +5252,8 @@ dtseph_summary %>%  gt(rowname_col = "row_lab") %>%
   ) 
 
 #Days per cycle used (other)
+one_logic_funct2(D_290126991, D_263785082_D_263785082_D_807835037, 1, "SEPHOR2: Days per Cycle Other Estrogen & Progestin Used")
+
 dtCOMBHOR= data_tib_all2 %>%   filter(D_263785082_D_263785082_D_807835037==1)
 seph2_med= dtCOMBHOR %>%  mutate(meds= case_when(D_290126991=="647504893"~"Everyday",
                                          D_290126991=="862918284"~"0-9 per month",
@@ -5245,10 +5295,10 @@ one_logic_funct2(D_111235606, D_621744463, 353358909, "TESTTHER1: Used Testoster
 ```
 ```{r TESTHER2, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
-dtTESTTHER2= data_tib_all2  %>% filter(D_111235606==353358909)
 
 
-est_med= dtTESTTHER2 %>%  mutate(meds= case_when(D_946849196_D_729863969==1 ~ "Gel/Cream Testosterone",
+dtTESTTHER2= data_tib_all2  %>% filter(D_111235606==353358909) %>%  
+                      mutate(meds= case_when(D_946849196_D_729863969==1 ~ "Gel/Cream Testosterone",
                                              D_946849196_D_108104748==1 ~ "Testosterone Injection",
                                              D_946849196_D_717308596==1 ~ "Testosterone Skin Patch",
                                              D_946849196_D_746788766==1 ~ "Testosterone Pills",
@@ -5280,7 +5330,7 @@ testtr2_dx$testtr2_dx <- c("Gel/Cream Testosterone","Testosterone Injection","Te
 colnames(testtr2_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
 testt2 <- testtr2_dx[, c(4,1,2)]
 
-skipped_mhg1 <- sum(table(est_med$meds=="Skipped this question")[2])
+skipped_mhg1 <- sum(table(dtTESTTHER2$meds=="Skipped this question")[2])
 testt2[as.numeric(dim(testt2)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dtTESTTHER2)[[1]])*100,2))
 
 
@@ -5322,19 +5372,17 @@ boxp_funct_F(D_797076693,"TESTTHER3: Age Testosterone First Used", "Age")
 
 
 #How often
-
-
-dtTESTTHER2= data_tib_all2  %>% filter(D_111235606==353358909 & !(D_946849196_D_729863969==104430631 &  D_946849196_D_108104748==104430631  &
+test_med= data_tib_all2  %>% filter(D_111235606==353358909 & !(D_946849196_D_729863969==104430631 &  D_946849196_D_108104748==104430631  &
                                                                     D_946849196_D_717308596==104430631 &  D_946849196_D_746788766==104430631 &  
-                                                                    D_946849196_D_158214723==104430631 &  D_946849196_D_658810736==353358909))
-test_med= dtTESTTHER2 %>%  mutate(meds= case_when(D_984514646=="729363341"~"Daily(2+ times)",
+                                                                    D_946849196_D_158214723==104430631 &  D_946849196_D_658810736==353358909)) %>%  
+                        mutate(meds= case_when(D_984514646=="729363341"~"Daily(2+ times)",
                                               D_984514646=="181786871"~"Daily",
                                               D_984514646=="626911538"~"Every few days",
                                               D_984514646=="522395860"~"Once per Week",
                                               D_984514646=="814242010"~"Few times per Month",
                                               D_984514646=="235613392"~"Rarely",
                                              TRUE ~ "Skipped this question"))
-test_med$meds <- factor(test_med$meds,levels=c("Daily(2+ times)","Every few days","Once per Week","Few times per Month","Rarely","Skipped this question"))
+test_med$meds <- factor(test_med$meds,levels=c("Daily(2+ times)","Daily", "Every few days","Once per Week","Few times per Month","Rarely","Skipped this question"))
 
 dtTESTTHER2_summary <- test_med %>% group_by(meds) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
 
@@ -5407,11 +5455,13 @@ hist_funct(D_305195766_D_970604592,"PRESHOR6: Total Years Other Testosterone Use
 #warning=FALSE, echo=FALSE, message=FALSE
 
 #Work over last 12 months: sitting, arm movements
-#one_logic_funct2(D_392658845_D_699101535, D_613744428, 353358909, "WORKACTA: Work over last 12 months: Sitting with Arm Movements")
-fb_WORKACTA <- data_tib_all2 %>%  filter(data_tib_all2$D_613744428==353358909)
+levels=c("None", "Less than 30 minutes", "30 minutes", "45 minutes", "1 hour", "2 hour" , "3 to 4 hours", "5 to 6 hours", "7 to 8 hours", "9 hours or more", "Skipped this question")
+one_logic_funct2(D_392658845_D_699101535, D_613744428, 353358909, "WORKACTA: Work over last 12 months: Sitting with Arm Movements")
 
 
-WORKACTA_ans= fb_WORKACTA %>%  mutate(answer= case_when(D_392658845_D_699101535==503218834 ~ "None",
+
+WORKACTA_ans= data_tib_all2 %>%  filter(data_tib_all2$D_613744428==353358909) %>%  
+                                mutate(answer= case_when(D_392658845_D_699101535==503218834 ~ "None",
                                                         D_392658845_D_699101535==464753847 ~ "Less than 30 minutes",
                                                         D_392658845_D_699101535==729681071 ~ "30 minutes",
                                                         D_392658845_D_699101535==258023209 ~ "45 minutes",
@@ -5447,11 +5497,12 @@ dtWORKACTA_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 
-#one_logic_funct2(D_392658845_D_652561589, D_613744428, 353358909,"WORKACTB: Work over last 12 months: Standing with Walking")
-fb_WORKACTB <- data_tib_all2 %>%  filter(data_tib_all2$D_613744428==353358909)
+one_logic_funct2(D_392658845_D_652561589, D_613744428, 353358909,"WORKACTB: Work over last 12 months: Standing with Walking")
 
 
-WORKACTB_ans= fb_WORKACTB %>%  mutate(answer= case_when(D_392658845_D_652561589==503218834 ~ "None",
+
+WORKACTB_ans= data_tib_all2 %>%  filter(data_tib_all2$D_613744428==353358909) %>%  
+                                mutate(answer= case_when(D_392658845_D_652561589==503218834 ~ "None",
                                                         D_392658845_D_652561589==464753847 ~ "Less than 30 minutes",
                                                         D_392658845_D_652561589==729681071 ~ "30 minutes",
                                                         D_392658845_D_652561589==258023209 ~ "45 minutes",
@@ -5487,11 +5538,11 @@ dtWORKACTB_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 
-#one_logic_funct2(D_392658845_D_589522790, D_613744428, 353358909,"WORKACTC: Work over last 12 months: Walking and Carrying Materials")
-fb_WORKACTC <- data_tib_all2 %>%  filter(data_tib_all2$D_613744428==353358909)
+one_logic_funct2(D_392658845_D_589522790, D_613744428, 353358909,"WORKACTC: Work over last 12 months: Walking and Carrying Materials")
 
 
-WORKACTC_ans= fb_WORKACTC %>%  mutate(answer= case_when(D_392658845_D_652561589==503218834 ~ "None",
+WORKACTC_ans= data_tib_all2 %>%  filter(data_tib_all2$D_613744428==353358909) %>%  
+                              mutate(answer= case_when(D_392658845_D_652561589==503218834 ~ "None",
                                                         D_392658845_D_652561589==464753847 ~ "Less than 30 minutes",
                                                         D_392658845_D_652561589==729681071 ~ "30 minutes",
                                                         D_392658845_D_652561589==258023209 ~ "45 minutes",
@@ -5525,11 +5576,11 @@ dtWORKACTC_summary %>%  gt(rowname_col = "row_lab") %>%
   ) 
 
 
-##one_logic_funct(D_392658845_D_239572239, D_613744428, 353358909,"WORKACTD: Work over last 12 months: Walking and Heavy Manual Labor")
-fb_WORKACTD <- data_tib_all2 %>%  filter(data_tib_all2$D_613744428==353358909)
+one_logic_funct2(D_392658845_D_239572239, D_613744428, 353358909,"WORKACTD: Work over last 12 months: Walking and Heavy Manual Labor")
 
 
-WORKACTD_ans= fb_WORKACTD %>%  mutate(answer= case_when(D_392658845_D_239572239==503218834 ~ "None",
+WORKACTD_ans= data_tib_all2 %>%  filter(data_tib_all2$D_613744428==353358909) %>%  
+                                mutate(answer= case_when(D_392658845_D_239572239==503218834 ~ "None",
                                                         D_392658845_D_239572239==464753847 ~ "Less than 30 minutes",
                                                         D_392658845_D_239572239==729681071 ~ "30 minutes",
                                                         D_392658845_D_239572239==258023209 ~ "45 minutes",
@@ -5568,7 +5619,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
 ```{r SittingGrids, include=FALSE}
 #warning=FALSE, echo=FALSE, message=FALSE
 
- ##simple_funct1(D_649352910_D_654385712, "SITTINGA: Driving or Sitting in a Car, Bus, or Train") 
+simple_funct2(D_649352910_D_654385712, "SITTINGA: Driving or Sitting in a Car, Bus, or Train") 
 
 
  SITTINGA_ans= data_tib_all2 %>%  mutate(answer= case_when(D_649352910_D_654385712==503218834 ~ "None", 
@@ -5605,7 +5656,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
    )  
 
 
- ##simple_funct1(D_649352910_D_263483736, "SittingB: Watching TV or other Video Content") 
+simple_funct2(D_649352910_D_263483736, "SittingB: Watching TV or other Video Content") 
  SITTINGB_ans= data_tib_all2 %>%  mutate(answer= case_when(D_649352910_D_263483736==503218834 ~ "None", 
                                                          D_649352910_D_263483736==464753847 ~ "Less than 30 minutes", 
                                                          D_649352910_D_263483736==729681071 ~ "30 minutes", 
@@ -5640,7 +5691,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
    )  
 
 
- ##simple_funct1(D_649352910_D_806746224, "SittingC: Browsing or Playing Games") 
+simple_funct2(D_649352910_D_806746224, "SittingC: Browsing or Playing Games") 
  SITTINGC_ans= data_tib_all2 %>%  mutate(answer= case_when(D_649352910_D_806746224==503218834 ~ "None", 
                                                          D_649352910_D_806746224==464753847 ~ "Less than 30 minutes", 
                                                          D_649352910_D_806746224==729681071 ~ "30 minutes", 
@@ -5675,7 +5726,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
    )  
 
 
- ##simple_funct1(D_649352910_D_396649512, "SittingD: Other Activity") 
+simple_funct2(D_649352910_D_396649512, "SittingD: Other Activity") 
  SITTINGD_ans= data_tib_all2 %>%  mutate(answer= case_when(D_649352910_D_396649512==503218834 ~ "None", 
                                                          D_649352910_D_396649512==464753847 ~ "Less than 30 minutes", 
                                                          D_649352910_D_396649512==729681071 ~ "30 minutes", 
@@ -5715,7 +5766,8 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
 ```{r houre1a2e, include=FALSE}
 #warning=FALSE, echo=FALSE, message=FALSE
 
- ##simple_funct1(D_733547268_D_980120253, "HOUSE1A: Frequency of Light Household Chores") 
+levels=c("None", "Less than 30 minutes", "30 minutes", "45 minutes", "1 hour", "2 hour" , "3 to 4 hours", "5 to 6 hours", "7 to 8 hours", "9 hours or more", "Skipped this question")
+simple_funct2(D_733547268_D_980120253, "HOUSE1A: Frequency of Light Household Chores") 
  HOUSE1A_ans= data_tib_all2 %>%  mutate(answer= case_when(D_733547268_D_980120253==503218834 ~ "None", 
                                                          D_733547268_D_980120253==464753847 ~ "Less than 30 minutes", 
                                                          D_733547268_D_980120253==729681071 ~ "30 minutes", 
@@ -5750,7 +5802,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
    )  
 
 
- ##simple_funct1(D_733547268_D_993029890, "HOUSE1B: Frequency of Moderate to Vigorous Household Chores") 
+simple_funct2(D_733547268_D_993029890, "HOUSE1B: Frequency of Moderate to Vigorous Household Chores") 
  HOUSE1B_ans= data_tib_all2 %>%  mutate(answer= case_when(D_733547268_D_993029890==503218834 ~ "None", 
                                                          D_733547268_D_993029890==464753847 ~ "Less than 30 minutes", 
                                                          D_733547268_D_993029890==729681071 ~ "30 minutes", 
@@ -5785,7 +5837,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
    )  
 
 
- ##simple_funct1(D_733547268_D_980196073, "HOUSE1C: Frequency of Caring for Pets") 
+simple_funct2(D_733547268_D_980196073, "HOUSE1C: Frequency of Caring for Pets") 
  HOUSE1C_ans= data_tib_all2 %>%  mutate(answer= case_when(D_733547268_D_980196073==503218834 ~ "None", 
                                                          D_733547268_D_980196073==464753847 ~ "Less than 30 minutes", 
                                                          D_733547268_D_980196073==729681071 ~ "30 minutes", 
@@ -5820,7 +5872,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
    )  
 
 
- ##simple_funct1(D_733547268_D_115422925, "HOUSE1D: Frequency of Caring for Kids/Adults") 
+simple_funct2(D_733547268_D_115422925, "HOUSE1D: Frequency of Caring for Kids/Adults") 
  HOUSE1D_ans= data_tib_all2 %>%  mutate(answer= case_when(D_733547268_D_980196073==503218834 ~ "None", 
                                                          D_733547268_D_980196073==464753847 ~ "Less than 30 minutes", 
                                                          D_733547268_D_980196073==729681071 ~ "30 minutes", 
@@ -5856,7 +5908,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 
- ##simple_funct1(D_733547268_D_151161693, "HOUSE1E: Frequency of Walking while Shopping") 
+ simple_funct2(D_733547268_D_151161693, "HOUSE1E: Frequency of Walking while Shopping") 
  HOUSE1E_ans= data_tib_all2 %>%  mutate(answer= case_when(D_733547268_D_151161693==503218834 ~ "None", 
                                                          D_733547268_D_151161693==464753847 ~ "Less than 30 minutes", 
                                                          D_733547268_D_151161693==729681071 ~ "30 minutes", 
@@ -6066,7 +6118,6 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
 ```{r Lawn, include=FALSE}
 #warning=FALSE, echo=FALSE, message=FALSE
 
-
  chore_type= data_tib_all2 %>%  mutate(chore= case_when(D_204421360_D_797221287==1 ~ "Moderate Chores", 
                                               D_204421360_D_500744195==1 ~ "Vigorous Chores", 
                                               D_204421360_D_383015037==1 ~ "Home Repair", 
@@ -6133,7 +6184,8 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
  #How often- moderate 
- ##one_logic_funct(D_992022740,D_204421360_D_797221287,1,"LAWN3A: Frequency of Moderate Outdoor Chores") 
+ levels=c("Once a month or less", "2-3 days per month", "1-2 days per week", "3-4 days per week", "5-6 days per week", "Every day", "Skipped this question" )
+one_logic_funct2(D_992022740,D_204421360_D_797221287,1,"LAWN3A: Frequency of Moderate Outdoor Chores") 
  LAWN3A <- data_tib_all2 %>%  filter(D_204421360_D_797221287==1) 
  LAWN3A_ans= LAWN3A %>%  mutate(answer= case_when(D_992022740==239152340 ~ "Once a month or less", 
                                                          D_992022740==582006876 ~ "2-3 days per month", 
@@ -6166,7 +6218,8 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
  #Time per day- moderate 
- ##one_logic_funct(D_429531329,D_204421360_D_797221287,1,"LAWN4A: Time Spent on Moderate Outdoor Chores") 
+ levels=c("15 minutes or less", "16 to 30 minutes", "31 to 44 minutes", "45 to 59 minutes", "1 hour", "2 hours", "3 hours or more", "Skipped this question" )
+one_logic_funct2(D_429531329,D_204421360_D_797221287,1,"LAWN4A: Time Spent on Moderate Outdoor Chores") 
  LAWN4A <- data_tib_all2 %>%  filter(D_204421360_D_797221287==1) 
  LAWN4A_ans= LAWN4A %>%  mutate(answer= case_when(D_429531329==428999623 ~ "15 minutes or less", 
                                                          D_429531329==248303092 ~ "16 to 30 minutes", 
@@ -6237,7 +6290,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
    )  
 
  #How often- vigorous 
- ##one_logic_funct(D_888313306,D_204421360_D_500744195,1,"LAWN3B: Frequency of Vigorous Outdoor Chores") 
+one_logic_funct2(D_888313306,D_204421360_D_500744195,1,"LAWN3B: Frequency of Vigorous Outdoor Chores") 
  LAWN3B <- data_tib_all2 %>%  filter(D_204421360_D_500744195==1) 
  LAWN3B_ans= LAWN3B %>%  mutate(answer= case_when(D_888313306==239152340 ~ "Once a month or less", 
                                                          D_888313306==582006876 ~ "2-3 days per month", 
@@ -6271,7 +6324,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
  #Time per day- vigorous 
- ##one_logic_funct(D_644018981,D_204421360_D_500744195,1,"LAWN4B: Time Spent on Vigorous Outdoor Chores") 
+one_logic_funct2(D_644018981,D_204421360_D_500744195,1,"LAWN4B: Time Spent on Vigorous Outdoor Chores") 
  LAWN4B <- data_tib_all2 %>%  filter(D_204421360_D_500744195==1) 
  LAWN4B_ans= LAWN4B %>%  mutate(answer= case_when(D_644018981==428999623 ~ "15 minutes or less", 
                                                          D_644018981==248303092 ~ "16 to 30 minutes", 
@@ -6341,7 +6394,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
  #How often- home repair 
- ##one_logic_funct(D_352531133,D_204421360_D_383015037,1,"LAWN3B: Frequency of Home Repair") 
+one_logic_funct2(D_352531133,D_204421360_D_383015037,1,"LAWN3B: Frequency of Home Repair") 
  LAWN3C <- data_tib_all2 %>%  filter(D_204421360_D_383015037==1) 
  LAWN3C_ans= LAWN3C %>%  mutate(answer= case_when(D_352531133==239152340 ~ "Once a month or less", 
                                                          D_352531133==582006876 ~ "2-3 days per month", 
@@ -6375,7 +6428,7 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
  #Time per day- home repair 
- ##one_logic_funct(D_267261558,D_204421360_D_383015037,1,"LAWN4B: Time Spent on Home Repair") 
+one_logic_funct2(D_267261558,D_204421360_D_383015037,1,"LAWN4B: Time Spent on Home Repair") 
  LAWN4C <- data_tib_all2 %>%  filter(D_204421360_D_383015037==1) 
  LAWN4C_ans= LAWN4C %>%  mutate(answer= case_when(D_267261558==428999623 ~ "15 minutes or less", 
                                                          D_267261558==248303092 ~ "16 to 30 minutes", 
@@ -6418,7 +6471,9 @@ dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
 # SLEEPSCHB 
 ```{r SLEEPSCHB, warning=FALSE, echo=FALSE, message=FALSE}
 
- ##one_logic_funct(D_168431681,D_591723682,"353358909","SLEEPSCHB: Days per Week Sleep Determined by Job or School") 
+levels=c("1 Day per Week","2 Days per Week", "3 Days per Week", "4 Days per Week", "5 Days per Week", "6 Days per Week", "7 Days per Week","Skipped this question")
+one_logic_funct2(D_168431681,D_591723682,"353358909","SLEEPSCHB: Days per Week Sleep Determined by Job or School") 
+
  SLEEPSCHB <- data_tib_all2 %>%  filter(D_591723682==353358909) 
  SLEEPSCHB_ans= SLEEPSCHB %>%  mutate(answer= case_when(D_168431681==349122068 ~ "1", 
                                                          D_168431681==156095877 ~ "2", 
@@ -6552,8 +6607,8 @@ one_logic_funct2(D_823541843, D_591723682,353358909, "SLEEP2M: Ability to Choose
 # SLHABIT1A-G
 ```{r SLHABIT1, warning=FALSE, echo=FALSE, message=FALSE}
 
-
-##simple_funct1(D_421859821_D_220238240, "SLHABIT1A: Having Trouble Falling Asleep")
+levels=c("No", "Yes, less than once per week", "Yes, 1 or 2 times per week", "Yes, 3 or 4 times per week", "Yes, 5 or more times per week", "Skipped this question")
+simple_funct2(D_421859821_D_220238240, "SLHABIT1A: Having Trouble Falling Asleep")
 
 SLHABIT1A_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_220238240==104430631 ~ "No",
                                                      D_421859821_D_220238240==525779785 ~ "Yes, less than once per week",
@@ -6591,7 +6646,7 @@ dtSLHABIT1A_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 #Wake up several times
 
-##simple_funct1(D_421859821_D_151006826, "SLHABIT1B: Waking up Several Times per Night")
+simple_funct2(D_421859821_D_151006826, "SLHABIT1B: Waking up Several Times per Night")
 
 SLHABIT1B_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_151006826==104430631 ~ "No",
                                                      D_421859821_D_151006826==525779785 ~ "Yes, less than once per week",
@@ -6629,7 +6684,7 @@ dtSLHABIT1B_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 #Wake up early
 
-##simple_funct1(D_421859821_D_965290070, "SLHABIT1C: Waking up Too early")
+simple_funct2(D_421859821_D_965290070, "SLHABIT1C: Waking up Too early")
 
 SLHABIT1C_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_965290070==104430631 ~ "No",
                                                      D_421859821_D_965290070==525779785 ~ "Yes, less than once per week",
@@ -6666,7 +6721,7 @@ dtSLHABIT1C_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 #Getting back to sleep
 
-##simple_funct1(D_421859821_D_781115321, "SLHABIT1D: Trouble Falling Back Asleep")
+simple_funct2(D_421859821_D_781115321, "SLHABIT1D: Trouble Falling Back Asleep")
 
 SLHABIT1D_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_781115321==104430631 ~ "No",
                                                      D_421859821_D_781115321==525779785 ~ "Yes, less than once per week",
@@ -6703,7 +6758,7 @@ dtSLHABIT1D_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 #sleeping pills
 
-##simple_funct1(D_421859821_D_453071098, "SLHABIT1E: Prescription Sleep Medication Taken")
+simple_funct2(D_421859821_D_453071098, "SLHABIT1E: Prescription Sleep Medication Taken")
 
 SLHABIT1E_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_453071098==104430631 ~ "No",
                                                      D_421859821_D_453071098==525779785 ~ "Yes, less than once per week",
@@ -6740,7 +6795,7 @@ dtSLHABIT1E_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 #Irritable
-##simple_funct1(D_421859821_D_513065503, "SLHABIT1F: Sleep Problems causing Irritability")
+simple_funct2(D_421859821_D_513065503, "SLHABIT1F: Sleep Problems causing Irritability")
 
 SLHABIT1F_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_513065503==104430631 ~ "No",
                                                      D_421859821_D_513065503==525779785 ~ "Yes, less than once per week",
@@ -6778,7 +6833,7 @@ dtSLHABIT1F_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 #Tired during the day
 
-##simple_funct1(D_421859821_D_257137378, "SLHABIT1G: Feeling Tired Throughout the day")
+simple_funct2(D_421859821_D_257137378, "SLHABIT1G: Feeling Tired Throughout the day")
 
 SLHABIT1G_ans= data_tib_all2 %>%  mutate(answer= case_when(D_421859821_D_257137378==104430631 ~ "No",
                                                      D_421859821_D_257137378==525779785 ~ "Yes, less than once per week",
@@ -6818,7 +6873,8 @@ dtSLHABIT1G_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ```{r SLHABIT2, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Sleep last 4 weeks
-##simple_funct1(D_910856756, "SLHABIT2: Sleep Quality in the Last Four Weeks")
+levels=c("Very sound or restful", "Sound and restful", "Average quality", "Restless", "Very restless", "Skipped this question" )
+simple_funct2(D_910856756, "SLHABIT2: Sleep Quality in the Last Four Weeks")
 SLHABIT2_ans= data_tib_all2 %>%  mutate(answer= case_when(D_910856756==462478011 ~ "Very sound or restful",
                                                      D_910856756==303095574 ~ "Sound and restful",
                                                      D_910856756==838403733 ~ "Average quality",
@@ -6855,7 +6911,8 @@ dtSLHABIT2_summary %>%  gt(rowname_col = "row_lab") %>%
 
 ##Chance of Falling asleep while:
 #sitting and reading
-##simple_funct1(D_981441822_D_403155173, "SLHABIT3A: Chance of Falling Asleep while Sitting and Reading")
+levels=c("No chance", "Slight chance", "Moderate chance", "High Chance", "Skipped this question" )
+simple_funct2(D_981441822_D_403155173, "SLHABIT3A: Chance of Falling Asleep while Sitting and Reading")
 SLHABIT3A_ans= data_tib_all2 %>%  mutate(answer= case_when(D_981441822_D_403155173==514068832 ~ "No chance",
                                                      D_981441822_D_403155173==774439579 ~ "Slight chance",
                                                      D_981441822_D_403155173==747099514 ~ "Moderate chance",
@@ -6885,7 +6942,7 @@ dtSLHABIT3A_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #watch tv
-##simple_funct1(D_981441822_D_576621769, "SLHABIT3B: Chance of Falling Asleep while Watching TV")
+simple_funct2(D_981441822_D_576621769, "SLHABIT3B: Chance of Falling Asleep while Watching TV")
 SLHABIT3B_ans= data_tib_all2 %>%  mutate(answer= case_when(D_981441822_D_403155173==514068832 ~ "No chance",
                                                      D_981441822_D_403155173==774439579 ~ "Slight chance",
                                                      D_981441822_D_403155173==747099514 ~ "Moderate chance",
@@ -6915,7 +6972,7 @@ dtSLHABIT3B_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #sitting inactive
-##simple_funct1(D_981441822_D_988508028, "SLHABIT3C: Chance of Falling Asleep while Sitting Inactive")
+simple_funct2(D_981441822_D_988508028, "SLHABIT3C: Chance of Falling Asleep while Sitting Inactive")
 SLHABIT3C_ans= data_tib_all2 %>%  mutate(answer= case_when(D_981441822_D_403155173==514068832 ~ "No chance",
                                                      D_981441822_D_403155173==774439579 ~ "Slight chance",
                                                      D_981441822_D_403155173==747099514 ~ "Moderate chance",
@@ -6944,7 +7001,7 @@ dtSLHABIT3C_summary %>%  gt(rowname_col = "row_lab") %>%
   ) 
 
 #riding passenger
-##simple_funct1(D_981441822_D_186488870, "SLHABIT3D: Chance of Falling Asleep while Sitting as a Passenger in the Car")
+simple_funct2(D_981441822_D_186488870, "SLHABIT3D: Chance of Falling Asleep while Sitting as a Passenger in the Car")
 SLHABIT3D_ans= data_tib_all2 %>%  mutate(answer= case_when(D_981441822_D_403155173==514068832 ~ "No chance",
                                                      D_981441822_D_403155173==774439579 ~ "Slight chance",
                                                      D_981441822_D_403155173==747099514 ~ "Moderate chance",
@@ -6973,7 +7030,7 @@ dtSLHABIT3D_summary %>%  gt(rowname_col = "row_lab") %>%
   ) 
 
 #lying in the afternoon
-##simple_funct1(D_981441822_D_922388461, "SLHABIT3E: Chance of Falling Asleep while Lying Resting in the Afternoon")
+simple_funct2(D_981441822_D_922388461, "SLHABIT3E: Chance of Falling Asleep while Lying Resting in the Afternoon")
 SLHABIT3E_ans= data_tib_all2 %>%  mutate(answer= case_when(D_981441822_D_403155173==514068832 ~ "No chance",
                                                      D_981441822_D_403155173==774439579 ~ "Slight chance",
                                                      D_981441822_D_403155173==747099514 ~ "Moderate chance",
@@ -7003,7 +7060,7 @@ dtSLHABIT3E_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #sitting talking
-##simple_funct1(D_981441822_D_760686611, "SLHABIT3F: Chance of Falling Asleep while Sitting and Talking")
+simple_funct2(D_981441822_D_760686611, "SLHABIT3F: Chance of Falling Asleep while Sitting and Talking")
 SLHABIT3F_ans= data_tib_all2 %>%  mutate(answer= case_when(D_981441822_D_403155173==514068832 ~ "No chance",
                                                      D_981441822_D_403155173==774439579 ~ "Slight chance",
                                                      D_981441822_D_403155173==747099514 ~ "Moderate chance",
@@ -7033,7 +7090,7 @@ dtSLHABIT3F_summary %>%  gt(rowname_col = "row_lab") %>%
 
 
 #siting after lunch w/o alc
-##simple_funct1(D_981441822_D_354550061, "SLHABIT3G: Chance of Falling Asleep while Sitting after Lunch w/o Alcohol")
+simple_funct2(D_981441822_D_354550061, "SLHABIT3G: Chance of Falling Asleep while Sitting after Lunch w/o Alcohol")
 SLHABIT3G_ans= data_tib_all2 %>%  mutate(answer= case_when(D_981441822_D_403155173==514068832 ~ "No chance",
                                                      D_981441822_D_403155173==774439579 ~ "Slight chance",
                                                      D_981441822_D_403155173==747099514 ~ "Moderate chance",
@@ -7062,7 +7119,7 @@ dtSLHABIT3G_summary %>%  gt(rowname_col = "row_lab") %>%
   ) 
 
 #traffic light
-##simple_funct1(D_981441822_D_179705366, "SLHABIT3H: Chance of Falling Asleep while Stopped at a Traffic Light")
+simple_funct2(D_981441822_D_179705366, "SLHABIT3H: Chance of Falling Asleep while Stopped at a Traffic Light")
 SLHABIT3H_ans= data_tib_all2 %>%  mutate(answer= case_when(D_981441822_D_403155173==514068832 ~ "No chance",
                                                      D_981441822_D_403155173==774439579 ~ "Slight chance",
                                                      D_981441822_D_403155173==747099514 ~ "Moderate chance",
@@ -7096,7 +7153,7 @@ dtSLHABIT3H_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   ) %>% opt_row_striping()
 
 #dinner table
-##simple_funct1(D_981441822_D_955609858, "SLHABIT3I: Chance of Falling Asleep while at the Dinner Table")
+simple_funct2(D_981441822_D_955609858, "SLHABIT3I: Chance of Falling Asleep while at the Dinner Table")
 SLHABIT3I_ans= data_tib_all2 %>%  mutate(answer= case_when(D_981441822_D_403155173==514068832 ~ "No chance",
                                                      D_981441822_D_403155173==774439579 ~ "Slight chance",
                                                      D_981441822_D_403155173==747099514 ~ "Moderate chance",
@@ -7148,7 +7205,8 @@ simple_funct2(D_471018082, "SLHABIT4: Ever Fallen Asleep while Driving")
 simple_funct2(D_940733450, "SNORING1: Do you Snore?")
 
 #Describe snoring
-#one_logic_funct2(D_406137786, D_940733450, 353358909, "SNORING2: Describe your Snoring")
+levels=c("Slightly Louder Than Breathing", "As Loud As Talking", "Louder Than Talking", "Unknown", "Skipped this question" )
+one_logic_funct2(D_406137786, D_940733450, 353358909, "SNORING2: Describe your Snoring")
 SNORING2 <- data_tib_all2 %>%  filter(D_940733450==353358909)
 SNORING2_ans= SNORING2 %>%  mutate(answer= case_when(D_406137786==624808470 ~ "Slightly Louder Than Breathing",
                                                        D_406137786==137254299 ~ "As Loud As Talking",
@@ -7178,7 +7236,8 @@ dtSNORING2_summary %>%  gt(rowname_col = "row_lab") %>%
   ) 
 
 #How often
-#one_logic_funct2(D_631303960, D_940733450, 353358909, "SNORING3: Frequency of Snoring")
+levels=c("0-1 times per month","1-2 times per month","1-2 times per week","3-4 times per week","Almost Every Day", "Unknown", "Skipped this question")
+one_logic_funct2(D_631303960, D_940733450, 353358909, "SNORING3: Frequency of Snoring")
 SNORING3 <- data_tib_all2 %>%  filter(D_940733450==353358909)
 SNORING3_ans= SNORING3 %>%  mutate(answer= case_when(D_631303960==718687985 ~ "Almost every day",
                                                      D_631303960==471294296 ~ "3 to 4 times per week",
@@ -7215,7 +7274,7 @@ one_logic_funct2(D_876846761, D_940733450, 353358909, "SNORING4: Snoring Bothers
 
 
 #Stop breathing
-#one_logic_funct2(D_756521698, D_940733450, 353358909, "SNORING5: Frequency you Stop Breathing while Sleeping")
+one_logic_funct2(D_756521698, D_940733450, 353358909, "SNORING5: Frequency you Stop Breathing while Sleeping")
 SNORING5 <- data_tib_all2 %>%  filter(D_940733450==353358909)
 SNORING5_ans= SNORING5 %>%  mutate(answer= case_when(D_756521698==718687985 ~ "Almost every day",
                                                      D_756521698==471294296 ~ "3 to 4 times per week",
@@ -7391,38 +7450,9 @@ tab_footnote(
 ```{r ShiftWork, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Ever
-#simple_funct2(D_674976924, "SHIFTWORK: Worked as a Shift Worker")
-shiftw1= data_tib_all2 %>%  mutate(meds= case_when(D_674976924== 958538953 ~ "Yes, in Last 3 months",
-                                                   D_674976924== 274062548 ~ "Yes, Over 3 months Ago",
-                                                     D_674976924== 104430631 ~ "No",
-                                                     TRUE ~ "Skipped this question"))
+levels=c("Yes, in Last 3 months","Yes, Over 3 months Ago","No","Skipped this question")
+simple_funct2(D_674976924, "SHIFTWORK: Worked as a Shift Worker")
 
-shiftw1$meds <- factor(shiftw1$meds,levels=c("Yes, in Last 3 months","Yes, Over 3 months Ago","No","Skipped this question"))
-
-shiftw1_summary <- shiftw1 %>% group_by(meds) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
-
-
-shiftw1_summary %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("SHIFTWORK: Worked as a Shift Worker")) %>% 
-  cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-    stub.font.weight = "bold"
-  ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = meds,
-    )
-  ) 
 
 #Time started
   merge_m2$hour_nw <- as.numeric(ifelse(as.numeric(str_sub(merge_m2$D_195662769,1,2))>9, str_sub(merge_m2$D_195662769,1,2), str_sub(merge_m2$D_195662769,2,2))) #clock times, so 0=00, 1=01, ect.
@@ -7568,7 +7598,7 @@ dict <- list("104430631"="No", "353358909"="Yes", "265550580"="Didn't Drink ", "
              "480609810"="1 day per Week", "485011582"="A Few Days per Month", "865134801"="One Day per Month", 
              "648960871"="Never", "503218834"="0",   "759356722"="1",  "668407984"="2", "448069154"="3",  "485163252"="4", "160036380"="5+", "648665281"="1",   "420091116"="2", "412554346"="3",
              "475454159"="4", "312200270"="5","411022152"="6+", "249485680"="Blistering Sunburn",  "646918928"="Sunburn w/o Blisters", "692155653"="Mild Sunburn, Eventual Tan", 
-             "899670578"="A Tan wWithout Sunburn", "455468743"="No Skin Color Change", "503218834"="None",  "961021302"="1-2", "953684708"="3-4", "922737557"="5-9", "945387130"="10+",
+             "899670578"="A Tan Without Sunburn", "455468743"="No Skin Color Change", "503218834"="None",  "961021302"="1-2", "953684708"="3-4", "922737557"="5-9", "945387130"="10+",
              "178420302"="Unknown", "648960871"="Never",  "235613392"="Rarely",  "132099255"="Sometimes", "211590917"="Often",  "907579123"="Always", "905073380"="All exposed Areas", 
              "223461539"="Some Exposed Areas", "901521065"="Face or Head Only", "445549128"="Less Than 15","995736452"="15-20",  "120045322"="21-35", "190125431"="36-50",  "133730190"="51+",
              "102445389"="1-9 Times", "388196732"="10-49 Times", "649327523"="50-99 Times","587052987"="100-249", "838336013"="250+", "676516297"="Everyday", "511873578"="A few Days per Week",
@@ -7577,7 +7607,7 @@ dict <- list("104430631"="No", "353358909"="Yes", "265550580"="Didn't Drink ", "
              "834817071"="Light", "385246065"="Medium", "189414295"="Dark", "482157734"="Very dark", "259218831"="No Freckles",  "519761171"="A few", "800179850"="Some", "455684772"="A lot",
              "425604618"="1",  "914302382"="2", "835682347"="3", "562508684"="4", "180306463"="5", "413495952"="6+", "332226274"="1",  "549638643"="2", "939235325"="3", "473673527"="4",
              "290010251"="5","355205294"="6+", "968093023"="1",   "545630587"="2","526602834"="3", "905402667"="4", "900343645"="5","554549266"="6+", "437269318"="Recreation", "838317013"="As Medicine",
-             "585672584"="Both", "807835037"="Other", "746038746"="Prefer Not to Answer")
+             "585672584"="Both", "807835037"="Other", "746038746"="Prefer Not to Answer", "111520945"="Not At All", "548628123"="A Little Bit", "597477164"="A Lot")
 
 
 
@@ -7646,18 +7676,21 @@ one_logic_funct3 <- function(CID, CID_prev, Prev_Answer, Title){
 ```{r skinsun, warning=FALSE, echo=FALSE, message=FALSE}
 
 #SKINSUN   #Adjust to Age Chart Filter
+levels=c("No Skin Color Change", "A Tan Without Sunburn", "Mild Sunburn, Eventual Tan","Sunburn w/o Blisters","Blistering Sunburn", "Skipped this question")
 simple_funct3(D_863593410, "SKINSUN: Skin Reaction of Being in the Sun for an Hour Without Sunscreen")
 ```
 # BLISTERING
 ```{r blister, warning=FALSE, echo=FALSE, message=FALSE}
 
 #BLISTERING
+levels=c("None", "1-2", "3-4", "5-9", "10+","Unknown")
 simple_funct3(D_525152373, "BLISTERING: Number of Blistering Sunburns over Lifetime")
 ```
 # TANOUT12, TANOUTADU
 ```{r tanout, warning=FALSE, echo=FALSE, message=FALSE}
 
 #TANOUT12
+levels=c("Never",  "Rarely",  "Sometimes", "Often",  "Always")
 simple_funct3(D_146319128, "TANOUT12: Frequency of Sunbathing to Get a Tan in the past Year")
 
 
