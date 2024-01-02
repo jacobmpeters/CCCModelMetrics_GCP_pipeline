@@ -1960,11 +1960,11 @@ for (i in 1: length(cnames)){
 #sql_M1_1 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
 #sql_M1_2 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
 
-#Only these variables carry over from mod1 into mod2:
+#Only these variables carry over from mod1 into mod2/mod3/mod4: 
   #sex, sex2, gen, work
 #Going to see if only these are selected, if it will allow the automation to run
-sql_M1_1 <- bq_project_query(project, query="SELECT Connect_ID, D_407056417, D_750420077_D_846483618, D_750420077_D_505282171, D_750420077_D_578416151, D_750420077_D_434651539, D_750420077_D_108025529, D_289664241_D_289664241, D_613744428 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
-sql_M1_2 <- bq_project_query(project, query="SELECT Connect_ID, D_407056417, D_750420077_D_582784267, D_750420077_D_751402477, D_750420077_D_700100953, D_750420077_D_846483618, D_750420077_D_505282171, D_750420077_D_578416151, D_750420077_D_434651539, D_750420077_D_108025529, D_289664241_D_289664241, D_613744428 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
+sql_M1_1 <- bq_project_query(project, query="SELECT Connect_ID, D_407056417, D_750420077_D_846483618, D_750420077_D_505282171, D_750420077_D_578416151, D_750420077_D_434651539, D_750420077_D_108025529, D_289664241_D_289664241, D_613744428, D_784967158 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
+sql_M1_2 <- bq_project_query(project, query="SELECT Connect_ID, D_407056417, D_750420077_D_582784267, D_750420077_D_751402477, D_750420077_D_700100953, D_750420077_D_846483618, D_750420077_D_505282171, D_750420077_D_578416151, D_750420077_D_434651539, D_750420077_D_108025529, D_289664241_D_289664241, D_613744428, D_784967158  FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
 
 
 M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64") #1436 #1436 vars: 1507 01112023 
