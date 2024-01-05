@@ -4591,8 +4591,10 @@ one_logic_funct2(D_424047361, D_939897560, 353358909, "FERT3: Sought medical adv
 
 ```{r Fert4, include=FALSE}
 
-preg_iss= fb %>% filter(D_424047361==353358909) %>%  
-                      mutate(issue= case_when(D_548355426_D_548355426_D_342735868==1 ~ "Tubal blockage",
+dtfert4= fb %>% filter(D_424047361==353358909) 
+
+
+preg_iss= dtfert4 %>%  mutate(issue= case_when(D_548355426_D_548355426_D_342735868==1 ~ "Tubal blockage",
                                              D_548355426_D_548355426_D_990599372==1 ~ "Ovary or hormone problem",
                                              D_548355426_D_548355426_D_863286658==1 ~ "Endometriosis",
                                              D_548355426_D_548355426_D_202355614==1 ~ "Cervical mucus",
@@ -4604,7 +4606,8 @@ preg_iss= fb %>% filter(D_424047361==353358909) %>%
 
  
 preg_issues<- preg_iss[, grepl("548355426", colnames(preg_iss))]
-painmds <- preg_issues[, c(3,9,8,2,1,5,4,6 )]
+preg_issues
+painmds <- preg_issues[, c(3,8,7,2,1,5,4,6 )]
 
 medsp_dx <- NULL
 for (i in 1:8){
@@ -4669,7 +4672,7 @@ one_logic_funct2(D_224681201, D_407056417, 536341288, "FERT5: Ever used fertilit
 fert_med=  fb %>% filter(D_224681201==353358909) %>%  
                       mutate(meds= case_when(D_881200765_D_881200765_D_619799524==1 ~ "Chlomid",
                                              D_881200765_D_881200765_D_663814928==1 ~ "Injectables",
-                                             D_881200765_D_881200765_D_642004888==1 ~ "Danazol",
+                                             D_881200765_D_881200765_D_642004888==1 ~ "Danazol", 
                                              D_881200765_D_881200765_D_454641975==1 ~ "Danocrine",
                                              D_881200765_D_881200765_D_256131117==1 ~ "Hcg",
                                              D_881200765_D_881200765_D_532607252==1 ~ "Milophene",
@@ -4678,22 +4681,16 @@ fert_med=  fb %>% filter(D_224681201==353358909) %>%
                                              D_881200765_D_881200765_D_100181644==1 ~ "Pergonal",
                                              D_881200765_D_881200765_D_372219003==1 ~ "Serophene",
                                              D_881200765_D_881200765_D_743731422==1 ~ "Synarel",
-                                             D_881200765_D_881200765_D_807835037==1 ~ "Other",
+                                             D_881200765_D_881200765_D_807835037==1 ~ "Other",#
                                              D_881200765_D_881200765_D_535003378==1 ~ "None of the above",
                                              TRUE  ~ "Skipped this question"))
 
 
-tmpFERT6 <- data_tib_all2 %>%  filter(data_tib_all2$D_224681201==353358909 & data_tib_all2$D_407056417==536341288)
-tmpF6<- tmpFERT6[, grepl("881200765", colnames(tmpFERT6))]
-tmpF6$D_881200765_D_762700622 <- ifelse(is.na(tmpF6$D_881200765_D_762700622), 0, 1)
+#tmpFERT6 <- data_tib_all2 %>%  filter(data_tib_all2$D_224681201==353358909 & data_tib_all2$D_407056417==536341288)
+tmpF6<- fert_med[, grepl("881200765", colnames(fert_med))]
+tmpF6
 
-
-# tmp2_1 <- data_tib_all2 %>%  select(D_881200765_D_881200765_D_619799524, D_881200765_D_881200765_D_663814928, D_881200765_D_881200765_D_642004888, D_881200765_D_881200765_D_454641975, D_881200765_D_881200765_D_256131117,
-#                                     D_881200765_D_881200765_D_532607252, D_881200765_D_881200765_D_459188493, D_881200765_D_881200765_D_304927036, D_881200765_D_881200765_D_100181644, D_881200765_D_881200765_D_372219003,
-#                                     D_881200765_D_881200765_D_743731422, D_881200765_D_881200765_D_807835037, D_881200765_D_881200765_D_535003378) %>% 
-                                  #filter(data_tib_all2$D_224681201==353358909 & data_tib_all2$D_407056417==536341288)
-
-tmp2_1 <- tmpF6[, c(10, 12, 11, 5, 3, 8, 7, 4, 2, 5,13, 15, 9)]
+tmp2_1 <- tmpF6[, c(10, 12, 11, 6, 3, 8, 7, 4, 2, 5, 13, 14, 9)]
 fert6_dx <- NULL
 for (i in 1:13){
   dt <- as.data.frame(tab1(tmp2_1[,i])$output.table)
@@ -4707,7 +4704,7 @@ for (i in 1:13){
 #fert6_dx$fert6_dx 
 
 #fert6_dx$fert6_dx <- c("Other specified", "Pergonal", "hCG", "Nolvadex", "Seophene", "Danocrine", "Lupron depot", "Milophene", "None of the above", "Clomid", "Danazol", "Gonadotropins", "Synarel nasal solution", "Other specified-double nested", "Other Medication")
-fert6_dx$fert6_dx <- c("Clomid","Gonadotropins","Danazol","Danocrine","hCG","Milophene","Lupron depot","Nolvadex","Pergonal","Seophene","Synarel nasal solution", "Other Medication", "None of the above")
+fert6_dx$fert6_dx <- c("Clomid","Injectables","Danazol","Danocrine","hCG","Milophene","Lupron depot","Nolvadex","Pergonal","Seophene","Synarel nasal solution", "Other Medication", "None of the above")
 ```
 
 ```{r Fert6Table, warning=FALSE, echo=FALSE, message=FALSE}
