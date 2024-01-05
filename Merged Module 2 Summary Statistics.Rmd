@@ -195,32 +195,6 @@ knitr::opts_chunk$set(comment = NA)
 
 ```{r M2functions, warning=FALSE, include=FALSE}
 
-#Histogram 
-hist_funct <- function(CID,Title, Xlab, Ylab) {
-  CID_SYM <- rlang::ensym(CID)
-  data_tib_base %>% mutate(!!CID_SYM:=as.numeric(!!CID_SYM)) %>%
-    filter(!is.na(!!CID_SYM)) %>%
-    ggplot(aes(x=!!CID_SYM))+
-    xlab(Xlab) + ylab(Ylab) + geom_histogram()+  ggtitle(Title)+
-    geom_histogram(color="black")+ scale_y_continuous(breaks=pretty_breaks()) +
-    #scale_fill_discrete(name = "Sex at Birth", labels=c("Female", "Male"))+
-    geom_vline(aes(xintercept=mean(!!CID_SYM, na.rm=T)), colour="red", linetype="solid")
-  
-}
-
-
-
-#Boxplot
-boxp_funct <- function(CID,Title, Xlab) {
-  CID_SYM <- rlang::ensym(CID)
-  data_tib_base %>% mutate(!!CID_SYM:=as.numeric(!!CID_SYM)) %>%
-    filter(!is.na(!!CID_SYM)) %>%
-    ggplot(aes(x=!!CID_SYM))+
-    xlab(Xlab) + geom_boxplot()+  ggtitle(Title)+
-    theme(axis.text.y=element_blank(),  #remove y axis labels
-        axis.ticks.y=element_blank()  #remove y axis ticks
-        )
-}
 
 
 
@@ -3742,8 +3716,9 @@ preg_iss= dtfert4 %>%  mutate(issue= case_when(D_548355426_D_548355426_D_3427358
                                              TRUE~ "Skipped this question"))
 
  
-preg_issues<- dtfert4[, grepl("548355426", colnames(dtfert4))]
-painmds <- preg_issues[, c(3,9,8,2,1,5,4,6 )]
+preg_issues<- preg_iss[, grepl("548355426", colnames(preg_iss))]
+preg_issues
+painmds <- preg_issues[, c(3,8,7,2,1,5,4,6 )]
 
 medsp_dx <- NULL
 for (i in 1:8){
@@ -3860,19 +3835,22 @@ fert_med= dtFERT6 %>%  mutate(meds= case_when(D_881200765_D_881200765_D_61979952
                                              TRUE  ~ "Skipped this question"))
 
  
-preg_issues<- dtFERT6[, grepl("881200765", colnames(dtFERT6))]
-painmds <- preg_issues[, c(10,12,11,6,3,8,7,4,2,5,13,11,9)]
-
-medsp_dx <- NULL
+tmpF6<- dtFERT6[, grepl("881200765", colnames(dtFERT6))]
+tmp2_1 <- tmpF6[, c(10, 12, 11, 6, 3, 8, 7, 4, 2, 5, 13, 14, 9)]
+fert6_dx <- NULL
 for (i in 1:13){
-  dt <- as.data.frame(tab1(painmds[,i])$output.table)
-  dt$medsp_dx <- colnames(painmds)[i]
-  medsp_dx <- rbind(medsp_dx,dt[2,])
-  
-}
-#medsp_dx$medsp_dx ### how are their race variables being assigned here?? wrong variable matching. Flattening issue?
+  dt <- as.data.frame(tab1(tmp2_1[,i])$output.table)
+  dt$fert6_dx <- colnames(tmp2_1)[i]
+  fert6_dx <- rbind(fert6_dx,dt[2,])
 
-medsp_dx$medsp_dx <- c("Chlomid","Injectables","Danazol","Danocrine", "Hcg","Milophene","Lupron depot","Nolyadex","Pergonal","Serophene","Synarel","Other","None of the above")
+}
+
+
+
+#fert6_dx$fert6_dx 
+
+#fert6_dx$fert6_dx <- c("Other specified", "Pergonal", "hCG", "Nolvadex", "Seophene", "Danocrine", "Lupron depot", "Milophene", "None of the above", "Clomid", "Danazol", "Gonadotropins", "Synarel nasal solution", "Other specified-double nested", "Other Medication")
+fert6_dx$fert6_dx <- c("Clomid","Injectables","Danazol","Danocrine","hCG","Milophene","Lupron depot","Nolvadex","Pergonal","Seophene","Synarel nasal solution", "Other Medication", "None of the above")
 ```
 ```{r Fert6Table, warning=FALSE, echo=FALSE, message=FALSE}
 # colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
