@@ -4591,10 +4591,8 @@ one_logic_funct2(D_424047361, D_939897560, 353358909, "FERT3: Sought medical adv
 
 ```{r Fert4, include=FALSE}
 
-dtfert4= fb %>% filter(D_424047361==353358909) 
-
-
-preg_iss= dtfert4 %>%  mutate(issue= case_when(D_548355426_D_548355426_D_342735868==1 ~ "Tubal blockage",
+preg_iss= fb %>% filter(D_424047361==353358909) %>%  
+                      mutate(issue= case_when(D_548355426_D_548355426_D_342735868==1 ~ "Tubal blockage",
                                              D_548355426_D_548355426_D_990599372==1 ~ "Ovary or hormone problem",
                                              D_548355426_D_548355426_D_863286658==1 ~ "Endometriosis",
                                              D_548355426_D_548355426_D_202355614==1 ~ "Cervical mucus",
@@ -4606,8 +4604,8 @@ preg_iss= dtfert4 %>%  mutate(issue= case_when(D_548355426_D_548355426_D_3427358
 
  
 preg_issues<- preg_iss[, grepl("548355426", colnames(preg_iss))]
-preg_issues
 painmds <- preg_issues[, c(3,8,7,2,1,5,4,6 )]
+
 
 medsp_dx <- NULL
 for (i in 1:8){
