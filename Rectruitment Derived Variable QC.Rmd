@@ -70,13 +70,13 @@ bq_auth()
 
 project <- "nih-nci-dceg-connect-prod-6d04"
 
-partsbq <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
-D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384, d_827220437,
-D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, 
+parts_bq <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
+D_335767902, D_982402227, D_919254129, D_699625233, d_827220437, d_371067537, d_544150384, d_564964481, d_795827569,
+D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, d_130371375_d_266600170_d_945795905, d_130371375_d_266600170_d_320023644,
 d_663265240, d_878865966, d_684635302, d_167958071,d_371067537, d_130371375_d_266600170_d_731498909, d_130371375_d_266600170_d_222373868, d_130371375_d_266600170_d_787567527,
 d_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_914639140, d_311580100 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
 where Connect_ID IS NOT NULL"
-partsbq_table <- bq_project_query(project, partsbq)
+partsbq_table <- bq_project_query(project, parts_bq)
 partsbq <- bq_table_download(partsbq_table, bigint = "integer64")
 
 
@@ -193,6 +193,60 @@ colnames(mens_elg) <- c("Site", "Connect ID", "SrvMC_MenstSrvElig_v1r0")
 mens_elg %>% gt()
 
 ```
+
+
+\FloatBarrier
+
+###  If HDPaym_PaymChosenBL_v2r0 = "cash" and SMPaym_PaymEligBL_v1r0=yes, then HDPaym_CaseNumberBL_v1r0 should not be populated. Or conversely, if SMPaym_PaymEligBL_v1r0=yes"and HDPaym_CaseNumberBL_v1r0 is populated, then HDPaym_PaymChosenBL_v2r0 should not be "cash".
+```{r Cash_NO_NORC, echo=FALSE, warning=FALSE, message=FALSE}
+
+cash_NORC <- base_vars %>%  filter(d_130371375_d_266600170_d_731498909==353358909 & d_130371375_d_266600170_d_945795905=="cash" & !is.na(d_130371375_d_266600170_d_320023644)) %>% 
+  select(Site, Connect_ID, d_130371375_d_266600170_d_945795905, d_130371375_d_266600170_d_320023644) %>%  sort_by(Site)
+
+colnames(cash_NORC) <- c("Site", "Connect ID", "HDPaym_PaymChosenBL", "HDPaym_CaseNumberBL")
+knitr::kable(cash_NORC)  %>% kable_styling(latex_options = "scale_down")
+
+```
+
+
+
+
+\FloatBarrier
+
+### RcrtUP_DOB must equal the concatenation of RcrtUP_YOB, RcrtUP_MOB, and RcrtUP_BD. This excludes those with a null concatenated DOB as it was implements after Module 1 was in production.
+```{r Bday, echo=FALSE, warning=FALSE, message=FALSE}
+
+
+partsbq <-
+  partsbq %>%  mutate(
+    Site = case_when(
+      d_827220437 == 125001209 ~ "Kaiser Permanente Colorado",
+      d_827220437 == 181769837 ~ "Other",
+      d_827220437 == 300267574 ~ "Kaiser Permanente Hawaii",
+      d_827220437 == 303349821 ~ "Marshfield Clinic Health System",
+      d_827220437 == 327912200 ~ "Kaiser Permanente Georgia",
+      d_827220437 == 452412599 ~ "Kaiser Permanente Northwest",
+      d_827220437 == 517700004 ~ "National Cancer Institute",
+      d_827220437 == 531629870 ~ "HealthPartners",
+      d_827220437 == 548392715 ~ "Henry Ford Health System",
+      d_827220437 == 657167265 ~ "Sanford Health",
+      d_827220437 == 809703864 ~ "University of Chicago Medicine"
+    )
+  )
+
+
+bday <- partsbq %>%  filter(!is.na(d_371067537) & 
+                                d_371067537 != paste0(d_544150384, d_564964481, d_795827569)) %>% 
+    select(Site, Connect_ID, d_371067537, d_544150384, d_564964481, d_795827569) %>%  sort_by(Site)
+
+colnames(bday) <- c("Site", "Connect ID", "RcrtUP_DOB", "RcrtUP_YOB", "RcrtUP_MOB", "RcrtUP_BD")
+knitr::kable(bday)  %>% kable_styling(latex_options = "scale_down")
+
+```
+
+
+
+
 
 
 
