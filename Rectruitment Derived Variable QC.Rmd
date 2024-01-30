@@ -16,8 +16,6 @@ output:
 
 
 
-
-
 ```{r library, include=FALSE}
 #rm(list = ls())
 
@@ -70,8 +68,9 @@ bq_auth()
 
 project <- "nih-nci-dceg-connect-prod-6d04"
 
-parts_bq <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
-D_335767902, D_982402227, D_919254129, D_699625233, d_827220437, d_371067537, d_544150384, d_564964481, d_795827569,
+parts_bq <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853, state_d_697256759, state_d_158291096,
+D_335767902, D_982402227, D_919254129, D_699625233, d_827220437, d_371067537, d_544150384, d_564964481, d_795827569, d_685002411_d_994064239, d_912301837, 
+d_685002411_d_194410742,d_685002411_d_949501163,d_685002411_d_277479354,d_685002411_d_867203506,d_685002411_d_352996056,d_685002411_d_217367618,d_747006172,d_906417725,d_773707518,d_831041022,d_987563196,
 D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, d_130371375_d_266600170_d_945795905, d_130371375_d_266600170_d_320023644,
 d_663265240, d_878865966, d_684635302, d_167958071,d_371067537, d_130371375_d_266600170_d_731498909, d_130371375_d_266600170_d_222373868, d_130371375_d_266600170_d_787567527,
 d_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_914639140, d_311580100 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
@@ -245,9 +244,84 @@ knitr::kable(bday)  %>% kable_styling(latex_options = "scale_down")
 ```
 
 
+\FloatBarrier
+### If HdRef_Basesrv_v1r0 = "no" AND HdRef_Baseblood_v1r0 = "no" AND HdRef_Baseurine_v1r0 and HdRef_Basesaliva_v1r0 = "no" AND HdRef_Allsrv_v1r0 = "no" AND HdRef_Allsample_v1r0 = "no" AND HdRef_BlSpecSrv_v1r0 = "no" AND HdWd_WdConsent_v1r0 = "no" AND HdWd_Activepart_v1r0 = "no" AND HdWd_HIPAArevoked_v1r0 = "no" AND HdWd_Destroydata_v1r0 = "no" AND HdWd_Deceased_v1r0 = "no", then SMMet_PartStatus_v1r0= "No Refusal"
+```{r SMMet_PartStatus0, echo=FALSE, warning=FALSE, message=FALSE}
+
+smmet0 <- partsbq %>%  filter(d_685002411_d_994064239==104430631 & d_685002411_d_194410742==104430631 & d_685002411_d_949501163==104430631 & d_685002411_d_277479354==104430631 & d_685002411_d_867203506==104430631 & d_685002411_d_352996056==104430631 & d_685002411_d_217367618==104430631 & d_747006172==104430631 & d_906417725==104430631 & d_773707518==104430631 & d_831041022==104430631 & d_987563196==104430631 & 
+                                d_912301837!=208325815) %>% 
+    select(Site, Connect_ID, d_912301837) %>%  sort_by(Site)
+
+colnames(smmet0) <- c("Site", "Connect ID", "SMMet_PartStatus_v1r0")
+knitr::kable(smmet0)  %>% kable_styling(latex_options = "scale_down")
+
+```
+
+
+```{r SMMet_PartStatus1, echo=FALSE, warning=FALSE, message=FALSE}
+
+# \FloatBarrier
+# ### If HdWd_WdConsent_v1r0 = "no" AND HdWd_Activepart_v1r0 = "no" AND HdWd_HIPAArevoked_v1r0 = "no" AND HdWd_Destroydata_v1r0 = "no" AND HdWd_Deceased_v1r0 = "no", then SMMet_PartStatus_v1r0= "Refused some activities"
+# 
+# smmet1 <- partsbq %>%  filter(d_747006172==104430631 & d_906417725==104430631 & d_773707518==104430631 & d_831041022==104430631 & d_987563196==104430631 & d_912301837!=622008261) %>%  
+#     select(Site, Connect_ID, d_912301837) %>%  sort_by(Site)
+# 
+# colnames(smmet1) <- c("Site", "Connect ID", "SMMet_PartStatus_v1r0")
+# knitr::kable(smmet1)  %>% kable_styling(latex_options = "scale_down")
+
+```
+
+
+\FloatBarrier
+### If HdWd_Activepart_v1r0 = yes" AND HdWd_HIPAArevoked_v1r0 = "no" And HdWd_WdConsent_v1r0 = "no" AND HdWd_Deceased_v1r0 = "no" AND HdWd_Destroydata_v1r0 = "no", then SMMet_PartStatus_v1r0= "Refused All Future Activities"
+```{r SMMet_PartStatus2, echo=FALSE, warning=FALSE, message=FALSE}
+
+smmet2 <- partsbq %>%  filter( d_906417725==353358909 & d_773707518==104430631 & d_747006172==104430631 & d_831041022==104430631 & d_987563196==104430631 & d_912301837!=458508122) %>% 
+    select(Site, Connect_ID, d_912301837) %>%  sort_by(Site)
+
+colnames(smmet2) <- c("Site", "Connect ID", "SMMet_PartStatus_v1r0")
+knitr::kable(smmet2)  %>% kable_styling(latex_options = "scale_down")
+
+```
+
+
+\FloatBarrier
+### If HdWd_HIPAArevoked_v1r0 = yes" And HdWd_WdConsent_v1r0 = "no" And HdWd_Deceased_v1r0 = "no" AND HdWd_Destroydata_v1r0 = "no", then SMMet_PartStatus_v1r0= "Revoked HIPAA Only"
+```{r SMMet_PartStatus3, echo=FALSE, warning=FALSE, message=FALSE}
+
+smmet3 <- partsbq %>%  filter(d_773707518==353358909 & d_747006172==104430631 & d_831041022==104430631 & d_987563196==104430631 & d_912301837!=872012139) %>% 
+    select(Site, Connect_ID, d_912301837) %>%  sort_by(Site)
+
+colnames(smmet3) <- c("Site", "Connect ID", "SMMet_PartStatus_v1r0")
+knitr::kable(smmet3)  %>% kable_styling(latex_options = "scale_down")
+
+```
+
+
+\FloatBarrier
+### If HdWd_HIPAArevoked_v1r0 = yes" AND HdWd_WdConsent_v1r0 = "yes" AND HdWd_Deceased_v1r0 = "no" AND HdWd_Destroydata_v1r0 = "no", then SMMet_PartStatus_v1r0= "Withdrew Consent"
+```{r SMMet_PartStatus4, echo=FALSE, warning=FALSE, message=FALSE}
+
+smmet4 <- partsbq %>%  filter(d_773707518==353358909 &  d_747006172==353358909 & d_831041022==104430631 & d_987563196==104430631 & d_912301837!=854021266) %>% 
+    select(Site, Connect_ID, d_912301837) %>%  sort_by(Site)
+
+colnames(smmet4) <- c("Site", "Connect ID", "SMMet_PartStatus_v1r0")
+knitr::kable(smmet4)  %>% kable_styling(latex_options = "scale_down")
+
+```
 
 
 
+\FloatBarrier
+### If RcrtSI_OptOutTm_v1r0 is a valid date, then RcrtSI_OptOut_v1r0 must be "yes"
+```{r OptOut, echo=FALSE, warning=FALSE, message=FALSE}
 
+opt_out <- partsbq %>%  filter(!is.na(state_d_697256759) & state_d_158291096==104430631) %>% 
+      select(Site, Connect_ID, state_d_158291096) %>%  sort_by(Site)
+
+colnames(opt_out) <- c("Site", "Connect ID", "RcrtSI_OptOut_v1r0")
+knitr::kable(opt_out)  %>% kable_styling(latex_options = "scale_down")
+
+```
 
 
