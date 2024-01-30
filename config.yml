@@ -70,3 +70,12 @@ baseline_low_priority:
   gcp_info:
     cloud_scheduler: ccc-baseline-ranked-variables-low-priority
     frequency: "30 14 1 * *" # first of the month at 2:30 PM
+    
+recruitment_qc_metrics:
+  rmd_file_name: "Rectruitment Derived Variable QC.Rmd"
+  report_file_name: "Rectruitment_Derived_Variable_QC.pdf"
+  box_folders:
+    - "194196493018" # internal
+  gcp_info:
+    cloud_scheduler: ccc-recruitment-qc-metrics
+    frequency: "30 13 * * 1" # every Monday at 1:30 PM"
