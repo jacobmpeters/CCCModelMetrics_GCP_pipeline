@@ -16,6 +16,7 @@ output:
 
 
 
+
 ```{r library, include=FALSE}
 #rm(list = ls())
 
@@ -68,9 +69,11 @@ bq_auth()
 
 project <- "nih-nci-dceg-connect-prod-6d04"
 
+
 parts_bq <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853, state_d_697256759, state_d_158291096,
 D_335767902, D_982402227, D_919254129, D_699625233, d_827220437, d_371067537, d_544150384, d_564964481, d_795827569, d_685002411_d_994064239, d_912301837, 
 d_685002411_d_194410742,d_685002411_d_949501163,d_685002411_d_277479354,d_685002411_d_867203506,d_685002411_d_352996056,d_685002411_d_217367618,d_747006172,d_906417725,d_773707518,d_831041022,d_987563196,
+
 D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, d_130371375_d_266600170_d_945795905, d_130371375_d_266600170_d_320023644,
 d_663265240, d_878865966, d_684635302, d_167958071,d_371067537, d_130371375_d_266600170_d_731498909, d_130371375_d_266600170_d_222373868, d_130371375_d_266600170_d_787567527,
 d_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_914639140, d_311580100 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
@@ -244,6 +247,7 @@ knitr::kable(bday)  %>% kable_styling(latex_options = "scale_down")
 ```
 
 
+
 \FloatBarrier
 ### If HdRef_Basesrv_v1r0 = "no" AND HdRef_Baseblood_v1r0 = "no" AND HdRef_Baseurine_v1r0 and HdRef_Basesaliva_v1r0 = "no" AND HdRef_Allsrv_v1r0 = "no" AND HdRef_Allsample_v1r0 = "no" AND HdRef_BlSpecSrv_v1r0 = "no" AND HdWd_WdConsent_v1r0 = "no" AND HdWd_Activepart_v1r0 = "no" AND HdWd_HIPAArevoked_v1r0 = "no" AND HdWd_Destroydata_v1r0 = "no" AND HdWd_Deceased_v1r0 = "no", then SMMet_PartStatus_v1r0= "No Refusal"
 ```{r SMMet_PartStatus0, echo=FALSE, warning=FALSE, message=FALSE}
@@ -323,5 +327,6 @@ colnames(opt_out) <- c("Site", "Connect ID", "RcrtSI_OptOut_v1r0")
 knitr::kable(opt_out)  %>% kable_styling(latex_options = "scale_down")
 
 ```
+
 
 
