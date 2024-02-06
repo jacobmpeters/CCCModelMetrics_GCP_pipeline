@@ -2,11 +2,7 @@
 title: "Baseline Ranked Variables- High Priority"
 author: "Kelsey Dowling"
 date: "`r Sys.Date()`"
-
-output:
-  pdf_document:
-    latex_engine: xelatex
-    df_print: paged 
+output: pdf_document
 ---
 
 
@@ -447,7 +443,7 @@ dt_all_races_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 
 
-## RACEETH2-8 (Ethnicity)
+## Ethnicity
 ```{r Ethnicity, warning=FALSE, echo=FALSE, message=FALSE}
 
 
@@ -471,7 +467,7 @@ dt_am_ind_ethn_summary <- amer_eth %>% group_by(ethnicity) %>%    dplyr::summari
 gtm3_print <- gt::gt(dt_am_ind_ethn_summary)
 
 
-dt_ethnic1 <- dt_am_ind_ethn_summary %>%  gt::gt(rowname_col = "row_lab") %>%
+dt_am_ind_ethn_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>%
   tab_header(title = md("Ethnicity of American Indian/Native American Participants")) %>%
   cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
@@ -491,16 +487,14 @@ dt_ethnic1 <- dt_am_ind_ethn_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping()
-tab_footnote(
-  dt_ethnic1,
-  md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
+  ) %>% opt_row_striping() %>%
+  tab_footnote(
+    footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
   locations = cells_column_labels(columns = n),
   placement = c("left")
-)
-tab_footnote(
-  dt_ethnic1,
-  md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+) %>%
+  tab_footnote(
+    footnote = md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
   locations = cells_column_labels(columns = ethnicity),
   placement = c("left")
 )
@@ -530,7 +524,7 @@ which_eth= dt_asian %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Mul
 
 dt_asian_summary <- which_eth %>% group_by(ethnicity) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage) 
 
-dt_ethnic2 <- dt_asian_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+dt_asian_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Ethnicity of Asian and Asian American Participants")) %>% 
   cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -550,16 +544,14 @@ dt_ethnic2 <- dt_asian_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping()
-tab_footnote(
-  dt_ethnic2,
-  md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
+  ) %>% opt_row_striping() %>%
+  tab_footnote(
+    footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
   locations = cells_column_labels(columns = n),
   placement = c("left")
-)
-tab_footnote(
-  dt_ethnic2,
-  md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+) %>%
+  tab_footnote(
+    footnote = md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
   locations = cells_column_labels(columns = ethnicity),
   placement = c("left")
 )
@@ -592,7 +584,8 @@ which_eth= dt_black %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Mul
 
 
 dt_black_summary <- which_eth %>% group_by(ethnicity) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
-dt_ethnic3 <- dt_black_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+
+dt_black_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Ethnicity of Black/African/African American Participants")) %>% 
   cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -612,16 +605,14 @@ dt_ethnic3 <- dt_black_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping()
-tab_footnote(
-  dt_ethnic3,
-  md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
+  ) %>% opt_row_striping() %>%
+  tab_footnote(
+    footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
   locations = cells_column_labels(columns = n),
   placement = c("left")
-)
-tab_footnote(
-  dt_ethnic3,
-  md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+) %>%
+  tab_footnote(
+    footnote = md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
   locations = cells_column_labels(columns = ethnicity),
   placement = c("left")
 )
@@ -651,7 +642,7 @@ which_eth= dt_hisp %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Mult
 
 dt_hisp_summary <- which_eth %>% group_by(ethnicity) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
 
-dt_ethnic4 <- dt_hisp_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+dt_hisp_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Ethnicity of Hispanic/Latino/Spanish Participants")) %>% 
   cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -671,16 +662,14 @@ dt_ethnic4 <- dt_hisp_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping()
-tab_footnote(
-  dt_ethnic4,
-  md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
+  ) %>% opt_row_striping() %>%
+  tab_footnote(
+    footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
   locations = cells_column_labels(columns = n),
   placement = c("left")
-)
-tab_footnote(
-  dt_ethnic4,
-  md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+) %>%
+  tab_footnote(
+    footnote = md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
   locations = cells_column_labels(columns = ethnicity),
   placement = c("left")
 )
@@ -711,7 +700,7 @@ which_eth= dt_mideast %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "M
 
 dt_mideast_summary <- which_eth %>% group_by(ethnicity) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
 
-dt_ethnic5 <- dt_mideast_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+dt_mideast_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Ethnicity of Middle Eastern or North African Participants")) %>% 
   cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -731,16 +720,14 @@ dt_ethnic5 <- dt_mideast_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping()
-tab_footnote(
-  dt_ethnic5,
-  md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
+  ) %>% opt_row_striping() %>%
+  tab_footnote(
+    footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
   locations = cells_column_labels(columns = n),
   placement = c("left")
-)
-tab_footnote(
-  dt_ethnic5,
-  md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+) %>%
+  tab_footnote(
+    footnote = md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
   locations = cells_column_labels(columns = ethnicity),
   placement = c("left")
 )
@@ -769,7 +756,7 @@ which_eth= dt_hawi %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Mult
 
 dt_hawi_summary <- which_eth %>% group_by(ethnicity) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
 
-dt_ethnic6 <- dt_hawi_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+dt_hawi_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Ethnicity of Hawaiian or Pacific Islander Participants")) %>% 
   cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -789,16 +776,14 @@ dt_ethnic6 <- dt_hawi_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping()
-tab_footnote(
-  dt_ethnic6,
-  md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
+  ) %>% opt_row_striping() %>%
+  tab_footnote(
+    footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
   locations = cells_column_labels(columns = n),
   placement = c("left")
-)
-tab_footnote(
-  dt_ethnic6,
-  md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+) %>%
+  tab_footnote(
+    footnote = md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
   locations = cells_column_labels(columns = ethnicity),
   placement = c("left")
 )
@@ -830,7 +815,7 @@ which_eth= dt_white %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Mul
 dt_white_summary <- which_eth %>% group_by(ethnicity) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
 gtm3_print <- gt::gt(dt_white_summary)
 
-dt_ethnic7 <- dt_white_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+dt_white_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Ethnicity of White Participants")) %>% 
   cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -850,16 +835,14 @@ dt_ethnic7 <- dt_white_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping()
-tab_footnote(
-  dt_ethnic7,
-  md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
+  ) %>% opt_row_striping() %>%
+  tab_footnote(
+    footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
   locations = cells_column_labels(columns = n),
   placement = c("left")
-)
-tab_footnote(
-  dt_ethnic7,
-  md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+) %>%
+  tab_footnote(
+    footnote = md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
   locations = cells_column_labels(columns = ethnicity),
   placement = c("left")
 )
@@ -2484,15 +2467,14 @@ tmpMC2<- tmpMOMCANC[, grepl("814510313", colnames(tmpMOMCANC))]
 tmpMC2$D_814510313_D_677702321 <- ifelse(is.na(tmpMC2$D_814510313_D_677702321), 0, 1)
 
 
-# tmp2_1 <- data_tib_all2 %>%  select(D_814510313_D_814510313_D_939782495, D_814510313_D_814510313_D_135725957, D_814510313_D_814510313_D_518416174, D_814510313_D_814510313_D_847945207, D_814510313_D_814510313_D_283025574,
-#D_814510313_D_814510313_D_942970912, D_814510313_D_814510313_D_596122041, D_814510313_D_814510313_D_489400183, D_814510313_D_814510313_D_863246236, D_814510313_D_814510313_D_607793249, D_814510313_D_814510313_D_532172400,
-#D_814510313_D_814510313_D_754745617, D_814510313_D_814510313_D_665036297, D_814510313_D_814510313_D_200837530, D_814510313_D_814510313_D_990319383, D_814510313_D_814510313_D_487917585, D_814510313_D_814510313_D_603181162, D_814510313_D_814510313_D_482225200,
-#D_814510313_D_814510313_D_764891959, D_814510313_D_814510313_D_139822395, D_814510313_D_814510313_D_723614811, D_814510313_D_814510313_D_807835037, D_814510313_D_814510313_D_178420302)
 
-tmpM2 <- tmpMC2[, c(25,2,10,23,6, 
-                    26,12, 9,24, 14, 11, 
-                    20, 17, 5, 27, 8, 13, 7, 
-                    21, 3,19, 22,  4)]
+tmpM2 <- tmpMC2 %>%  select(D_814510313_D_814510313_D_939782495, D_814510313_D_814510313_D_135725957, D_814510313_D_814510313_D_518416174, D_814510313_D_814510313_D_847945207,
+                    D_814510313_D_814510313_D_283025574, D_814510313_D_814510313_D_942970912, D_814510313_D_814510313_D_596122041, D_814510313_D_814510313_D_489400183,
+                    D_814510313_D_814510313_D_863246236, D_814510313_D_814510313_D_607793249, D_814510313_D_814510313_D_532172400, D_814510313_D_814510313_D_754745617,
+                    D_814510313_D_814510313_D_665036297, D_814510313_D_814510313_D_200837530, D_814510313_D_814510313_D_990319383, D_814510313_D_814510313_D_487917585,
+                    D_814510313_D_814510313_D_603181162, D_814510313_D_814510313_D_482225200, D_814510313_D_814510313_D_764891959, D_814510313_D_814510313_D_139822395,
+                    D_814510313_D_814510313_D_723614811, D_814510313_D_814510313_D_807835037, D_814510313_D_814510313_D_178420302)
+
 momcnc_dx <- NULL
 for (i in 1:23){
   dt <- as.data.frame(tab1(tmpM2[,i])$output.table)
