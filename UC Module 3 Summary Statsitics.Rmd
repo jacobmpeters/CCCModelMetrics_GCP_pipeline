@@ -1,5 +1,5 @@
 ---
-title: "Module 3 Summary Statatistics"
+title: "UC Module3 Summary Statistics"
 author: "Kelsey Dowling"
 date: "`r Sys.Date()`"
 output:
@@ -93,14 +93,8 @@ for (i in 1: length(cnames)){
   recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
 }
 
-# sql_M1_1 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
-# sql_M1_2 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
-
-#Only these variables carry over from mod1 into mod3:
-  #age, agecor
-#Going to see if only these are selected, if it will allow the automation to run
-sql_M1_1 <- bq_project_query(project, query="SELECT Connect_ID, D_479353866, D_150344905 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
-sql_M1_2 <- bq_project_query(project, query="SELECT Connect_ID, D_479353866, D_150344905 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
+sql_M1_1 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
+sql_M1_2 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
 
 
 M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64") #1436 #1436 vars: 1507 01112023 
@@ -176,9 +170,9 @@ table(m1_complete_nodup$version)
 parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
 D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
 D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, 
-d_663265240, d_878865966, d_684635302, d_167958071,d_371067537,
+d_663265240, d_878865966, d_684635302, d_167958071,d_371067537, d_827220437, 
 d_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_914639140, d_311580100 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
-where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and (d_949302066='231311385') and d_976570371='231311385'"
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and (d_949302066='231311385')"
 parts_table <- bq_project_query(project, parts)
 parts_data <- bq_table_download(parts_table, bigint = "integer64")
 
@@ -234,10 +228,24 @@ merge_m3 <- merge_m3 %>% filter(D_919254129==353358909)
 
 
 #User profile submitted
-module3 <- merge_m3 %>% filter(D_699625233==353358909)
+merge_m3 <- merge_m3 %>% filter(D_699625233==353358909)
 
 
 
+#Mod1 completed
+merge_m3 <- merge_m3 %>% filter(d_949302066==231311385)
+
+
+
+
+#Mod3 completed
+
+module3 <- merge_m3 %>% filter(d_976570371==231311385)
+
+
+
+#UC only 
+module3 <- module3 %>% filter(d_827220437==809703864)
 cat("Module 3 Completed by : ", dim(module3)[[1]], " Participants")
 
 data_tib_all3 <- as_tibble(module3)
@@ -1617,22 +1625,22 @@ lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
-dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("CHEWLIFEG: Time Chewing Tobacco/Dip Used per Day at Ages 60-69")) %>% 
-  cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = timespan,
-    )
-  ) 
+# dt_timespan_summary %>%  gt(rowname_col = "row_lab") %>%  
+#   fmt_number(columns = "percentage", decimals = 2) %>% 
+#   tab_header(title = md("CHEWLIFEG: Time Chewing Tobacco/Dip Used per Day at Ages 60-69")) %>% 
+#   cols_label(n= md("**Number of Participants**"),timespan = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+#   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+#   tab_options(
+#       stub.font.weight = "bold"
+#     ) %>%
+#   tab_style(
+#     style = list(
+#       cell_text(weight = "bold")
+#     ),
+#     locations = cells_body(
+#       columns = timespan,
+#     )
+#   ) 
 
 
 #CHEWLIFEH
@@ -3317,10 +3325,7 @@ one_logic_funct3(D_103045461,D_447720598_D_181769837,1,"OTHERALC2: Servings of O
 ## Frequency of Drinking 
 ```{r FreqAlc, warning=FALSE, echo=FALSE, message=FALSE}
 #ALCOHOL9
-#alc9 <- data_tib_all3 %>%  filter(D_429228540==132232896 & (!is.na(D_556837046_D_141874857)| D_556837046_D_556837046_D_648960871!=1) & (D_338467033==353358909 | (D_338467033==104430631 & !is.na(D_480426504))))
-
-alc9 <- data_tib_all3 %>%  filter(D_429228540==132232896 & !is.na(D_556837046_D_141874857) & D_338467033==353358909)
-
+alc9 <- data_tib_all3 %>%  filter(D_429228540==132232896 & (!is.na(D_556837046_D_141874857)| D_556837046_D_556837046_D_648960871!=1) & (D_338467033==353358909 | (D_338467033==104430631 & !is.na(D_480426504))))
 edu= alc9  %>%  mutate(edlevel= case_when(D_254739443==648960871 ~ "Never",
                                                   D_254739443==351028096 ~ "1 to 5 times per year",
                                                   D_254739443==690077051 ~ "6 to 11 times per year",
@@ -3982,7 +3987,7 @@ dttanbed5_summary <- tanbed5_ans %>% group_by(answer) %>%  dplyr::summarize(n=n(
 
 dttanbed5_summary %>%  gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("TANBED5: Used a Tanning Bed in the Past 12 Months")) %>% 
+  tab_header(title = md("tanbed5: Used a Tanning Bed in the Past 12 Months")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows(
   #   column = c(n,percentage),
