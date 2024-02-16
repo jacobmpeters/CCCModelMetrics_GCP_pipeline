@@ -1,0 +1,829 @@
+---
+title: "Module 3 QC Metrics"
+author: "Kelsey Dowling"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+
+
+
+
+```{r library, include=FALSE}
+#rm(list = ls())
+
+
+#update.packages("tinytex")
+#require(devtools)
+#install_version("ggplot2", version = "0.9.1", repos = "http://cran.us.r-project.org")
+#tinytex::install_tinytex(version = "2020.10")
+#tinytex::reinstall_tinytex(repository = "illinois")
+
+
+
+library(bigrquery)
+library(foreach)
+library(stringr)
+#library(plyr)
+library(expss) ###to add labels
+library(epiDisplay) ##recommended applied here crosstable, tab1
+library(gmodels) ##recommended
+library(magrittr)
+library(arsenal)
+library(gtsummary)
+library(rio)
+
+
+library(stringr)
+library(ggplot2)
+library(gridExtra)
+library(scales)
+library(gt)
+#install(tinytex)
+library(tinytex)
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(reshape)  ###to work on transition from long to wide or wide to long data
+library(listr) ###to work on a list of vector, files or..
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(stringr) ###to work on patterns, characters
+
+options(tinytex.verbose = TRUE)
+
+bq_auth()
+```
+
+
+```{r M1merge, include=FALSE, warning=FALSE}
+
+dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
+dd <- dplyr::bind_rows(dictionary,.id="CID")
+dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
+dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name')
+
+dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
+dd$CID <- rownames(dd)
+#https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
+#devtools::install_github("tidyverse/reprex")
+
+project <- "nih-nci-dceg-connect-prod-6d04"
+billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be consistent
+##517311251 Date/time Status of Completion of Background and Overall Health                         SrvBOH_TmComplete_v1r0
+##949302066 Flag for Baseline Module Background and Overall Health                        SrvBOH_BaseStatus_v1r0
+recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
+                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935'")
+recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
+cnames <- names(recr_m1)
+# Check that it doesn't match any non-number
+numbers_only <- function(x) !grepl("\\D", x)
+# to check variables in recr_noinact_wl1
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(recr_m1,varname)
+  recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+sql_M1_1 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
+sql_M1_2 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
+
+
+M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64") #1436 #1436 vars: 1507 01112023 
+M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64") #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
+
+mod1_v1 <- M1_V1
+cnames <- names(M1_V1)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v1,varname)
+  mod1_v1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+mod1_v2 <- M1_V2
+cnames <- names(M1_V2)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v2,varname)
+  mod1_v2[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+M1_V1.var <- colnames(M1_V1)
+M1_V2.var <- colnames(M1_V2)
+var.matched <- M1_V1.var[which(M1_V1.var %in% M1_V2.var)]
+length(var.matched)  #1275 #1278 vars 01112023 #1348 vars 05022023
+
+V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched] #232 #229 01112023 #159 05022023
+V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched] #253 #253 01112023 #545 05022023
+
+length(M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID])
+#[1] 59 with the completion of two versions of Module1 
+#[1] 62 with completing both versions of M1 ###double checked 03/28/2023
+#68 double checked 05/02/2023
+
+common.IDs <- M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID]
+M1_V1_common <- mod1_v1[,var.matched]
+
+M1_V2_common <- mod1_v2[,var.matched]
+M1_V1_common$version <- 1
+M1_V2_common$version <- 2
+
+##to check the completion of M1 among these duplicates
+partM1_dups <- recr_m1[which(recr_m1$Connect_ID %in% common.IDs),]
+table(partM1_dups$d_949302066)
+
+M1_common  <- rbind(M1_V1_common, M1_V2_common) #including 136 duplicates (version 1 and version 2) from 68 participants 05022023
+#M1_response <- matrix(data=NA, nrow=118, ncol=967)
+
+m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)] #230 vars 03282023 #160 vars 05/02/2023
+m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] #255 vars 03282023 #546 vars 05/02/2023
+m1_v1_only$version <- 1
+m1_v2_only$version <- 2
+#for (i in 1:length)
+##to check the completion in each version
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #1364 03282023 # 1370 05022023
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #4870 03282023 # 5731 05022023
+
+#library(janitor)
+
+m1_common <- rbind(M1_V1_common,M1_V2_common)
+m1_common_v1 <- base::merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
+m1_combined_v1v2 <- base::merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
+m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] #7289 including duplicates 05022023
+
+m1_complete <- m1_complete %>% arrange(desc(version)) 
+
+
+m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),] 
+table(m1_complete_nodup$version)
+
+
+parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
+D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
+D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, 
+d_663265240, d_878865966, d_684635302, d_167958071,d_371067537,
+d_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_914639140, d_311580100 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and (d_949302066='231311385')"
+parts_table <- bq_project_query(project, parts)
+parts_data <- bq_table_download(parts_table, bigint = "integer64")
+
+parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID)
+
+
+base_vars= left_join(m1_complete_nodup, parts_data, by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
+dim(base_vars)
+
+
+
+
+
+
+
+data_tib_base <- as_tibble(base_vars)
+
+
+knitr::opts_chunk$set(comment = NA)
+#knitr::opts_chunk$set(message = NA)
+#knitr::opts_chunk$set(warning = NA)
+
+```
+
+
+
+
+```{r M3, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+querymod3 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module3_v1_JP` where Connect_ID IS NOT NULL"
+mod3_table <- bq_project_query(project, querymod3)
+mod3_data <- bq_table_download(mod3_table, bigint = "integer64")
+mod3_data$Connect_ID <- as.numeric(mod3_data$Connect_ID)
+
+
+merge_m3P= left_join(base_vars, mod3_data, by="Connect_ID")
+
+
+#Mod3 completed
+
+module3 <- merge_m3P %>% filter(d_976570371==231311385)
+cat("Module 3 Completed by : ", dim(module3)[[1]], " Participants")
+
+data_tib_all3 <- as_tibble(module3)
+```
+
+
+
+```{r functions, include=FALSE, warning=FALSE}
+
+
+
+  data_tib_all3$DOB <- paste0(str_sub(module3$D_371067537, 1, 4), "-", str_sub(module3$D_371067537, 5, 6), "-", str_sub(module3$D_371067537, 7, 8)) 
+data_tib_all3$DOB <- as.Date(data_tib_all3$DOB)
+
+currentDate <- as.Date(Sys.Date(), format = '%y/%m/%d')
+data_tib_all3$AGEGRID <- time_length(difftime(currentDate, data_tib_all3$DOB), "years")
+data_tib_all3$AGEGRID <- as.numeric(data_tib_all3$AGEGRID)
+
+
+
+## functions for 9b 
+funct_9b <- function(PRODUCT1_CID, PRODUCT4_CID, PRODUCT5_CID, PRODUCT8C_CID, PRODUCT9B_CID){ 
+  CID_SYM_P1 <- rlang::ensym(PRODUCT1_CID)
+  CID_SYM_P4 <- rlang::ensym(PRODUCT4_CID)
+  CID_SYM_P5 <- rlang::ensym(PRODUCT5_CID)
+  CID_SYM_P8C <- rlang::ensym(PRODUCT8C_CID)
+  CID_SYM_P9B <- rlang::ensym(PRODUCT9B_CID)
+
+  dt_prod9b <- data_tib_all3 %>%  select(Connect_ID, !!CID_SYM_P8C, !!CID_SYM_P4, !!CID_SYM_P5, !!CID_SYM_P1, !!CID_SYM_P9B)
+  gt_prod9b <- dt_prod9b %>% filter((!!CID_SYM_P1==486319890 | !!CID_SYM_P1==132232896) & !(!!CID_SYM_P4== 804785430|
+           ((!is.na(!!CID_SYM_P4) | !!CID_SYM_P4!=419415087) & !!CID_SYM_P5==484055234 & !!CID_SYM_P8C== 353358909) | 
+           ((!is.na(!!CID_SYM_P4) |  !!CID_SYM_P4!=419415087) & !!CID_SYM_P5==802197176 & !!CID_SYM_P8C== 353358909))) # & 
+             #(!!CID_SYM_P9B!=353358909 & !!CID_SYM_P9B!=104430631 & !is.na(!!CID_SYM_P9B))) 
+  
+  gt_prod9b_errors <- dt_prod9b %>%  filter(!!CID_SYM_P9B!=353358909 & !!CID_SYM_P9B!=104430631 & !is.na(!!CID_SYM_P9B)) %>% 
+    select(Connect_ID, !!CID_SYM_P9B) %>% mutate(Response=!!CID_SYM_P9B)
+
+    
+gt_prod9b_errors[, c(1,3)] %>%  gt()
+    
+}
+
+
+
+
+## functions for LIFE questions ---- THIS WON'T WORK BECAUSE PRODUCT3 IS NESTED
+
+funct_NON_NUMERIC_LIFE <- function(LIFE_CID, PRODUCT1_CID, PRODUCT3_CID, PRODUCT3_never_CID,PRODUCT4_CID,PRODUCT8_CID, PRODUCT8C_CID, Age_Lower_Range, Age_Upper_Range_Plus_One){ 
+  CID_SYM_P1 <- rlang::ensym(PRODUCT1_CID)
+  CID_SYM_P3 <- rlang::ensym(PRODUCT3_CID)
+  CID_SYM_P3_N <- rlang::ensym(PRODUCT3_never_CID)
+  CID_SYM_P8 <- rlang::ensym(PRODUCT8_CID)
+  CID_SYM_P4 <- rlang::ensym(PRODUCT4_CID)
+  CID_SYM_P8C <- rlang::ensym(PRODUCT8C_CID)
+  CID_SYM_LIFE <- rlang::ensym(LIFE_CID)
+  Age_lower <- as.numeric(Age_Lower_Range) #for example, age 50-59 lower range would be 50
+  Age_upper <- as.numeric(Age_Upper_Range_Plus_One) # for example, age 50-59 upper range plus one would be 60
+  
+#   data_tib_all3$DOB <- paste0(str_sub(module3$D_371067537,1,4), "-", str_sub(module3$D_371067537,5,6), "-", str_sub(module3$D_371067537,7,8)) 
+# data_tib_all3$DOB <- as.Date(data_tib_all3$DOB) #, format='%y-%m-%d')
+# currentDate <- as.Date(Sys.Date(), format='%y/%m/%d')
+# data_tib_all3$AGEGRID <- time_length(difftime(currentDate, data_tib_all3$DOB), "years") #created my own derived age variable, since some finished module 1 before 
+#   data_tib_all3$AGEGRID <- as.numeric(data_tib_all3$AGEGRID)
+# 
+# 
+# 
+#   dt_life <- data_tib_all3 %>%  select(Connect_ID, !!CID_SYM_P8C, !!CID_SYM_P8, !!CID_SYM_P3, !!CID_SYM_P8, !!CID_SYM_P4, !!CID_SYM_P1, !!CID_SYM_LIFE)
+#   gt_life <- dt_life %>% filter(!!CID_SYM_P1==132232896 & !is.na(!!CID_SYM_P3) & 
+#                                       (!!CID_SYM_P4==804785430 | !!CID_SYM_P8C==353358909) & 
+#                                       as.numeric(!!CID_SYM_P3)<Age_upper  & 
+#                                       (is.na(!!CID_SYM_P8) | !(as.numeric(!!CID_SYM_P8)<Age_lower)) & 
+#                                       as.numeric(AGEGRID)>Age_lower)
+  
+  
+
+
+# reverse logic, if they don't answer the way that is needed to get to LIFE questions, they shouldn't see LIFE questions't
+  #adding ! at the front of LIFE logic. They should see LIFE questions if they answer this way, if not, they shoudn
+dt_life <- data_tib_all3 %>%
+  filter( !(!!CID_SYM_P1 == 132232896 & !is.na(!!CID_SYM_P3) & !!CID_SYM_P3_N!=1 & #PRODUCT1=3 and PRODUCT3=#
+         (!!CID_SYM_P4 == 804785430 | !!CID_SYM_P8C == 353358909) & #PRODUCT4=3 or PRODUCT8c=1
+         as.numeric(!!CID_SYM_P3) < Age_upper  & #starting using before the age range in question
+         (is.na(!!CID_SYM_P8) | !(as.numeric(!!CID_SYM_P8) > Age_upper)) &   #never quit, or if they did, they quit after this age range
+         as.numeric(AGEGRID) > Age_lower)) #their current age is within the age range in question
+
+ #!(as.numeric(!!CID_SYM_P8) < Age_lower)) &                                       
+  
+gt_life_errors <- dt_life %>%  filter(#!!CID_SYM_LIFE!= 428999623 & !!CID_SYM_LIFE!=248303092 & !!CID_SYM_LIFE!=998679771 & !!CID_SYM_LIFE!=638092100 & 
+                                      #!!CID_SYM_LIFE!=127455035 & !!CID_SYM_LIFE!= 402752509 & 
+                                        !is.na(!!CID_SYM_LIFE))  %>%  
+  select(Connect_ID, !!CID_SYM_LIFE) %>% mutate(Response=!!CID_SYM_LIFE)
+
+    
+gt_life_errors[, c(1,3)] %>%  gt()
+
+    
+}
+
+
+
+
+
+# funct_NUMERIC_LIFE <- function(LIFE_CID, PRODUCT1_CID, PRODUCT3_CID, PRODUCT3_never_CID, PRODUCT4_CID,PRODUCT8_CID, PRODUCT8C_CID, Age_Lower_Range, Age_Upper_Range_Plus_One){ 
+#   CID_SYM_P1 <- rlang::ensym(PRODUCT1_CID)
+#   CID_SYM_P3 <- rlang::ensym(PRODUCT3_CID)
+#   CID_SYM_P3_N <- rlang::ensym(PRODUCT3_never_CID)
+#   CID_SYM_P8 <- rlang::ensym(PRODUCT8_CID)
+#   CID_SYM_P4 <- rlang::ensym(PRODUCT4_CID)
+#   CID_SYM_P8C <- rlang::ensym(PRODUCT8C_CID)
+#   CID_SYM_LIFE <- rlang::ensym(LIFE_CID)
+#   Age_lower <- as.numeric(Age_Lower_Range) #for example, age 50-59 lower range would be 50
+#   Age_upper <- as.numeric(Age_Upper_Range_Plus_One) # for example, age 50-59 upper range plus one would be 60
+#   data_tib_all3$DOB <- paste0(str_sub(module3$D_371067537, 1, 4), "-", str_sub(module3$D_371067537, 5, 6), "-", str_sub(module3$D_371067537, 7, 8)) 
+# data_tib_all3$DOB <- as.Date(data_tib_all3$DOB)
+# 
+# currentDate <- as.Date(Sys.Date(), format = '%y/%m/%d')
+# data_tib_all3$AGEGRID <- time_length(difftime(currentDate, data_tib_all3$DOB), "years")
+# data_tib_all3$AGEGRID <- as.numeric(data_tib_all3$AGEGRID)
+# 
+# # reverse logic, if they don't answer the way that is needed to get to LIFE questions, they shouldn't see LIFE questions
+# dt_life <- data_tib_all3 %>%
+#   filter(!(!!CID_SYM_P1 == 132232896 & !is.na(!!CID_SYM_P3) &  !!CID_SYM_P3_N!=1 &
+#          (!!CID_SYM_P4 == 804785430 | !!CID_SYM_P8C == 353358909) & 
+#          as.numeric(!!CID_SYM_P3) < Age_upper  & 
+#          (is.na(!!CID_SYM_P8) | !(as.numeric(!!CID_SYM_P8) < Age_lower)) & 
+#          as.numeric(AGEGRID) > Age_lower))
+# 
+#                                       
+#   
+# gt_life_errors <- dt_life %>%  filter(!is.na(!!CID_SYM_LIFE))  %>%  
+#   select(Connect_ID, !!CID_SYM_LIFE) %>% mutate(Response=!!CID_SYM_LIFE)
+# 
+#     
+# gt_life_errors[, c(1,3)] %>%  gt()
+# 
+#     
+#}
+
+
+funct_NUMERIC_LIFE <- function(LIFE_CID, PRODUCT3_CID, PRODUCT3_never_CID,  PRODUCT5_CID, PRODUCT8C_CID, Age_Lower_Range, Age_Upper_Range_Plus_One){ 
+  CID_SYM_P3 <- rlang::ensym(PRODUCT3_CID)
+  CID_SYM_P3_N <- rlang::ensym(PRODUCT3_never_CID)
+  CID_SYM_P5 <- rlang::ensym(PRODUCT5_CID)
+  CID_SYM_P8C <- rlang::ensym(PRODUCT8C_CID)
+  CID_SYM_LIFE <- rlang::ensym(LIFE_CID)
+  Age_lower <- as.numeric(Age_Lower_Range) #for example, age 50-59 lower range would be 50
+  Age_upper <- as.numeric(Age_Upper_Range_Plus_One) # for example, age 50-59 upper range plus one would be 60
+  data_tib_all3$DOB <- paste0(str_sub(module3$D_371067537, 1, 4), "-", str_sub(module3$D_371067537, 5, 6), "-", str_sub(module3$D_371067537, 7, 8)) 
+data_tib_all3$DOB <- as.Date(data_tib_all3$DOB)
+
+currentDate <- as.Date(Sys.Date(), format = '%y/%m/%d')
+data_tib_all3$AGEGRID <- time_length(difftime(currentDate, data_tib_all3$DOB), "years")
+data_tib_all3$AGEGRID <- as.numeric(data_tib_all3$AGEGRID)
+
+#3=never or NR, 5=0 or nr, 8c=0 or nr
+dt_life <- data_tib_all3 %>%
+  filter( (is.na(!!CID_SYM_P3) |  !!CID_SYM_P3_N==1) |
+           (is.na(!!CID_SYM_P5) |  !!CID_SYM_P5==317567178) |
+         (is.na(!!CID_SYM_P8C) | !!CID_SYM_P8C == 104430631))
+
+                                      
+  
+gt_life_errors <- dt_life %>%  filter(!is.na(!!CID_SYM_LIFE))  %>%  
+  select(Connect_ID, !!CID_SYM_LIFE) %>% mutate(Response=!!CID_SYM_LIFE)
+
+    
+gt_life_errors[, c(1,3)] %>%  gt()
+
+    
+}
+
+# 
+# 
+# funct_ecig_NON_NUMERIC_LIFE <- function(LIFE_CID, PRODUCT1_CID,  PRODUCT4_CID, PRODUCT8_CID, PRODUCT8C_CID, Age_Lower_Range, Age_Upper_Range_Plus_One){ 
+#   CID_SYM_P1 <- rlang::ensym(PRODUCT1_CID)
+#   #CID_SYM_P3 <- rlang::ensym(PRODUCT3_CID)
+#   CID_SYM_P8 <- rlang::ensym(PRODUCT8_CID)
+#   CID_SYM_P4 <- rlang::ensym(PRODUCT4_CID)
+#   CID_SYM_P8C <- rlang::ensym(PRODUCT8C_CID)
+#   CID_SYM_LIFE <- rlang::ensym(LIFE_CID)
+#   Age_lower <- as.numeric(Age_Lower_Range) #for example, age 50-59 lower range would be 50
+#   Age_upper <- as.numeric(Age_Upper_Range_Plus_One) # for example, age 50-59 upper range plus one would be 60
+#   
+# data_tib_all3$DOB <- paste0(str_sub(module3$D_371067537,1,4), "-", str_sub(module3$D_371067537,5,6), "-", str_sub(module3$D_371067537,7,8)) 
+# data_tib_all3$DOB <- as.Date(data_tib_all3$DOB) #, format='%y-%m-%d')
+# currentDate <- as.Date(Sys.Date(), format='%y/%m/%d')
+# data_tib_all3$AGEGRID <- time_length(difftime(currentDate, data_tib_all3$DOB), "years")
+# 
+# 
+#   #gt_life <- data_tib_all3 %>%  filter(as.numeric(data_tib_all3$D_550244580_D_517801904)<Age_upper  & !is.na(data_tib_all3$D_550244580_D_517801904))
+#   #dt_life <- data_tib_all3 %>%  select(Connect_ID, !!CID_SYM_P8C, !!CID_SYM_P8, !!CID_SYM_P8, !!CID_SYM_P4, !!CID_SYM_P1, !!CID_SYM_LIFE, D_550244580_D_517801904)
+#   gt_life <- data_tib_all3 %>% filter(!!CID_SYM_P1==132232896 & !is.na(data_tib_all3$D_550244580_D_517801904) & 
+#                                       (!!CID_SYM_P4==804785430 | !!CID_SYM_P8C==353358909) & 
+#                                       as.numeric(data_tib_all3$D_550244580_D_517801904)<Age_upper  & 
+#                                       (is.na(!!CID_SYM_P8) | !(as.numeric(!!CID_SYM_P8)<Age_lower)) & 
+#                                       as.numeric(AGEGRID)>Age_lower)
+#                                       
+#   
+# gt_life_errors <- gt_life %>%  filter(!!CID_SYM_LIFE!= 428999623 & !!CID_SYM_LIFE!=248303092 & !!CID_SYM_LIFE!=998679771 & !!CID_SYM_LIFE!=638092100 & 
+#                                       !!CID_SYM_LIFE!=127455035 & !!CID_SYM_LIFE!= 402752509 & !is.na(!!CID_SYM_LIFE))  %>%  
+#   select(Connect_ID, !!CID_SYM_LIFE) %>% mutate(Response=!!CID_SYM_LIFE)
+# 
+#     
+# gt_life_errors[, c(1,3)] %>%  gt()
+# 
+#     
+# }
+
+
+
+
+
+```
+
+
+## PRODUCT 9B RULES
+
+### CIG9B
+```{r, echo=FALSE, warning=FALSE}
+funct_9b(D_763164658, D_639684251, D_798549704, D_400969127, D_815776236)
+
+```
+
+
+### ECIG9B
+```{r, echo=FALSE, warning=FALSE}
+funct_9b(D_624111331, D_751046675, D_238422161, D_242276545, D_333072838)
+```
+
+
+### CIGAR9B
+```{r, echo=FALSE, warning=FALSE}
+funct_9b(D_182431332, D_564438246, D_789271762, D_395480458, D_287715042)
+
+```
+
+### CHEW9B
+```{r, echo=FALSE, warning=FALSE}
+funct_9b(D_306320432, D_101710639, D_344631681, D_785139115, D_673842048)
+
+```
+
+### HOOKAH9B
+```{r, echo=FALSE, warning=FALSE}
+funct_9b(D_981755099, D_472007171, D_787047261, D_585702271, D_720305356)
+
+```
+
+### PIPE9B
+```{r, echo=FALSE, warning=FALSE}
+funct_9b(D_559388168, D_458395129, D_845122623, D_311569789, D_385490512)
+
+```
+
+### SMMAR9B
+```{r, echo=FALSE, warning=FALSE}
+funct_9b(D_319397722, D_503058092, D_180308733, D_129677435, D_722122662)
+
+```
+
+### TOMAR9B
+```{r, echo=FALSE, warning=FALSE}
+funct_9b(D_524914900, D_891825638, D_444759994, D_698314386, D_171050898)
+
+```
+
+### ELMAR9B
+```{r, echo=FALSE, warning=FALSE}
+funct_9b(D_325229459, D_521073718, D_859228803, D_142164107, D_177252178)
+
+```
+
+### EAMAR9B
+```{r, echo=FALSE, warning=FALSE}
+funct_9b(D_101170268, D_742544044, D_921663542, D_259481608, D_891996278)
+
+```
+
+### THMAR9B
+```{r, echo=FALSE, warning=FALSE}
+funct_9b(D_355689185, D_420155119, D_532755074, D_536166591, D_937550939)
+```
+
+
+
+
+
+
+## LIFE RULES
+
+
+### CIGLIFE
+```{r, echo=FALSE, warning=FALSE}
+#numeric 
+# funct_NUMERIC_LIFE(D_594608533, D_790436165_D_408696162, D_790436165_D_790436165_D_648960871, D_798549704, D_400969127, 0,18) 
+# funct_NUMERIC_LIFE(D_923371868, D_790436165_D_408696162, D_790436165_D_790436165_D_648960871, D_798549704, D_400969127, 18,25) 
+# funct_NUMERIC_LIFE(D_445537380, D_790436165_D_408696162, D_790436165_D_790436165_D_648960871, D_798549704, D_400969127, 25,30) 
+# funct_NUMERIC_LIFE(D_387489930, D_790436165_D_408696162, D_790436165_D_790436165_D_648960871, D_798549704, D_400969127, 30,40) 
+# funct_NUMERIC_LIFE(D_493642768, D_790436165_D_408696162, D_790436165_D_790436165_D_648960871, D_798549704, D_400969127, 40,50) 
+# funct_NUMERIC_LIFE(D_821629868, D_790436165_D_408696162, D_790436165_D_790436165_D_648960871, D_798549704, D_400969127, 50,60) 
+# funct_NUMERIC_LIFE(D_434034366, D_790436165_D_408696162, D_790436165_D_790436165_D_648960871, D_798549704, D_400969127, 60,70) 
+# #funct_NUMERIC_LIFE(D_842088582, D_790436165_D_408696162, D_790436165_D_790436165_D_648960871, D_798549704, D_400969127, 70,80)   # no one answered ciglifeh yet
+
+
+funct_NON_NUMERIC_LIFE(D_594608533, D_763164658, D_790436165_D_408696162, D_790436165_D_790436165_D_648960871, D_639684251, D_204884007, D_400969127, 0,18) 
+funct_NON_NUMERIC_LIFE(D_923371868, D_763164658, D_790436165_D_408696162, D_790436165_D_790436165_D_648960871, D_639684251, D_204884007, D_400969127, 18,25) 
+funct_NON_NUMERIC_LIFE(D_445537380, D_763164658, D_790436165_D_408696162, D_790436165_D_790436165_D_648960871, D_639684251, D_204884007, D_400969127, 25,30) 
+funct_NON_NUMERIC_LIFE(D_387489930, D_763164658, D_790436165_D_408696162, D_790436165_D_790436165_D_648960871, D_639684251, D_204884007, D_400969127, 30,40) 
+funct_NON_NUMERIC_LIFE(D_493642768, D_763164658, D_790436165_D_408696162, D_790436165_D_790436165_D_648960871, D_639684251, D_204884007, D_400969127, 40,50) 
+funct_NON_NUMERIC_LIFE(D_821629868, D_763164658, D_790436165_D_408696162, D_790436165_D_790436165_D_648960871, D_639684251, D_204884007, D_400969127, 50,60) 
+funct_NON_NUMERIC_LIFE(D_434034366, D_763164658, D_790436165_D_408696162, D_790436165_D_790436165_D_648960871, D_639684251, D_204884007, D_400969127, 60,70) 
+#funct_NON_NUMERIC_LIFE(D_842088582, D_763164658, D_790436165_D_408696162, D_790436165_D_790436165_D_648960871, D_639684251, D_204884007, D_400969127, 70,80) 
+
+
+
+```
+
+
+
+### ECIGLIFE
+```{r, echo=FALSE, warning=FALSE}
+
+# #funct_NON_NUMERIC_LIFE(D_240089798, D_624111331, D_550244580_D_517801904, D_550244580_D_550244580_D_648960871, D_751046675, D_360277949, D_242276545, 0,18) # no one answered eciglifea yet
+# #funct_NON_NUMERIC_LIFE(D_536216847, D_624111331, D_550244580_D_517801904, D_550244580_D_550244580_D_648960871, D_751046675, D_360277949, D_242276545, 18,25) # no one answered eciglifeb yet
+# #funct_NON_NUMERIC_LIFE(D_622394149, D_624111331, D_550244580_D_517801904, D_550244580_D_550244580_D_648960871, D_751046675, D_360277949, D_242276545, 25,30) # no one answered eciglifec yet
+funct_NON_NUMERIC_LIFE(D_442002787, D_624111331, D_550244580_D_517801904, D_550244580_D_550244580_D_648960871, D_751046675, D_360277949, D_242276545, 30,40)
+funct_NON_NUMERIC_LIFE(D_208578552, D_624111331, D_550244580_D_517801904, D_550244580_D_550244580_D_648960871, D_751046675, D_360277949, D_242276545, 40,50)
+funct_NON_NUMERIC_LIFE(D_480155628, D_624111331, D_550244580_D_517801904, D_550244580_D_550244580_D_648960871, D_751046675, D_360277949, D_242276545, 50,60)
+funct_NON_NUMERIC_LIFE(D_640944113, D_624111331, D_550244580_D_517801904, D_550244580_D_550244580_D_648960871, D_751046675, D_360277949, D_242276545, 60,70)
+# #funct_NON_NUMERIC_LIFE(D_866159532,D_624111331, D_550244580_D_517801904, D_550244580_D_550244580_D_648960871, D_751046675, D_360277949, D_242276545, 70,80) # no one answered eciglifeh yet
+
+
+```
+
+### CIGARLIFE
+```{r, echo=FALSE, warning=FALSE}
+#numeric
+
+# #funct_NUMERIC_LIFE(D_254689566, D_814115676_D_851145096, D_814115676_D_814115676_D_648960871, D_789271762, D_395480458, 0,18) # no one answered cigarlifea yet
+# funct_NUMERIC_LIFE(D_951151270, D_814115676_D_851145096, D_814115676_D_814115676_D_648960871, D_789271762, D_395480458, 18,25) 
+# funct_NUMERIC_LIFE(D_237415094, D_814115676_D_851145096, D_814115676_D_814115676_D_648960871, D_789271762, D_395480458, 25,30) 
+# funct_NUMERIC_LIFE(D_868868325, D_814115676_D_851145096, D_814115676_D_814115676_D_648960871, D_789271762, D_395480458, 30,40) 
+# funct_NUMERIC_LIFE(D_243519559, D_814115676_D_851145096, D_814115676_D_814115676_D_648960871, D_789271762, D_395480458, 40,50) 
+# funct_NUMERIC_LIFE(D_365370279, D_814115676_D_851145096, D_814115676_D_814115676_D_648960871, D_789271762, D_395480458, 50,60) 
+# funct_NUMERIC_LIFE(D_645681293, D_814115676_D_851145096, D_814115676_D_814115676_D_648960871, D_789271762, D_395480458, 60,70) 
+# #funct_NUMERIC_LIFE(D_440364083, D_814115676_D_851145096, D_814115676_D_814115676_D_648960871, D_789271762, D_395480458, 70,80)   # no one answered cigarlifeh yet
+
+
+#funct_NON_NUMERIC_LIFE(D_254689566, D_182431332, D_814115676_D_851145096, D_814115676_D_814115676_D_648960871, D_564438246, D_395480458, D_997412869, 0,18) # no one answered cigarlifea yet
+funct_NON_NUMERIC_LIFE(D_951151270, D_182431332, D_814115676_D_851145096, D_814115676_D_814115676_D_648960871, D_564438246, D_997412869, D_395480458, 18,25) 
+funct_NON_NUMERIC_LIFE(D_237415094, D_182431332, D_814115676_D_851145096, D_814115676_D_814115676_D_648960871, D_564438246, D_997412869, D_395480458, 25,30) 
+funct_NON_NUMERIC_LIFE(D_868868325, D_182431332, D_814115676_D_851145096, D_814115676_D_814115676_D_648960871, D_564438246, D_997412869, D_395480458, 30,40) 
+funct_NON_NUMERIC_LIFE(D_243519559, D_182431332, D_814115676_D_851145096, D_814115676_D_814115676_D_648960871, D_564438246, D_997412869, D_395480458, 40,50) 
+funct_NON_NUMERIC_LIFE(D_365370279, D_182431332, D_814115676_D_851145096, D_814115676_D_814115676_D_648960871, D_564438246, D_997412869, D_395480458, 50,60) 
+funct_NON_NUMERIC_LIFE(D_645681293, D_182431332, D_814115676_D_851145096, D_814115676_D_814115676_D_648960871, D_564438246, D_997412869, D_395480458, 60,70) 
+#funct_NON_NUMERIC_LIFE(D_440364083,D_182431332, D_814115676_D_851145096, D_814115676_D_814115676_D_648960871, D_564438246, D_997412869, D_395480458, 70,80)   # no one answered cigarlifeh yet
+
+
+```
+
+
+### CHEWLIFE
+```{r, echo=FALSE, warning=FALSE}
+
+funct_NON_NUMERIC_LIFE(D_495592561, D_306320432, D_257300783_D_424527685, D_257300783_D_257300783_D_648960871, D_101710639, D_671380198, D_785139115, 0,18)
+funct_NON_NUMERIC_LIFE(D_705282587, D_306320432, D_257300783_D_424527685, D_257300783_D_257300783_D_648960871, D_101710639, D_671380198, D_785139115, 18,25)
+funct_NON_NUMERIC_LIFE(D_133396976, D_306320432, D_257300783_D_424527685, D_257300783_D_257300783_D_648960871, D_101710639, D_671380198, D_785139115, 25,30)
+funct_NON_NUMERIC_LIFE(D_628770824, D_306320432, D_257300783_D_424527685, D_257300783_D_257300783_D_648960871, D_101710639, D_671380198, D_785139115, 30,40)
+funct_NON_NUMERIC_LIFE(D_558707243, D_306320432, D_257300783_D_424527685, D_257300783_D_257300783_D_648960871, D_101710639, D_671380198, D_785139115, 40,50)
+funct_NON_NUMERIC_LIFE(D_929034795, D_306320432, D_257300783_D_424527685, D_257300783_D_257300783_D_648960871, D_101710639, D_671380198, D_785139115, 50,60)
+funct_NON_NUMERIC_LIFE(D_995220236, D_306320432, D_257300783_D_424527685, D_257300783_D_257300783_D_648960871, D_101710639, D_671380198, D_785139115, 60,70)
+#funct_NON_NUMERIC_LIFE(D_551301510, D_306320432, D_257300783_D_424527685, D_257300783_D_257300783_D_648960871, D_101710639, D_671380198, D_785139115, 70,80) # no one answered chewlifeh yet
+
+```
+
+
+```{r, echo=FALSE, warning=FALSE}
+### HOOKAHLIFE
+#no one yet
+
+```
+
+
+### PIPELIFE
+```{r, echo=FALSE, warning=FALSE}
+#numeric
+
+# #funct_NUMERIC_LIFE(D_689339933, D_546410473_D_663551714, D_546410473_D_546410473_D_648960871, D_845122623, D_311569789, 0,18) # no one answered piepelifea yet
+# funct_NUMERIC_LIFE(D_812430894, D_546410473_D_663551714, D_546410473_D_546410473_D_648960871, D_845122623, D_311569789, 18,25) 
+# funct_NUMERIC_LIFE(D_178242940, D_546410473_D_663551714, D_546410473_D_546410473_D_648960871, D_845122623, D_311569789, 25,30) 
+# funct_NUMERIC_LIFE(D_501545129, D_546410473_D_663551714, D_546410473_D_546410473_D_648960871, D_845122623, D_311569789, 30,40) 
+# funct_NUMERIC_LIFE(D_197309242, D_546410473_D_663551714, D_546410473_D_546410473_D_648960871, D_845122623, D_311569789, 40,50) 
+# funct_NUMERIC_LIFE(D_550850568, D_546410473_D_663551714, D_546410473_D_546410473_D_648960871, D_845122623, D_311569789, 50,60) 
+# #funct_NUMERIC_LIFE(D_277284423, D_546410473_D_663551714, D_546410473_D_546410473_D_648960871, D_845122623, D_311569789, 60,70) # no one answered pipelifeg yet
+# #funct_NUMERIC_LIFE(D_127038003, D_546410473_D_663551714, D_546410473_D_546410473_D_648960871, D_845122623, D_311569789, 70,80)   # no one answered pipelifeh yet
+
+
+#funct_NON_NUMERIC_LIFE(D_689339933, D_559388168, D_546410473_D_663551714, D_546410473_D_546410473_D_648960871, D_458395129, D_780685299, D_311569789, 0,18) # no one answered piepelifea yet
+funct_NON_NUMERIC_LIFE(D_812430894, D_559388168, D_546410473_D_663551714, D_546410473_D_546410473_D_648960871, D_458395129, D_780685299, D_311569789, 18,25) 
+funct_NON_NUMERIC_LIFE(D_178242940, D_559388168, D_546410473_D_663551714, D_546410473_D_546410473_D_648960871, D_458395129, D_780685299, D_311569789, 25,30) 
+funct_NON_NUMERIC_LIFE(D_501545129, D_559388168, D_546410473_D_663551714, D_546410473_D_546410473_D_648960871, D_458395129, D_780685299, D_311569789, 30,40) 
+funct_NON_NUMERIC_LIFE(D_197309242, D_559388168, D_546410473_D_663551714, D_546410473_D_546410473_D_648960871, D_458395129, D_780685299, D_311569789, 40,50) 
+funct_NON_NUMERIC_LIFE(D_550850568, D_559388168, D_546410473_D_663551714, D_546410473_D_546410473_D_648960871, D_458395129, D_780685299, D_311569789, 50,60) 
+#funct_NON_NUMERIC_LIFE(D_277284423, D_559388168, D_546410473_D_663551714, D_546410473_D_546410473_D_648960871, D_458395129, D_780685299, D_311569789, 60,70) # no one answered pipelifeg yet
+#funct_NON_NUMERIC_LIFE(D_127038003, D_559388168, D_546410473_D_663551714, D_546410473_D_546410473_D_648960871, D_458395129, D_780685299, D_311569789, 70,80)   # no one answered pipelifeh yet
+
+
+
+```
+
+
+### SMMARLIFE
+```{r, echo=FALSE, warning=FALSE}
+
+funct_NON_NUMERIC_LIFE(D_258291510, D_319397722, D_116080663_D_889949861,D_116080663_D_116080663_D_648960871, D_503058092, D_863664828, D_129677435, 0, 18)
+funct_NON_NUMERIC_LIFE(D_175995366, D_319397722, D_116080663_D_889949861,D_116080663_D_116080663_D_648960871, D_503058092, D_863664828, D_129677435, 18, 25)
+funct_NON_NUMERIC_LIFE(D_643099118, D_319397722, D_116080663_D_889949861,D_116080663_D_116080663_D_648960871, D_503058092, D_863664828, D_129677435, 25, 30)
+funct_NON_NUMERIC_LIFE(D_864290328, D_319397722, D_116080663_D_889949861,D_116080663_D_116080663_D_648960871, D_503058092, D_863664828, D_129677435, 30, 40)
+funct_NON_NUMERIC_LIFE(D_386950237, D_319397722, D_116080663_D_889949861,D_116080663_D_116080663_D_648960871, D_503058092, D_863664828, D_129677435, 40, 50)
+funct_NON_NUMERIC_LIFE(D_480217113, D_319397722, D_116080663_D_889949861,D_116080663_D_116080663_D_648960871, D_503058092, D_863664828, D_129677435, 50, 60)
+funct_NON_NUMERIC_LIFE(D_645361463, D_319397722, D_116080663_D_889949861,D_116080663_D_116080663_D_648960871, D_503058092, D_863664828, D_129677435, 60, 70)
+#funct_NON_NUMERIC_LIFE(D_882838859, D_319397722, D_116080663_D_889949861,D_116080663_D_116080663_D_648960871, D_503058092, D_863664828, D_129677435, 70, 80)
+
+```
+
+### TOMARLIFE
+```{r, echo=FALSE, warning=FALSE}
+#numeric
+
+#funct_NUMERIC_LIFE(D_381268397, D_378254382_D_628818510 D_378254382_D_378254382_D_648960871, D_444759994, D_698314386, 0,18) # no one answered tomrlifea yet
+funct_NUMERIC_LIFE(D_723763329, D_378254382_D_628818510, D_378254382_D_378254382_D_648960871, D_444759994, D_698314386, 18,25) 
+funct_NUMERIC_LIFE(D_724990284, D_378254382_D_628818510, D_378254382_D_378254382_D_648960871, D_444759994, D_698314386, 25,30) 
+funct_NUMERIC_LIFE(D_383748300, D_378254382_D_628818510, D_378254382_D_378254382_D_648960871, D_444759994, D_698314386, 30,40) 
+funct_NUMERIC_LIFE(D_199612020, D_378254382_D_628818510, D_378254382_D_378254382_D_648960871, D_444759994, D_698314386, 40,50) 
+#funct_NUMERIC_LIFE(D_755298453, D_378254382_D_628818510, D_378254382_D_378254382_D_648960871, D_444759994, D_698314386, 50,60) # no one answered tomarlifef yet
+#funct_NUMERIC_LIFE(D_777877159, D_378254382_D_628818510, D_378254382_D_378254382_D_648960871, D_444759994, D_698314386, 60,70) # no one answered tomarlifeg yet
+#funct_NUMERIC_LIFE(D_680697711, D_378254382_D_628818510, D_378254382_D_378254382_D_648960871, D_444759994, D_698314386, 70,80)   # no one answered tomarlifeh yet
+
+
+#funct_NON_NUMERIC_LIFE(D_381268397, D_524914900,  D_378254382_D_628818510, D_378254382_D_378254382_D_648960871, D_891825638,  D_405178123, D_698314386, 0,18) # no one answered tomrlifea yet
+funct_NON_NUMERIC_LIFE(D_723763329, D_524914900,  D_378254382_D_628818510, D_378254382_D_378254382_D_648960871, D_891825638,  D_405178123, D_698314386, 18,25) 
+funct_NON_NUMERIC_LIFE(D_724990284, D_524914900,  D_378254382_D_628818510, D_378254382_D_378254382_D_648960871, D_891825638,  D_405178123, D_698314386, 25,30) 
+funct_NON_NUMERIC_LIFE(D_383748300, D_524914900,  D_378254382_D_628818510, D_378254382_D_378254382_D_648960871, D_891825638,  D_405178123, D_698314386, 30,40) 
+funct_NON_NUMERIC_LIFE(D_199612020, D_524914900,  D_378254382_D_628818510, D_378254382_D_378254382_D_648960871, D_891825638,  D_405178123, D_698314386, 40,50) 
+#funct_NON_NUMERIC_LIFE(D_755298453, D_524914900,  D_378254382_D_628818510, D_378254382_D_378254382_D_648960871, D_891825638,  D_405178123, D_698314386, 50,60) # no one answered tomarlifef yet
+#funct_NON_NUMERIC_LIFE(D_777877159, D_524914900,  D_378254382_D_628818510, D_378254382_D_378254382_D_648960871, D_891825638,  D_405178123, D_698314386, 60,70) # no one answered tomarlifeg yet
+#funct_NON_NUMERIC_LIFE(D_680697711, D_524914900,  D_378254382_D_628818510, D_378254382_D_378254382_D_648960871, D_891825638,  D_405178123, D_698314386, 70,80)   # no one answered tomarlifeh yet
+
+
+
+```
+
+
+### ELMARLIFE
+```{r, echo=FALSE, warning=FALSE}
+#funct_NON_NUMERIC_LIFE(D_446121108, D_325229459, D_942945860_D_742716427,D_942945860_D_942945860_D_648960871, D_521073718, D_445187084, D_142164107, 0, 18)
+#funct_NON_NUMERIC_LIFE(D_319252189, D_325229459, D_942945860_D_742716427,D_942945860_D_942945860_D_648960871, D_521073718, D_445187084, D_142164107, 18, 25)
+#funct_NON_NUMERIC_LIFE(D_822964046, D_325229459, D_942945860_D_742716427,D_942945860_D_942945860_D_648960871, D_521073718, D_445187084, D_142164107, 25, 30)
+funct_NON_NUMERIC_LIFE(D_878281875, D_325229459, D_942945860_D_742716427,D_942945860_D_942945860_D_648960871, D_521073718, D_445187084, D_142164107, 30, 40)
+funct_NON_NUMERIC_LIFE(D_989594002, D_325229459, D_942945860_D_742716427,D_942945860_D_942945860_D_648960871, D_521073718, D_445187084, D_142164107, 40, 50)
+funct_NON_NUMERIC_LIFE(D_596004621, D_325229459, D_942945860_D_742716427,D_942945860_D_942945860_D_648960871, D_521073718, D_445187084, D_142164107, 50, 60)
+funct_NON_NUMERIC_LIFE(D_459096272, D_325229459, D_942945860_D_742716427,D_942945860_D_942945860_D_648960871, D_521073718, D_445187084, D_142164107, 60, 70)
+#funct_NON_NUMERIC_LIFE(D_586306068, D_325229459, D_942945860_D_742716427,D_942945860_D_942945860_D_648960871, D_521073718, D_445187084, D_142164107, 70, 80)
+
+```
+
+### EAMARLIFE
+```{r, echo=FALSE, warning=FALSE}
+#numeric
+
+# #funct_NUMERIC_LIFE(D_922708844, D_653198444_D_622843252, D_653198444_D_653198444_D_648960871, D_921663542, D_259481608, 0,18) # no one answered eamarlifea yet
+# #funct_NUMERIC_LIFE(D_336810811, D_653198444_D_622843252, D_653198444_D_653198444_D_648960871, D_921663542, D_259481608, 18,25) 
+# #funct_NUMERIC_LIFE(D_925215135, D_653198444_D_622843252, D_653198444_D_653198444_D_648960871, D_921663542, D_259481608, 25,30) 
+# funct_NUMERIC_LIFE(D_402300898, D_653198444_D_622843252, D_653198444_D_653198444_D_648960871, D_921663542, D_259481608, 30,40) 
+# funct_NUMERIC_LIFE(D_677733128, D_653198444_D_622843252, D_653198444_D_653198444_D_648960871, D_921663542, D_259481608, 40,50) 
+# funct_NUMERIC_LIFE(D_702729897, D_653198444_D_622843252, D_653198444_D_653198444_D_648960871, D_921663542, D_259481608, 50,60) 
+# funct_NUMERIC_LIFE(D_795265404, D_653198444_D_622843252, D_653198444_D_653198444_D_648960871, D_921663542, D_259481608, 60,70) 
+# #funct_NUMERIC_LIFE(D_432310123, D_653198444_D_622843252, D_653198444_D_653198444_D_648960871, D_921663542, D_259481608, 70,80)   # no one answered eamarlifeh yet
+
+
+#funct_NON_NUMERIC_LIFE(D_922708844, D_101170268, D_653198444_D_622843252, D_653198444_D_653198444_D_648960871, D_742544044, D_700173707, D_259481608, 0,18) # no one answered eamarlifea yet
+#funct_NON_NUMERIC_LIFE(D_336810811, D_101170268, D_653198444_D_622843252, D_653198444_D_653198444_D_648960871, D_742544044, D_700173707, D_259481608, 18,25) 
+#funct_NON_NUMERIC_LIFE(D_925215135, D_101170268, D_653198444_D_622843252, D_653198444_D_653198444_D_648960871, D_742544044, D_700173707, D_259481608, 25,30) 
+funct_NON_NUMERIC_LIFE(D_402300898, D_101170268, D_653198444_D_622843252, D_653198444_D_653198444_D_648960871, D_742544044, D_700173707, D_259481608, 30,40) 
+funct_NON_NUMERIC_LIFE(D_677733128, D_101170268, D_653198444_D_622843252, D_653198444_D_653198444_D_648960871, D_742544044, D_700173707, D_259481608, 40,50) 
+funct_NON_NUMERIC_LIFE(D_702729897, D_101170268, D_653198444_D_622843252, D_653198444_D_653198444_D_648960871, D_742544044, D_700173707, D_259481608, 50,60) 
+funct_NON_NUMERIC_LIFE(D_795265404, D_101170268, D_653198444_D_622843252, D_653198444_D_653198444_D_648960871, D_742544044, D_700173707, D_259481608, 60,70) 
+#funct_NON_NUMERIC_LIFE(D_432310123, D_101170268, D_653198444_D_622843252, D_653198444_D_653198444_D_648960871, D_742544044, D_700173707, D_259481608, 70,80)   # no one answered eamarlifeh yet
+
+```
+
+
+### THMARLIFE
+```{r, echo=FALSE, warning=FALSE}
+#numeric
+
+# #funct_NUMERIC_LIFE(D_349510816, D_742254559_D_185168695, D_742254559_D_742254559_D_648960871, D_532755074, D_536166591, 0,18) # no one answered thmarlifea yet
+# funct_NUMERIC_LIFE(D_375227733, D_742254559_D_185168695, D_742254559_D_742254559_D_648960871, D_532755074, D_536166591, 18,25) 
+# funct_NUMERIC_LIFE(D_752795304, D_742254559_D_185168695, D_742254559_D_742254559_D_648960871, D_532755074, D_536166591, 25,30) 
+# funct_NUMERIC_LIFE(D_417552256, D_742254559_D_185168695, D_742254559_D_742254559_D_648960871, D_532755074, D_536166591, 30,40) 
+# funct_NUMERIC_LIFE(D_963040791, D_742254559_D_185168695, D_742254559_D_742254559_D_648960871, D_532755074, D_536166591, 40,50) 
+# funct_NUMERIC_LIFE(D_685659661, D_742254559_D_185168695, D_742254559_D_742254559_D_648960871, D_532755074, D_536166591, 50,60) 
+# funct_NUMERIC_LIFE(D_511145980, D_742254559_D_185168695, D_742254559_D_742254559_D_648960871, D_532755074, D_536166591, 60,70) 
+# #funct_NUMERIC_LIFE(D_227784207, D_742254559_D_185168695, D_742254559_D_742254559_D_648960871, D_532755074, D_536166591, 70,80)   # no one answered thmarlifeh yet
+
+#funct_NON_NUMERIC_LIFE(D_349510816, D_355689185, D_742254559_D_185168695, D_742254559_D_742254559_D_648960871, D_532755074, D_420155119, D_970325871, 0,18) # no one answered thmarlifea yet
+funct_NON_NUMERIC_LIFE(D_375227733, D_355689185, D_742254559_D_185168695, D_742254559_D_742254559_D_648960871, D_532755074, D_420155119, D_970325871, 18,25) 
+funct_NON_NUMERIC_LIFE(D_752795304, D_355689185, D_742254559_D_185168695, D_742254559_D_742254559_D_648960871, D_532755074, D_420155119, D_970325871, 25,30) 
+funct_NON_NUMERIC_LIFE(D_417552256, D_355689185, D_742254559_D_185168695, D_742254559_D_742254559_D_648960871, D_532755074, D_420155119, D_970325871, 30,40) 
+funct_NON_NUMERIC_LIFE(D_963040791, D_355689185, D_742254559_D_185168695, D_742254559_D_742254559_D_648960871, D_532755074, D_420155119, D_970325871, 40,50) 
+funct_NON_NUMERIC_LIFE(D_685659661, D_355689185, D_742254559_D_185168695, D_742254559_D_742254559_D_648960871, D_532755074, D_420155119, D_970325871, 50,60) 
+funct_NON_NUMERIC_LIFE(D_511145980, D_355689185, D_742254559_D_185168695, D_742254559_D_742254559_D_648960871, D_532755074, D_420155119, D_970325871, 60,70) 
+#funct_NON_NUMERIC_LIFE(D_227784207, D_355689185, D_742254559_D_185168695, D_742254559_D_742254559_D_648960871, D_532755074, D_420155119, D_970325871, 70,80)   # no one answered thmarlifeh yet
+
+
+#funct_NON_NUMERIC_LIFE <- function(LIFE_CID, PRODUCT1_CID, PRODUCT3_CID, PRODUCT3_never_CID,PRODUCT4_CID,PRODUCT8_CID, PRODUCT8C_CID, Age_Lower_Range, Age_Upper_Range_Plus_One)
+#funct_NUMERIC_LIFE     <- function(LIFE_CID, PRODUCT3_CID, PRODUCT3_never_CID,  PRODUCT5_CID, PRODUCT8C_CID, Age_Lower_Range, Age_Upper_Range_Plus_One)
+
+```
+
+
+
+### SECSMLF2D
+```{r, echo=FALSE, warning=FALSE}
+                                      
+  # these response should be numeric and only answered by those 30 or older, those that don't appear on the error list
+gt_SECSMLF2D_errors <- data_tib_all3 %>%  filter(!is.na(D_738219521_D_509170471) & (!is.numeric(D_738219521_D_509170471) | AGEGRID <29))  %>%  
+  select(Connect_ID, D_738219521_D_509170471, AGEGRID) %>% mutate(Response=D_738219521_D_509170471,
+                                                                  Age=AGEGRID) #not working?
+
+gt_SECSMLF2D_errors$Age <- gt_SECSMLF2D_errors$AGEGRID
+#colnames(gt_SECSMLF2D_errors) <- c("Connect_ID", "SECSMLF2D", "Age")
+
+gt_SECSMLF2D_errors <- gt_SECSMLF2D_errors[, c(1,5,4)]
+  
+
+```
+
+### SECSMLF2E
+```{r, echo=FALSE, warning=FALSE}
+
+  # these response should be numeric and only answered by those 40 or older, those that don't appear on the error list
+gt_SECSMLF2E_errors <- data_tib_all3 %>%  filter(!is.numeric(D_738219521_D_576358766) | AGEGRID <39)  %>%  
+  select(Connect_ID, D_738219521_D_576358766, AGEGRID) %>% mutate(Response=D_738219521_D_576358766)
+
+colnames(gt_SECSMLF2E_errors) <- c("Connect_ID", "SECSMLF2E", "Age")
+
+    
+gt_SECSMLF2E_errors %>%  gt()
+```
+
+### SECSMLF2F
+```{r, echo=FALSE, warning=FALSE}
+
+  # these response should be numeric and only answered by those 50 or older, those that don't appear on the error list
+gt_SECSMLF2F_errors <- data_tib_all3 %>%  filter(!is.numeric(D_738219521_D_767711152) | AGEGRID <49)  %>%  
+  select(Connect_ID, D_738219521_D_767711152, AGEGRID) %>% mutate(Response=D_738219521_D_767711152)
+
+colnames(gt_SECSMLF2F_errors) <- c("Connect_ID", "SECSMLF2F", "Age")
+
+    
+gt_SECSMLF2F_errors %>%  gt()
+```
+
+### SECSMLF2G
+```{r, echo=FALSE, warning=FALSE}
+
+  # these response should be numeric and only answered by those 60 or older, those that don't appear on the error list
+gt_SECSMLF2G_errors <- data_tib_all3 %>%  filter(!is.numeric(D_738219521_D_888898065) | AGEGRID <59)  %>%  
+  select(Connect_ID, D_738219521_D_888898065, AGEGRID) %>% mutate(Response=D_738219521_D_888898065)
+
+colnames(gt_SECSMLF2G_errors) <- c("Connect_ID", "SECSMLF2G", "Age")
+
+    
+gt_SECSMLF2G_errors %>%  gt()
+```
+
+### SECSMLF2H
+```{r, echo=FALSE, warning=FALSE}
+
+#NO ONE
+
+  # these response should be numeric and only answered by those 70 or older, those that don't appear on the error list
+#gt_SECSMLF2H_errors <- data_tib_all3 %>%  filter(!is.numeric(D_738219521_D_509170471) | AGEGRID <69)  %>%   select(Connect_ID, D_738219521_D_509170471, AGEGRID) %>% mutate(Response=D_738219521_D_509170471)
+
+#colnames(gt_SECSMLF2H_errors) <- c("Connect_ID", "SECSMLF2H", "Age")
+
+    
+#gt_SECSMLF2H_errors %>%  gt()
+```
+
+
+
+
+
+
+
+
+### ALCOHOL9
+```{r, echo=FALSE, warning=FALSE}
+#alsohol2=3 & !is.na(alcohol4) & (alcohol5=1 | (alcohol5=0 & !is.na(alcohol6)))
+#THEN alcohol9 must = 648960871, 351028096, 690077051, 637900673, 207952166, 522395860, 418361985, 471294296, 594557208, 647504893
+
+# alc9 <- module3 %>%  filter(D_429228540==132232896 & !is.na(D_556837046_D_141874857) & (D_338467033==353358909 | (D_338467033==104430631 & !is.na(D_480426504))) & 
+#                               D_254739443!= 648960871 & D_254739443!=351028096 & D_254739443!=690077051 & D_254739443!=637900673 & D_254739443!= 207952166 &
+#                               D_254739443!=522395860 & D_254739443!=418361985 & D_254739443!=471294296 & D_254739443!=594557208 & D_254739443!=647504893 &
+#                               !is.na(D_254739443))
+
+alc9 <- module3 %>%  filter(D_429228540==132232896 & !is.na(D_556837046_D_141874857) & D_338467033==353358909)
+ 
+  alc9 %>% select(Connect_ID, D_254739443) %>% gt() %>% cols_label(Connect_ID= md("**Connect ID**"), D_254739443 = md("**Response**"))
+
+
+```
+
+
+
+
+
+

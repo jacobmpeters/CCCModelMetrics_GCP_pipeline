@@ -1,0 +1,1002 @@
+---
+title: "Home Address 1 Missingness Across Sites"
+author: "Kelsey Dowling"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+
+In Module 4, the entire cohort is asked to provide their Home 1 Addresses , meaning their current home address. This is asked in a manner of open text boxes for each of the following home address components:
+Street Number, Street Name, City, State, ZIP, Country. While we hope the entirety of the question is answered, a participant does have the ability to skip one or all text boxes and still move on from this question. This report reviews the skipping of Home Address 1 questions across all Connect Sites using the Module 4 skip logic from Qx: https://nih.app.box.com/file/1255293127627 ; only participants that have skipped one or all address 1 components are included in this report. Among those that did skip providing their full current address, the skipping trends are very much aligned across sites, though UChicago does have slightly higher rates overall. Roughly 19-27% chose not to provide their street name, less than 2% of participants from any site skipped their entire address, and the remainder of the address components were skipped at a much lower rate varying between 0-7%.
+
+
+
+To avoid confusion, these tables will NOT have sums of missing responses at the bottom. Participants are able to skip one or all components of a question in Module 4.
+
+
+```{r libraries, include=FALSE}
+
+##  MUST RUN FIRST BEFORE KNITTING
+
+
+library(bigrquery)
+#install_tinytex()
+library(tinytex)
+
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(reshape)  ###to work on transition from long to wide or wide to long data
+library(listr) ###to work on a list of vector, files or..
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(stringr) ###to work on patterns, charaters
+library(arsenal)
+library(gt)
+library(gtsummary)
+
+options(tinytex.verbose = TRUE)
+
+bq_auth()
+```
+
+
+```{r QueryStatus, include=FALSE}
+
+##Make sure SQL queries are properly running
+
+
+# check_sch_query_status <- 
+#   function(project, table_name){
+# 
+#     ## Set default project for BQ CLI
+#     #set_proj_cmd <- paste0("bq ls -j --project_id ", project, " > /dev/null")
+#     #system(set_proj_cmd)
+#     
+#     # Get list of scheduled queries from bq
+#     bq_request <- 'bq ls --transfer_config --transfer_location="us" --filter="dataSourceIds:scheduled_query"'
+#     response   <- system(bq_request, intern=TRUE)
+#     # Remove second line "----" of table and remove white space from each row
+#     response   <- lapply(response[-2], function(x) scan(text = x, what = ""))
+#     header     <- simplify2array(response[1]) # Array of column names
+#     
+#     # Bind rows of data into one array
+#     for (i in length(header)){
+#       x <- c() # Initialize array with first non-header line of data
+#       # Loop through remaining data
+#       for (line in response[2:length(response)]){
+#         x <- rbind(x, line)
+#       }
+#     }
+#     
+#     # Format as dataframe
+#     df <- data.frame(x, row.names = NULL)
+#     colnames(df) <- header
+#     
+#     # Return sch. query status as "SUCCEEDED", "PENDING", "RUNNING" or "FAILED".
+#     df$state[df$displayName==table_name] 
+#   }
+# 
+# 
+# table_name <- "FlatConnect.participants_JP"
+# project    <- "nih-nci-dceg-connect-prod-6d04"
+# 
+# # Check status of scheduled query
+# query_status <- check_sch_query_status(project, table_name)
+# switch(query_status,
+#  "FAILED"    = stop(paste0("The sch. query for ", table_name, " failed. Reach out to Jake.")),
+#   "PENDING"   = stop(paste0("The query for ", table_name, " is scheduled and waiting to be run.")),
+#   "RUNNING"   = stop(paste0("The sch. query for ", table_name, " is still running. Wait until complete.")),
+#   "SUCCEEDED" = print(paste0("The most recent scheduled query for ", table_name, " succeeded. The table is up-to-date."))
+# )
+# 
+# 
+# table_name <- "FlatConnect.module1_v1_JP"
+# project    <- "nih-nci-dceg-connect-prod-6d04"
+# 
+# # Check status of scheduled query
+# query_status <- check_sch_query_status(project, table_name)
+# switch(query_status,
+#  "FAILED"    = stop(paste0("The sch. query for ", table_name, " failed. Reach out to Jake.")),
+#   "PENDING"   = stop(paste0("The query for ", table_name, " is scheduled and waiting to be run.")),
+#   "RUNNING"   = stop(paste0("The sch. query for ", table_name, " is still running. Wait until complete.")),
+#   "SUCCEEDED" = print(paste0("The most recent scheduled query for ", table_name, " succeeded. The table is up-to-date."))
+# )
+# 
+# 
+# table_name <- "FlatConnect.module1_v2_JP"
+# project    <- "nih-nci-dceg-connect-prod-6d04"
+# 
+# # Check status of scheduled query
+# query_status <- check_sch_query_status(project, table_name)
+# switch(query_status,
+#  "FAILED"    = stop(paste0("The sch. query for ", table_name, " failed. Reach out to Jake.")),
+#   "PENDING"   = stop(paste0("The query for ", table_name, " is scheduled and waiting to be run.")),
+#   "RUNNING"   = stop(paste0("The sch. query for ", table_name, " is still running. Wait until complete.")),
+#   "SUCCEEDED" = print(paste0("The most recent scheduled query for ", table_name, " succeeded. The table is up-to-date."))
+# )
+# 
+# 
+# table_name <- "FlatConnect.module4_v1_JP"
+# project    <- "nih-nci-dceg-connect-prod-6d04"
+# 
+# # Check status of scheduled query
+# query_status <- check_sch_query_status(project, table_name)
+# switch(query_status,
+#  "FAILED"    = stop(paste0("The sch. query for ", table_name, " failed. Reach out to Jake.")),
+#   "PENDING"   = stop(paste0("The query for ", table_name, " is scheduled and waiting to be run.")),
+#   "RUNNING"   = stop(paste0("The sch. query for ", table_name, " is still running. Wait until complete.")),
+#   "SUCCEEDED" = print(paste0("The most recent scheduled query for ", table_name, " succeeded. The table is up-to-date."))
+# )
+
+
+```
+
+
+```{r M1Merge, include=FALSE}
+project = "nih-nci-dceg-connect-prod-6d04"
+
+dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
+dd <- dplyr::bind_rows(dictionary,.id="CID")
+dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
+dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name')
+
+dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
+dd$CID <- rownames(dd)
+#https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
+devtools::install_github("tidyverse/reprex")
+
+project <- "nih-nci-dceg-connect-prod-6d04"
+billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be consistent
+##517311251 Date/time Status of Completion of Background and Overall Health                         SrvBOH_TmComplete_v1r0
+##949302066 Flag for Baseline Module Background and Overall Health                        SrvBOH_BaseStatus_v1r0
+recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
+                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935'")
+recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
+cnames <- names(recr_m1)
+# Check that it doesn't match any non-number
+numbers_only <- function(x) !grepl("\\D", x)
+# to check variables in recr_noinact_wl1
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(recr_m1,varname)
+  recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+sql_M1_1 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
+sql_M1_2 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
+
+
+M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64") #1436 #1436 vars: 1507 01112023 
+M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64") #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
+
+mod1_v1 <- M1_V1
+cnames <- names(M1_V1)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v1,varname)
+  mod1_v1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+mod1_v2 <- M1_V2
+cnames <- names(M1_V2)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v2,varname)
+  mod1_v2[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+M1_V1.var <- colnames(M1_V1)
+M1_V2.var <- colnames(M1_V2)
+var.matched <- M1_V1.var[which(M1_V1.var %in% M1_V2.var)]
+length(var.matched)  #1275 #1278 vars 01112023 #1348 vars 05022023
+
+V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched] #232 #229 01112023 #159 05022023
+V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched] #253 #253 01112023 #545 05022023
+
+length(M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID])
+#[1] 59 with the completion of two versions of Module1 
+#[1] 62 with completing both versions of M1 ###double checked 03/28/2023
+#68 double checked 05/02/2023
+
+common.IDs <- M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID]
+M1_V1_common <- mod1_v1[,var.matched]
+
+M1_V2_common <- mod1_v2[,var.matched]
+M1_V1_common$version <- 1
+M1_V2_common$version <- 2
+
+##to check the completion of M1 among these duplicates
+partM1_dups <- recr_m1[which(recr_m1$Connect_ID %in% common.IDs),]
+table(partM1_dups$d_949302066)
+
+M1_common  <- rbind(M1_V1_common, M1_V2_common) #including 136 duplicates (version 1 and version 2) from 68 participants 05022023
+#M1_response <- matrix(data=NA, nrow=118, ncol=967)
+
+m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)] #230 vars 03282023 #160 vars 05/02/2023
+m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] #255 vars 03282023 #546 vars 05/02/2023
+m1_v1_only$version <- 1
+m1_v2_only$version <- 2
+#for (i in 1:length)
+##to check the completion in each version
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #1364 03282023 # 1370 05022023
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #4870 03282023 # 5731 05022023
+
+#library(janitor)
+
+m1_common <- rbind(M1_V1_common,M1_V2_common)
+m1_common_v1 <- base::merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
+m1_combined_v1v2 <- base::merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
+m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] #7289 including duplicates 05022023
+
+m1_complete <- m1_complete %>% arrange(desc(version)) 
+
+
+m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),] 
+table(m1_complete_nodup$version)
+
+
+parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
+D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
+D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_827220437, d_827220437, 
+D_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_663265240, d_452942800 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
+where Connect_ID IS NOT NULL"
+querymod4 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module4_v1_JP` where Connect_ID IS NOT NULL"
+
+parts_table <- bq_project_query(project, parts)
+mod4_table <- bq_project_query(project, querymod4)
+
+parts_data <- bq_table_download(parts_table, bigint = "integer64")
+mod4_data <- bq_table_download(mod4_table, bigint = "integer64")
+
+parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID) ###need to convert type- m1... is double and parts is character
+mod4_data$Connect_ID <- as.numeric(mod4_data$Connect_ID)
+
+mergeall= left_join(m1_complete_nodup, mod4_data, by="Connect_ID") %>%  left_join(parts_data, by="Connect_ID")
+dim(mergeall)
+
+knitr::opts_chunk$set(comment = NA)
+
+
+#Has a recruitment flag
+mergeall <- mergeall %>% filter(D_512820379==486306141 | D_512820379==854703046)
+dim(mergeall)
+
+active4 <- mergeall %>% filter(D_512820379==486306141)
+dim(active4)
+passive4 <- mergeall %>% filter(D_512820379==854703046)
+dim(passive4)
+
+#User consent submitted
+mergeall <- mergeall %>% filter(D_919254129==353358909)
+dim(mergeall)
+
+#User profile submitted
+mergeall <- mergeall %>% filter(D_699625233==353358909)
+dim(mergeall)
+
+#Verified by site
+sum(mergeall$d_821247024==197316935, na.rm=TRUE)
+#all who have started or completed survey are verified
+
+#Mod1 completed
+mergeall <- mergeall %>% filter(D_949302066==231311385)
+dim(mergeall)
+
+
+#Mod4 completed
+module4 <- mergeall %>% filter(d_663265240==231311385)
+dim(module4)
+
+
+```
+
+```{r MissingnessLibraries, warning=FALSE, include=FALSE}
+#Missingness Analysis Set Up
+
+#install.packages("naniar")
+#install.packages("UpSetR")
+library(naniar)
+library(UpSetR)
+library(tidyverse)
+
+
+
+Mod4 <- as_tibble(module4)
+```
+
+```{r, echo=FALSE, warning=FALSE}
+cat("Module 4 Completed by : ", dim(module4)[[1]], " Total Participants")
+```
+
+
+# Home 1 Address
+
+## HealthPartners
+```{r HP, warning=FALSE, echo=FALSE, message=FALSE}
+
+HP <- Mod4 %>%  filter(d_827220437=='531629870')
+  
+HP$Street_Number <- HP$D_121490150_D_255248624
+HP$Street_Name <- HP$D_121490150_D_945532934
+HP$Apt_Number <- HP$D_121490150_D_469838242
+HP$City <- HP$D_121490150_D_303500597
+HP$State <- HP$D_121490150_D_195068098
+HP$ZIP <- HP$D_121490150_D_202784871
+HP$Country <- HP$D_121490150_D_831127170
+
+
+
+home1skip <- HP %>% select(Connect_ID, Street_Number, Street_Name, City, State, ZIP, Country)
+home1skip= home1skip %>%  mutate(Address1= case_when(is.na(Street_Number) & is.na(Street_Name) & 
+                                                       is.na(City) & is.na(State) & is.na(ZIP)& is.na(Country)~"Skipped Entire Home 1 Address "))
+
+dt_home1skip_summary <- home1skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+dt_home1skip_summary <- dt_home1skip_summary[1,]
+
+
+dt_home1skip_summary[2,1] <- "Skipped Street Number" 
+dt_home1skip_summary[2,2] <- sum(is.na(home1skip$Street_Number))
+dt_home1skip_summary[2,3] <- (sum(is.na(home1skip$Street_Number))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[3,1] <- "Skipped Street Name" 
+dt_home1skip_summary[3,2] <- sum(is.na(home1skip$Street_Name))
+dt_home1skip_summary[3,3] <- (sum(is.na(home1skip$Street_Name))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[4,1] <- "Skipped City"
+dt_home1skip_summary[4,2] <- sum(is.na(home1skip$City))
+dt_home1skip_summary[4,3] <- (sum(is.na(home1skip$City))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[5,1] <- "Skipped State"
+dt_home1skip_summary[5,2] <- sum(is.na(home1skip$State))
+dt_home1skip_summary[5,3] <- (sum(is.na(home1skip$State))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[6,1] <- "Skipped ZIP"
+dt_home1skip_summary[6,2] <- sum(is.na(home1skip$ZIP))
+dt_home1skip_summary[6,3] <- (sum(is.na(home1skip$ZIP))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[7,1] <- "Skipped Country"
+dt_home1skip_summary[7,2] <- sum(is.na(home1skip$Country))
+dt_home1skip_summary[7,3] <- (sum(is.na(home1skip$Country))/dim(home1skip)[[1]])*100
+
+
+
+dt_home1skip_summary_gtHP <- dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 1 Components Skipped by HealthPartners")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) 
+tab_footnote(
+  dt_home1skip_summary_gtHP,
+  md("Each row is not mutually exclusive. Those that skip all address 1 components will be counted in each row. Those that skip multiple components will be counted in each of the component rows; for example, if both Street Number and Street Name are skipped by a participant, they are counted in both the 'Skipped Street Number' and 'Skipped Street Name' rows."),
+  locations = cells_column_labels(columns = Address1),
+  placement = c("left")
+)
+
+
+```
+
+
+
+## Henry Ford Health System
+```{r HF, warning=FALSE, echo=FALSE, message=FALSE}
+
+HF <- Mod4 %>%  filter(d_827220437=='548392715')
+  
+HF$Street_Number <- HF$D_121490150_D_255248624
+HF$Street_Name <- HF$D_121490150_D_945532934
+HF$Apt_Number <- HF$D_121490150_D_469838242
+HF$City <- HF$D_121490150_D_303500597
+HF$State <- HF$D_121490150_D_195068098
+HF$ZIP <- HF$D_121490150_D_202784871
+HF$Country <- HF$D_121490150_D_831127170
+
+
+
+home1skip <- HF %>% select(Connect_ID, Street_Number, Street_Name, City, State, ZIP, Country)
+home1skip= home1skip %>%  mutate(Address1= case_when(is.na(Street_Number) & is.na(Street_Name) & 
+                                                       is.na(City) & is.na(State) & is.na(ZIP)& is.na(Country)~"Skipped Entire Home 1 Address "))
+
+dt_home1skip_summary <- home1skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+dt_home1skip_summary <- dt_home1skip_summary[1,]
+
+
+dt_home1skip_summary[2,1] <- "Skipped Street Number" 
+dt_home1skip_summary[2,2] <- sum(is.na(home1skip$Street_Number))
+dt_home1skip_summary[2,3] <- (sum(is.na(home1skip$Street_Number))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[3,1] <- "Skipped Street Name" 
+dt_home1skip_summary[3,2] <- sum(is.na(home1skip$Street_Name))
+dt_home1skip_summary[3,3] <- (sum(is.na(home1skip$Street_Name))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[4,1] <- "Skipped City"
+dt_home1skip_summary[4,2] <- sum(is.na(home1skip$City))
+dt_home1skip_summary[4,3] <- (sum(is.na(home1skip$City))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[5,1] <- "Skipped State"
+dt_home1skip_summary[5,2] <- sum(is.na(home1skip$State))
+dt_home1skip_summary[5,3] <- (sum(is.na(home1skip$State))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[6,1] <- "Skipped ZIP"
+dt_home1skip_summary[6,2] <- sum(is.na(home1skip$ZIP))
+dt_home1skip_summary[6,3] <- (sum(is.na(home1skip$ZIP))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[7,1] <- "Skipped Country"
+dt_home1skip_summary[7,2] <- sum(is.na(home1skip$Country))
+dt_home1skip_summary[7,3] <- (sum(is.na(home1skip$Country))/dim(home1skip)[[1]])*100
+
+
+
+dt_home1skip_summary_gtHF <- dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 1 Components Skipped by Henry Ford Health System")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) 
+tab_footnote(
+  dt_home1skip_summary_gtHF,
+  md("Each row is not mutually exclusive. Those that skip all address 1 components will be counted in each row. Those that skip multiple components will be counted in each of the component rows; for example, if both Street Number and Street Name are skipped by a participant, they are counted in both the 'Skipped Street Number' and 'Skipped Street Name' rows."),
+  locations = cells_column_labels(columns = Address1),
+  placement = c("left")
+)
+
+```
+
+
+## Kaiser Permanente Colorado
+```{r KPCO, warning=FALSE, echo=FALSE, message=FALSE}
+
+KPCO <- Mod4 %>%  filter(d_827220437=='125001209')
+  
+KPCO$Street_Number <- KPCO$D_121490150_D_255248624
+KPCO$Street_Name <- KPCO$D_121490150_D_945532934
+KPCO$Apt_Number <- KPCO$D_121490150_D_469838242
+KPCO$City <- KPCO$D_121490150_D_303500597
+KPCO$State <- KPCO$D_121490150_D_195068098
+KPCO$ZIP <- KPCO$D_121490150_D_202784871
+KPCO$Country <- KPCO$D_121490150_D_831127170
+
+
+
+home1skip <- KPCO %>% select(Connect_ID, Street_Number, Street_Name, City, State, ZIP, Country)
+home1skip= home1skip %>%  mutate(Address1= case_when(is.na(Street_Number) & is.na(Street_Name) & 
+                                                       is.na(City) & is.na(State) & is.na(ZIP)& is.na(Country)~"Skipped Entire Home 1 Address "))
+
+dt_home1skip_summary <- home1skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+dt_home1skip_summary <- dt_home1skip_summary[1,]
+
+
+dt_home1skip_summary[2,1] <- "Skipped Street Number" 
+dt_home1skip_summary[2,2] <- sum(is.na(home1skip$Street_Number))
+dt_home1skip_summary[2,3] <- (sum(is.na(home1skip$Street_Number))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[3,1] <- "Skipped Street Name" 
+dt_home1skip_summary[3,2] <- sum(is.na(home1skip$Street_Name))
+dt_home1skip_summary[3,3] <- (sum(is.na(home1skip$Street_Name))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[4,1] <- "Skipped City"
+dt_home1skip_summary[4,2] <- sum(is.na(home1skip$City))
+dt_home1skip_summary[4,3] <- (sum(is.na(home1skip$City))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[5,1] <- "Skipped State"
+dt_home1skip_summary[5,2] <- sum(is.na(home1skip$State))
+dt_home1skip_summary[5,3] <- (sum(is.na(home1skip$State))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[6,1] <- "Skipped ZIP"
+dt_home1skip_summary[6,2] <- sum(is.na(home1skip$ZIP))
+dt_home1skip_summary[6,3] <- (sum(is.na(home1skip$ZIP))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[7,1] <- "Skipped Country"
+dt_home1skip_summary[7,2] <- sum(is.na(home1skip$Country))
+dt_home1skip_summary[7,3] <- (sum(is.na(home1skip$Country))/dim(home1skip)[[1]])*100
+
+
+
+dt_home1skip_summary_gtKPCO <- dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 1 Components Skipped by KPCO")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) 
+tab_footnote(
+  dt_home1skip_summary_gtKPCO,
+  md("Each row is not mutually exclusive. Those that skip all address 1 components will be counted in each row. Those that skip multiple components will be counted in each of the component rows; for example, if both Street Number and Street Name are skipped by a participant, they are counted in both the 'Skipped Street Number' and 'Skipped Street Name' rows."),
+  locations = cells_column_labels(columns = Address1),
+  placement = c("left")
+)
+
+
+```
+
+
+## Kaiser Permanente Georgia
+```{r KPGA, warning=FALSE, echo=FALSE, message=FALSE}
+
+KPGA <- Mod4 %>%  filter(d_827220437=='327912200')
+  
+KPGA$Street_Number <- KPGA$D_121490150_D_255248624
+KPGA$Street_Name <- KPGA$D_121490150_D_945532934
+KPGA$Apt_Number <- KPGA$D_121490150_D_469838242
+KPGA$City <- KPGA$D_121490150_D_303500597
+KPGA$State <- KPGA$D_121490150_D_195068098
+KPGA$ZIP <- KPGA$D_121490150_D_202784871
+KPGA$Country <- KPGA$D_121490150_D_831127170
+
+
+
+home1skip <- KPGA %>% select(Connect_ID, Street_Number, Street_Name, City, State, ZIP, Country)
+home1skip= home1skip %>%  mutate(Address1= case_when(is.na(Street_Number) & is.na(Street_Name) & 
+                                                       is.na(City) & is.na(State) & is.na(ZIP)& is.na(Country)~"Skipped Entire Home 1 Address "))
+
+dt_home1skip_summary <- home1skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+dt_home1skip_summary <- dt_home1skip_summary[1,]
+
+
+dt_home1skip_summary[2,1] <- "Skipped Street Number" 
+dt_home1skip_summary[2,2] <- sum(is.na(home1skip$Street_Number))
+dt_home1skip_summary[2,3] <- (sum(is.na(home1skip$Street_Number))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[3,1] <- "Skipped Street Name" 
+dt_home1skip_summary[3,2] <- sum(is.na(home1skip$Street_Name))
+dt_home1skip_summary[3,3] <- (sum(is.na(home1skip$Street_Name))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[4,1] <- "Skipped City"
+dt_home1skip_summary[4,2] <- sum(is.na(home1skip$City))
+dt_home1skip_summary[4,3] <- (sum(is.na(home1skip$City))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[5,1] <- "Skipped State"
+dt_home1skip_summary[5,2] <- sum(is.na(home1skip$State))
+dt_home1skip_summary[5,3] <- (sum(is.na(home1skip$State))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[6,1] <- "Skipped ZIP"
+dt_home1skip_summary[6,2] <- sum(is.na(home1skip$ZIP))
+dt_home1skip_summary[6,3] <- (sum(is.na(home1skip$ZIP))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[7,1] <- "Skipped Country"
+dt_home1skip_summary[7,2] <- sum(is.na(home1skip$Country))
+dt_home1skip_summary[7,3] <- (sum(is.na(home1skip$Country))/dim(home1skip)[[1]])*100
+
+
+
+dt_home1skip_summary_gtKPGA <- dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 1 Components Skipped by KPGA")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) 
+tab_footnote(
+  dt_home1skip_summary_gtKPGA,
+  md("Each row is not mutually exclusive. Those that skip all address 1 components will be counted in each row. Those that skip multiple components will be counted in each of the component rows; for example, if both Street Number and Street Name are skipped by a participant, they are counted in both the 'Skipped Street Number' and 'Skipped Street Name' rows."),
+  locations = cells_column_labels(columns = Address1),
+  placement = c("left")
+)
+
+
+
+```
+
+
+## Kaiser Permanente Hawaii
+```{r KPHI, warning=FALSE, echo=FALSE, message=FALSE}
+
+KPHI <- Mod4 %>%  filter(d_827220437=='300267574')
+  
+KPHI$Street_Number <- KPHI$D_121490150_D_255248624
+KPHI$Street_Name <- KPHI$D_121490150_D_945532934
+KPHI$Apt_Number <- KPHI$D_121490150_D_469838242
+KPHI$City <- KPHI$D_121490150_D_303500597
+KPHI$State <- KPHI$D_121490150_D_195068098
+KPHI$ZIP <- KPHI$D_121490150_D_202784871
+KPHI$Country <- KPHI$D_121490150_D_831127170
+
+
+
+home1skip <- KPHI %>% select(Connect_ID, Street_Number, Street_Name, City, State, ZIP, Country)
+home1skip= home1skip %>%  mutate(Address1= case_when(is.na(Street_Number) & is.na(Street_Name) & 
+                                                       is.na(City) & is.na(State) & is.na(ZIP)& is.na(Country)~"Skipped Entire Home 1 Address "))
+
+dt_home1skip_summary <- home1skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+dt_home1skip_summary <- dt_home1skip_summary[1,]
+
+
+dt_home1skip_summary[2,1] <- "Skipped Street Number" 
+dt_home1skip_summary[2,2] <- sum(is.na(home1skip$Street_Number))
+dt_home1skip_summary[2,3] <- (sum(is.na(home1skip$Street_Number))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[3,1] <- "Skipped Street Name" 
+dt_home1skip_summary[3,2] <- sum(is.na(home1skip$Street_Name))
+dt_home1skip_summary[3,3] <- (sum(is.na(home1skip$Street_Name))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[4,1] <- "Skipped City"
+dt_home1skip_summary[4,2] <- sum(is.na(home1skip$City))
+dt_home1skip_summary[4,3] <- (sum(is.na(home1skip$City))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[5,1] <- "Skipped State"
+dt_home1skip_summary[5,2] <- sum(is.na(home1skip$State))
+dt_home1skip_summary[5,3] <- (sum(is.na(home1skip$State))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[6,1] <- "Skipped ZIP"
+dt_home1skip_summary[6,2] <- sum(is.na(home1skip$ZIP))
+dt_home1skip_summary[6,3] <- (sum(is.na(home1skip$ZIP))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[7,1] <- "Skipped Country"
+dt_home1skip_summary[7,2] <- sum(is.na(home1skip$Country))
+dt_home1skip_summary[7,3] <- (sum(is.na(home1skip$Country))/dim(home1skip)[[1]])*100
+
+
+
+dt_home1skip_summary_gtKPHI <- dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 1 Components Skipped by KPHI")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) 
+tab_footnote(
+  dt_home1skip_summary_gtKPHI,
+  md("Each row is not mutually exclusive. Those that skip all address 1 components will be counted in each row. Those that skip multiple components will be counted in each of the component rows; for example, if both Street Number and Street Name are skipped by a participant, they are counted in both the 'Skipped Street Number' and 'Skipped Street Name' rows."),
+  locations = cells_column_labels(columns = Address1),
+  placement = c("left")
+)
+
+
+```
+
+
+## Kaiser Permanente Northwest
+```{r KPNW, warning=FALSE, echo=FALSE, message=FALSE}
+
+KPNW <- Mod4 %>%  filter(d_827220437=='452412599')
+  
+KPNW$Street_Number <- KPNW$D_121490150_D_255248624
+KPNW$Street_Name <- KPNW$D_121490150_D_945532934
+KPNW$Apt_Number <- KPNW$D_121490150_D_469838242
+KPNW$City <- KPNW$D_121490150_D_303500597
+KPNW$State <- KPNW$D_121490150_D_195068098
+KPNW$ZIP <- KPNW$D_121490150_D_202784871
+KPNW$Country <- KPNW$D_121490150_D_831127170
+
+
+
+home1skip <- KPNW %>% select(Connect_ID, Street_Number, Street_Name, City, State, ZIP, Country)
+home1skip= home1skip %>%  mutate(Address1= case_when(is.na(Street_Number) & is.na(Street_Name) & 
+                                                       is.na(City) & is.na(State) & is.na(ZIP)& is.na(Country)~"Skipped Entire Home 1 Address "))
+
+dt_home1skip_summary <- home1skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+dt_home1skip_summary <- dt_home1skip_summary[1,]
+
+
+dt_home1skip_summary[2,1] <- "Skipped Street Number" 
+dt_home1skip_summary[2,2] <- sum(is.na(home1skip$Street_Number))
+dt_home1skip_summary[2,3] <- (sum(is.na(home1skip$Street_Number))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[3,1] <- "Skipped Street Name" 
+dt_home1skip_summary[3,2] <- sum(is.na(home1skip$Street_Name))
+dt_home1skip_summary[3,3] <- (sum(is.na(home1skip$Street_Name))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[4,1] <- "Skipped City"
+dt_home1skip_summary[4,2] <- sum(is.na(home1skip$City))
+dt_home1skip_summary[4,3] <- (sum(is.na(home1skip$City))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[5,1] <- "Skipped State"
+dt_home1skip_summary[5,2] <- sum(is.na(home1skip$State))
+dt_home1skip_summary[5,3] <- (sum(is.na(home1skip$State))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[6,1] <- "Skipped ZIP"
+dt_home1skip_summary[6,2] <- sum(is.na(home1skip$ZIP))
+dt_home1skip_summary[6,3] <- (sum(is.na(home1skip$ZIP))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[7,1] <- "Skipped Country"
+dt_home1skip_summary[7,2] <- sum(is.na(home1skip$Country))
+dt_home1skip_summary[7,3] <- (sum(is.na(home1skip$Country))/dim(home1skip)[[1]])*100
+
+
+
+dt_home1skip_summary_gtKPHNW <- dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 1 Components Skipped by KPNW")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) 
+tab_footnote(
+  dt_home1skip_summary_gtKPHNW,
+  md("Each row is not mutually exclusive. Those that skip all address 1 components will be counted in each row. Those that skip multiple components will be counted in each of the component rows; for example, if both Street Number and Street Name are skipped by a participant, they are counted in both the 'Skipped Street Number' and 'Skipped Street Name' rows."),
+  locations = cells_column_labels(columns = Address1),
+  placement = c("left")
+)
+
+
+```
+
+
+## Marshfield Clinic Health System
+```{r MF, warning=FALSE, echo=FALSE, message=FALSE}
+
+MF <- Mod4 %>%  filter(d_827220437=='303349821')
+  
+MF$Street_Number <- MF$D_121490150_D_255248624
+MF$Street_Name <- MF$D_121490150_D_945532934
+MF$Apt_Number <- MF$D_121490150_D_469838242
+MF$City <- MF$D_121490150_D_303500597
+MF$State <- MF$D_121490150_D_195068098
+MF$ZIP <- MF$D_121490150_D_202784871
+MF$Country <- MF$D_121490150_D_831127170
+
+
+
+home1skip <- MF %>% select(Connect_ID, Street_Number, Street_Name, City, State, ZIP, Country)
+home1skip= home1skip %>%  mutate(Address1= case_when(is.na(Street_Number) & is.na(Street_Name) & 
+                                                       is.na(City) & is.na(State) & is.na(ZIP)& is.na(Country)~"Skipped Entire Home 1 Address "))
+
+dt_home1skip_summary <- home1skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+dt_home1skip_summary <- dt_home1skip_summary[1,]
+
+
+dt_home1skip_summary[2,1] <- "Skipped Street Number" 
+dt_home1skip_summary[2,2] <- sum(is.na(home1skip$Street_Number))
+dt_home1skip_summary[2,3] <- (sum(is.na(home1skip$Street_Number))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[3,1] <- "Skipped Street Name" 
+dt_home1skip_summary[3,2] <- sum(is.na(home1skip$Street_Name))
+dt_home1skip_summary[3,3] <- (sum(is.na(home1skip$Street_Name))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[4,1] <- "Skipped City"
+dt_home1skip_summary[4,2] <- sum(is.na(home1skip$City))
+dt_home1skip_summary[4,3] <- (sum(is.na(home1skip$City))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[5,1] <- "Skipped State"
+dt_home1skip_summary[5,2] <- sum(is.na(home1skip$State))
+dt_home1skip_summary[5,3] <- (sum(is.na(home1skip$State))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[6,1] <- "Skipped ZIP"
+dt_home1skip_summary[6,2] <- sum(is.na(home1skip$ZIP))
+dt_home1skip_summary[6,3] <- (sum(is.na(home1skip$ZIP))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[7,1] <- "Skipped Country"
+dt_home1skip_summary[7,2] <- sum(is.na(home1skip$Country))
+dt_home1skip_summary[7,3] <- (sum(is.na(home1skip$Country))/dim(home1skip)[[1]])*100
+
+
+
+dt_home1skip_summary_gtMF <- dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 1 Components Skipped by Marshfield")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) 
+
+tab_footnote(
+  dt_home1skip_summary_gtMF,
+  md("Each row is not mutually exclusive. Those that skip all address 1 components will be counted in each row. Those that skip multiple components will be counted in each of the component rows; for example, if both Street Number and Street Name are skipped by a participant, they are counted in both the 'Skipped Street Number' and 'Skipped Street Name' rows."),
+  locations = cells_column_labels(columns = Address1),
+  placement = c("left")
+)
+
+```
+
+
+## Sanford Health
+```{r SF, warning=FALSE, echo=FALSE, message=FALSE}
+
+SF <- Mod4 %>%  filter(d_827220437=='657167265')
+  
+SF$Street_Number <- SF$D_121490150_D_255248624
+SF$Street_Name <- SF$D_121490150_D_945532934
+SF$Apt_Number <- SF$D_121490150_D_469838242
+SF$City <- SF$D_121490150_D_303500597
+SF$State <- SF$D_121490150_D_195068098
+SF$ZIP <- SF$D_121490150_D_202784871
+SF$Country <- SF$D_121490150_D_831127170
+
+
+
+home1skip <- SF %>% select(Connect_ID, Street_Number, Street_Name, City, State, ZIP, Country)
+home1skip= home1skip %>%  mutate(Address1= case_when(is.na(Street_Number) & is.na(Street_Name) & 
+                                                       is.na(City) & is.na(State) & is.na(ZIP)& is.na(Country)~"Skipped Entire Home 1 Address "))
+
+dt_home1skip_summary <- home1skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+dt_home1skip_summary <- dt_home1skip_summary[1,]
+
+
+dt_home1skip_summary[2,1] <- "Skipped Street Number" 
+dt_home1skip_summary[2,2] <- sum(is.na(home1skip$Street_Number))
+dt_home1skip_summary[2,3] <- (sum(is.na(home1skip$Street_Number))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[3,1] <- "Skipped Street Name" 
+dt_home1skip_summary[3,2] <- sum(is.na(home1skip$Street_Name))
+dt_home1skip_summary[3,3] <- (sum(is.na(home1skip$Street_Name))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[4,1] <- "Skipped City"
+dt_home1skip_summary[4,2] <- sum(is.na(home1skip$City))
+dt_home1skip_summary[4,3] <- (sum(is.na(home1skip$City))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[5,1] <- "Skipped State"
+dt_home1skip_summary[5,2] <- sum(is.na(home1skip$State))
+dt_home1skip_summary[5,3] <- (sum(is.na(home1skip$State))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[6,1] <- "Skipped ZIP"
+dt_home1skip_summary[6,2] <- sum(is.na(home1skip$ZIP))
+dt_home1skip_summary[6,3] <- (sum(is.na(home1skip$ZIP))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[7,1] <- "Skipped Country"
+dt_home1skip_summary[7,2] <- sum(is.na(home1skip$Country))
+dt_home1skip_summary[7,3] <- (sum(is.na(home1skip$Country))/dim(home1skip)[[1]])*100
+
+
+
+dt_home1skip_summary_gtSF <- dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 1 Components Skipped by Sanford")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) 
+tab_footnote(
+  dt_home1skip_summary_gtSF,
+  md("Each row is not mutually exclusive. Those that skip all address 1 components will be counted in each row. Those that skip multiple components will be counted in each of the component rows; for example, if both Street Number and Street Name are skipped by a participant, they are counted in both the 'Skipped Street Number' and 'Skipped Street Name' rows."),
+  locations = cells_column_labels(columns = Address1),
+  placement = c("left")
+)
+
+
+```
+
+
+
+## University of Chicago Medicine
+```{r UC, warning=FALSE, echo=FALSE, message=FALSE}
+
+UC <- Mod4 %>%  filter(d_827220437=='809703864')
+  
+UC$Street_Number <- UC$D_121490150_D_255248624
+UC$Street_Name <- UC$D_121490150_D_945532934
+UC$Apt_Number <- UC$D_121490150_D_469838242
+UC$City <- UC$D_121490150_D_303500597
+UC$State <- UC$D_121490150_D_195068098
+UC$ZIP <- UC$D_121490150_D_202784871
+UC$Country <- UC$D_121490150_D_831127170
+
+
+
+home1skip <- UC %>% select(Connect_ID, Street_Number, Street_Name, City, State, ZIP, Country)
+home1skip= home1skip %>%  mutate(Address1= case_when(is.na(Street_Number) & is.na(Street_Name) & 
+                                                       is.na(City) & is.na(State) & is.na(ZIP)& is.na(Country)~"Skipped Entire Home 1 Address "))
+
+dt_home1skip_summary <- home1skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+dt_home1skip_summary <- dt_home1skip_summary[1,]
+
+
+dt_home1skip_summary[2,1] <- "Skipped Street Number" 
+dt_home1skip_summary[2,2] <- sum(is.na(home1skip$Street_Number))
+dt_home1skip_summary[2,3] <- (sum(is.na(home1skip$Street_Number))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[3,1] <- "Skipped Street Name" 
+dt_home1skip_summary[3,2] <- sum(is.na(home1skip$Street_Name))
+dt_home1skip_summary[3,3] <- (sum(is.na(home1skip$Street_Name))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[4,1] <- "Skipped City"
+dt_home1skip_summary[4,2] <- sum(is.na(home1skip$City))
+dt_home1skip_summary[4,3] <- (sum(is.na(home1skip$City))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[5,1] <- "Skipped State"
+dt_home1skip_summary[5,2] <- sum(is.na(home1skip$State))
+dt_home1skip_summary[5,3] <- (sum(is.na(home1skip$State))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[6,1] <- "Skipped ZIP"
+dt_home1skip_summary[6,2] <- sum(is.na(home1skip$ZIP))
+dt_home1skip_summary[6,3] <- (sum(is.na(home1skip$ZIP))/dim(home1skip)[[1]])*100
+
+dt_home1skip_summary[7,1] <- "Skipped Country"
+dt_home1skip_summary[7,2] <- sum(is.na(home1skip$Country))
+dt_home1skip_summary[7,3] <- (sum(is.na(home1skip$Country))/dim(home1skip)[[1]])*100
+
+
+
+dt_home1skip_summary_gtUC <- dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Address 1 Components Skipped by UChicago")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  ) 
+tab_footnote(
+  dt_home1skip_summary_gtUC,
+  md("Each row is not mutually exclusive. Those that skip all address 1 components will be counted in each row. Those that skip multiple components will be counted in each of the component rows; for example, if both Street Number and Street Name are skipped by a participant, they are counted in both the 'Skipped Street Number' and 'Skipped Street Name' rows."),
+  locations = cells_column_labels(columns = Address1),
+  placement = c("left")
+)
+
+
+
+
+```
+

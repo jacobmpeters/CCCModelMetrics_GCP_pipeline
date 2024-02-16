@@ -1,0 +1,1634 @@
+---
+title: "Free Text Response Entries"
+author: "Kelsey Dowling"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+
+```{r libraries, include=FALSE}
+
+#All libraries are listed up top; authentication for BQ will be necessary.
+#Functions used included before the start of the analysis .
+#Currently filtered by gender, and will eventually be done by age groups as well (D_117249500).
+
+
+
+rm(list = ls())
+library(bigrquery)
+library(foreach)
+library(stringr)
+#library(plyr)
+#library(expss) ###to add labels
+library(epiDisplay) ##recommended applied here crosstable, tab1
+library(gmodels) ##recommended
+library(magrittr)
+library(arsenal)
+library(gtsummary)
+library(rio)
+
+
+
+library(ggplot2)
+library(gridExtra)
+library(scales)
+library(gt)
+#install(tinytex)
+library(tinytex)
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(reshape)  ###to work on transition from long to wide or wide to long data
+library(listr) ###to work on a list of vector, files or..
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(stringr) ###to work on patterns, charaters
+library(kableExtra)
+
+
+options(tinytex.verbose = TRUE)
+
+bq_auth()
+```
+
+
+```{r M1merge, include=FALSE}
+dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
+dd <- dplyr::bind_rows(dictionary,.id="CID")
+dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
+dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name')
+
+dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
+dd$CID <- rownames(dd)
+#https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
+devtools::install_github("tidyverse/reprex")
+
+project <- "nih-nci-dceg-connect-prod-6d04"
+billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be consistent
+##517311251 Date/time Status of Completion of Background and Overall Health                         SrvBOH_TmComplete_v1r0
+##949302066 Flag for Baseline Module Background and Overall Health                        SrvBOH_BaseStatus_v1r0
+recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
+                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935' and d_949302066 ='231311385'")
+recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
+cnames <- names(recr_m1)
+# Check that it doesn't match any non-number
+numbers_only <- function(x) !grepl("\\D", x)
+# to check variables in recr_noinact_wl1
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(recr_m1,varname)
+  recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+sql_M1_1 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
+sql_M1_2 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
+
+
+M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64") #1436 #1436 vars: 1507 01112023 
+M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64") #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
+
+mod1_v1 <- M1_V1
+cnames <- names(M1_V1)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v1,varname)
+  mod1_v1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+mod1_v2 <- M1_V2
+cnames <- names(M1_V2)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v2,varname)
+  mod1_v2[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+M1_V1.var <- colnames(M1_V1)
+M1_V2.var <- colnames(M1_V2)
+var.matched <- M1_V1.var[which(M1_V1.var %in% M1_V2.var)]
+length(var.matched)  #1275 #1278 vars 01112023 #1348 vars 05022023
+
+V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched] #232 #229 01112023 #159 05022023
+V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched] #253 #253 01112023 #545 05022023
+
+length(M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID])
+#[1] 59 with the completion of two versions of Module1 
+#[1] 62 with completing both versions of M1 ###double checked 03/28/2023
+#68 double checked 05/02/2023
+
+common.IDs <- M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID]
+M1_V1_common <- mod1_v1[,var.matched]
+
+M1_V2_common <- mod1_v2[,var.matched]
+M1_V1_common$version <- 1
+M1_V2_common$version <- 2
+
+##to check the completion of M1 among these duplicates
+partM1_dups <- recr_m1[which(recr_m1$Connect_ID %in% common.IDs),]
+table(partM1_dups$d_949302066)
+
+M1_common  <- rbind(M1_V1_common, M1_V2_common) #including 136 duplicates (version 1 and version 2) from 68 participants 05022023
+#M1_response <- matrix(data=NA, nrow=118, ncol=967)
+
+m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)] #230 vars 03282023 #160 vars 05/02/2023
+m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] #255 vars 03282023 #546 vars 05/02/2023
+m1_v1_only$version <- 1
+m1_v2_only$version <- 2
+#for (i in 1:length)
+##to check the completion in each version
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #1364 03282023 # 1370 05022023
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #4870 03282023 # 5731 05022023
+
+#library(janitor)
+
+m1_common <- rbind(M1_V1_common,M1_V2_common)
+m1_common_v1 <- base::merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
+m1_combined_v1v2 <- base::merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
+m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] #7289 including duplicates 05022023
+
+m1_complete <- m1_complete %>% arrange(desc(version)) 
+
+
+m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),] 
+table(m1_complete_nodup$version)
+
+
+
+parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
+D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
+D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_827220437, 
+D_949302066 , D_517311251, D_205553981, D_117249500, d_430551721, d_517311251, d_544150384, d_564964481, d_117249500 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and (d_949302066='231311385')"
+parts_table <- bq_project_query(project, parts)
+parts_data <- bq_table_download(parts_table, bigint = "integer64")
+
+parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID) ###need to convert type- m1... is double and parts is character
+
+module1= left_join(m1_complete_nodup, parts_data, by="Connect_ID") 
+dim(module1)
+
+
+# #Has a recruitment flag
+# merged <- merged %>% filter(D_512820379==486306141 | D_512820379==854703046)
+# 
+# 
+# #User consent submitted
+# merged <- merged %>% filter(D_919254129==353358909)
+# 
+# 
+# #User profile submitted
+# merged <- merged %>% filter(D_699625233==353358909)
+# 
+# 
+# #Verified by site
+# #cat("Verified by site:", sum(merged$D_821247024==197316935, na.rm=TRUE))
+# 
+# 
+# #Mod1 completed
+# module1 <- merged %>% filter(D_949302066==231311385)
+#cat("Module 1 completed:", dim(module1)[[1]])
+
+
+data_tib_m1 <- as_tibble(module1)
+#dim(module1)
+
+knitr::opts_chunk$set(comment = NA)
+
+
+
+```
+
+
+```{r functions, warning=FALSE, include=FALSE}
+#Created Functions for this code
+
+#Histogram 
+hist_funct <- function(CID,Title, Xlab, Ylab) {
+  CID_SYM <- rlang::ensym(CID)
+  module1 %>% mutate(!!CID_SYM:=as.numeric(!!CID_SYM)) %>%
+    filter(!is.na(!!CID_SYM)) %>%
+    ggplot(aes(x=!!CID_SYM))+
+     xlab(Xlab) + ylab(Ylab) + geom_histogram()+  ggtitle(Title)+
+    geom_histogram(color="black")+ scale_y_continuous(breaks=pretty_breaks()) +
+    geom_vline(aes(xintercept=mean(!!CID_SYM, na.rm=T)), colour="red", linetype="solid")
+  
+}
+
+
+
+#Boxplot
+boxp_funct <- function(CID,Title, Xlab) {
+  CID_SYM <- rlang::ensym(CID)
+  module1 %>% mutate(!!CID_SYM:=as.numeric(!!CID_SYM)) %>%
+    filter(!is.na(!!CID_SYM)) %>%
+    ggplot(aes(x=!!CID_SYM))+
+    xlab(Xlab) + geom_boxplot()+  ggtitle(Title)+
+    theme(axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()  #remove y axis ticks
+        )
+}
+
+
+
+##GT TABLE: Questions that all participants asked, update dictionary as new answer options come up
+
+dict <- list("104430631"="No", "353358909"="Yes", "589959753"="A little shorter", "623310018"="A lot shorter", "978204320"= "Grade School(Grades 1-8)", "935502060"="Some High School, No Diploma", "404564707"= "High School Graduate or GED", "432193665"="Some College, No Degree", "890756124"="Technical or Trade School After High School", "766964355"="Associate's Degree", "875342283"="Bachelor's Degree", "598242454"="Advanced Degree", "709650750"="Biological Child", "810290359"="Adopted Child", "509607548"="Step Child", "784922042"="Related to me in some other way", "288105839"=" Yes, fraternal twins", "626558982"="Yes, triplets or higher multiple birth", "178420302"="Do not Know", "536341288"="Female", "576796184"="Intersex or Other", "654207589"="Male","555374628"="Full Sibling", "871673221"="Half Sibling, Same Mother",  "198654048"="Half Sibling, Same Father", "807835037"="Other", "274062548"="More than 3 months ago", "958538953"="In the past 3 months", "317567178"="In the past month", "484055234"="In the past year",  "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago","958538953"="In the past 3 months",  "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible", "764708931"="Very flexible","0"="No", "1"="Yes", "536341288"="Female", "218837028"="Woman", "983318667"="Man"  , "654207589"="Male","746038746"="Prefer Not to Answer", "805712793"="Genderqueer","486192236"="Non-Binary", "807835037"="Other","873138103"="Transgender Woman","405267600"="Transgender Man", "220083334"="Very Feminine","541300533"="Mostly Feminine","878286618"="Somewhat Feminine","910745276"="Equally feminine and masculine","915528806"="Very masculine","265452386"="Mostly Masculine","510148951"="Somewhat Masculine","271882746"="Straight or heterosexual", "903084185"="Lesbian, gay, or homosexual", "999994434"="Bisexual", "584368278"="Retired", "475665841"="Homemaker", "656816477"="Unemployed", "756948639"="Unble to Work (Disabled)", "181769837"="Other Employment Status","551525967"="Yes, Full-Time Student", "738284740"="Yes, Part Time Student", "288321056"="Married", "514080822"="Never Married","522680498"="Never Married but living with Partner","649436542"="Divorced","522680498"="Partner", "741094625"="Separated","733527132"="Widow" )
+
+
+
+simple_funct <- function(CID, Title){  
+  CID_SYM <- rlang::ensym(CID)
+  dt_select <- data_tib_m1 %>%  select(Connect_ID, !!CID_SYM)
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%  
+  # summary_rows( groups=F,
+  #   columns = c(n,percentage),    
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+}
+
+
+#GT table with one filter/skip logic
+one_logic_funct <- function(CID, CID_prev, Prev_Answer, Title){  
+  CID_SYM <- rlang::ensym(CID)
+  CID_SYM_P <- rlang::ensym(CID_prev)
+  dt_select <- data_tib_m1 %>%  filter(!!CID_SYM_P == Prev_Answer) %>%  select(Connect_ID, !!CID_SYM) 
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F,
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+}
+
+#GT table for siblings
+sib_logic_funct <- function(CID, Sib_Num, Title){  
+  CID_SYM <- rlang::ensym(CID)
+  data_tib_m1$D_694265648 <- as.numeric(data_tib_m1$D_694265648)
+  dt_select <- data_tib_m1 %>%  filter(D_694265648 >= Sib_Num) %>%  select(Connect_ID, !!CID_SYM) 
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F,
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+}
+
+#GT table for children
+child_logic_funct <- function(CID, Child_Num, Title){  
+  CID_SYM <- rlang::ensym(CID)
+  data_tib_m1$D_446999144 <- as.numeric(data_tib_m1$D_446999144)
+  dt_select <- data_tib_m1 %>%  filter(D_446999144 >= Child_Num) %>%  select(Connect_ID, !!CID_SYM) 
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+}
+
+#GT TABLE: Weight loss method
+
+
+
+```
+
+
+
+```{r race, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE, results='hold'}
+all_races <- data_tib_m1[ , c("Connect_ID", "D_384191091_D_384191091_D_583826374", "D_384191091_D_384191091_D_636411467", "D_384191091_D_384191091_D_458435048",
+                                 "D_384191091_D_384191091_D_706998638", "D_384191091_D_384191091_D_973565052", "D_384191091_D_384191091_D_586825330",
+                                 "D_384191091_D_384191091_D_412790539", "D_384191091_D_384191091_D_807835037", "D_384191091_D_747350323", "D_384191091_D_384191091_D_746038746")] 
+
+
+
+
+
+
+
+## Multi-racial
+
+multi_race=0    
+for (i in 1:length(module1$Connect_ID)){
+  AI=ifelse((module1$D_384191091_D_384191091_D_583826374[[i]]==1 & (module1$D_384191091_D_384191091_D_636411467[[i]]==1 | module1$D_384191091_D_384191091_D_458435048[[i]]==1|
+                                               module1$D_384191091_D_384191091_D_706998638[[i]]==1 | module1$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                               module1$D_384191091_D_384191091_D_586825330[[i]]==1 | module1$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                               module1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  As=ifelse((module1$D_384191091_D_384191091_D_636411467[[i]]==1 & (module1$D_384191091_D_384191091_D_583826374[[i]]==1 | module1$D_384191091_D_384191091_D_458435048[[i]]==1|
+                                                        module1$D_384191091_D_384191091_D_706998638[[i]]==1 | module1$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        module1$D_384191091_D_384191091_D_586825330[[i]]==1 | module1$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        module1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Bl=ifelse((module1$D_384191091_D_384191091_D_458435048[[i]]==1 & (module1$D_384191091_D_384191091_D_583826374[[i]]==1 | module1$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        module1$D_384191091_D_384191091_D_706998638[[i]]==1 | module1$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        module1$D_384191091_D_384191091_D_586825330[[i]]==1 | module1$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        module1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Hs=ifelse((module1$D_384191091_D_384191091_D_706998638[[i]]==1 & (module1$D_384191091_D_384191091_D_583826374[[i]]==1 | module1$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        module1$D_384191091_D_384191091_D_458435048[[i]]==1 | module1$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        module1$D_384191091_D_384191091_D_586825330[[i]]==1 | module1$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        module1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Me=ifelse((module1$D_384191091_D_384191091_D_973565052[[i]]==1 & (module1$D_384191091_D_384191091_D_583826374[[i]]==1 | module1$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        module1$D_384191091_D_384191091_D_458435048[[i]]==1 | module1$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        module1$D_384191091_D_384191091_D_586825330[[i]]==1 | module1$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        module1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Hw=ifelse((module1$D_384191091_D_384191091_D_586825330[[i]]==1 & (module1$D_384191091_D_384191091_D_583826374[[i]]==1 | module1$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        module1$D_384191091_D_384191091_D_458435048[[i]]==1 | module1$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        module1$D_384191091_D_384191091_D_973565052[[i]]==1 | module1$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        module1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Wh=ifelse((module1$D_384191091_D_384191091_D_412790539[[i]]==1 & (module1$D_384191091_D_384191091_D_583826374[[i]]==1 | module1$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        module1$D_384191091_D_384191091_D_458435048[[i]]==1 | module1$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        module1$D_384191091_D_384191091_D_586825330[[i]]==1 | module1$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        module1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Ot=ifelse((module1$D_384191091_D_384191091_D_807835037[[i]]==1 & (module1$D_384191091_D_384191091_D_583826374[[i]]==1 | module1$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        module1$D_384191091_D_384191091_D_458435048[[i]]==1 | module1$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        module1$D_384191091_D_384191091_D_586825330[[i]]==1 | module1$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        module1$D_384191091_D_384191091_D_412790539[[i]]==1)), 1, 0)
+  multi_race= multi_race + sum(AI+As+Bl+Hs+Me+Hw+Wh+Ot, na.rm=T)
+
+}
+
+  
+
+data_tib_m1$multi_racial <- c(rep(1, times=multi_race), rep(0, times=(dim(data_tib_m1)[1]- multi_race)))
+
+
+
+## RACE
+
+which_race= data_tib_m1 %>%  mutate(race= case_when(multi_racial==1 ~ "Multi-Racial",
+                                                     D_384191091_D_384191091_D_583826374==1 ~ "American Indian or Native American",
+                                                     D_384191091_D_384191091_D_636411467==1 ~ "Asian/Asian American",
+                                                     D_384191091_D_384191091_D_458435048==1 ~ "Black, African American, or African",
+                                                     D_384191091_D_384191091_D_706998638==1 ~ "Hispanic, Latino, or Spanish",
+                                                     D_384191091_D_384191091_D_973565052==1 ~ "Middle Eastern or North African",
+                                                     D_384191091_D_384191091_D_586825330==1 ~ "Hawaiian or Pacific Islander",
+                                                     D_384191091_D_384191091_D_412790539==1 ~ "White",
+                                                     (D_384191091_D_384191091_D_807835037==1 | !is.na(D_384191091_D_747350323)) ~ "Other",
+                                                     D_384191091_D_384191091_D_746038746==1 ~ "Prefer Not to Answer",
+                                                     TRUE  ~ "Skipped this question "))
+
+dt_all_races_summary <- which_race  %>% dplyr::group_by(race) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup()  %>%  dplyr::select(race, n, percentage)
+
+dt_all_races_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Race/Ethnicity of Participants Who Completed BOH Section of First Survey")) %>% 
+  cols_label(n= md("**Number of Participants**"), race = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F,
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = race,
+    )
+  ) #%>% opt_row_striping()
+```
+
+
+# Ethnicity 
+```{r Ethnicity, echo=FALSE, warning=FALSE, include=FALSE, results='hold'}
+
+
+
+
+
+#American Indian/Native American
+dt_am_ind_ethn= data_tib_m1 %>%  filter(data_tib_m1$D_384191091_D_384191091_D_583826374==1)  
+
+
+dt_am_ind_ethn= dt_am_ind_ethn %>%  mutate(multb2 = ifelse(D_362270886_D_362270886_D_249603425==1, 1, 0) + ifelse(D_362270886_D_362270886_D_530063091==1, 1, 0) + ifelse(D_362270886_D_362270886_D_643489668==1, 1, 0) + 
+                                             ifelse(D_362270886_D_362270886_D_807835037==1, 1, 0) + ifelse(D_362270886_D_362270886_D_746038746==1, 1, 0))
+
+
+amer_eth= dt_am_ind_ethn %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Multi-Ethnic",
+                                                          D_362270886_D_362270886_D_249603425==1 ~ "American Indian",
+                                             D_362270886_D_362270886_D_530063091==1 ~ "Alaska Native",
+                                             D_362270886_D_362270886_D_643489668==1 ~ "Central or South American Indian",
+                                             (D_362270886_D_362270886_D_807835037==1 | !is.na(D_362270886_D_650100414)) ~ "Other",
+                                             D_362270886_D_362270886_D_746038746==1 ~ "Prefer Not to Answer",
+                                             TRUE ~ "Skipped this question"))
+
+dt_am_ind_ethn_summary <- amer_eth %>% group_by(ethnicity) %>%    dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage) 
+gtm3_print <- gt::gt(dt_am_ind_ethn_summary)
+
+
+dt_am_ind_ethn_summary %>%  gt::gt(rowname_col = "row_lab") %>%
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("Ethnicity of American Indian/Native American Participants")) %>%
+  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
+  # summary_rows( groups=F,
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = ethnicity,
+    )
+  ) %>% opt_row_striping() %>% 
+tab_footnote(
+  footnote=("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other races/ethnicities."),
+  locations = cells_column_labels(columns = n)
+) %>% 
+tab_footnote(
+  footnote=("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+  locations = cells_column_labels(columns = ethnicity)
+)
+
+
+
+#Asian/Asian American
+dt_asian= data_tib_m1 %>% filter(data_tib_m1$D_384191091_D_384191091_D_636411467==1)  
+
+dt_asian= dt_asian %>%  mutate(multb2 = ifelse(D_525535977_D_525535977_D_773844957==1, 1, 0) + ifelse(D_525535977_D_525535977_D_901439277==1, 1, 0) + ifelse(D_525535977_D_525535977_D_750168061==1, 1, 0) + 
+                                             ifelse(D_525535977_D_525535977_D_326604981==1, 1, 0) + ifelse(D_525535977_D_525535977_D_469918550==1, 1, 0) + ifelse(D_525535977_D_525535977_D_288079668==1, 1, 0) + ifelse(D_525535977_D_525535977_D_240721579==1, 1, 0) + ifelse(D_525535977_D_525535977_D_571633051==1, 1, 0) + ifelse(D_525535977_D_525535977_D_964924704==1, 1, 0) + ifelse(D_525535977_D_525535977_D_807835037==1, 1, 0) + ifelse(D_525535977_D_525535977_D_746038746==1, 1, 0))
+
+
+                                                          
+which_eth= dt_asian %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Multi-Ethnic",
+                                                     D_525535977_D_525535977_D_773844957==1 ~ "Asian indian",
+                                             D_525535977_D_525535977_D_901439277==1 ~ "Cambodian",
+                                             D_525535977_D_525535977_D_750168061==1 ~ "Chinese",
+                                             D_525535977_D_525535977_D_326604981==1 ~ "Filipino",
+                                             D_525535977_D_525535977_D_469918550==1 ~ "Hmong",
+                                             D_525535977_D_525535977_D_288079668==1 ~ "Japanese",
+                                             D_525535977_D_525535977_D_240721579==1 ~ "Korean",
+                                             D_525535977_D_525535977_D_571633051==1 ~ "Pakastani",
+                                             D_525535977_D_525535977_D_964924704==1 ~ "Vietnamese",
+                                             (D_525535977_D_525535977_D_807835037==1 | !is.na(D_525535977_D_396618548)) ~ "Other",
+                                             D_525535977_D_525535977_D_746038746==1 ~ "Prefer Not to Answer",
+                                             TRUE ~ "Skipped this question"))
+
+dt_asian_summary <- which_eth %>% group_by(ethnicity) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage) 
+
+dt_asian_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Ethnicity of Asian and Asian American Participants")) %>% 
+  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = ethnicity,
+    )
+  ) %>% opt_row_striping() %>% 
+tab_footnote(
+  footnote=("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other races/ethnicities."),
+  locations = cells_column_labels(columns = n)
+  #placement = c("left")
+) %>% 
+tab_footnote(
+  footnote=("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+  locations = cells_column_labels(columns = ethnicity)
+  #placement = c("left")
+)
+
+
+#Black/African/African American 
+dt_black= data_tib_m1 %>% filter(data_tib_m1$D_384191091_D_384191091_D_458435048==1)  
+
+dt_black= dt_black %>%  mutate(multb2 = ifelse(D_976808005_D_976808005_D_704774349==1, 1, 0) + ifelse(D_976808005_D_976808005_D_240854115==1, 1, 0) + ifelse(D_976808005_D_976808005_D_280957170==1, 1, 0) + 
+                                             ifelse(D_976808005_D_976808005_D_533776046==1, 1, 0) + ifelse(D_976808005_D_976808005_D_647105074==1, 1, 0) + ifelse(D_976808005_D_976808005_D_618222258==1, 1, 0) + ifelse(D_976808005_D_976808005_D_487027241==1, 1, 0) + ifelse(D_976808005_D_976808005_D_900838463==1, 1, 0) + ifelse(D_976808005_D_976808005_D_379093069==1, 1, 0) + ifelse(D_976808005_D_976808005_D_304643362==1, 1, 0) + ifelse(D_976808005_D_976808005_D_151821009==1, 1, 0) + ifelse(D_976808005_D_976808005_D_807835037==1, 1, 0) + ifelse(D_976808005_D_976808005_D_746038746==1, 1, 0))
+
+
+
+which_eth= dt_black %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Multi-Ethnic",
+                                                     D_976808005_D_976808005_D_704774349==1 ~ "African American",
+                                             D_976808005_D_976808005_D_240854115==1 ~ "Barbadian",
+                                             D_976808005_D_976808005_D_280957170==1 ~ "Caribbean",
+                                             D_976808005_D_976808005_D_533776046==1 ~ "Ethiopian",
+                                             D_976808005_D_976808005_D_647105074==1 ~ "Ghanauin",
+                                             D_976808005_D_976808005_D_618222258==1 ~ "Haitian",
+                                             D_976808005_D_976808005_D_487027241==1 ~ "Jamaican",
+                                             D_976808005_D_976808005_D_900838463==1 ~ "Liberian",
+                                             D_976808005_D_976808005_D_379093069==1 ~ "Nigerian",
+                                             D_976808005_D_976808005_D_304643362==1 ~ "Somali",
+                                             D_976808005_D_976808005_D_151821009==1 ~ "South African",
+                                             (D_976808005_D_976808005_D_807835037==1 | !is.na(D_976808005_D_852296096)) ~ "Other",
+                                             D_976808005_D_976808005_D_746038746==1 ~ "Prefer Not to Answer",
+                                             TRUE   ~ "Skipped this question"))
+
+
+
+dt_black_summary <- which_eth %>% group_by(ethnicity) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
+dt_black_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Ethnicity of Black/African/African American Participants")) %>% 
+  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = ethnicity,
+    )
+  ) %>% opt_row_striping() %>% 
+tab_footnote(
+  footnote=("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other races/ethnicities."),
+  locations = cells_column_labels(columns = n)
+  #placement = c("left")
+) %>% 
+tab_footnote(
+  footnote=("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+  locations = cells_column_labels(columns = ethnicity)
+  #placement = c("left")
+)
+
+
+
+#Hispanic/Latino/Spanish
+dt_hisp= data_tib_m1  %>% filter(data_tib_m1$D_384191091_D_384191091_D_706998638==1) 
+
+dt_hisp= dt_hisp %>%  mutate(multb2 = ifelse(D_308014437_D_308014437_D_810637250==1, 1, 0) + ifelse(D_308014437_D_308014437_D_248444252==1, 1, 0) + ifelse(D_308014437_D_308014437_D_764331628==1, 1, 0) + 
+                                             ifelse(D_308014437_D_308014437_D_412757551==1, 1, 0) + ifelse(D_308014437_D_308014437_D_981774939==1, 1, 0) + ifelse(D_308014437_D_308014437_D_432305109==1, 1, 0) + ifelse(D_308014437_D_308014437_D_862718552==1, 1, 0) + ifelse(D_308014437_D_308014437_D_988121468==1, 1, 0) + ifelse(D_308014437_D_308014437_D_773342525==1, 1, 0) + ifelse(D_308014437_D_308014437_D_807835037==1, 1, 0) + ifelse(D_308014437_D_308014437_D_746038746==1, 1, 0))
+
+
+
+which_eth= dt_hisp %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Multi-Ethnic",
+                                                    D_308014437_D_308014437_D_810637250==1 ~ "Columbian",
+                                             D_308014437_D_308014437_D_248444252==1 ~ "Cuban",
+                                             D_308014437_D_308014437_D_764331628==1 ~ "Dominican",
+                                             D_308014437_D_308014437_D_412757551==1 ~ "Ecuadorian",
+                                             D_308014437_D_308014437_D_981774939==1 ~ "Hondurian",
+                                             D_308014437_D_308014437_D_432305109==1 ~ "Mexican or Mexican American",
+                                             D_308014437_D_308014437_D_862718552==1 ~ "Puerto Rican",
+                                             D_308014437_D_308014437_D_988121468==1 ~ "Salvadorian",
+                                             D_308014437_D_308014437_D_773342525==1 ~ "Spanish",
+                                             (D_308014437_D_308014437_D_807835037==1 | !is.na(D_308014437_D_440307926)) ~ "Other",
+                                             D_308014437_D_308014437_D_746038746==1 ~ "Prefer Not to Answer",
+                                             TRUE   ~ "Skipped this question"))
+
+dt_hisp_summary <- which_eth %>% group_by(ethnicity) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
+
+dt_hisp_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Ethnicity of Hispanic/Latino/Spanish Participants")) %>% 
+  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = ethnicity,
+    )
+  ) %>% opt_row_striping() %>% 
+tab_footnote(
+  footnote=("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other races/ethnicities."),
+  locations = cells_column_labels(columns = n)
+  #placement = c("left")
+) %>% 
+tab_footnote(
+  footnote=("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+  locations = cells_column_labels(columns = ethnicity)
+  #placement = c("left")
+)
+
+
+#Middle Eastern or North African
+dt_mideast= data_tib_m1 %>%  filter(data_tib_m1$D_384191091_D_384191091_D_973565052==1)  
+
+dt_mideast= dt_mideast %>%  mutate(multb2 = ifelse(D_351657815_D_351657815_D_190152384==1, 1, 0) + ifelse(D_351657815_D_351657815_D_119632587==1, 1, 0) + ifelse(D_351657815_D_351657815_D_578616917==1, 1, 0) + 
+                                             ifelse(D_351657815_D_351657815_D_834030167==1, 1, 0) + ifelse(D_351657815_D_351657815_D_680575651==1, 1, 0) + ifelse(D_351657815_D_351657815_D_144320785==1, 1, 0) + ifelse(D_351657815_D_351657815_D_214951746==1, 1, 0) + ifelse(D_351657815_D_351657815_D_932563284==1, 1, 0) + ifelse(D_351657815_D_351657815_D_336596477==1, 1, 0) + ifelse(D_351657815_D_351657815_D_380583570==1, 1, 0) + ifelse(D_351657815_D_351657815_D_807835037==1, 1, 0) + ifelse(D_351657815_D_351657815_D_746038746==1, 1, 0))
+
+
+                                                    
+which_eth= dt_mideast %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Multi-Ethnic",
+                                                       D_351657815_D_351657815_D_190152384==1 ~ "Afghan",
+                                             D_351657815_D_351657815_D_119632587==1 ~ "Algerian",
+                                             D_351657815_D_351657815_D_578616917==1 ~ "Egyptian",
+                                             D_351657815_D_351657815_D_834030167==1 ~ "Iranian",
+                                             D_351657815_D_351657815_D_680575651==1 ~ "Iraqi",
+                                             D_351657815_D_351657815_D_144320785==1 ~ "Israeli",
+                                             D_351657815_D_351657815_D_214951746==1 ~ "Lebanese",
+                                             D_351657815_D_351657815_D_932563284==1 ~ "Moroccan",
+                                             D_351657815_D_351657815_D_336596477==1 ~ "Syrian",
+                                             D_351657815_D_351657815_D_380583570==1 ~ "Tunisian",
+                                             (D_351657815_D_351657815_D_807835037==1 | !is.na(D_351657815_D_576646485)) ~ "Other",
+                                             D_351657815_D_351657815_D_746038746==1 ~ "Prefer Not to Answer",
+                                             TRUE   ~ "Skipped this question"))
+
+dt_mideast_summary <- which_eth %>% group_by(ethnicity) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
+
+dt_mideast_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Ethnicity of Middle Eastern or North African Participants")) %>% 
+  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = ethnicity,
+    )
+  ) %>% opt_row_striping() %>% 
+tab_footnote(
+  footnote=("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other races/ethnicities."),
+  locations = cells_column_labels(columns = n)
+  #placement = c("left")
+) %>% 
+tab_footnote(
+  footnote=("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+  locations = cells_column_labels(columns = ethnicity)
+  #placement = c("left")
+)
+
+
+#Hawaiian/ Pacific Islander
+dt_hawi_PI= data_tib_m1 %>%  filter(data_tib_m1$D_384191091_D_384191091_D_586825330==1)  
+
+dt_hawi= dt_hawi_PI %>%  mutate(multb2 = ifelse(D_115616118_D_115616118_D_664730658==1, 1, 0) + ifelse(D_115616118_D_115616118_D_949727109==1, 1, 0) + ifelse(D_115616118_D_115616118_D_496132363==1, 1, 0) + 
+                                             ifelse(D_115616118_D_115616118_D_453456270==1, 1, 0) + ifelse(D_115616118_D_115616118_D_819018322==1, 1, 0) + ifelse(D_115616118_D_115616118_D_685406566==1, 1, 0) + ifelse(D_115616118_D_115616118_D_786290435==1, 1, 0) + ifelse(D_115616118_D_115616118_D_167028305==1, 1, 0) + ifelse(D_115616118_D_115616118_D_345861266==1, 1, 0) +  ifelse(D_115616118_D_115616118_D_807835037==1, 1, 0) + ifelse(D_115616118_D_115616118_D_746038746==1, 1, 0))
+
+                                                       
+which_eth= dt_hawi %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Multi-Ethnic",
+                                                    D_115616118_D_115616118_D_664730658==1 ~ "Chamorro",
+                                             D_115616118_D_115616118_D_949727109==1 ~ "Chuukese",
+                                             D_115616118_D_115616118_D_496132363==1 ~ "Fijian",
+                                             D_115616118_D_115616118_D_453456270==1 ~ "Marshallese",
+                                             D_115616118_D_115616118_D_819018322==1 ~ "Hawaiian",
+                                             D_115616118_D_115616118_D_685406566==1 ~ "Palauan",
+                                             D_115616118_D_115616118_D_786290435==1 ~ "Samoan",
+                                             D_115616118_D_115616118_D_167028305==1 ~ "Tahitian",
+                                             D_115616118_D_115616118_D_345861266==1 ~ "Tongan",
+                                             (D_115616118_D_115616118_D_807835037==1 | !is.na(D_115616118_D_403180970)) ~ "Other",
+                                             D_115616118_D_115616118_D_746038746==1 ~ "Prefer Not to Answer",
+                                             TRUE   ~ "Skipped this question"))
+
+dt_hawi_summary <- which_eth %>% group_by(ethnicity) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
+
+dt_hawi_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Ethnicity of Hawaiian or Pacific Islander Participants")) %>% 
+  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = ethnicity,
+    )
+  ) %>% opt_row_striping() %>% 
+tab_footnote(
+  footnote=("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other races/ethnicities."),
+  locations = cells_column_labels(columns = n)
+  #placement = c("left")
+) %>% 
+tab_footnote(
+  footnote=("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+  locations = cells_column_labels(columns = ethnicity)
+  #placement = c("left")
+)
+
+
+
+#White
+dt_white= data_tib_m1 %>% filter(data_tib_m1$D_384191091_D_384191091_D_412790539==1) 
+
+dt_white= dt_white %>%  mutate(multb2 = ifelse(D_797626610_D_797626610_D_664571574==1, 1, 0) + ifelse(D_797626610_D_797626610_D_163149180==1, 1, 0) + ifelse(D_797626610_D_797626610_D_192776753==1, 1, 0) + 
+                                             ifelse(D_797626610_D_797626610_D_733789220==1, 1, 0) + ifelse(D_797626610_D_797626610_D_418464677==1, 1, 0) + ifelse(D_797626610_D_797626610_D_859329001==1, 1, 0) + ifelse(D_797626610_D_797626610_D_267472307==1, 1, 0) + ifelse(D_797626610_D_797626610_D_918190932==1, 1, 0) + ifelse(D_797626610_D_797626610_D_381749264==1, 1, 0) + ifelse(D_797626610_D_797626610_D_704661219==1, 1, 0) + ifelse(D_797626610_D_797626610_D_773342525==1, 1, 0) +  ifelse(D_797626610_D_797626610_D_807835037==1, 1, 0) + ifelse(D_797626610_D_797626610_D_746038746==1, 1, 0))
+
+
+which_eth= dt_white %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Multi-Ethnic",
+                                                     D_797626610_D_797626610_D_664571574==1 ~ "Ducth",
+                                             D_797626610_D_797626610_D_163149180==1 ~ "English",
+                                             D_797626610_D_797626610_D_192776753==1 ~ "European",
+                                             D_797626610_D_797626610_D_733789220==1 ~ "French",
+                                             D_797626610_D_797626610_D_418464677==1 ~ "German",
+                                             D_797626610_D_797626610_D_859329001==1 ~ "Irish",
+                                             D_797626610_D_797626610_D_267472307==1 ~ "Italian",
+                                             D_797626610_D_797626610_D_918190932==1 ~ "Norwegian",
+                                             D_797626610_D_797626610_D_381749264==1 ~ "Polish",
+                                             D_797626610_D_797626610_D_704661219==1 ~ "Scottish",
+                                             D_797626610_D_797626610_D_773342525==1 ~ "Spanish",
+                                             (D_797626610_D_797626610_D_807835037==1 | !is.na(D_797626610_D_774928994)) ~ "Other",
+                                             D_797626610_D_797626610_D_746038746==1 ~ "Prefer Not to Answer",
+                                             TRUE   ~ "Skipped this question"))
+
+dt_white_summary <- which_eth %>% group_by(ethnicity) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
+gtm3_print <- gt::gt(dt_white_summary)
+
+dt_white_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Ethnicity of White Participants")) %>% 
+  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = ethnicity,
+    )
+  ) %>% opt_row_striping() %>% 
+tab_footnote(
+  footnote=("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other races/ethnicities."),
+  locations = cells_column_labels(columns = n)
+  #placement = c("left")
+) %>% 
+tab_footnote(
+  footnote=("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+  locations = cells_column_labels(columns = ethnicity)
+  #placement = c("left")
+)
+
+```
+
+```{r ai_an_other, echo=FALSE, warning=FALSE}
+
+
+
+# Assuming dt_hisp is your data frame
+
+# Define patterns and categories
+patterns <- c(
+Black="Black",
+Afr="Afr",
+White="White",
+Caucasian="Caucasian",
+Indigenous="Indigenous",
+Indian="Indian",
+Native="Native",
+Mexic="Mexic",
+Europe="Europe"
+
+)
+
+categorize_ethnicity <- function(response) {
+  category <- "Other"
+  for (pattern in patterns) {
+    if (grepl(pattern, response, ignore.case = TRUE)) {
+      category <- pattern
+      break
+    }
+  }
+  return(category)
+}
+
+# Apply the categorization function to create a new column
+dt_native <- dt_am_ind_ethn %>% filter(!is.na(D_362270886_D_650100414)) %>% 
+  mutate(Response_Category = sapply(D_362270886_D_650100414, categorize_ethnicity))
+
+# Summarize counts for each category
+summary_table <- dt_native %>% 
+  group_by(Response_Category) %>%
+  summarise(Count = n()) %>%
+    mutate(
+        Response_Category = case_when(
+            (Response_Category == "Black" | Response_Category =="Afr" | Response_Category == "White" | Response_Category =="Caucasian") ~ "Provided another race",
+            (Response_Category == "Indigenous" | Response_Category =="Indian" | Response_Category =="Native") ~ "Gave a response already provided",
+            Response_Category == "Mexic" ~ "Mexican",
+            Response_Category == "Europe" ~ "European",
+            TRUE ~ "Other"
+        )
+    )  %>%
+  group_by(Response_Category) %>%
+  summarise(Count = sum(Count)) %>%
+  arrange(desc(Count)) 
+
+# Create a table using gt
+oth_native_table <- summary_table %>% gt() %>%
+  tab_header(
+    title = "'Other' American Inidan or Native American Ethnicities Selected",
+  ) %>% cols_label(Response_Category= md("**Response**"), Count=md("**Number of Participants**")) %>% 
+  grand_summary_rows(columns=c(Count),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) 
+
+tab_footnote(
+  oth_native_table,
+  md("This table gives counts of each individual response type; if a participant gave several ethnicities, they are counted in each of those respective ethnicity rows. The Total is the total number of responses, not the total number of participants who provided a response."),
+  locations = cells_column_labels(columns = Count),
+  placement = c("left")
+)
+
+
+```
+
+
+```{r asian_other, echo=FALSE, warning=FALSE}
+
+
+# Define patterns and categories
+patterns <- c(
+American="American",
+Bangladesh="Bangladesh",
+Chinese="Chinese",
+Thai="Thai",
+Filipino="Filipino",
+White="White",
+Caucasian="Caucasian",
+Indonesia="Indonesia",
+Nepal="Nepal",
+Okinawan="Okinawan",
+Japanese="Japanese",
+Samoan="Samoan",
+Hawiian="Hawiian",
+Viet="Viet",
+Sing="Sing",
+Sri="Sri",
+Taiwanese="Taiwanese"
+
+)
+
+categorize_ethnicity <- function(response) {
+  category <- "Other"
+  for (pattern in patterns) {
+    if (grepl(pattern, response, ignore.case = TRUE)) {
+      category <- pattern
+      break
+    }
+  }
+  return(category)
+}
+
+# Apply the categorization function to create a new column
+dt_asian <- dt_asian %>% filter(!is.na(D_525535977_D_396618548)) %>% 
+  mutate(Response_Category = sapply(D_525535977_D_396618548, categorize_ethnicity))
+
+# Summarize counts for each category
+summary_table <- dt_asian %>% 
+  group_by(Response_Category) %>%
+  summarise(Count = n()) %>%
+    mutate(
+        Response_Category = case_when(
+          (Response_Category == "Chinese" | Response_Category == "Filipino" | Response_Category == "Japanese" | 
+             Response_Category == "Viet") ~ "Gave a response already provided",
+          (Response_Category == "White"  | Response_Category == "Caucasian"  | Response_Category == "Samoan"  |
+             Response_Category == "Hawiian" )~ "Gave a response already provided",
+            Response_Category == "American" ~ "American",
+            Response_Category == "Bangladesh"~"Bangladesh",
+            Response_Category == "Thai" ~ "Thai",
+            Response_Category == "Indonesia" ~ "Indonesia",
+            Response_Category == "Nepal" ~ "Nepal",
+            Response_Category == "Okinawan" ~ "Okinawan",
+            Response_Category == "Sing" ~ "Singaporean",
+          Response_Category == "Sri" ~ "Sri Lankan",
+          Response_Category == "Taiwanese" ~ "Taiwanese",
+            TRUE ~ "Other"
+        )
+    )  %>%
+  group_by(Response_Category) %>%
+  summarise(Count = sum(Count)) %>%
+  arrange(desc(Count)) 
+
+# Create a table using gt
+oth_asian_table <- summary_table %>% gt() %>%
+  tab_header(
+    title = "'Other' Asian or Asian American Ethnicities Selected",
+  ) %>% cols_label(Response_Category= md("**Response**"), Count=md("**Number of Participants**")) %>% 
+  grand_summary_rows(columns=c(Count),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) 
+
+tab_footnote(
+  oth_asian_table,
+  md("This table gives counts of each individual response type; if a participant gave several ethnicities, they are counted in each of those respective ethnicity rows. The Total is the total number of responses, not the total number of participants who provided a response."),
+  locations = cells_column_labels(columns = Count),
+  placement = c("left")
+)
+
+
+```
+
+
+```{r black_other, echo=FALSE, warning=FALSE}
+
+
+# Define patterns and categories
+patterns <- c(
+  Black = "Black",
+  Kenyan = "Kenyan",
+  Mixed = "Mixed",
+  West_African = "West African",
+  Zimbab = "Zimbab",
+  Congo = "Congo",
+  Eritean = "Eritean",
+  Afro = "Afro",
+  sierra = "sierra"
+)
+
+categorize_ethnicity <- function(response) {
+  category <- "Other"
+  for (pattern in patterns) {
+    if (grepl(pattern, response, ignore.case = TRUE)) {
+      category <- pattern
+      break
+    }
+  }
+  return(category)
+}
+
+# Apply the categorization function to create a new column
+dt_black <- dt_black %>% filter(!is.na(D_976808005_D_852296096)) %>% 
+  mutate(Response_Category = sapply(D_976808005_D_852296096, categorize_ethnicity))
+
+# Summarize counts for each category
+summary_table <- dt_black %>% 
+  group_by(Response_Category) %>%
+  summarise(Count = n()) %>%
+    mutate(
+        Response_Category = case_when(
+            Response_Category == "Black" ~ "Black or Black American",
+            Response_Category == "Kenyan" ~ "Kenyan",
+            Response_Category == "Mixed" ~ "Mixed",
+            Response_Category == "West_African" ~ "West African",
+            Response_Category == "Zimbab" ~ "Zimbabwean",
+            Response_Category == "Congo" ~ "Congolese",
+            Response_Category == "Eritean" ~ "Guatemalan",
+            Response_Category == "Afro" ~ "Afro American or Afro Costa Rican",
+            Response_Category == "sierra" ~ "Sierra Leone/Sierra Leonean",
+            TRUE ~ "Other"
+        )
+    )  %>%
+  group_by(Response_Category) %>%
+  summarise(Count = sum(Count)) %>%
+  arrange(desc(Count)) 
+
+# Create a table using gt
+oth_black_table <- summary_table %>% gt() %>%
+  tab_header(
+    title = "'Other' Black Ethnicities Selected",
+  ) %>% cols_label(Response_Category= md("**Response**"), Count=md("**Number of Participants**")) %>% 
+  grand_summary_rows(columns=c(Count),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) 
+
+tab_footnote(
+  oth_black_table,
+  md("This table gives counts of each individual response type; if a participant gave several ethnicities, they are counted in each of those respective ethnicity rows. The Total is the total number of responses, not the total number of participants who provided a response."),
+  locations = cells_column_labels(columns = Count),
+  placement = c("left")
+)
+
+
+```
+
+```{r hisp_other, echo=FALSE, warning=FALSE}
+
+
+
+
+# Define patterns and categories
+patterns <- c(
+  peru = "peru",
+  potruguese = "portuguese",
+  panama = "panama",
+  nicaragua = "nicara",
+  venezuela = "venez",
+  hispanic = "span",
+  guatemalan = "guat",
+  costa_rican = "costa",
+  chile = "chil",
+  brazil = "brazil",
+  bolivian = "boliv",
+  argentinian = "argent",
+  jamaican = "jamaica",
+  paraguayan = "paraguay",
+  mexican = "mexic",
+  mixed = "mixed",
+  american = "america",
+  white = "white",
+  unsure = "unsure"
+)
+
+categorize_ethnicity <- function(response) {
+  category <- "Other"
+  for (pattern in patterns) {
+    if (grepl(pattern, response, ignore.case = TRUE)) {
+      category <- pattern
+      break
+    }
+  }
+  return(category)
+}
+
+# Apply the categorization function to create a new column
+dt_hisp <- dt_hisp %>% filter(!is.na(D_308014437_D_440307926)) %>% 
+  mutate(Response_Category = sapply(D_308014437_D_440307926, categorize_ethnicity))
+
+# Summarize counts for each category
+summary_table <- dt_hisp %>% 
+  group_by(Response_Category) %>%
+  summarise(Count = n()) %>%
+    mutate(
+        Response_Category = case_when(
+            Response_Category == "peru" ~ "Peruvian",
+            Response_Category == "portuguese" ~ "Portuguese",
+            Response_Category == "panama" ~ "Panamanian",
+            Response_Category == "nicara" ~ "Nicaraguan",
+            Response_Category == "venez" ~ "Venezuelan",
+            Response_Category == "span" ~ "Hispanic or Spaniard",
+            Response_Category == "guat" ~ "Guatemalan",
+            Response_Category == "costa" ~ "Costa Rican",
+            Response_Category == "chil" ~ "Chilean",
+            Response_Category == "brazil" ~ "Brazilian",
+            Response_Category == "boliv" ~ "Bolivian",
+            Response_Category == "argent" ~ "Argentinian",
+            Response_Category == "jamaica" ~ "Jamaican",
+            Response_Category == "paraguay" ~ "Paraguayan",
+            Response_Category == "mexic" ~ "Mexican or New Mexican",
+            Response_Category == "mixed" ~ "Mixed",
+            Response_Category == "america" ~ "American",
+            Response_Category == "white" ~ "White",
+            Response_Category == "unsure" ~ "Unsure",
+            TRUE ~ "Other"
+        )
+    )  %>%
+  group_by(Response_Category) %>%
+  summarise(Count = sum(Count)) %>%
+  arrange(desc(Count)) 
+
+# Create a table using gt
+oth_hisp_table <- summary_table %>% gt() %>%
+  tab_header(
+    title = "'Other' Hispanic Ethnicities Selected",
+  ) %>% cols_label(Response_Category= md("**Response**"), Count=md("**Number of Participants**")) %>% 
+  grand_summary_rows(columns=c(Count),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) 
+
+tab_footnote(
+  oth_hisp_table,
+  md("This table gives counts of each individual response type; if a participant gave several ethnicities, they are counted in each of those respective ethnicity rows. The Total is the total number of responses, not the total number of participants who provided a response."),
+  locations = cells_column_labels(columns = Count),
+  placement = c("left")
+)
+
+
+```
+
+```{r mideast_other, echo=FALSE, warning=FALSE}
+
+
+
+
+
+# Define patterns and categories
+patterns <- c(
+Armenia="Armenia",
+Jewish="Jewish",
+Jordan="Jordan",
+Liberia="Liberia",
+Palest="Palest",
+Turk="Turk",
+Yemin="Yemin"
+
+)
+
+categorize_ethnicity <- function(response) {
+  category <- "Other"
+  for (pattern in patterns) {
+    if (grepl(pattern, response, ignore.case = TRUE)) {
+      category <- pattern
+      break
+    }
+  }
+  return(category)
+}
+
+# Apply the categorization function to create a new column
+dt_mideast <- dt_mideast %>% filter(!is.na(D_351657815_D_576646485)) %>% 
+  mutate(Response_Category = sapply(D_351657815_D_576646485, categorize_ethnicity))
+
+# Summarize counts for each category
+summary_table <- dt_mideast %>% 
+  group_by(Response_Category) %>%
+  summarise(Count = n()) %>%
+    mutate(
+        Response_Category = case_when(
+            Response_Category == "Armenia" ~ "Armenian",
+            Response_Category == "Jewish" ~ "Jewish",
+            Response_Category == "Liberia" ~ "Liberian",
+            Response_Category == "Palestin" ~ "Palestinian",
+            Response_Category == "Turk" ~ "Turkish",
+            Response_Category == "Yemen" ~ "Yemeni",
+            Response_Category == "Jordan" ~ "Jordanian",
+            TRUE ~ "Other"
+        )
+    )  %>%
+  group_by(Response_Category) %>%
+  summarise(Count = sum(Count)) %>%
+  arrange(desc(Count)) 
+
+# Create a table using gt
+oth_mideast_table <- summary_table %>% gt() %>%
+  tab_header(
+    title = "'Other' Middle Eastern Ethnicities Selected",
+  ) %>% cols_label(Response_Category= md("**Response**"), Count=md("**Number of Participants**")) %>% 
+  grand_summary_rows(columns=c(Count),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) 
+
+tab_footnote(
+  oth_mideast_table,
+  md("This table gives counts of each individual response type; if a participant gave several ethnicities, they are counted in each of those respective ethnicity rows. The Total is the total number of responses, not the total number of participants who provided a response."),
+  locations = cells_column_labels(columns = Count),
+  placement = c("left")
+)
+
+
+```
+
+```{r hawi_other, echo=FALSE, warning=FALSE}
+
+
+
+# Define patterns and categories
+patterns <- c(
+Filipino="Filipino", 
+Chinese="Chinese"
+)
+
+categorize_ethnicity <- function(response) {
+  category <- "Other"
+  for (pattern in patterns) {
+    if (grepl(pattern, response, ignore.case = TRUE)) {
+      category <- pattern
+      break
+    }
+  }
+  return(category)
+}
+
+# Apply the categorization function to create a new column
+dt_hawi_PI <- dt_hawi_PI %>% filter(!is.na(D_115616118_D_403180970)) %>% 
+  mutate(Response_Category = sapply(D_115616118_D_403180970, categorize_ethnicity))
+
+# Summarize counts for each category
+summary_table <- dt_hawi_PI %>% 
+  group_by(Response_Category) %>%
+  summarise(Count = n()) %>%
+    mutate(
+        Response_Category = case_when(
+            Response_Category == "Filipino" ~ "Filipino",
+            Response_Category == "Chinese" ~ "Chinese",
+            TRUE ~ "Other"
+        )
+    )  %>%
+  group_by(Response_Category) %>%
+  summarise(Count = sum(Count)) %>%
+  arrange(desc(Count)) 
+
+# Create a table using gt
+oth_hawi_table <- summary_table %>% gt() %>%
+  tab_header(
+    title = "'Other' Hawaiian or Pacific Islander Ethnicities Selected",
+  ) %>% cols_label(Response_Category= md("**Response**"), Count=md("**Number of Participants**")) %>% 
+  grand_summary_rows(columns=c(Count),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) 
+
+tab_footnote(
+  oth_hawi_table,
+  md("This table gives counts of each individual response type; if a participant gave several ethnicities, they are counted in each of those respective ethnicity rows. The Total is the total number of responses, not the total number of participants who provided a response."),
+  locations = cells_column_labels(columns = Count),
+  placement = c("left")
+)
+
+
+```
+
+
+
+```{r white_other, echo=FALSE, warning=FALSE}
+
+
+
+patterns <- c(
+Ashkenazi="Ashkenazi",
+Jew="Jewish",
+European="European",
+American_Indian="American Indian",
+Indigenous="Indigenous",
+Greece="Greece",
+Greek="Greek",
+Ital="Italian",
+Irish="Irish",
+Ireland="Ireland",
+Polish="Polish",
+Poland="Poland",
+French="French",
+France="France",
+German="German",
+adopted="adopted",
+Danish="Danish",
+Engl="English",
+Mixed="Mix",
+Native_American="Native American",
+Scand="Scandanavian",
+Puerto="Puerto",
+Scottish="Scottish",
+Cherokee="Cherokee",
+Dont_know="Don't know",
+unsure="unsure",
+no_idea=" no idea",
+unknown= "unknown",
+Brazilian= "Brazilian",
+Russian= "Russian",
+Swedish= "Swedish",
+American= "American",
+Slov= "Slov",
+Lithu= "Lithu",
+czech= "czech",
+Finn= "Finn",
+Hungarian= "Hungarian",
+Canadian= "Canadian",
+Prussian= "Prussian",
+Swiss= "Swiss",
+Turk= "Turk")
+
+categorize_ethnicity <- function(response) {
+  category <- "Other"
+  for (pattern in patterns) {
+    if (grepl(pattern, response, ignore.case = TRUE)) {
+      category <- pattern
+      break
+    }
+  }
+  return(category)
+}
+
+# Apply the categorization function to create a new column
+dt_white <- dt_white %>% filter(!is.na(D_797626610_D_774928994)) %>% 
+  mutate(Response_Category = sapply(D_797626610_D_774928994, categorize_ethnicity))
+
+# Summarize counts for each category
+summary_table <- dt_white %>% 
+  group_by(Response_Category) %>%
+  summarise(Count = n()) %>%
+    mutate(
+        Response_Category = case_when(
+          (Response_Category ==  "German" | Response_Category ==  "European" | Response_Category ==  "Scottish" | Response_Category ==  "Engl" |
+             Response_Category ==  "Ital"| Response_Category ==  "Irish" | Response_Category ==  "Ireland" |  Response_Category ==  "Danish"  | 
+             Response_Category ==  "Polish" | Response_Category ==  "Poland"  |  Response_Category ==  "French" | Response_Category ==  "France" |
+             Response_Category ==  "Puerto" | Response_Category == "Norwegian" | Response_Category ==  "unsure" | Response_Category == "no_idea"  | 
+             Response_Category ==  "unknown" | Response_Category =="Dont_know") ~ "Gave a response already provided",
+          (Response_Category ==  "American_Indian" | Response_Category =="Cherokee" | Response_Category ==  "Native_American") ~  "Gave a race already provided",
+          ( Response_Category ==  "Jew" | Response_Category ==  "Ashkenazi") ~ "Jewish",
+          ( Response_Category ==  "Greek" | Response_Category ==  "Greece") ~ "Greek",
+        Response_Category ==  "Brazil" ~ "Brazilian",
+        Response_Category ==  "Russian" ~ "Russian",
+        Response_Category ==  "Swedish" ~ "Swedish",
+        Response_Category ==  "American" ~ "American",
+        Response_Category ==  "Mix" ~ "Mixed",
+        Response_Category ==  "Slov" ~ "Slovanian",
+        Response_Category ==  "Lithu" ~ "Lithuanian",
+        Response_Category ==  "czech" ~ "Czech",
+       (Response_Category ==  "welsh" |  Response_Category ==  "welch") ~ "Welch",
+        Response_Category ==  "Finn" ~ "Finnish",
+        Response_Category ==  "Hungarian" ~ "Hungarian",
+        Response_Category ==  "Canadian" ~ "Canadian",
+        Response_Category ==  "Prussian" ~ "Prussian",
+       Response_Category ==  "Prussian" ~ "Prussian",
+        (Response_Category ==  "Swiss" | Response_Category == "Swedish") ~ "Swiss",
+        Response_Category ==  "Turk" ~ "Turkish",
+            TRUE ~ "Other"
+        )
+    )  %>%
+  group_by(Response_Category) %>%
+  summarise(Count = sum(Count)) %>%
+  arrange(desc(Count)) 
+
+# Create a table using gt
+oth_white_table <- summary_table %>% gt() %>%
+  tab_header(
+    title = "'Other' White Ethnicities Selected",
+  ) %>% cols_label(Response_Category= md("**Response**"), Count=md("**Number of Participants**")) %>% 
+  grand_summary_rows(columns=c(Count),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) 
+
+tab_footnote(
+  oth_white_table,
+  md("This table gives counts of each individual response type; if a participant gave several ethnicities, they are counted in each of those respective ethnicity rows. The Total is the total number of responses, not the total number of participants who provided a response."),
+  locations = cells_column_labels(columns = Count),
+  placement = c("left")
+)
+
+
+```
+
+# Race
+```{r all_race_other, echo=FALSE, warning=FALSE}
+
+# Ashkenazi/Jew/Jewish	21		
+# Asian/Asian American/East Asian	31		already a response
+# Indian/East Indian	26		ethnicity
+# European	30		ethnicity
+# American Indian/Native American/ Indigenous	24		already a response
+# White/Caucasian	45		already a response
+# Mixed	8		multi responses available
+# Black/African	30		already a response
+# biracial/bi-racial/by racial/bi racial	9		multi responses available
+# Middle East/Iran	7		already a response
+# Mexic	8		ethnicity
+# Greece/Greek	7		ethnicity
+# Italian/Italy	11		ethnicity
+# Irish/Ireland	16		ethnicity
+# Polish/Poland	6		ethnicity
+# French/France	6		ethnicity
+# Spain/Spanish	12		ethnicity
+# Filipino	5		ethnicity
+# German	20		ethnicity
+# Brazil	3		ethnicity
+# Adopted	3		
+# Dutch	3		ethnicity
+# Haiti/Jamaica/ Carribbean	5		ethnicity
+# England/English	5		ethnicity
+# Japan	3		ethnicity
+# Portug	12		ethnicity
+# Puerto Rico/Puerto Rican/ puertorrican	5		ethnicity
+
+
+
+
+# Define patterns and categories
+patterns <- c(Ashkenazi="Ashkenazi",
+Ashkenazi="Ashkenazi",
+Jew="Jewish",
+European="European",
+American_Indian="American Indian",
+Indigenous="Indigenous",
+White="White",
+Caucasian="Caucasian",
+biracial="biracial",
+bi__racial="bi-racial",
+bi_racial="bi racial",
+Black="Black",
+by_racial="by racial",
+middle_east="middle east",
+Mexic="Mexican",
+Greece="Greece",
+Greek="Greek",
+Ital="Italian",
+Irish="Irish",
+Ireland="Ireland",
+Polish="Polish",
+Poland="Poland",
+French="French",
+France="France",
+Spain="Spain",
+Spanish="Spanish",
+Filipino="Filipino",
+German="German",
+India="India",
+Iran="Iran",
+Brazil="Brazil",
+adopted="adopted",
+Dutch="Dutch",
+Haiti="Haiti",
+Engl="English",
+Japan="Japan",
+Jamaica="Jamaica",
+Mixed="Mixed",
+Portuguese ="Portuguese ",
+Native_American="Native American",
+Scand="Scandanavian",
+Puerto="Puerto",
+Scottish="Scottish",
+Asian="Asian",
+Cherokee="Cherokee",
+Carribbean = "Carribbean")
+
+categorize_ethnicity <- function(response) {
+  category <- "Other"
+  for (pattern in patterns) {
+    if (grepl(pattern, response, ignore.case = TRUE)) {
+      category <- pattern
+      break
+    }
+  }
+  return(category)
+}
+
+# Apply the categorization function to create a new column
+data_tib_m1race <- data_tib_m1 %>% filter(!is.na(D_384191091_D_747350323)) %>% 
+  mutate(Response_Category = sapply(D_384191091_D_747350323, categorize_ethnicity))
+
+# Summarize counts for each category
+summary_table <- data_tib_m1race %>% 
+  group_by(Response_Category) %>%
+  summarise(Count = n()) %>%
+    mutate(
+        Response_Category = case_when(
+          (Response_Category ==  "Caucasian" | Response_Category ==  "White" | Response_Category ==  "middle_east" | Response_Category ==  "Iran" |
+             Response_Category ==  "Black" | Response_Category ==  "Asian"  | Response_Category ==  "American_Indian" |
+             Response_Category =="Cherokee" | Response_Category ==  "Native_American" |  Response_Category ==  "Indigenous")~ "Gave a response already provided",
+          
+          (Response_Category ==  "European" | Response_Category ==  "German" |Response_Category ==  "Greece" | Response_Category ==  "Greek"  |
+             Response_Category ==  "Ital"| Response_Category ==  "Irish" | Response_Category ==  "Ireland" |
+             Response_Category ==  "Polish" | Response_Category ==  "Poland"  |  Response_Category ==  "French" | Response_Category ==  "France" |
+             Response_Category ==  "Spain"  | Response_Category ==  "Spanish" | Response_Category ==  "Scottish" | Response_Category ==  "Scand" |
+             Response_Category ==  "Portuguese " | Response_Category ==  "Engl" |  Response_Category ==  "Dutch"  | Response_Category ==  "Mexic" |
+             Response_Category ==  "Filipino" |Response_Category ==  "India" |Response_Category ==  "Brazil" |Response_Category ==  "Haiti"| 
+             Response_Category ==  "Jamaica"| Response_Category == "Carribbean" |Response_Category ==  "Japan" |Response_Category ==  "Mixed"|
+             Response_Category ==  "Puerto") ~ "Gave Ethnicity Instead of Race",
+
+          ( Response_Category ==  "Jew" | Response_Category ==  "Ashkenazi") ~ "Jewish",
+          (Response_Category ==  "biracial" | Response_Category ==  "bi__racial" |Response_Category ==  "bi_racial" | 
+             Response_Category ==  "by_racial") ~ "Biracial",
+        Response_Category ==  "adopted" ~ "Adopted",
+            TRUE ~ "Other")) %>% 
+  group_by(Response_Category) %>%  
+  summarise(Count = sum(Count)) %>%  
+  arrange(desc(Count)) 
+
+# Create a table using gt
+oth_race_table <- summary_table %>% gt() %>%
+  tab_header(
+    title = "'Other' Race Provided by the Participant",
+  ) %>% cols_label(Response_Category= md("**Response**"), Count=md("**Number of Participants**")) %>% 
+  grand_summary_rows(columns=c(Count),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) 
+
+tab_footnote(
+  oth_race_table,
+  md("This table gives counts of each individual response type; if a participant gave several race/ethnicities, they are counted in each of those respective race/ethnicity rows. The Total is the total number of responses, not the total number of participants who provided a response."),
+  locations = cells_column_labels(columns = Count),
+  placement = c("left")
+)
+
+
+```
+
+# Sexual Orientation 
+
+```{r sexuality_other, echo=FALSE, warning=FALSE}
+sexorient <- data_tib_m1 %>%  filter(!is.na(D_555481393_D_979809707))
+sexorient$sexuality=tolower(sexorient$D_555481393_D_979809707)
+sexorient$sexuality_no_spaces = gsub(" ", "", sexorient$D_555481393_D_979809707)
+
+
+
+sexorient= sexorient  %>%  mutate(sexuality= case_when(tolower(D_555481393_D_979809707)=="asexual" | tolower(D_555481393_D_979809707)=="a sexual" ~ "Asexual",
+                                                           tolower(D_555481393_D_979809707)=="pansexual" | tolower(D_555481393_D_979809707)=="pan sexual" | tolower(D_555481393_D_979809707)=="pan"~ "Pansexual",
+                                                           tolower(D_555481393_D_979809707)=="queer"~ "Queer",
+                                                           tolower(D_555481393_D_979809707)=="straight" | D_555481393_D_979809707=="hetero" ~ "Straight",
+                                                          is.na(D_555481393_D_979809707)~ "Skipped this Question",
+                                                      TRUE ~ "Other"))
+
+sexorient_table <- sexorient  %>% dplyr::group_by(sexuality) %>% dplyr::summarize(n=n()) %>% dplyr::ungroup()  %>%  dplyr::select(sexuality, n) %>% arrange(desc(n)) 
+
+oth_sex_table <- sexorient_table %>% gt() %>%
+  tab_header(
+    title = "'Other' Sexual Orientation Provided by the Participant",
+  ) %>% cols_label(sexuality= md("**Response**"), n=md("**Number of Participants**")) %>% 
+  grand_summary_rows(columns=c(n),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) 
+
+tab_footnote(
+  oth_sex_table,
+  md("This table gives counts of each individual response type; if a participant gave several race/ethnicities, they are counted in each of those respective race/ethnicity rows. The Total is the total number of responses, not the total number of participants who provided a response."),
+  locations = cells_column_labels(columns = n),
+  placement = c("left")
+)
+
+```
+
+
+```{r ethnicity_other, echo=FALSE, warning=FALSE}
+# other_all_race <- table(data_tib_m1$D_384191091_D_747350323)
+# write.csv(other_all_race,"other_all_race.csv",row.names = F,na="")
+# 
+# other_ai_an_race <- table(data_tib_m1$D_362270886_D_650100414)
+# write.csv(other_ai_an_race,"other_ai_an_race.csv",row.names = F,na="")
+# 
+# other_asian_race <- table(data_tib_m1$D_525535977_D_396618548)
+# write.csv(other_asian_race,"other_asian_race.csv",row.names = F,na="")
+# 
+# other_black_race <- table(data_tib_m1$D_976808005_D_852296096)
+# write.csv(other_black_race,"other_black_race.csv",row.names = F,na="")
+# 
+# other_hispanic_race <- table(data_tib_m1$D_308014437_D_440307926)
+# write.csv(other_hispanic_race,"other_hispanic_race.csv",row.names = F,na="")
+# 
+# other_middle_eastern_race <- table(data_tib_m1$D_351657815_D_576646485)
+# write.csv(other_middle_eastern_race,"other_middle_eastern_race.csv",row.names = F,na="")
+# 
+# other_HI_race <- table(data_tib_m1$D_115616118_D_403180970)
+# write.csv(other_HI_race,"other_HI_race.csv",row.names = F,na="")
+# 
+# other_white_race <- table(data_tib_m1$D_797626610_D_774928994)
+# write.csv(other_white_race,"other_white_race.csv",row.names = F,na="")
+# 
+# 
+# 
+# 
+# 
+# other_all_race <- table(data_tib_m1$D_384191091_D_747350323)
+# write.csv(other_all_race,"other_all_race.csv",row.names = F,na="")
+
+```

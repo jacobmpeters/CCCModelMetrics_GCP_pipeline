@@ -1,0 +1,1249 @@
+---
+title: "Module 4 QC Metrics"
+author: "Kelsey Dowling"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r library, include=FALSE}
+#rm(list = ls())
+
+
+#update.packages("tinytex")
+#require(devtools)
+#install_version("ggplot2", version = "0.9.1", repos = "http://cran.us.r-project.org")
+#tinytex::install_tinytex(version = "2020.10")
+#tinytex::reinstall_tinytex(repository = "illinois")
+
+
+
+library(bigrquery)
+library(foreach)
+library(stringr)
+#library(plyr)
+library(expss) ###to add labels
+library(epiDisplay) ##recommended applied here crosstable, tab1
+library(gmodels) ##recommended
+library(magrittr)
+library(arsenal)
+library(gtsummary)
+library(rio)
+
+
+library(stringr)
+library(ggplot2)
+library(gridExtra)
+library(scales)
+library(gt)
+#install(tinytex)
+library(tinytex)
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(reshape)  ###to work on transition from long to wide or wide to long data
+library(listr) ###to work on a list of vector, files or..
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(stringr) ###to work on patterns, characters
+
+options(tinytex.verbose = TRUE)
+
+bq_auth()
+```
+
+
+```{r M1merge, include=FALSE, warning=FALSE}
+
+dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
+dd <- dplyr::bind_rows(dictionary,.id="CID")
+dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
+dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name')
+
+dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
+dd$CID <- rownames(dd)
+#https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
+#devtools::install_github("tidyverse/reprex")
+
+project <- "nih-nci-dceg-connect-prod-6d04"
+billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be consistent
+##517311251 Date/time Status of Completion of Background and Overall Health                         SrvBOH_TmComplete_v1r0
+##949302066 Flag for Baseline Module Background and Overall Health                        SrvBOH_BaseStatus_v1r0
+recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
+                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935'")
+recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
+cnames <- names(recr_m1)
+# Check that it doesn't match any non-number
+numbers_only <- function(x) !grepl("\\D", x)
+# to check variables in recr_noinact_wl1
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(recr_m1,varname)
+  recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+sql_M1_1 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
+sql_M1_2 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
+
+
+M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64") #1436 #1436 vars: 1507 01112023 
+M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64") #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
+
+mod1_v1 <- M1_V1
+cnames <- names(M1_V1)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v1,varname)
+  mod1_v1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+mod1_v2 <- M1_V2
+cnames <- names(M1_V2)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v2,varname)
+  mod1_v2[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+M1_V1.var <- colnames(M1_V1)
+M1_V2.var <- colnames(M1_V2)
+var.matched <- M1_V1.var[which(M1_V1.var %in% M1_V2.var)]
+length(var.matched)  #1275 #1278 vars 01112023 #1348 vars 05022023
+
+V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched] #232 #229 01112023 #159 05022023
+V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched] #253 #253 01112023 #545 05022023
+
+length(M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID])
+#[1] 59 with the completion of two versions of Module1 
+#[1] 62 with completing both versions of M1 ###double checked 03/28/2023
+#68 double checked 05/02/2023
+
+common.IDs <- M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID]
+M1_V1_common <- mod1_v1[,var.matched]
+
+M1_V2_common <- mod1_v2[,var.matched]
+M1_V1_common$version <- 1
+M1_V2_common$version <- 2
+
+##to check the completion of M1 among these duplicates
+partM1_dups <- recr_m1[which(recr_m1$Connect_ID %in% common.IDs),]
+table(partM1_dups$d_949302066)
+
+M1_common  <- rbind(M1_V1_common, M1_V2_common) #including 136 duplicates (version 1 and version 2) from 68 participants 05022023
+#M1_response <- matrix(data=NA, nrow=118, ncol=967)
+
+m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)] #230 vars 03282023 #160 vars 05/02/2023
+m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] #255 vars 03282023 #546 vars 05/02/2023
+m1_v1_only$version <- 1
+m1_v2_only$version <- 2
+#for (i in 1:length)
+##to check the completion in each version
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #1364 03282023 # 1370 05022023
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #4870 03282023 # 5731 05022023
+
+#library(janitor)
+
+m1_common <- rbind(M1_V1_common,M1_V2_common)
+m1_common_v1 <- base::merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
+m1_combined_v1v2 <- base::merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
+m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] #7289 including duplicates 05022023
+
+m1_complete <- m1_complete %>% arrange(desc(version)) 
+
+
+m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),] 
+table(m1_complete_nodup$version)
+
+
+parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
+D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
+D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, 
+d_663265240, d_878865966, d_684635302, d_167958071,d_371067537,
+d_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_914639140, d_311580100 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and (d_663265240='231311385')"
+querymod4 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module4_v1_JP` where Connect_ID IS NOT NULL"
+
+parts_table <- bq_project_query(project, parts)
+parts_data <- bq_table_download(parts_table, bigint = "integer64")
+mod4_table <- bq_project_query(project, querymod4)
+mod4_data <- bq_table_download(mod4_table, bigint = "integer64")
+mod4_data$Connect_ID <- as.numeric(mod4_data$Connect_ID)
+parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID)
+
+
+module4 = left_join(m1_complete_nodup, parts_data, by="Connect_ID") %>%  left_join(mod4_data, by="Connect_ID")
+dim(module4)
+
+
+data_tib4 <- as_tibble(module4)
+
+
+knitr::opts_chunk$set(comment = NA)
+
+```
+
+
+
+
+```{r functions, include=FALSE, warning=FALSE}
+
+#HOMEADD2 <- Only display if CITY = NA OR ST = NA OR ZIP = NA OR COUNTRY = NA  
+#SEASADD2 <- Only display if SEACITY = NA OR SEAST = NA OR SEAZIP = NA OR SEACOUNTRY = NA
+funct_HOMEADD2 <- function(HOMEADD2, CITY,ST,ZIP,COUNTRY, Title){
+              #doing inverse rule. If none of these preceeding questions were NA, then we shouldn't have a response for HOMEADD2
+  CID_SYM_HOMEADD2 <- rlang::ensym(HOMEADD2)
+  CID_SYM_CITY <- rlang::ensym(CITY)
+  CID_SYM_ST <- rlang::ensym(ST)
+  CID_SYM_ZIP <- rlang::ensym(ZIP)
+  CID_SYM_COUNTRY <- rlang::ensym(COUNTRY)
+  Hadd2_errors <- data_tib4 %>%  filter(!is.na(!!CID_SYM_HOMEADD2) & !!CID_SYM_HOMEADD2!="[]" & !is.na(!!CID_SYM_CITY) & 
+                                          !is.na(!!CID_SYM_ST)& !is.na(!!CID_SYM_ZIP) & !is.na(!!CID_SYM_COUNTRY)) %>%  
+    select(Connect_ID, !!CID_SYM_HOMEADD2) %>% mutate(Response=!!CID_SYM_HOMEADD2)
+  Hadd2_errors[, c(1,3)] %>%  gt() %>% tab_header(title = md(Title)) 
+}
+
+
+#HOMEADD3_# Cross Streets or Don't know <- Only display if STNUM = NA AND FULLST = NA AND ((CITY <> NA) or (ST <> NA) or (ZIP <> NA) or (COUNTRY <> NA) or (CITY_FOLLOWUP <> NA) or (ST_FOLLOWUP <> NA) or (ZIP_FOLLOWUP <> NA) or (COUNTRY_FOLLOWUP <> NA))
+
+#SEASTRNAME_# Cross Streets or Don't know <- Only display if SEASTNUM = NA AND SEAFULLST = NA AND ((SEACITY <> NA) or (SEAST <> NA) or (SEAZIP <> NA) or (SEACOUNTRY <> NA) or (SEACITY_FOLLOWUP <> NA) or (SEAST_FOLLOWUP <> NA) or (SEAZIP_FOLLOWUP <> NA) or (SEACOUNTRY_FOLLOWUP <> NA)
+funct_HOMEADD3 <- function(HOMEADD3_St1, HOMEADD3_St2, HOMEADD3_DK, STNUM, FULLST, CITY, ST, ZIP, COUNTRY, CITY_FOLLOWUP, ST_FOLLOWUP, ZIP_FOLLOWUP, COUNTRY_FOLLOWUP, Title){
+              #doing inverse rule. If strnum and full st weren't NA, or all of the other components WERE NA, then they shouldn'tve seen this question
+  CID_SYM_HOMEADD3_St1 <- rlang::ensym(HOMEADD3_St1)
+  CID_SYM_HOMEADD3_St2 <- rlang::ensym(HOMEADD3_St2)
+  CID_SYM_HOMEADD3_DK <- rlang::ensym(HOMEADD3_DK)
+  CID_SYM_CITY <- rlang::ensym(CITY)
+  CID_SYM_ST <- rlang::ensym(ST)
+  CID_SYM_ZIP <- rlang::ensym(ZIP)
+  CID_SYM_COUNTRY <- rlang::ensym(COUNTRY)
+  
+  CID_SYM_STNUM <- rlang::ensym(STNUM)
+  CID_SYM_FULLST <- rlang::ensym(FULLST)
+  
+  CID_SYM_CITYF <- rlang::ensym(CITY_FOLLOWUP)
+  CID_SYM_STF <- rlang::ensym(ST_FOLLOWUP)
+  CID_SYM_ZIPF <- rlang::ensym(ZIP_FOLLOWUP)
+  CID_SYM_COUNTRYF <- rlang::ensym(COUNTRY_FOLLOWUP)
+  Hadd3_errors <- data_tib4 %>%  filter( (!is.na(!!CID_SYM_STNUM) & !is.na(!!CID_SYM_FULLST)) & 
+                                           ( is.na(!!CID_SYM_CITY) & is.na(!!CID_SYM_ST) & is.na(!!CID_SYM_ZIP) | is.na(!!CID_SYM_COUNTRY) & 
+                                          is.na(!!CID_SYM_CITYF) & is.na(!!CID_SYM_STF) & is.na(!!CID_SYM_ZIPF) & is.na(!!CID_SYM_COUNTRYF)) &
+                                           !(is.na(!!CID_SYM_HOMEADD3_St1) & is.na(!!CID_SYM_HOMEADD3_St2) & is.na(!!CID_SYM_HOMEADD3_DK))) %>%  
+    select(Connect_ID, !!CID_SYM_HOMEADD3_St1, !!CID_SYM_HOMEADD3_St2, !!CID_SYM_HOMEADD3_DK) %>% mutate('Response Cross-Street1'=!!CID_SYM_HOMEADD3_St1,
+                                                                                                         'Response Cross-Street2'=!!CID_SYM_HOMEADD3_St2,
+                                                                                                         'Response of Do not Know'=!!CID_SYM_HOMEADD3_DK)
+  Hadd3_errors[, c(1,5,6,7)] %>%  gt() %>% tab_header(title = md(Title)) 
+}
+
+#HOMEMOVEIN_# <- Only display if (STNUM <> NA) or (FULLST <> NA) or (APT <> NA) or (CITY <> NA) or (CITY_FOLLOWUP <> NA) or (ST <> NA) or (ST_FOLLOWUP <> NA) or (ZIP <> NA) 
+#or (ZIP_FOLLOWUP <> NA) or (COUNTRY <> NA) or (COUNTRY_FOLLOWUP <> NA)
+
+#home1
+funct_MOVEIN_1 <- function(HOMEMOVEIN, STNUM, FULLST, CITY, ST, ZIP, COUNTRY, CITY_FOLLOWUP, ST_FOLLOWUP, ZIP_FOLLOWUP, COUNTRY_FOLLOWUP, Title){
+              #doing inverse rule. If all were NA, then they shouldn'tve seen this question
+  CID_SYM_HOMEMOVEIN <- rlang::ensym(HOMEMOVEIN)
+  CID_SYM_CITY <- rlang::ensym(CITY)
+  CID_SYM_ST <- rlang::ensym(ST)
+  CID_SYM_ZIP <- rlang::ensym(ZIP)
+  CID_SYM_COUNTRY <- rlang::ensym(COUNTRY)
+  
+  CID_SYM_STNUM <- rlang::ensym(STNUM)
+  CID_SYM_FULLST <- rlang::ensym(FULLST)
+  
+  CID_SYM_CITYF <- rlang::ensym(CITY_FOLLOWUP)
+  CID_SYM_STF <- rlang::ensym(ST_FOLLOWUP)
+  CID_SYM_ZIPF <- rlang::ensym(ZIP_FOLLOWUP)
+  CID_SYM_COUNTRYF <- rlang::ensym(COUNTRY_FOLLOWUP)
+  HaddMI_errors <- data_tib4 %>%  filter( !(!is.na(!!CID_SYM_STNUM) | !is.na(!!CID_SYM_FULLST) | 
+                                           !is.na(!!CID_SYM_CITY) | !is.na(!!CID_SYM_ST) | !is.na(!!CID_SYM_ZIP) | !is.na(!!CID_SYM_COUNTRY) | 
+                                          !is.na(!!CID_SYM_CITYF) | !is.na(!!CID_SYM_STF) | !is.na(!!CID_SYM_ZIPF) | !is.na(!!CID_SYM_COUNTRYF)) &
+                                           !is.na(!!CID_SYM_HOMEMOVEIN)) %>%  
+    select(Connect_ID, !!CID_SYM_HOMEMOVEIN) %>% mutate('Response'=!!CID_SYM_HOMEMOVEIN)
+  HaddMI_errors[, c(1,3)] %>%  gt() %>% tab_header(title = md(Title)) 
+}
+
+#hom2-11
+funct_MOVEIN <- function(HOMEMOVEIN, HOMEADDOTH, HOMEADDSUM, STNUM, FULLST, CITY, ST, ZIP, COUNTRY, CITY_FOLLOWUP, ST_FOLLOWUP, ZIP_FOLLOWUP, COUNTRY_FOLLOWUP, Title){
+              #doing inverse rule. If all were NA, then they shouldn'tve seen this question
+  CID_SYM_HOMEMOVEIN <- rlang::ensym(HOMEMOVEIN)
+    CID_SYM_HOMEADDOTH <- rlang::ensym(HOMEADDOTH)
+  CID_SYM_HOMEADDSUM <- rlang::ensym(HOMEADDSUM)
+  
+  CID_SYM_CITY <- rlang::ensym(CITY)
+  CID_SYM_ST <- rlang::ensym(ST)
+  CID_SYM_ZIP <- rlang::ensym(ZIP)
+  CID_SYM_COUNTRY <- rlang::ensym(COUNTRY)
+  
+  CID_SYM_STNUM <- rlang::ensym(STNUM)
+  CID_SYM_FULLST <- rlang::ensym(FULLST)
+  
+  CID_SYM_CITYF <- rlang::ensym(CITY_FOLLOWUP)
+  CID_SYM_STF <- rlang::ensym(ST_FOLLOWUP)
+  CID_SYM_ZIPF <- rlang::ensym(ZIP_FOLLOWUP)
+  CID_SYM_COUNTRYF <- rlang::ensym(COUNTRY_FOLLOWUP)
+  HaddMI_errors <- data_tib4 %>%  filter( !(!!CID_SYM_HOMEADDOTH==353358909 | !!CID_SYM_HOMEADDSUM==270752953 | !is.na(!!CID_SYM_STNUM) | !is.na(!!CID_SYM_FULLST) | 
+                                           !is.na(!!CID_SYM_CITY) | !is.na(!!CID_SYM_ST) | !is.na(!!CID_SYM_ZIP) | !is.na(!!CID_SYM_COUNTRY) | 
+                                          !is.na(!!CID_SYM_CITYF) | !is.na(!!CID_SYM_STF) | !is.na(!!CID_SYM_ZIPF) | !is.na(!!CID_SYM_COUNTRYF)) &
+                                           !is.na(!!CID_SYM_HOMEMOVEIN)) %>%  
+    select(Connect_ID, !!CID_SYM_HOMEMOVEIN) %>% mutate('Response'=!!CID_SYM_HOMEMOVEIN)
+  HaddMI_errors[, c(1,3)] %>%  gt() %>% tab_header(title = md(Title)) 
+}
+
+
+
+
+#HOMEMOVEOUT_# <- Only display if (STNUM <> NA) or (FULLST <> NA) or (APT <> NA) or (CITY <> NA) or (CITY_FOLLOWUP <> NA) or (ST <> NA) or (ST_FOLLOWUP <> NA) or (ZIP <> NA) or (ZIP_FOLLOWUP <> NA) or (COUNTRY <> NA) or (COUNTRY_FOLLOWUP <> NA)
+
+#HOME1
+funct_MOVEOUT_1 <- function(HOMEMOVEOUT_YR, HOMEMOVEOUT_SLH, STNUM, FULLST, CITY, ST, ZIP, COUNTRY, CITY_FOLLOWUP, ST_FOLLOWUP, ZIP_FOLLOWUP, COUNTRY_FOLLOWUP, Title){
+              #doing inverse rule. If all were NA, then they shouldn'tve seen this question
+  CID_SYM_HOMEMOVEOUT_YR <- rlang::ensym(HOMEMOVEOUT_YR)
+  CID_SYM_HOMEMOVEOUT_SLH <- rlang::ensym(HOMEMOVEOUT_SLH)
+  CID_SYM_CITY <- rlang::ensym(CITY)
+  CID_SYM_ST <- rlang::ensym(ST)
+  CID_SYM_ZIP <- rlang::ensym(ZIP)
+  CID_SYM_COUNTRY <- rlang::ensym(COUNTRY)
+  
+  CID_SYM_STNUM <- rlang::ensym(STNUM)
+  CID_SYM_FULLST <- rlang::ensym(FULLST)
+  
+  CID_SYM_CITYF <- rlang::ensym(CITY_FOLLOWUP)
+  CID_SYM_STF <- rlang::ensym(ST_FOLLOWUP)
+  CID_SYM_ZIPF <- rlang::ensym(ZIP_FOLLOWUP)
+  CID_SYM_COUNTRYF <- rlang::ensym(COUNTRY_FOLLOWUP)
+  HaddMO_errors <- data_tib4 %>%  filter( !(!is.na(!!CID_SYM_STNUM) | !is.na(!!CID_SYM_FULLST) | 
+                                           !is.na(!!CID_SYM_CITY) | !is.na(!!CID_SYM_ST) | !is.na(!!CID_SYM_ZIP) | !is.na(!!CID_SYM_COUNTRY) | 
+                                          !is.na(!!CID_SYM_CITYF) | !is.na(!!CID_SYM_STF) | !is.na(!!CID_SYM_ZIPF) | !is.na(!!CID_SYM_COUNTRYF)) &
+                                           ! (is.na(!!CID_SYM_HOMEMOVEOUT_YR) & is.na(!!CID_SYM_HOMEMOVEOUT_SLH))) %>%  
+    select(Connect_ID, !!CID_SYM_HOMEMOVEOUT_YR, !!CID_SYM_HOMEMOVEOUT_SLH) %>% mutate('Response Year'=!!CID_SYM_HOMEMOVEOUT_YR,
+                                                                                       'Response Still Live Here'=!!CID_SYM_HOMEMOVEOUT_SLH)
+  HaddMO_errors[, c(1,4,5)] %>%  gt() %>% tab_header(title = md(Title))
+}
+
+#home2-11
+funct_MOVEOUT <- function(HOMEMOVEOUT_YR, HOMEMOVEOUT_SLH, HOMEADDOTH, HOMEADDSUM, STNUM, FULLST, CITY, ST, ZIP, COUNTRY, CITY_FOLLOWUP, ST_FOLLOWUP, ZIP_FOLLOWUP, COUNTRY_FOLLOWUP, Title){
+              #doing inverse rule. If all were NA, then they shouldn'tve seen this question
+  CID_SYM_HOMEMOVEOUT_YR <- rlang::ensym(HOMEMOVEOUT_YR)
+  CID_SYM_HOMEMOVEOUT_SLH <- rlang::ensym(HOMEMOVEOUT_SLH)
+      CID_SYM_HOMEADDOTH <- rlang::ensym(HOMEADDOTH)
+  CID_SYM_HOMEADDSUM <- rlang::ensym(HOMEADDSUM)
+  CID_SYM_CITY <- rlang::ensym(CITY)
+  CID_SYM_ST <- rlang::ensym(ST)
+  CID_SYM_ZIP <- rlang::ensym(ZIP)
+  CID_SYM_COUNTRY <- rlang::ensym(COUNTRY)
+  
+  CID_SYM_STNUM <- rlang::ensym(STNUM)
+  CID_SYM_FULLST <- rlang::ensym(FULLST)
+  
+  CID_SYM_CITYF <- rlang::ensym(CITY_FOLLOWUP)
+  CID_SYM_STF <- rlang::ensym(ST_FOLLOWUP)
+  CID_SYM_ZIPF <- rlang::ensym(ZIP_FOLLOWUP)
+  CID_SYM_COUNTRYF <- rlang::ensym(COUNTRY_FOLLOWUP)
+  HaddMO_errors <- data_tib4 %>%  filter( !(!!CID_SYM_HOMEADDOTH==353358909 | !!CID_SYM_HOMEADDSUM==270752953 | !is.na(!!CID_SYM_STNUM) | !is.na(!!CID_SYM_FULLST) | 
+                                           !is.na(!!CID_SYM_CITY) | !is.na(!!CID_SYM_ST) | !is.na(!!CID_SYM_ZIP) | !is.na(!!CID_SYM_COUNTRY) | 
+                                          !is.na(!!CID_SYM_CITYF) | !is.na(!!CID_SYM_STF) | !is.na(!!CID_SYM_ZIPF) | !is.na(!!CID_SYM_COUNTRYF)) &
+                                           ! (is.na(!!CID_SYM_HOMEMOVEOUT_YR) & is.na(!!CID_SYM_HOMEMOVEOUT_SLH))) %>%  
+    select(Connect_ID, !!CID_SYM_HOMEMOVEOUT_YR, !!CID_SYM_HOMEMOVEOUT_SLH) %>% mutate('Response Year'=!!CID_SYM_HOMEMOVEOUT_YR,
+                                                                                       'Response Still Live Here'=!!CID_SYM_HOMEMOVEOUT_SLH)
+  HaddMO_errors[, c(1,4,5)] %>%  gt() %>% tab_header(title = md(Title))
+}
+
+
+#HOMEWTR1_# & HOMEWTR3_# <- Only display if (STNUM <> NA) or (FULLST <> NA) or (APT <> NA) or (CITY <> NA) or (CITY_FOLLOWUP <> NA) or (ST <> NA) or (ST_FOLLOWUP <> NA) or (ZIP <> NA) or (ZIP_FOLLOWUP <> NA) or (COUNTRY <> NA) or (COUNTRY_FOLLOWUP <> NA)
+
+
+#home1
+funct_HOMEWATER1_1 <- function(HOMEWTR1, STNUM, FULLST, CITY, ST, ZIP, COUNTRY, CITY_FOLLOWUP, ST_FOLLOWUP, ZIP_FOLLOWUP, COUNTRY_FOLLOWUP, Title){
+              #doing inverse rule. If all were NA, then they shouldn'tve seen this question
+  CID_SYM_HOMEWTR1 <- rlang::ensym(HOMEWTR1)
+  CID_SYM_CITY <- rlang::ensym(CITY)
+  CID_SYM_ST <- rlang::ensym(ST)
+  CID_SYM_ZIP <- rlang::ensym(ZIP)
+  CID_SYM_COUNTRY <- rlang::ensym(COUNTRY)
+  
+  CID_SYM_STNUM <- rlang::ensym(STNUM)
+  CID_SYM_FULLST <- rlang::ensym(FULLST)
+  
+  CID_SYM_CITYF <- rlang::ensym(CITY_FOLLOWUP)
+  CID_SYM_STF <- rlang::ensym(ST_FOLLOWUP)
+  CID_SYM_ZIPF <- rlang::ensym(ZIP_FOLLOWUP)
+  CID_SYM_COUNTRYF <- rlang::ensym(COUNTRY_FOLLOWUP)
+  HWater_errors <- data_tib4 %>%  filter( !(!is.na(!!CID_SYM_STNUM) | !is.na(!!CID_SYM_FULLST) | 
+                                           !is.na(!!CID_SYM_CITY) | !is.na(!!CID_SYM_ST) | !is.na(!!CID_SYM_ZIP) | !is.na(!!CID_SYM_COUNTRY) | 
+                                          !is.na(!!CID_SYM_CITYF) | !is.na(!!CID_SYM_STF) | !is.na(!!CID_SYM_ZIPF) | !is.na(!!CID_SYM_COUNTRYF)) &
+                                           !is.na(!!CID_SYM_HOMEWTR1)) %>%  
+    select(Connect_ID, !!CID_SYM_HOMEWTR1) %>% mutate('Response'=!!CID_SYM_HOMEWTR1)
+  HWater_errors[, c(1,3)] %>%  gt() %>% tab_header(title = md(Title))
+}
+
+#home2-11 need homeaddoth or homeaddsum=1
+funct_HOMEWATER1 <- function(HOMEWTR1, HOMEADDOTH, HOMEADDSUM, STNUM, FULLST, CITY, ST, ZIP, COUNTRY, CITY_FOLLOWUP, ST_FOLLOWUP, ZIP_FOLLOWUP, COUNTRY_FOLLOWUP, Title){
+              #doing inverse rule. If all were NA, then they shouldn'tve seen this question
+  CID_SYM_HOMEWTR1 <- rlang::ensym(HOMEWTR1)
+  CID_SYM_HOMEADDOTH <- rlang::ensym(HOMEADDOTH)
+  CID_SYM_HOMEADDSUM <- rlang::ensym(HOMEADDSUM)
+  
+  CID_SYM_CITY <- rlang::ensym(CITY)
+  CID_SYM_ST <- rlang::ensym(ST)
+  CID_SYM_ZIP <- rlang::ensym(ZIP)
+  CID_SYM_COUNTRY <- rlang::ensym(COUNTRY)
+  
+  CID_SYM_STNUM <- rlang::ensym(STNUM)
+  CID_SYM_FULLST <- rlang::ensym(FULLST)
+  
+  CID_SYM_CITYF <- rlang::ensym(CITY_FOLLOWUP)
+  CID_SYM_STF <- rlang::ensym(ST_FOLLOWUP)
+  CID_SYM_ZIPF <- rlang::ensym(ZIP_FOLLOWUP)
+  CID_SYM_COUNTRYF <- rlang::ensym(COUNTRY_FOLLOWUP)
+  HWater_errors <- data_tib4 %>%  filter( !(!!CID_SYM_HOMEADDOTH==353358909 | !!CID_SYM_HOMEADDSUM==270752953 | !is.na(!!CID_SYM_STNUM) | !is.na(!!CID_SYM_FULLST) | 
+                                           !is.na(!!CID_SYM_CITY) | !is.na(!!CID_SYM_ST) | !is.na(!!CID_SYM_ZIP) | !is.na(!!CID_SYM_COUNTRY) | 
+                                          !is.na(!!CID_SYM_CITYF) | !is.na(!!CID_SYM_STF) | !is.na(!!CID_SYM_ZIPF) | !is.na(!!CID_SYM_COUNTRYF)) &
+                                           !is.na(!!CID_SYM_HOMEWTR1)) %>%  
+    select(Connect_ID, !!CID_SYM_HOMEWTR1) %>% mutate('Response'=!!CID_SYM_HOMEWTR1)
+  HWater_errors[, c(1,3)] %>%  gt() %>% tab_header(title = md(Title))
+}
+
+
+#home1
+funct_HOMEWATER3_1 <- function(HOMEWTR3, STNUM, FULLST, CITY, ST, ZIP, COUNTRY, CITY_FOLLOWUP, ST_FOLLOWUP, ZIP_FOLLOWUP, COUNTRY_FOLLOWUP, Title){
+              #doing inverse rule. If all were NA, then they shouldn'tve seen this question
+  CID_SYM_HOMEWTR3 <- rlang::ensym(HOMEWTR3)
+  CID_SYM_CITY <- rlang::ensym(CITY)
+  CID_SYM_ST <- rlang::ensym(ST)
+  CID_SYM_ZIP <- rlang::ensym(ZIP)
+  CID_SYM_COUNTRY <- rlang::ensym(COUNTRY)
+  
+  CID_SYM_STNUM <- rlang::ensym(STNUM)
+  CID_SYM_FULLST <- rlang::ensym(FULLST)
+  
+  CID_SYM_CITYF <- rlang::ensym(CITY_FOLLOWUP)
+  CID_SYM_STF <- rlang::ensym(ST_FOLLOWUP)
+  CID_SYM_ZIPF <- rlang::ensym(ZIP_FOLLOWUP)
+  CID_SYM_COUNTRYF <- rlang::ensym(COUNTRY_FOLLOWUP)
+  HWater_errors <- data_tib4 %>%  filter( !(!is.na(!!CID_SYM_STNUM) | !is.na(!!CID_SYM_FULLST) | 
+                                           !is.na(!!CID_SYM_CITY) | !is.na(!!CID_SYM_ST) | !is.na(!!CID_SYM_ZIP) | !is.na(!!CID_SYM_COUNTRY) | 
+                                          !is.na(!!CID_SYM_CITYF) | !is.na(!!CID_SYM_STF) | !is.na(!!CID_SYM_ZIPF) | !is.na(!!CID_SYM_COUNTRYF)) &
+                                           ! is.na(!!CID_SYM_HOMEWTR3)) %>%  
+    select(Connect_ID,!!CID_SYM_HOMEWTR3) %>% mutate('Response'=!!CID_SYM_HOMEWTR3)
+  HWater_errors[, c(1,3)] %>%  gt() %>% tab_header(title = md(Title))
+}
+
+
+#home2-11 need homeaddoth or homeaddsum=1
+funct_HOMEWATER3 <- function(HOMEWTR3,HOMEADDOTH, HOMEADDSUM, STNUM, FULLST, CITY, ST, ZIP, COUNTRY, CITY_FOLLOWUP, ST_FOLLOWUP, ZIP_FOLLOWUP, COUNTRY_FOLLOWUP, Title){
+              #doing inverse rule. If all were NA, then they shouldn'tve seen this question
+  CID_SYM_HOMEWTR3 <- rlang::ensym(HOMEWTR3)
+  CID_SYM_HOMEADDOTH <- rlang::ensym(HOMEADDOTH)
+  CID_SYM_HOMEADDSUM <- rlang::ensym(HOMEADDSUM)
+  CID_SYM_CITY <- rlang::ensym(CITY)
+  CID_SYM_ST <- rlang::ensym(ST)
+  CID_SYM_ZIP <- rlang::ensym(ZIP)
+  CID_SYM_COUNTRY <- rlang::ensym(COUNTRY)
+  
+  CID_SYM_STNUM <- rlang::ensym(STNUM)
+  CID_SYM_FULLST <- rlang::ensym(FULLST)
+  
+  CID_SYM_CITYF <- rlang::ensym(CITY_FOLLOWUP)
+  CID_SYM_STF <- rlang::ensym(ST_FOLLOWUP)
+  CID_SYM_ZIPF <- rlang::ensym(ZIP_FOLLOWUP)
+  CID_SYM_COUNTRYF <- rlang::ensym(COUNTRY_FOLLOWUP)
+  HWater_errors <- data_tib4 %>%  filter( !(!!CID_SYM_HOMEADDOTH==353358909 | !!CID_SYM_HOMEADDSUM==270752953 | !is.na(!!CID_SYM_STNUM) | !is.na(!!CID_SYM_FULLST) | 
+                                           !is.na(!!CID_SYM_CITY) | !is.na(!!CID_SYM_ST) | !is.na(!!CID_SYM_ZIP) | !is.na(!!CID_SYM_COUNTRY) | 
+                                          !is.na(!!CID_SYM_CITYF) | !is.na(!!CID_SYM_STF) | !is.na(!!CID_SYM_ZIPF) | !is.na(!!CID_SYM_COUNTRYF)) &
+                                           ! is.na(!!CID_SYM_HOMEWTR3)) %>%  
+    select(Connect_ID,!!CID_SYM_HOMEWTR3) %>% mutate('Response'=!!CID_SYM_HOMEWTR3)
+  HWater_errors[, c(1,3)] %>%  gt() %>% tab_header(title = md(Title))
+}
+
+
+
+
+
+
+#Only display if (SEASHOME=1) or (SEASADDSUM1 = 0) or (SEASTNUM <> NA) or (SEAFULLST <> NA) or (SEAAPT <> NA) or (SEACITY <> NA) or (SEACITY_FOLLOWUP <> NA) or (SEAST <> NA) or (SEAST_FOLLOWUP <> NA) or (SEAZIP <> NA) or (SEAZIP_FOLLOWUP <> NA) or (SEACOUNTRY <> NA) or (SEACOUNTRY_FOLLOWUP <> NA)
+
+###### THE SEAYRS RULES APPLY TO SEASADDYRS1_#, SEASADDYRS2_#_YEARS, SEASADDYRS_# (STILL SPENDING TIME), MonthAdd#
+
+## first house has slightly different logic then homes 2-10
+funct_SEAYRS1_1 <- function(SEASADDYRS1, SEASHOME, SEASADDSUM1, STNUM, FULLST, CITY, ST, ZIP, COUNTRY, CITY_FOLLOWUP, ST_FOLLOWUP, ZIP_FOLLOWUP, COUNTRY_FOLLOWUP, Title){
+              #doing inverse rule. If none of the logic, then they shouldn'tve seen this question
+  CID_SYM_SEASADDYRS1 <- rlang::ensym(SEASADDYRS1)
+  CID_SYM_SEASHOME <- rlang::ensym(SEASHOME)
+  CID_SYM_SEASADDSUM1 <- rlang::ensym(SEASADDSUM1)
+  
+  CID_SYM_CITY <- rlang::ensym(CITY)
+  CID_SYM_ST <- rlang::ensym(ST)
+  CID_SYM_ZIP <- rlang::ensym(ZIP)
+  CID_SYM_COUNTRY <- rlang::ensym(COUNTRY)
+  
+  CID_SYM_STNUM <- rlang::ensym(STNUM)
+  CID_SYM_FULLST <- rlang::ensym(FULLST)
+  
+  CID_SYM_CITYF <- rlang::ensym(CITY_FOLLOWUP)
+  CID_SYM_STF <- rlang::ensym(ST_FOLLOWUP)
+  CID_SYM_ZIPF <- rlang::ensym(ZIP_FOLLOWUP)
+  CID_SYM_COUNTRYF <- rlang::ensym(COUNTRY_FOLLOWUP)
+  SEAYRS1_errors <- data_tib4 %>%  filter( !(!!CID_SYM_SEASHOME==353358909 | !!CID_SYM_SEASADDSUM1 ==991158851 | !is.na(!!CID_SYM_STNUM) | !is.na(!!CID_SYM_FULLST) | 
+                                           !is.na(!!CID_SYM_CITY) | !is.na(!!CID_SYM_ST) | !is.na(!!CID_SYM_ZIP) | !is.na(!!CID_SYM_COUNTRY) | 
+                                          !is.na(!!CID_SYM_CITYF) | !is.na(!!CID_SYM_STF) | !is.na(!!CID_SYM_ZIPF) | !is.na(!!CID_SYM_COUNTRYF)) &
+                                           !is.na(!!CID_SYM_SEASADDYRS1)) %>%  
+    select(Connect_ID, !!CID_SYM_SEASADDYRS1) %>% mutate('Response'=!!CID_SYM_SEASADDYRS1)
+  SEAYRS1_errors[, c(1,3)] %>%  gt() %>% tab_header(title = md(Title))
+}
+
+
+#Only display if (SEASADDOTH1=1) or (SEASADDSUM_1 = 0) or (SEASTNUM2 <> NA) or (SEAFULLST2 <> NA) or (SEAAPT2 <> NA) or (SEACITY2 <> NA) or (SEACITY2_FOLLOWUP <> NA) or (SEAST2 <> NA) or (SEAST2_FOLLOWUP <> NA) or (SEAZIP2 <> NA) or (SEAZIP2_FOLLOWUP <> NA) or (SEACOUNTRY2 <> NA) or (SEACOUNTRY2_FOLLOWUP <> NA)
+funct_SEAYRS1 <- function(SEASADDYRS1, SEASADDOTH, SEASADDSUM1, STNUM, FULLST, CITY, ST, ZIP, COUNTRY, CITY_FOLLOWUP, ST_FOLLOWUP, ZIP_FOLLOWUP, COUNTRY_FOLLOWUP, Title){
+              #doing inverse rule. If none of the logic, then they shouldn'tve seen this question
+  CID_SYM_SEASADDYRS1 <- rlang::ensym(SEASADDYRS1)
+  CID_SYM_SEASADDOTH <- rlang::ensym(SEASADDOTH)
+  CID_SYM_SEASADDSUM1 <- rlang::ensym(SEASADDSUM1)
+  
+  CID_SYM_CITY <- rlang::ensym(CITY)
+  CID_SYM_ST <- rlang::ensym(ST)
+  CID_SYM_ZIP <- rlang::ensym(ZIP)
+  CID_SYM_COUNTRY <- rlang::ensym(COUNTRY)
+  
+  CID_SYM_STNUM <- rlang::ensym(STNUM)
+  CID_SYM_FULLST <- rlang::ensym(FULLST)
+  
+  CID_SYM_CITYF <- rlang::ensym(CITY_FOLLOWUP)
+  CID_SYM_STF <- rlang::ensym(ST_FOLLOWUP)
+  CID_SYM_ZIPF <- rlang::ensym(ZIP_FOLLOWUP)
+  CID_SYM_COUNTRYF <- rlang::ensym(COUNTRY_FOLLOWUP)
+  SEAYRS1_errors <- data_tib4 %>%  filter( !(!!CID_SYM_SEASADDOTH==353358909 | !!CID_SYM_SEASADDSUM1 ==991158851 | !is.na(!!CID_SYM_STNUM) | !is.na(!!CID_SYM_FULLST) | 
+                                           !is.na(!!CID_SYM_CITY) | !is.na(!!CID_SYM_ST) | !is.na(!!CID_SYM_ZIP) | !is.na(!!CID_SYM_COUNTRY) | 
+                                          !is.na(!!CID_SYM_CITYF) | !is.na(!!CID_SYM_STF) | !is.na(!!CID_SYM_ZIPF) | !is.na(!!CID_SYM_COUNTRYF)) &
+                                           !is.na(!!CID_SYM_SEASADDYRS1)) %>%  
+    select(Connect_ID, !!CID_SYM_SEASADDYRS1) %>% mutate('Response'=!!CID_SYM_SEASADDYRS1)
+  SEAYRS1_errors[, c(1,3)] %>%  gt() %>% tab_header(title = md(Title))
+}
+
+
+funct_PREWORKT3_4 <- function(preworkt3, preworkt4, Title){
+  CID_SYM_preworkt3 <- rlang::ensym(preworkt3)
+  CID_SYM_preworkt4 <- rlang::ensym(preworkt4)
+  
+  preworkT34_errors <- data_tib4 %>% filter( !(D_995620555==353358909 & D_980007418!=353358909 & D_291959537!=353358909) & 
+                                               (!is.na(!!CID_SYM_preworkt3) | !is.na(!!CID_SYM_preworkt4))) %>% 
+    select(Connect_ID, !!CID_SYM_preworkt3, !!CID_SYM_preworkt4) %>% mutate('Response T3'=!!CID_SYM_preworkt3, 
+                                                                            'Response T4'=!!CID_SYM_preworkt4)
+  preworkT34_errors[, c(1,4,5)] %>%  gt() %>% tab_header(title = md(Title))
+  
+}
+
+
+
+## CURWORKT3,4,5
+#Only display if (CURWORKT2A=1 ) OR (CURWORKT2A=2 ) OR (CURWORKT2A=3 ) OR (CURWORKT2A=4 ) OR (CURWORKT2B=1 ) OR (CURWORKT2B=2 ) OR (CURWORKT2B=3 ) OR (CURWORKT2B=4 ) OR (CURWORKT2C=1 ) OR (CURWORKT2C=2 ) OR (CURWORKT2C=3 ) OR (CURWORKT2C=4 ) OR (CURWORKT2D=1 ) OR (CURWORKT2D=2 ) OR (CURWORKT2D=3 ) OR (CURWORKT2D=4 ) OR (CURWORKT2E=1 ) OR (CURWORKT2E=2 ) OR (CURWORKT2E=3 ) OR (CURWORKT2E=4 ) OR (CURWORKT2F=1 ) OR (CURWORKT2F=2 ) OR (CURWORKT2F=3 ) OR (CURWORKT2F=4 ) OR (CURWORKT2G=1 ) OR (CURWORKT2G=2 ) OR (CURWORKT2G=3 ) OR (CURWORKT2G=4 ) OR (CURWORKT2H=1 ) OR (CURWORKT2H=2 ) OR (CURWORKT2H=3 ) OR (CURWORKT2H=4 )
+  #shorter version is curworkt2a-curwork2h is not null and not 0
+
+
+#if they didn't answer that way, they shouldn't have seen and answered these questions
+funct_CURWORKT3_4_5 <- function(CURWORKT3, CURWORKT4, CURWORKT5, Title){
+  CID_SYM_CURWORKT3 <- rlang::ensym(CURWORKT3)
+  CID_SYM_CURWORKT4 <- rlang::ensym(CURWORKT4)
+  CID_SYM_CURWORKT5 <- rlang::ensym(CURWORKT5)
+  
+  CURWORKT345_errors <- data_tib4 %>% filter( !( (!is.na(D_440093675_D_593010802) & D_440093675_D_593010802!=428999623) | 
+                                                   (!is.na(D_440093675_D_453004768) & D_440093675_D_453004768!=428999623) |
+                                                   (!is.na(D_440093675_D_511991969) & D_440093675_D_511991969!=428999623) |
+                                                   (!is.na(D_440093675_D_546570171) & D_440093675_D_546570171!=428999623) |
+                                                   (!is.na(D_440093675_D_242761203) & D_440093675_D_242761203!=428999623) |
+                                                   (!is.na(D_440093675_D_587434250) & D_440093675_D_587434250!=428999623) |
+                                                   (!is.na(D_440093675_D_569993305) & D_440093675_D_569993305!=428999623) |
+                                                   (!is.na(D_440093675_D_662584384) & D_440093675_D_662584384!=428999623)) & 
+                                               (!is.na(!!CID_SYM_CURWORKT3) | !is.na(!!CID_SYM_CURWORKT4) | !is.na(!!CID_SYM_CURWORKT5))) %>% 
+    select(Connect_ID, !!CID_SYM_CURWORKT3, !!CID_SYM_CURWORKT4, !!CID_SYM_CURWORKT5) %>% mutate('Response T3'=!!CID_SYM_CURWORKT3, 
+                                                                            'Response T4'=!!CID_SYM_CURWORKT4,
+                                                                            'Response T5'=!!CID_SYM_CURWORKT5)
+  CURWORKT345_errors[, c(1,5,6, 7)] %>%  gt() %>% tab_header(title = md(Title))
+  
+}
+
+
+
+## CURWORKT11,12,13
+
+#Only display if (CURWORKT10A=1 ) OR (CURWORKT10A=2 ) OR (CURWORKT10A=3 ) OR (CURWORKT10A=4 ) OR (CURWORKT10B=1 ) OR (CURWORKT10B=2 ) OR (CURWORKT10B=3 ) OR (CURWORKT10B=4 ) OR (CURWORKT10C=1 ) OR (CURWORKT10C=2 ) OR (CURWORKT10C=3 ) OR (CURWORKT10C=4 ) OR (CURWORKT10D=1 ) OR (CURWORKT10D=2 ) OR (CURWORKT10D=3 ) OR (CURWORKT10D=4 ) OR (CURWORKT10E=1 ) OR (CURWORKT10E=2 ) OR (CURWORKT10E=3 ) OR (CURWORKT10E=4 ) OR (CURWORKT10F=1 ) OR (CURWORKT10F=2 ) OR (CURWORKT10F=3 ) OR (CURWORKT10F=4 ) OR (CURWORKT10G=1 ) OR (CURWORKT10G=2 ) OR (CURWORKT10G=3 ) OR (CURWORKT10G=4 ) OR (CURWORKT10H=1 ) OR (CURWORKT10H=2 ) OR (CURWORKT10H=3 ) OR (CURWORKT10H=4 )
+  #shorter version is curworkt10a-curworkt10h is not null and not 0
+
+#if they didn't answer that way, they shouldn't have seen and answered these questions
+funct_CURWORKT11_12_13 <- function(CURWORKT11, CURWORKT12, CURWORKT13, Title){
+  CID_SYM_CURWORKT11 <- rlang::ensym(CURWORKT11)
+  CID_SYM_CURWORKT12 <- rlang::ensym(CURWORKT12)
+  CID_SYM_CURWORKT13 <- rlang::ensym(CURWORKT13)
+  
+  CURWORKT11_12_13_errors <- data_tib4 %>% filter( !( (!is.na(D_786253125_D_659799855) & D_786253125_D_659799855!=428999623) | 
+                                                   (!is.na(D_786253125_D_552410034) & D_786253125_D_552410034!=428999623) |
+                                                   (!is.na(D_786253125_D_772382520) & D_786253125_D_772382520!=428999623) |
+                                                   (!is.na(D_786253125_D_146307133) & D_786253125_D_146307133!=428999623) |
+                                                   (!is.na(D_786253125_D_100591237) & D_786253125_D_100591237!=428999623) |
+                                                   (!is.na(D_786253125_D_823402922) & D_786253125_D_823402922!=428999623) |
+                                                   (!is.na(D_786253125_D_289302451) & D_786253125_D_289302451!=428999623) |
+                                                   (!is.na(D_786253125_D_419151253) & D_786253125_D_419151253!=428999623)) & 
+                                               (!is.na(!!CID_SYM_CURWORKT11) | !is.na(!!CID_SYM_CURWORKT12) | !is.na(!!CID_SYM_CURWORKT13))) %>% 
+    select(Connect_ID, !!CID_SYM_CURWORKT11, !!CID_SYM_CURWORKT12, !!CID_SYM_CURWORKT13) %>% mutate('Response T11'=!!CID_SYM_CURWORKT11, 
+                                                                            'Response T12'=!!CID_SYM_CURWORKT12,
+                                                                            'Response T13'=!!CID_SYM_CURWORKT13)
+  CURWORKT11_12_13_errors[, c(1,5,6, 7)] %>%  gt() %>% tab_header(title = md(Title))
+  
+}
+
+
+## CURSCHT3,4,5
+
+#Only display if (CURSCHT2A=1 ) OR (CURSCHT2A=2 ) OR (CURSCHT2A=3 ) OR (CURSCHT2A=4 ) OR (CURSCHT2B=1 ) OR (CURSCHT2B=2 ) OR (CURSCHT2B=3 ) OR (CURSCHT2B=4 ) OR (CURSCHT2C=1 ) OR (CURSCHT2=2 ) OR (CURSCHT2C=3 ) OR (CURSCHT2C=4 ) OR (CURSCHT2D=1 ) OR (CURSCHT2D=2 ) OR (CURSCHT2D=3 ) OR (CURSCHT2D=4 ) OR (CURSCHT2E=1 ) OR (CURSCHT2E=2 ) OR (CURSCHT2E=3 ) OR (CURSCHT2E=4 ) OR (CURSCHT2F=1 ) OR (CURSCHT2F=2 ) OR (CURSCHT2F=3 ) OR (CURSCHT2F=4 ) OR (CURSCHT2G=1 ) OR (CURSCHT2G=2 ) OR (CURSCHT2G=3 ) OR (CURSCHT2G=4 ) OR (CURSCHT2H=1 ) OR (CURSCHT2H=2 ) OR (CURSCHT2H=3 ) OR (CURSCHT2H=4 )
+  #shorter version is CURSCHt2a-CURSCH2h is not null and not 0
+
+#if they didn't answer that way, they shouldn't have seen and answered these questions
+funct_CURSCHT3_4_5 <- function(CURSCHT3, CURSCHT4, CURSCHT5, Title){
+  CID_SYM_CURSCHT3 <- rlang::ensym(CURSCHT3)
+  CID_SYM_CURSCHT4 <- rlang::ensym(CURSCHT4)
+  CID_SYM_CURSCHT5 <- rlang::ensym(CURSCHT5)
+  
+  CURSCHT345_errors <- data_tib4 %>% filter( !( (!is.na(D_135529881_D_891237683) & D_135529881_D_891237683!=428999623) | 
+                                                   (!is.na(D_135529881_D_980695076) & D_135529881_D_980695076!=428999623) |
+                                                   (!is.na(D_135529881_D_265423096) & D_135529881_D_265423096!=428999623) |
+                                                   (!is.na(D_135529881_D_185533250) & D_135529881_D_185533250!=428999623) |
+                                                   (!is.na(D_135529881_D_769785846) & D_135529881_D_769785846!=428999623) |
+                                                   (!is.na(D_135529881_D_330492115) & D_135529881_D_330492115!=428999623) |
+                                                   (!is.na(D_135529881_D_173979298) & D_135529881_D_173979298!=428999623) |
+                                                   (!is.na(D_135529881_D_154229258) & D_135529881_D_154229258!=428999623)) & 
+                                               (!is.na(!!CID_SYM_CURSCHT3) | !is.na(!!CID_SYM_CURSCHT4) | !is.na(!!CID_SYM_CURSCHT5))) %>% 
+    select(Connect_ID, !!CID_SYM_CURSCHT3, !!CID_SYM_CURSCHT4, !!CID_SYM_CURSCHT5) %>% mutate('Response T3'=!!CID_SYM_CURSCHT3, 
+                                                                            'Response T4'=!!CID_SYM_CURSCHT4,
+                                                                            'Response T5'=!!CID_SYM_CURSCHT5)
+  CURSCHT345_errors[, c(1,5,6, 7)] %>%  gt() %>% tab_header(title = md(Title))
+  
+}
+
+
+
+
+## CURSCHT11,12,13
+
+#Only display if (CURSCHT10A=1 ) OR (CURSCHT10A=2 ) OR (CURSCHT10A=3 ) OR (CURSCHT10A=4 ) OR (CURSCHT10B=1 ) OR (CURSCHT10B=2 ) OR (CURSCHT10B=3 ) OR (CURSCHT10B=4 ) OR (CURSCHT10C=1 ) OR (CURSCHT10C=2 ) OR (CURSCHT10C=3 ) OR (CURSCHT10C=4 ) OR (CURSCHT10D=1 ) OR (CURSCHT10D=2 ) OR (CURSCHT10D=3 ) OR (CURSCHT10D=4 ) OR (CURSCHT10E=1 ) OR (CURSCHT10E=2 ) OR (CURSCHT10E=3 ) OR (CURSCHT10E=4 ) OR (CURSCHT10F=1 ) OR (CURSCHT10F=2 ) OR (CURSCHT10F=3 ) OR (CURSCHT10F=4 ) OR (CURSCHT10G=1 ) OR (CURSCHT10G=2 ) OR (CURSCHT10G_3 ) OR (CURSCHT10G=4 ) OR (CURSCHT10H=1 ) OR (CURSCHT10H=2 ) OR (CURSCHT10H=3 ) OR (CURSCHT10H=4 )
+  #shorter version is CURSCHt10a-CURSCH10h is not null and not 0
+
+#if they didn't answer that way, they shouldn't have seen and answered these questions
+funct_CURSCHT11_12_13 <- function(CURSCHT11, CURSCHT12, CURSCHT13, Title){
+  CID_SYM_CURSCHT11 <- rlang::ensym(CURSCHT11)
+  CID_SYM_CURSCHT12 <- rlang::ensym(CURSCHT12)
+  CID_SYM_CURSCHT13 <- rlang::ensym(CURSCHT13)
+  
+  CURSCHT11_12_13_errors <- data_tib4 %>% filter( !( (!is.na(D_219317801_D_990162153) & D_219317801_D_990162153!=428999623) | 
+                                                   (!is.na(D_219317801_D_576149634) & D_219317801_D_576149634!=428999623) |
+                                                   (!is.na(D_219317801_D_291458877) & D_219317801_D_291458877!=428999623) |
+                                                   (!is.na(D_219317801_D_453417964) & D_219317801_D_453417964!=428999623) |
+                                                   (!is.na(D_219317801_D_550646850) & D_219317801_D_550646850!=428999623) |
+                                                   (!is.na(D_219317801_D_949549557) & D_219317801_D_949549557!=428999623) |
+                                                   (!is.na(D_219317801_D_214274185) & D_219317801_D_214274185!=428999623) |
+                                                   (!is.na(D_219317801_D_533003859) & D_219317801_D_533003859!=428999623)) & 
+                                               (!is.na(!!CID_SYM_CURSCHT11) | !is.na(!!CID_SYM_CURSCHT12) | !is.na(!!CID_SYM_CURSCHT13))) %>% 
+    select(Connect_ID, !!CID_SYM_CURSCHT11, !!CID_SYM_CURSCHT12, !!CID_SYM_CURSCHT13) %>% mutate('Response T11'=!!CID_SYM_CURSCHT11, 
+                                                                            'Response T12'=!!CID_SYM_CURSCHT12,
+                                                                            'Response T13'=!!CID_SYM_CURSCHT13)
+  CURSCHT11_12_13_errors[, c(1,5,6, 7)] %>%  gt() %>% tab_header(title = md(Title))
+  
+}
+
+```
+
+
+
+# HOME ADDRESSES
+## HOMEADD2_# Don't know
+```{r, echo=FALSE, warning=FALSE}
+
+#home1
+funct_HOMEADD2(D_920576363_D_920576363, D_121490150_D_303500597, D_121490150_D_195068098, D_121490150_D_202784871, D_121490150_D_831127170, "HOMEADD2_1 Don't know")
+
+#home2
+funct_HOMEADD2(D_444145120_D_444145120, D_574985342_D_536516743, D_574985342_D_283900560, D_574985342_D_467947502, D_574985342_D_368486703, "HOMEADD2_2 Don't know")
+
+#home3
+funct_HOMEADD2(D_752101258_D_752101258, D_828086036_D_588699608, D_828086036_D_544692849, D_828086036_D_335435992, D_828086036_D_337088272, "HOMEADD2_3 Don't know")
+
+#home4
+funct_HOMEADD2(D_879180101_D_879180101, D_680046149_D_930511603, D_680046149_D_756548442, D_680046149_D_455968200, D_680046149_D_728704613, "HOMEADD2_4 Don't know")
+
+#home5
+funct_HOMEADD2(D_212343294_D_212343294, D_274189667_D_742177990, D_274189667_D_843508307, D_274189667_D_554901696, D_274189667_D_819429013, "HOMEADD2_5 Don't know")
+
+#home6
+funct_HOMEADD2(D_255474241_D_255474241, D_113930886_D_418702418, D_113930886_D_101219440, D_113930886_D_127963610, D_113930886_D_882731998, "HOMEADD2_6 Don't know")
+
+#home7
+funct_HOMEADD2(D_201906316_D_201906316, D_809728747_D_703944664, D_809728747_D_390463636, D_809728747_D_256790385, D_809728747_D_915222355, "HOMEADD2_7 Don't know")
+
+#home8
+funct_HOMEADD2(D_864213677_D_864213677, D_539057792_D_744290061, D_539057792_D_516936572, D_539057792_D_673034401, D_539057792_D_489019597, "HOMEADD2_8 Don't know")
+
+#home9
+funct_HOMEADD2(D_964853797_D_964853797, D_537011756_D_351559021, D_537011756_D_290370013, D_537011756_D_453691095, D_537011756_D_202104231, "HOMEADD2_9 Don't know")
+
+#home10
+funct_HOMEADD2(D_787064287_D_787064287, D_171937884_D_282089547, D_171937884_D_612617245, D_171937884_D_674024553, D_171937884_D_886247195, "HOMEADD2_10 Don't know")
+
+#home11
+funct_HOMEADD2(D_878688378_D_878688378, D_828766803_D_309461541, D_828766803_D_789637860, D_828766803_D_795253129, D_828766803_D_780298998, "HOMEADD2_11 Don't know")
+
+
+#(HOMEADD2, CITY,ST,ZIP,COUNTRY)
+```
+
+## HOMEADD3_# Cross Streets or Don't know
+```{r, echo=FALSE, warning=FALSE}
+
+#home1
+funct_HOMEADD3(D_804504024_D_105043152, D_804504024_D_543135391, D_804504024_D_804504024, D_121490150_D_255248624, D_121490150_D_945532934, D_121490150_D_303500597, D_121490150_D_195068098, D_121490150_D_202784871, D_121490150_D_831127170, D_920576363_D_725583683, D_920576363_D_917021073, D_920576363_D_970000442, D_920576363_D_500100435, "HOMEADD3_1 Cross Streets or Don't know")
+
+#home2
+funct_HOMEADD3(D_398762737_D_553357862, D_398762737_D_474541595, D_398762737_D_398762737, D_574985342_D_985267931, D_574985342_D_111275683, D_574985342_D_536516743, D_574985342_D_283900560, D_574985342_D_467947502, D_574985342_D_368486703, D_444145120_D_288498031, D_444145120_D_195845897, D_444145120_D_936129960, D_444145120_D_924583345, "HOMEADD3_2 Cross Streets or Don't know")
+
+#home3
+funct_HOMEADD3(D_961572487_D_469679476, D_961572487_D_216954796, D_961572487_D_961572487, D_828086036_D_875706715, D_828086036_D_645150792, D_828086036_D_588699608, D_828086036_D_544692849, D_828086036_D_335435992, D_828086036_D_337088272, D_752101258_D_648495207, D_752101258_D_300933270, D_752101258_D_649864362, D_752101258_D_723108194, "HOMEADD3_3 Cross Streets or Don't know")
+
+#home4
+funct_HOMEADD3(D_746604821_D_423713680, D_746604821_D_555767576, D_746604821_D_746604821, D_680046149_D_130174162, D_680046149_D_563832508, D_680046149_D_930511603, D_680046149_D_756548442, D_680046149_D_455968200, D_680046149_D_728704613, D_879180101_D_931999203, D_879180101_D_486511102, D_879180101_D_267027102, D_879180101_D_734345879, "HOMEADD3_4 Cross Streets or Don't know")
+
+#home5
+funct_HOMEADD3(D_298296694_D_915527263, D_298296694_D_325919807, D_298296694_D_298296694, D_274189667_D_838725845, D_274189667_D_565515774, D_274189667_D_742177990, D_274189667_D_843508307, D_274189667_D_554901696, D_274189667_D_819429013, D_212343294_D_445867902, D_212343294_D_348049244, D_212343294_D_684217044, D_212343294_D_600319581, "HOMEADD3_5 Cross Streets or Don't know")
+
+#home6
+funct_HOMEADD3(D_205492848_D_756458580, D_205492848_D_481599610, D_205492848_D_205492848, D_113930886_D_306805272, D_113930886_D_819844467, D_113930886_D_418702418, D_113930886_D_101219440, D_113930886_D_127963610, D_113930886_D_882731998, D_255474241_D_218334768, D_255474241_D_394294282, D_255474241_D_803526907, D_255474241_D_941168091, "HOMEADD3_6 Cross Streets or Don't know")
+
+#home7
+funct_HOMEADD3(D_581231591_D_732107715, D_581231591_D_803219073, D_581231591_D_581231591, D_809728747_D_351559015, D_809728747_D_903490632, D_809728747_D_703944664, D_809728747_D_390463636, D_809728747_D_256790385, D_809728747_D_915222355, D_201906316_D_476697171, D_201906316_D_605344820, D_201906316_D_814644814, D_201906316_D_627992821, "HOMEADD3_7 Cross Streets or Don't know")
+
+
+#home8
+funct_HOMEADD3(D_123104885_D_707276214, D_123104885_D_462701424, D_123104885_D_123104885, D_539057792_D_893639464, D_539057792_D_438475588, D_539057792_D_744290061, D_539057792_D_516936572, D_539057792_D_673034401, D_539057792_D_489019597, D_864213677_D_280877371, D_864213677_D_463064782, D_864213677_D_865310914, D_864213677_D_900377581, "HOMEADD3_8 Cross Streets or Don't know")
+
+#home9
+funct_HOMEADD3(D_890661849_D_174111872, D_890661849_D_735022625, D_890661849_D_890661849, D_537011756_D_988266183, D_537011756_D_709374950, D_537011756_D_351559021, D_537011756_D_290370013, D_537011756_D_453691095, D_537011756_D_202104231, D_964853797_D_548773158, D_964853797_D_487043303, D_964853797_D_659122266, D_964853797_D_388427546, "HOMEADD3_9 Cross Streets or Don't know")
+
+#home10
+funct_HOMEADD3(D_902193418_D_633590687, D_902193418_D_857265979, D_902193418_D_902193418, D_171937884_D_264707783, D_171937884_D_666011940, D_171937884_D_282089547, D_171937884_D_612617245, D_171937884_D_674024553, D_171937884_D_886247195, D_787064287_D_891573875, D_787064287_D_862255177, D_787064287_D_972332937, D_787064287_D_429200007, "HOMEADD3_10 Cross Streets or Don't know")
+
+#home11
+funct_HOMEADD3(D_440597740_D_573998459, D_440597740_D_760197341, D_440597740_D_440597740, D_828766803_D_622968789, D_828766803_D_696874548, D_828766803_D_309461541, D_828766803_D_789637860, D_828766803_D_795253129, D_828766803_D_780298998, D_878688378_D_706592013, D_878688378_D_585473282, D_878688378_D_814137809, D_878688378_D_876521406, "HOMEADD3_11 Cross Streets or Don't know")
+
+```
+
+## HOMEMOVEIN_#
+```{r, echo=FALSE, warning=FALSE}
+
+
+#home1--- confirmed with Julie that movein and moveout 1 is seen by every partipant regardless if they gave their current address or not!!
+
+#funct_MOVEIN_1(D_590222838, D_121490150_D_255248624, D_121490150_D_945532934, D_121490150_D_303500597, D_121490150_D_195068098, D_121490150_D_202784871, D_121490150_D_831127170, D_920576363_D_725583683, D_920576363_D_917021073, D_920576363_D_970000442, D_920576363_D_500100435, "HOMEMOVEIN_1")
+
+#home2
+funct_MOVEIN(D_623452399, D_290969423, D_869829679, D_574985342_D_985267931, D_574985342_D_111275683, D_574985342_D_536516743, D_574985342_D_283900560, D_574985342_D_467947502, D_574985342_D_368486703, D_444145120_D_288498031, D_444145120_D_195845897, D_444145120_D_936129960, D_444145120_D_924583345, "HOMEMOVEIN_2")
+
+#home3
+funct_MOVEIN(D_876443676, D_862052821, D_845483079, D_828086036_D_875706715, D_828086036_D_645150792, D_828086036_D_588699608, D_828086036_D_544692849, D_828086036_D_335435992, D_828086036_D_337088272, D_752101258_D_648495207, D_752101258_D_300933270, D_752101258_D_649864362, D_752101258_D_723108194, "HOMEMOVEIN_3")
+
+#home4
+funct_MOVEIN(D_270587543, D_593146348, D_736086261, D_680046149_D_130174162, D_680046149_D_563832508, D_680046149_D_930511603, D_680046149_D_756548442, D_680046149_D_455968200, D_680046149_D_728704613, D_879180101_D_931999203, D_879180101_D_486511102, D_879180101_D_267027102, D_879180101_D_734345879, "HOMEMOVEIN_4")
+
+#home5
+funct_MOVEIN(D_195167143, D_983592172, D_294308065, D_274189667_D_838725845, D_274189667_D_565515774, D_274189667_D_742177990, D_274189667_D_843508307, D_274189667_D_554901696, D_274189667_D_819429013, D_212343294_D_445867902, D_212343294_D_348049244, D_212343294_D_684217044, D_212343294_D_600319581, "HOMEMOVEIN_5")
+
+#home6
+funct_MOVEIN(D_495330716, D_776406200, D_385583361, D_113930886_D_306805272, D_113930886_D_819844467, D_113930886_D_418702418, D_113930886_D_101219440, D_113930886_D_127963610, D_113930886_D_882731998, D_255474241_D_218334768, D_255474241_D_394294282, D_255474241_D_803526907, D_255474241_D_941168091, "HOMEMOVEIN_6")
+
+#home7
+funct_MOVEIN(D_783797179, D_135207939, D_768802173, D_809728747_D_351559015, D_809728747_D_903490632, D_809728747_D_703944664, D_809728747_D_390463636, D_809728747_D_256790385, D_809728747_D_915222355, D_201906316_D_476697171, D_201906316_D_605344820, D_201906316_D_814644814, D_201906316_D_627992821, "HOMEMOVEIN_7")
+
+#home8
+funct_MOVEIN(D_243695994, D_647612167, D_150560299, D_539057792_D_893639464, D_539057792_D_438475588, D_539057792_D_744290061, D_539057792_D_516936572, D_539057792_D_673034401, D_539057792_D_489019597, D_864213677_D_280877371, D_864213677_D_463064782, D_864213677_D_865310914, D_864213677_D_900377581, "HOMEMOVEIN_8")
+
+#home9
+funct_MOVEIN(D_562190570, D_532944666, D_122054737, D_537011756_D_988266183, D_537011756_D_709374950, D_537011756_D_351559021, D_537011756_D_290370013, D_537011756_D_453691095, D_537011756_D_202104231, D_964853797_D_548773158, D_964853797_D_487043303, D_964853797_D_659122266, D_964853797_D_388427546, "HOMEMOVEIN_9")
+
+#home10
+funct_MOVEIN(D_790359238, D_548863580, D_948492967, D_171937884_D_264707783, D_171937884_D_666011940, D_171937884_D_282089547, D_171937884_D_612617245, D_171937884_D_674024553, D_171937884_D_886247195, D_787064287_D_891573875, D_787064287_D_862255177, D_787064287_D_972332937, D_787064287_D_429200007, "HOMEMOVEIN_10")
+
+#home11
+funct_MOVEIN(D_925747671, D_124320444, D_805353966, D_828766803_D_622968789, D_828766803_D_696874548, D_828766803_D_309461541, D_828766803_D_789637860, D_828766803_D_795253129, D_828766803_D_780298998, D_878688378_D_706592013, D_878688378_D_585473282, D_878688378_D_814137809, D_878688378_D_876521406, "HOMEMOVEIN_11")
+
+
+```
+
+## HOMEMOVEOUT_#
+```{r, echo=FALSE, warning=FALSE}
+#home1--- confirmed with Julie that movein and moveout 1 is seen by every partipant regardless if they gave their current address or not!!
+
+#funct_MOVEOUT_1(D_728155643_D_943813942, D_728155643_D_728155643_D_678602069, D_121490150_D_255248624, D_121490150_D_945532934, D_121490150_D_303500597, D_121490150_D_195068098, D_121490150_D_202784871, D_121490150_D_831127170, D_920576363_D_725583683, D_920576363_D_917021073, D_920576363_D_970000442, D_920576363_D_500100435, "HOMEMOVEOUT_1")
+
+#home2
+funct_MOVEOUT(D_380621340_D_943813942, D_380621340_D_380621340_D_678602069, D_290969423, D_869829679, D_574985342_D_985267931, D_574985342_D_111275683, D_574985342_D_536516743, D_574985342_D_283900560, D_574985342_D_467947502, D_574985342_D_368486703, D_444145120_D_288498031, D_444145120_D_195845897, D_444145120_D_936129960, D_444145120_D_924583345, "HOMEMOVEOUT_2")
+
+#home3
+funct_MOVEOUT(D_999694720_D_943813942, D_999694720_D_999694720_D_678602069, D_862052821, D_845483079, D_828086036_D_875706715, D_828086036_D_645150792, D_828086036_D_588699608, D_828086036_D_544692849, D_828086036_D_335435992, D_828086036_D_337088272, D_752101258_D_648495207, D_752101258_D_300933270, D_752101258_D_649864362, D_752101258_D_723108194, "HOMEMOVEOUT_3")
+
+#home4
+funct_MOVEOUT(D_849066624_D_943813942, D_849066624_D_849066624_D_678602069, D_593146348, D_736086261, D_680046149_D_130174162, D_680046149_D_563832508, D_680046149_D_930511603, D_680046149_D_756548442, D_680046149_D_455968200, D_680046149_D_728704613, D_879180101_D_931999203, D_879180101_D_486511102, D_879180101_D_267027102, D_879180101_D_734345879, "HOMEMOVEOUT_4")
+
+#home5
+funct_MOVEOUT(D_425315696_D_943813942, D_425315696_D_425315696_D_678602069, D_983592172, D_294308065, D_274189667_D_838725845, D_274189667_D_565515774, D_274189667_D_742177990, D_274189667_D_843508307, D_274189667_D_554901696, D_274189667_D_819429013, D_212343294_D_445867902, D_212343294_D_348049244, D_212343294_D_684217044, D_212343294_D_600319581, "HOMEMOVEOUT_5")
+
+#home6
+funct_MOVEOUT(D_529608184_D_943813942, D_529608184_D_529608184_D_678602069, D_776406200, D_385583361, D_113930886_D_306805272, D_113930886_D_819844467, D_113930886_D_418702418, D_113930886_D_101219440, D_113930886_D_127963610, D_113930886_D_882731998, D_255474241_D_218334768, D_255474241_D_394294282, D_255474241_D_803526907, D_255474241_D_941168091, "HOMEMOVEOUT_6")
+
+#home7
+funct_MOVEOUT(D_234731641_D_943813942, D_234731641_D_234731641_D_678602069, D_135207939, D_768802173, D_809728747_D_351559015, D_809728747_D_903490632, D_809728747_D_703944664, D_809728747_D_390463636, D_809728747_D_256790385, D_809728747_D_915222355, D_201906316_D_476697171, D_201906316_D_605344820, D_201906316_D_814644814, D_201906316_D_627992821, "HOMEMOVEOUT_7")
+
+#home8
+funct_MOVEOUT(D_664561394_D_943813942, D_664561394_D_664561394_D_678602069, D_647612167, D_150560299, D_539057792_D_893639464, D_539057792_D_438475588, D_539057792_D_744290061, D_539057792_D_516936572, D_539057792_D_673034401, D_539057792_D_489019597, D_864213677_D_280877371, D_864213677_D_463064782, D_864213677_D_865310914, D_864213677_D_900377581, "HOMEMOVEOUT_8")
+
+#home9
+funct_MOVEOUT(D_450154625_D_943813942, D_450154625_D_450154625_D_678602069, D_532944666, D_122054737, D_537011756_D_988266183, D_537011756_D_709374950, D_537011756_D_351559021, D_537011756_D_290370013, D_537011756_D_453691095, D_537011756_D_202104231, D_964853797_D_548773158, D_964853797_D_487043303, D_964853797_D_659122266, D_964853797_D_388427546, "HOMEMOVEOUT_9")
+
+#home10
+funct_MOVEOUT(D_812161236_D_943813942, D_812161236_D_812161236_D_678602069, D_548863580, D_948492967, D_171937884_D_264707783, D_171937884_D_666011940, D_171937884_D_282089547, D_171937884_D_612617245, D_171937884_D_674024553, D_171937884_D_886247195, D_787064287_D_891573875, D_787064287_D_862255177, D_787064287_D_972332937, D_787064287_D_429200007, "HOMEMOVEOUT_10")
+
+#home11
+funct_MOVEOUT(D_964437163_D_943813942, D_964437163_D_964437163_D_678602069,  D_124320444, D_805353966, D_828766803_D_622968789, D_828766803_D_696874548, D_828766803_D_309461541, D_828766803_D_789637860, D_828766803_D_795253129, D_828766803_D_780298998, D_878688378_D_706592013, D_878688378_D_585473282, D_878688378_D_814137809, D_878688378_D_876521406, "HOMEMOVEOUT_11")
+
+```
+
+## HOMEWATER1_# and HOMEWATER3_#
+```{r, echo=FALSE, warning=FALSE}
+#home1--- everyone will see these questions, maybe need to change QC to make sure the answers given are only the answers allowed?
+#funct_HOMEWATER1_1(D_958419506_D_958419506, D_121490150_D_255248624, D_121490150_D_945532934, D_121490150_D_303500597, D_121490150_D_195068098, D_121490150_D_202784871, D_121490150_D_831127170, D_920576363_D_725583683, D_920576363_D_917021073, D_920576363_D_970000442, D_920576363_D_500100435, "HOMEWATER1_1")
+#funct_HOMEWATER3_1(D_539909957_D_539909957, D_121490150_D_255248624, D_121490150_D_945532934, D_121490150_D_303500597, D_121490150_D_195068098, D_121490150_D_202784871, D_121490150_D_831127170, D_920576363_D_725583683, D_920576363_D_917021073, D_920576363_D_970000442, D_920576363_D_500100435, "HOMEWATER3_1")
+
+#home2
+funct_HOMEWATER1(D_505863509_D_505863509, D_290969423,D_869829679, D_574985342_D_985267931, D_574985342_D_111275683, D_574985342_D_536516743, D_574985342_D_283900560, D_574985342_D_467947502, D_574985342_D_368486703, D_444145120_D_288498031, D_444145120_D_195845897, D_444145120_D_936129960, D_444145120_D_924583345, "HOMEWATER1_2")
+funct_HOMEWATER3(D_250486386_D_250486386, D_290969423,D_869829679, D_574985342_D_985267931, D_574985342_D_111275683, D_574985342_D_536516743, D_574985342_D_283900560, D_574985342_D_467947502, D_574985342_D_368486703, D_444145120_D_288498031, D_444145120_D_195845897, D_444145120_D_936129960, D_444145120_D_924583345, "HOMEWATER3_2")
+
+#home3
+funct_HOMEWATER1(D_957717014_D_957717014, D_862052821, D_845483079, D_828086036_D_875706715, D_828086036_D_645150792, D_828086036_D_588699608, D_828086036_D_544692849, D_828086036_D_335435992, D_828086036_D_337088272, D_752101258_D_648495207, D_752101258_D_300933270, D_752101258_D_649864362, D_752101258_D_723108194, "HOMEWATER1_3")
+funct_HOMEWATER3( D_726654963_D_726654963,D_862052821, D_845483079, D_828086036_D_875706715, D_828086036_D_645150792, D_828086036_D_588699608, D_828086036_D_544692849, D_828086036_D_335435992, D_828086036_D_337088272, D_752101258_D_648495207, D_752101258_D_300933270, D_752101258_D_649864362, D_752101258_D_723108194, "HOMEWATER3_3")
+
+#home4
+funct_HOMEWATER1(D_195367894_D_195367894, D_593146348, D_736086261, D_680046149_D_130174162, D_680046149_D_563832508, D_680046149_D_930511603, D_680046149_D_756548442, D_680046149_D_455968200, D_680046149_D_728704613, D_879180101_D_931999203, D_879180101_D_486511102, D_879180101_D_267027102, D_879180101_D_734345879, "HOMEWATER1_4")
+funct_HOMEWATER3(D_934184033_D_934184033, D_593146348, D_736086261, D_680046149_D_130174162, D_680046149_D_563832508, D_680046149_D_930511603, D_680046149_D_756548442, D_680046149_D_455968200, D_680046149_D_728704613, D_879180101_D_931999203, D_879180101_D_486511102, D_879180101_D_267027102, D_879180101_D_734345879, "HOMEWATER3_4")
+
+#home5
+funct_HOMEWATER1(D_986989731_D_986989731, D_983592172, D_294308065, D_274189667_D_838725845, D_274189667_D_565515774, D_274189667_D_742177990, D_274189667_D_843508307, D_274189667_D_554901696, D_274189667_D_819429013, D_212343294_D_445867902, D_212343294_D_348049244, D_212343294_D_684217044, D_212343294_D_600319581, "HOMEWATER1_5")
+funct_HOMEWATER3(D_508187475_D_508187475, D_983592172, D_294308065, D_274189667_D_838725845, D_274189667_D_565515774, D_274189667_D_742177990, D_274189667_D_843508307, D_274189667_D_554901696, D_274189667_D_819429013, D_212343294_D_445867902, D_212343294_D_348049244, D_212343294_D_684217044, D_212343294_D_600319581, "HOMEWATER3_5")
+
+#home6
+funct_HOMEWATER1(D_665978055_D_665978055, D_776406200, D_385583361, D_113930886_D_306805272, D_113930886_D_819844467, D_113930886_D_418702418, D_113930886_D_101219440, D_113930886_D_127963610, D_113930886_D_882731998, D_255474241_D_218334768, D_255474241_D_394294282, D_255474241_D_803526907, D_255474241_D_941168091, "HOMEWATER1_6")
+funct_HOMEWATER3(D_933017499_D_933017499, D_776406200, D_385583361, D_113930886_D_306805272, D_113930886_D_819844467, D_113930886_D_418702418, D_113930886_D_101219440, D_113930886_D_127963610, D_113930886_D_882731998, D_255474241_D_218334768, D_255474241_D_394294282, D_255474241_D_803526907, D_255474241_D_941168091, "HOMEWATER3_6")
+
+#home7
+funct_HOMEWATER1(D_386487941_D_386487941, D_135207939, D_768802173, D_809728747_D_351559015, D_809728747_D_903490632, D_809728747_D_703944664, D_809728747_D_390463636, D_809728747_D_256790385, D_809728747_D_915222355, D_201906316_D_476697171, D_201906316_D_605344820, D_201906316_D_814644814, D_201906316_D_627992821, "HOMEWATER1_7")
+funct_HOMEWATER3(D_494698740_D_494698740, D_135207939, D_768802173, D_809728747_D_351559015, D_809728747_D_903490632, D_809728747_D_703944664, D_809728747_D_390463636, D_809728747_D_256790385, D_809728747_D_915222355, D_201906316_D_476697171, D_201906316_D_605344820, D_201906316_D_814644814, D_201906316_D_627992821, "HOMEWATER3_7")
+
+#home8
+funct_HOMEWATER1(D_211740798_D_211740798, D_647612167, D_150560299, D_539057792_D_893639464, D_539057792_D_438475588, D_539057792_D_744290061, D_539057792_D_516936572, D_539057792_D_673034401, D_539057792_D_489019597, D_864213677_D_280877371, D_864213677_D_463064782, D_864213677_D_865310914, D_864213677_D_900377581, "HOMEWATER1_8")
+funct_HOMEWATER3(D_542086156_D_542086156, D_647612167, D_150560299, D_539057792_D_893639464, D_539057792_D_438475588, D_539057792_D_744290061, D_539057792_D_516936572, D_539057792_D_673034401, D_539057792_D_489019597, D_864213677_D_280877371, D_864213677_D_463064782, D_864213677_D_865310914, D_864213677_D_900377581, "HOMEWATER3_8")
+
+#home9
+funct_HOMEWATER1(D_190307069_D_190307069, D_532944666, D_122054737, D_537011756_D_988266183, D_537011756_D_709374950, D_537011756_D_351559021, D_537011756_D_290370013, D_537011756_D_453691095, D_537011756_D_202104231, D_964853797_D_548773158, D_964853797_D_487043303, D_964853797_D_659122266, D_964853797_D_388427546, "HOMEWATER1_9")
+funct_HOMEWATER3(D_740535024_D_740535024, D_532944666, D_122054737, D_537011756_D_988266183, D_537011756_D_709374950, D_537011756_D_351559021, D_537011756_D_290370013, D_537011756_D_453691095, D_537011756_D_202104231, D_964853797_D_548773158, D_964853797_D_487043303, D_964853797_D_659122266, D_964853797_D_388427546, "HOMEWATER3_9")
+
+#home10
+funct_HOMEWATER1(D_154170916_D_154170916, D_548863580, D_948492967, D_171937884_D_264707783, D_171937884_D_666011940, D_171937884_D_282089547, D_171937884_D_612617245, D_171937884_D_674024553, D_171937884_D_886247195, D_787064287_D_891573875, D_787064287_D_862255177, D_787064287_D_972332937, D_787064287_D_429200007, "HOMEWATER1_10")
+funct_HOMEWATER3(D_825109070_D_825109070, D_548863580, D_948492967, D_171937884_D_264707783, D_171937884_D_666011940, D_171937884_D_282089547, D_171937884_D_612617245, D_171937884_D_674024553, D_171937884_D_886247195, D_787064287_D_891573875, D_787064287_D_862255177, D_787064287_D_972332937, D_787064287_D_429200007, "HOMEWATER1_10")
+
+#home11
+funct_HOMEWATER1(D_337574535_D_337574535, D_124320444, D_805353966, D_828766803_D_622968789, D_828766803_D_696874548, D_828766803_D_309461541, D_828766803_D_789637860, D_828766803_D_795253129, D_828766803_D_780298998, D_878688378_D_706592013, D_878688378_D_585473282, D_878688378_D_814137809, D_878688378_D_876521406, "HOMEWATER1_11")
+funct_HOMEWATER3(D_927932321_D_927932321, D_124320444, D_805353966, D_828766803_D_622968789, D_828766803_D_696874548, D_828766803_D_309461541, D_828766803_D_789637860, D_828766803_D_795253129, D_828766803_D_780298998, D_878688378_D_706592013, D_878688378_D_585473282, D_878688378_D_814137809, D_878688378_D_876521406, "HOMEWATER3_11")
+
+```
+
+
+
+
+
+# SEASONAL HOMES
+
+## SEAADD2_# Don't know
+```{r, echo=FALSE, warning=FALSE}
+#SEASADD2 <- Only display if SEACITY = NA OR SEAST = NA OR SEAZIP = NA OR SEACOUNTRY = NA
+#home1
+funct_HOMEADD2(D_173413183_D_173413183, D_376408004_D_556576930, D_376408004_D_304326324, D_376408004_D_812433386, D_376408004_D_477319994, "SEAADD2_1 Don't know")
+#home2
+funct_HOMEADD2(D_657986901_D_657986901, D_279093430_D_715370929, D_279093430_D_109991481, D_279093430_D_494380686, D_279093430_D_440796912, "SEAADD2_2 Don't know")
+#home3
+funct_HOMEADD2(D_564684946_D_564684946, D_143927994_D_113352592, D_143927994_D_768114466, D_143927994_D_938180781, D_143927994_D_733365745, "SEAADD2_3 Don't know")
+#home4
+funct_HOMEADD2(D_558981691_D_558981691, D_935378391_D_733619119, D_935378391_D_843680322, D_935378391_D_716343828, D_935378391_D_497260033, "SEAADD2_4 Don't know")
+#home5
+funct_HOMEADD2(D_194944818_D_194944818, D_320166033_D_570311888, D_320166033_D_557852952, D_320166033_D_970217879, D_320166033_D_452103273, "SEAADD2_5 Don't know")
+#home6
+funct_HOMEADD2(D_508587741_D_508587741, D_383535171_D_888514303, D_383535171_D_905002640, D_383535171_D_687407917, D_383535171_D_932828568, "SEAADD2_6 Don't know")
+#home7
+funct_HOMEADD2(D_293954660_D_293954660, D_133566757_D_384403974, D_133566757_D_585153023, D_133566757_D_248996395, D_133566757_D_525778327, "SEAADD2_7 Don't know")
+#home8
+funct_HOMEADD2(D_268612977_D_268612977, D_509553290_D_367684056, D_509553290_D_389478638, D_509553290_D_949478044, D_509553290_D_298170847, "SEAADD2_8 Don't know")
+#home9
+#funct_HOMEADD2(D_216096388_D_216096388, D_239279719_D_711881258, D_239279719_D_390941579, D_239279719_D_737885885, D_239279719_D_603853574, "SEAADD2_9 Don't know")
+#home10
+#funct_HOMEADD2(D_757983656_D_757983656, D_778711683_D_160188014, D_778711683_D_596751155, D_778711683_D_624226136, D_778711683_D_807127029, "SEAADD2_10 Don't know")
+
+
+```
+
+## SEASTRNAME_# Cross Streets or Don't know
+```{r, echo=FALSE, warning=FALSE}
+#SEASTRNAME_# Cross Streets or Don't know <- Only display if SEASTNUM = NA AND SEAFULLST = NA AND ((SEACITY <> NA) or (SEAST <> NA) or (SEAZIP <> NA) or (SEACOUNTRY <> NA) or (SEACITY_FOLLOWUP <> NA) or (SEAST_FOLLOWUP <> NA) or (SEAZIP_FOLLOWUP <> NA) or (SEACOUNTRY_FOLLOWUP <> NA)
+#home1
+funct_HOMEADD3(D_200086909_D_351319555, D_200086909_D_154163153, D_200086909_D_200086909, D_376408004_D_234037089, D_376408004_D_416862112, D_376408004_D_556576930, D_376408004_D_304326324, D_376408004_D_812433386, D_376408004_D_477319994, D_173413183_D_416620941, D_173413183_D_915859406, D_173413183_D_354833686, D_173413183_D_661148931, "SEASTRNAME_1 Cross Streets or Don't know")
+#home2
+funct_HOMEADD3(D_509526051_D_542763783, D_509526051_D_351069956, D_509526051_D_509526051, D_279093430_D_476938134, D_279093430_D_561635035, D_279093430_D_715370929, D_279093430_D_109991481, D_279093430_D_494380686, D_279093430_D_440796912, D_657986901_D_726739712, D_657986901_D_149514187, D_657986901_D_845446624, D_657986901_D_677739650, "SEASTRNAME_2 Cross Streets or Don't know")
+#home3
+funct_HOMEADD3(D_370121390_D_580185896, D_370121390_D_599607007, D_370121390_D_370121390, D_143927994_D_119483547, D_143927994_D_194338739, D_143927994_D_113352592, D_143927994_D_768114466, D_143927994_D_938180781, D_143927994_D_733365745, D_564684946_D_148846635, D_564684946_D_192663941, D_564684946_D_245044197, D_564684946_D_261025083, "SEASTRNAME_3 Cross Streets or Don't know")
+#home4
+funct_HOMEADD3(D_192184336_D_117544868, D_192184336_D_868650023, D_192184336_D_192184336, D_935378391_D_785588454, D_935378391_D_419659205, D_935378391_D_733619119, D_935378391_D_843680322, D_935378391_D_716343828, D_935378391_D_497260033, D_558981691_D_571926996, D_558981691_D_645589113, D_558981691_D_701056236, D_558981691_D_398249766, "SEASTRNAME_4 Cross Streets or Don't know")
+#home5
+funct_HOMEADD3(D_763354979_D_677922318, D_763354979_D_424347938, D_763354979_D_763354979, D_320166033_D_275244758, D_320166033_D_688216428, D_320166033_D_570311888, D_320166033_D_557852952, D_320166033_D_970217879, D_320166033_D_452103273, D_194944818_D_101804763, D_194944818_D_502068619, D_194944818_D_787391994, D_194944818_D_540340377, "SEASTRNAME_5 Cross Streets or Don't know")
+#home6
+funct_HOMEADD3(D_355179190_D_115195973, D_355179190_D_706861475, D_355179190_D_355179190, D_383535171_D_666445636, D_383535171_D_398622449, D_383535171_D_888514303, D_383535171_D_905002640, D_383535171_D_687407917, D_383535171_D_932828568, D_508587741_D_686611963, D_508587741_D_900950849, D_508587741_D_103689435, D_508587741_D_659457234, "SEASTRNAME_6 Cross Streets or Don't know")
+#home7
+funct_HOMEADD3(D_851731394_D_993557817, D_851731394_D_110516520, D_851731394_D_851731394, D_133566757_D_199489170, D_133566757_D_605155921, D_133566757_D_384403974, D_133566757_D_585153023, D_133566757_D_248996395, D_133566757_D_525778327, D_293954660_D_860984191, D_293954660_D_892150843, D_293954660_D_230376384, D_293954660_D_526462982, "SEASTRNAME_7 Cross Streets or Don't know")
+#home8
+funct_HOMEADD3(D_851731394_D_993557817, D_851731394_D_110516520, D_851731394_D_851731394, D_509553290_D_295693777, D_509553290_D_646099557, D_509553290_D_367684056, D_509553290_D_389478638, D_509553290_D_949478044, D_509553290_D_298170847, D_268612977_D_599753334, D_268612977_D_467126157, D_268612977_D_421779583, D_268612977_D_587765197, "SEASTRNAME_8 Cross Streets or Don't know")
+
+```
+
+## SEASADDYRS1_#
+```{r, echo=FALSE, warning=FALSE}
+#Only display if (SEASHOME=1) or (SEASADDSUM1 = 0) or (SEASTNUM <> NA) or (SEAFULLST <> NA) or (SEAAPT <> NA) or (SEACITY <> NA) or (SEACITY_FOLLOWUP <> NA) or (SEAST <> NA) or (SEAST_FOLLOWUP <> NA) or (SEAZIP <> NA) or (SEAZIP_FOLLOWUP <> NA) or (SEACOUNTRY <> NA) or (SEACOUNTRY_FOLLOWUP <> NA)
+#REPLACE FIRST THREE WITH SEASADDYRS1, SEASHOME, SEASADDSUM1
+#home1
+funct_SEAYRS1_1(D_379754686, D_342677547, D_710449106, D_376408004_D_234037089, D_376408004_D_416862112, D_376408004_D_556576930, D_376408004_D_304326324, D_376408004_D_812433386, D_376408004_D_477319994, D_173413183_D_416620941, D_173413183_D_915859406, D_173413183_D_354833686, D_173413183_D_661148931, "SEASADDYRS1_1")
+#REPLACE FIRST THREE WITH SEASADDYRS, SEASADDOTH, SEASADDSUM
+  #home2
+funct_SEAYRS1(D_963795928, D_576956950, D_710449106, D_279093430_D_476938134, D_279093430_D_561635035, D_279093430_D_715370929, D_279093430_D_109991481, D_279093430_D_494380686, D_279093430_D_440796912, D_657986901_D_726739712, D_657986901_D_149514187, D_657986901_D_845446624, D_657986901_D_677739650, "SEASADDYRS1_2")
+#home3
+funct_SEAYRS1(D_775038507, D_463952618, D_982650994, D_143927994_D_119483547, D_143927994_D_194338739, D_143927994_D_113352592, D_143927994_D_768114466, D_143927994_D_938180781, D_143927994_D_733365745, D_564684946_D_148846635, D_564684946_D_192663941, D_564684946_D_245044197, D_564684946_D_261025083, "SEASADDYRS1_3")
+#home4
+funct_SEAYRS1(D_778721228, D_959488634, D_945794974, D_935378391_D_785588454, D_935378391_D_419659205, D_935378391_D_733619119, D_935378391_D_843680322, D_935378391_D_716343828, D_935378391_D_497260033, D_558981691_D_571926996, D_558981691_D_645589113, D_558981691_D_701056236, D_558981691_D_398249766, "SEASADDYRS1_4")
+#home5
+funct_SEAYRS1(D_504158362, D_696017690, D_663869343, D_320166033_D_275244758, D_320166033_D_688216428, D_320166033_D_570311888, D_320166033_D_557852952, D_320166033_D_970217879, D_320166033_D_452103273, D_194944818_D_101804763, D_194944818_D_502068619, D_194944818_D_787391994, D_194944818_D_540340377, "SEASADDYRS1_5")
+#home6
+funct_SEAYRS1(D_696972918, D_424272506, D_275978701, D_383535171_D_666445636, D_383535171_D_398622449, D_383535171_D_888514303, D_383535171_D_905002640, D_383535171_D_687407917, D_383535171_D_932828568, D_508587741_D_686611963, D_508587741_D_900950849, D_508587741_D_103689435, D_508587741_D_659457234, "SEASADDYRS1_6")
+#home7
+funct_SEAYRS1(D_921090200, D_484550481, D_195803565, D_133566757_D_199489170, D_133566757_D_605155921, D_133566757_D_384403974, D_133566757_D_585153023, D_133566757_D_248996395, D_133566757_D_525778327, D_293954660_D_860984191, D_293954660_D_892150843, D_293954660_D_230376384, D_293954660_D_526462982, "SEASADDYRS1_7")
+#home8
+funct_SEAYRS1(D_134624195, D_773680071, D_282326355, D_509553290_D_295693777, D_509553290_D_646099557, D_509553290_D_367684056, D_509553290_D_389478638, D_509553290_D_949478044, D_509553290_D_298170847, D_268612977_D_599753334, D_268612977_D_467126157, D_268612977_D_421779583, D_268612977_D_587765197, "SEASADDYRS1_8")
+
+
+```
+
+## SEASADDYRS2_#_Year and SEASADDYRS2_# (Still spend time there)
+```{r, echo=FALSE, warning=FALSE}
+#Only display if (SEASHOME=1) or (SEASADDSUM1 = 0) or (SEASTNUM <> NA) or (SEAFULLST <> NA) or (SEAAPT <> NA) or (SEACITY <> NA) or (SEACITY_FOLLOWUP <> NA) or (SEAST <> NA) or (SEAST_FOLLOWUP <> NA) or (SEAZIP <> NA) or (SEAZIP_FOLLOWUP <> NA) or (SEACOUNTRY <> NA) or (SEACOUNTRY_FOLLOWUP <> NA)
+#REPLACE FIRST THREE WITH SEASADDYRS1, SEASHOME, SEASADDSUM1
+#home1
+funct_SEAYRS1_1(D_975198123_D_314198277, D_342677547, D_710449106, D_376408004_D_234037089, D_376408004_D_416862112, D_376408004_D_556576930, D_376408004_D_304326324, D_376408004_D_812433386, D_376408004_D_477319994, D_173413183_D_416620941, D_173413183_D_915859406, D_173413183_D_354833686, D_173413183_D_661148931, "SEASADDYRS2_1_Year")
+
+funct_SEAYRS1_1(D_975198123_D_975198123_D_196962759, D_342677547, D_710449106, D_376408004_D_234037089, D_376408004_D_416862112, D_376408004_D_556576930, D_376408004_D_304326324, D_376408004_D_812433386, D_376408004_D_477319994, D_173413183_D_416620941, D_173413183_D_915859406, D_173413183_D_354833686, D_173413183_D_661148931, "SEASADDYRS2_1 (Still spend time there)")
+#REPLACE FIRST THREE WITH SEASADDYRS, SEASADDOTH, SEASADDSUM
+
+
+  #home2
+funct_SEAYRS1(D_778495585_D_314198277, D_576956950, D_710449106, D_279093430_D_476938134, D_279093430_D_561635035, D_279093430_D_715370929, D_279093430_D_109991481, D_279093430_D_494380686, D_279093430_D_440796912, D_657986901_D_726739712, D_657986901_D_149514187, D_657986901_D_845446624, D_657986901_D_677739650, "SEASADDYRS2_2_Year")
+
+funct_SEAYRS1(D_778495585_D_778495585_D_196962759, D_576956950, D_710449106, D_279093430_D_476938134, D_279093430_D_561635035, D_279093430_D_715370929, D_279093430_D_109991481, D_279093430_D_494380686, D_279093430_D_440796912, D_657986901_D_726739712, D_657986901_D_149514187, D_657986901_D_845446624, D_657986901_D_677739650, "SEASADDYRS2_2 (Still spend time there)")
+
+
+#home3
+funct_SEAYRS1(D_829751791_D_314198277, D_463952618, D_982650994, D_143927994_D_119483547, D_143927994_D_194338739, D_143927994_D_113352592, D_143927994_D_768114466, D_143927994_D_938180781, D_143927994_D_733365745, D_564684946_D_148846635, D_564684946_D_192663941, D_564684946_D_245044197, D_564684946_D_261025083, "SEASADDYRS3_Year")
+
+funct_SEAYRS1(D_829751791_D_829751791_D_196962759, D_463952618, D_982650994, D_143927994_D_119483547, D_143927994_D_194338739, D_143927994_D_113352592, D_143927994_D_768114466, D_143927994_D_938180781, D_143927994_D_733365745, D_564684946_D_148846635, D_564684946_D_192663941, D_564684946_D_245044197, D_564684946_D_261025083, "SEASADDYRS2_3 (Still spend time there)")
+
+
+#home4
+funct_SEAYRS1(D_914325712_D_314198277, D_959488634, D_945794974, D_935378391_D_785588454, D_935378391_D_419659205, D_935378391_D_733619119, D_935378391_D_843680322, D_935378391_D_716343828, D_935378391_D_497260033, D_558981691_D_571926996, D_558981691_D_645589113, D_558981691_D_701056236, D_558981691_D_398249766, "SEASADDYRS2_4_Year")
+
+funct_SEAYRS1(D_914325712_D_914325712_D_196962759, D_959488634, D_945794974, D_935378391_D_785588454, D_935378391_D_419659205, D_935378391_D_733619119, D_935378391_D_843680322, D_935378391_D_716343828, D_935378391_D_497260033, D_558981691_D_571926996, D_558981691_D_645589113, D_558981691_D_701056236, D_558981691_D_398249766, "SEASADDYRS2_4 (Still spend time there)")
+
+
+#home5
+funct_SEAYRS1(D_682457230_D_314198277, D_696017690, D_663869343, D_320166033_D_275244758, D_320166033_D_688216428, D_320166033_D_570311888, D_320166033_D_557852952, D_320166033_D_970217879, D_320166033_D_452103273, D_194944818_D_101804763, D_194944818_D_502068619, D_194944818_D_787391994, D_194944818_D_540340377, "SEASADDYRS2_5_Year")
+
+#funct_SEAYRS1(D_682457230_D_682457230_D_196962759, D_696017690, D_663869343, D_320166033_D_275244758, D_320166033_D_688216428, D_320166033_D_570311888, D_320166033_D_557852952, D_320166033_D_970217879, D_320166033_D_452103273, D_194944818_D_101804763, D_194944818_D_502068619, D_194944818_D_787391994, D_194944818_D_540340377, "SEASADDYRS2_5 (Still spend time there)")
+
+
+#home6
+funct_SEAYRS1(D_404118353_D_314198277, D_424272506, D_275978701, D_383535171_D_666445636, D_383535171_D_398622449, D_383535171_D_888514303, D_383535171_D_905002640, D_383535171_D_687407917, D_383535171_D_932828568, D_508587741_D_686611963, D_508587741_D_900950849, D_508587741_D_103689435, D_508587741_D_659457234, "SEASADDYRS2_6_Year")
+
+funct_SEAYRS1(D_404118353_D_404118353_D_196962759, D_424272506, D_275978701, D_383535171_D_666445636, D_383535171_D_398622449, D_383535171_D_888514303, D_383535171_D_905002640, D_383535171_D_687407917, D_383535171_D_932828568, D_508587741_D_686611963, D_508587741_D_900950849, D_508587741_D_103689435, D_508587741_D_659457234, "SEASADDYRS2_6 (Still spend time there)")
+
+
+#home7
+funct_SEAYRS1(D_806530984_D_314198277, D_484550481, D_195803565, D_133566757_D_199489170, D_133566757_D_605155921, D_133566757_D_384403974, D_133566757_D_585153023, D_133566757_D_248996395, D_133566757_D_525778327, D_293954660_D_860984191, D_293954660_D_892150843, D_293954660_D_230376384, D_293954660_D_526462982, "SEASADDYRS2_7_Year")
+
+funct_SEAYRS1(D_806530984_D_806530984_D_196962759, D_484550481, D_195803565, D_133566757_D_199489170, D_133566757_D_605155921, D_133566757_D_384403974, D_133566757_D_585153023, D_133566757_D_248996395, D_133566757_D_525778327, D_293954660_D_860984191, D_293954660_D_892150843, D_293954660_D_230376384, D_293954660_D_526462982, "SEASADDYRS2_7 (Still spend time there)")
+
+
+#home8
+funct_SEAYRS1(D_613251957_D_314198277, D_773680071, D_282326355, D_509553290_D_295693777, D_509553290_D_646099557, D_509553290_D_367684056, D_509553290_D_389478638, D_509553290_D_949478044, D_509553290_D_298170847, D_268612977_D_599753334, D_268612977_D_467126157, D_268612977_D_421779583, D_268612977_D_587765197, "SEASADDYRS2_8_Year")
+
+funct_SEAYRS1(D_613251957_D_613251957_D_196962759, D_773680071, D_282326355, D_509553290_D_295693777, D_509553290_D_646099557, D_509553290_D_367684056, D_509553290_D_389478638, D_509553290_D_949478044, D_509553290_D_298170847, D_268612977_D_599753334, D_268612977_D_467126157, D_268612977_D_421779583, D_268612977_D_587765197, "SEASADDYRS2_8 (Still spend time there)")
+
+
+```
+
+## MonthAdd_# or SEASADDMOS# (Less than 1 month)
+```{r, echo=FALSE, warning=FALSE}
+#Only display if (SEASHOME=1) or (SEASADDSUM1 = 0) or (SEASTNUM <> NA) or (SEAFULLST <> NA) or (SEAAPT <> NA) or (SEACITY <> NA) or (SEACITY_FOLLOWUP <> NA) or (SEAST <> NA) or (SEAST_FOLLOWUP <> NA) or (SEAZIP <> NA) or (SEAZIP_FOLLOWUP <> NA) or (SEACOUNTRY <> NA) or (SEACOUNTRY_FOLLOWUP <> NA)
+#REPLACE FIRST THREE WITH SEASADDYRS1, SEASHOME, SEASADDSUM1
+#home1
+funct_SEAYRS1_1(D_860269869_D_451310566, D_342677547, D_710449106, D_376408004_D_234037089, D_376408004_D_416862112, D_376408004_D_556576930, D_376408004_D_304326324, D_376408004_D_812433386, D_376408004_D_477319994, D_173413183_D_416620941, D_173413183_D_915859406, D_173413183_D_354833686, D_173413183_D_661148931, "MonthAdd_1")
+
+funct_SEAYRS1_1(D_860269869_D_860269869_D_232063618, D_342677547, D_710449106, D_376408004_D_234037089, D_376408004_D_416862112, D_376408004_D_556576930, D_376408004_D_304326324, D_376408004_D_812433386, D_376408004_D_477319994, D_173413183_D_416620941, D_173413183_D_915859406, D_173413183_D_354833686, D_173413183_D_661148931, "SEASADDMOS1 (Less than 1 month)")
+
+#REPLACE FIRST THREE WITH SEASADDYRS, SEASADDOTH, SEASADDSUM
+  #home2
+funct_HOMEADD3(D_928112898_D_451310566, D_576956950, D_710449106, D_279093430_D_476938134, D_279093430_D_561635035, D_279093430_D_715370929, D_279093430_D_109991481, D_279093430_D_494380686, D_279093430_D_440796912, D_657986901_D_726739712, D_657986901_D_149514187, D_657986901_D_845446624, D_657986901_D_677739650, "MonthAdd_2")
+
+funct_HOMEADD3(D_928112898_D_928112898_D_232063618, D_576956950, D_710449106, D_279093430_D_476938134, D_279093430_D_561635035, D_279093430_D_715370929, D_279093430_D_109991481, D_279093430_D_494380686, D_279093430_D_440796912, D_657986901_D_726739712, D_657986901_D_149514187, D_657986901_D_845446624, D_657986901_D_677739650, "SEASADDMOS2 (Less than 1 month)")
+
+
+#home3
+funct_HOMEADD3(D_412195193_D_451310566, D_463952618, D_982650994, D_143927994_D_119483547, D_143927994_D_194338739, D_143927994_D_113352592, D_143927994_D_768114466, D_143927994_D_938180781, D_143927994_D_733365745, D_564684946_D_148846635, D_564684946_D_192663941, D_564684946_D_245044197, D_564684946_D_261025083, "MonthAdd_3")
+
+funct_HOMEADD3(D_412195193_D_412195193_D_232063618, D_463952618, D_982650994, D_143927994_D_119483547, D_143927994_D_194338739, D_143927994_D_113352592, D_143927994_D_768114466, D_143927994_D_938180781, D_143927994_D_733365745, D_564684946_D_148846635, D_564684946_D_192663941, D_564684946_D_245044197, D_564684946_D_261025083, "SEASADDMOS3 (Less than 1 month)")
+
+
+#home4
+funct_HOMEADD3(D_750000285_D_451310566, D_959488634, D_945794974, D_935378391_D_785588454, D_935378391_D_419659205, D_935378391_D_733619119, D_935378391_D_843680322, D_935378391_D_716343828, D_935378391_D_497260033, D_558981691_D_571926996, D_558981691_D_645589113, D_558981691_D_701056236, D_558981691_D_398249766, "MonthAdd_4")
+
+funct_HOMEADD3(D_750000285_D_750000285_D_232063618, D_959488634, D_945794974, D_935378391_D_785588454, D_935378391_D_419659205, D_935378391_D_733619119, D_935378391_D_843680322, D_935378391_D_716343828, D_935378391_D_497260033, D_558981691_D_571926996, D_558981691_D_645589113, D_558981691_D_701056236, D_558981691_D_398249766, "SEASADDMOS4 (Less than 1 month)")
+
+
+#home5
+funct_HOMEADD3(D_849979952_D_451310566, D_696017690, D_663869343, D_320166033_D_275244758, D_320166033_D_688216428, D_320166033_D_570311888, D_320166033_D_557852952, D_320166033_D_970217879, D_320166033_D_452103273, D_194944818_D_101804763, D_194944818_D_502068619, D_194944818_D_787391994, D_194944818_D_540340377, "MonthAdd_5")
+
+funct_HOMEADD3(D_849979952_D_849979952_D_232063618, D_696017690, D_663869343, D_320166033_D_275244758, D_320166033_D_688216428, D_320166033_D_570311888, D_320166033_D_557852952, D_320166033_D_970217879, D_320166033_D_452103273, D_194944818_D_101804763, D_194944818_D_502068619, D_194944818_D_787391994, D_194944818_D_540340377, "SEASADDMOS5 (Less than 1 month)")
+
+
+#home6 D_552298163_D_451310566
+#funct_HOMEADD3(D_552298163_D_451310566, D_424272506, D_275978701, D_383535171_D_666445636, D_383535171_D_398622449, D_383535171_D_888514303, D_383535171_D_905002640, D_383535171_D_687407917, D_383535171_D_932828568, D_508587741_D_686611963, D_508587741_D_900950849, D_508587741_D_103689435, D_508587741_D_659457234, "MonthAdd_6")
+
+funct_HOMEADD3(D_552298163_D_552298163_D_232063618, D_424272506, D_275978701, D_383535171_D_666445636, D_383535171_D_398622449, D_383535171_D_888514303, D_383535171_D_905002640, D_383535171_D_687407917, D_383535171_D_932828568, D_508587741_D_686611963, D_508587741_D_900950849, D_508587741_D_103689435, D_508587741_D_659457234, "SEASADDMOS6 (Less than 1 month)")
+
+
+#home7
+funct_HOMEADD3(D_710443293_D_451310566, D_484550481, D_195803565, D_133566757_D_199489170, D_133566757_D_605155921, D_133566757_D_384403974, D_133566757_D_585153023, D_133566757_D_248996395, D_133566757_D_525778327, D_293954660_D_860984191, D_293954660_D_892150843, D_293954660_D_230376384, D_293954660_D_526462982, "MonthAdd_7")
+
+funct_HOMEADD3(D_710443293_D_710443293_D_232063618, D_484550481, D_195803565, D_133566757_D_199489170, D_133566757_D_605155921, D_133566757_D_384403974, D_133566757_D_585153023, D_133566757_D_248996395, D_133566757_D_525778327, D_293954660_D_860984191, D_293954660_D_892150843, D_293954660_D_230376384, D_293954660_D_526462982, "SEASADDMOS7 (Less than 1 month)")
+
+
+#home8
+#funct_HOMEADD3(D_878144094_D_451310566, D_773680071, D_282326355, D_509553290_D_295693777, D_509553290_D_646099557, D_509553290_D_367684056, D_509553290_D_389478638, D_509553290_D_949478044, D_509553290_D_298170847, D_268612977_D_599753334, D_268612977_D_467126157, D_268612977_D_421779583, D_268612977_D_587765197, "MonthAdd_8")
+
+funct_HOMEADD3(D_878144094_D_878144094_D_232063618, D_773680071, D_282326355, D_509553290_D_295693777, D_509553290_D_646099557, D_509553290_D_367684056, D_509553290_D_389478638, D_509553290_D_949478044, D_509553290_D_298170847, D_268612977_D_599753334, D_268612977_D_467126157, D_268612977_D_421779583, D_268612977_D_587765197, "SEASADDMOS8 (Less than 1 month)")
+
+```
+
+## SEASWTR1_# and SEASWTR3_#
+```{r, echo=FALSE, warning=FALSE}
+
+#Only display if (SEASHOME=1) or (SEASADDSUM1 = 0) or (SEASTNUM <> NA) or (SEAFULLST <> NA) or (SEAAPT <> NA) or (SEACITY <> NA) or (SEACITY_FOLLOWUP <> NA) or (SEAST <> NA) or (SEAST_FOLLOWUP <> NA) or (SEAZIP <> NA) or (SEAZIP_FOLLOWUP <> NA) or (SEACOUNTRY <> NA) or (SEACOUNTRY_FOLLOWUP <> NA)
+#REPLACE FIRST THREE WITH SEASADDYRS1, SEASHOME, SEASADDSUM1
+#home1
+funct_SEAYRS1_1(D_426743354_D_426743354, D_342677547, D_710449106, D_376408004_D_234037089, D_376408004_D_416862112, D_376408004_D_556576930, D_376408004_D_304326324, D_376408004_D_812433386, D_376408004_D_477319994, D_173413183_D_416620941, D_173413183_D_915859406, D_173413183_D_354833686, D_173413183_D_661148931, "SEASWTR1_1")
+
+funct_SEAYRS1_1(D_598478268_D_598478268, D_342677547, D_710449106, D_376408004_D_234037089, D_376408004_D_416862112, D_376408004_D_556576930, D_376408004_D_304326324, D_376408004_D_812433386, D_376408004_D_477319994, D_173413183_D_416620941, D_173413183_D_915859406, D_173413183_D_354833686, D_173413183_D_661148931, "SEASWTR3_1")
+#REPLACE FIRST THREE WITH SEASADDYRS, SEASADDOTH, SEASADDSUM
+
+
+  #home2
+funct_SEAYRS1(D_170035952_D_170035952, D_576956950, D_710449106, D_279093430_D_476938134, D_279093430_D_561635035, D_279093430_D_715370929, D_279093430_D_109991481, D_279093430_D_494380686, D_279093430_D_440796912, D_657986901_D_726739712, D_657986901_D_149514187, D_657986901_D_845446624, D_657986901_D_677739650, "SEASWTR1_2")
+
+funct_SEAYRS1(D_823509509_D_823509509, D_576956950, D_710449106, D_279093430_D_476938134, D_279093430_D_561635035, D_279093430_D_715370929, D_279093430_D_109991481, D_279093430_D_494380686, D_279093430_D_440796912, D_657986901_D_726739712, D_657986901_D_149514187, D_657986901_D_845446624, D_657986901_D_677739650, "SEASWTR3_2")
+
+
+#home3
+funct_SEAYRS1(D_771505558_D_771505558, D_463952618, D_982650994, D_143927994_D_119483547, D_143927994_D_194338739, D_143927994_D_113352592, D_143927994_D_768114466, D_143927994_D_938180781, D_143927994_D_733365745, D_564684946_D_148846635, D_564684946_D_192663941, D_564684946_D_245044197, D_564684946_D_261025083, "SEASWTR1_3")
+
+funct_SEAYRS1(D_149476435_D_149476435, D_463952618, D_982650994, D_143927994_D_119483547, D_143927994_D_194338739, D_143927994_D_113352592, D_143927994_D_768114466, D_143927994_D_938180781, D_143927994_D_733365745, D_564684946_D_148846635, D_564684946_D_192663941, D_564684946_D_245044197, D_564684946_D_261025083, "SEASWTR3_3")
+
+
+#home4
+funct_SEAYRS1(D_105941645_D_105941645, D_959488634, D_945794974, D_935378391_D_785588454, D_935378391_D_419659205, D_935378391_D_733619119, D_935378391_D_843680322, D_935378391_D_716343828, D_935378391_D_497260033, D_558981691_D_571926996, D_558981691_D_645589113, D_558981691_D_701056236, D_558981691_D_398249766, "SEASWTR1_4")
+
+funct_SEAYRS1(D_719647239_D_719647239, D_959488634, D_945794974, D_935378391_D_785588454, D_935378391_D_419659205, D_935378391_D_733619119, D_935378391_D_843680322, D_935378391_D_716343828, D_935378391_D_497260033, D_558981691_D_571926996, D_558981691_D_645589113, D_558981691_D_701056236, D_558981691_D_398249766, "SEASWTR3_4")
+
+
+#home5
+funct_SEAYRS1(D_322665488_D_322665488, D_696017690, D_663869343, D_320166033_D_275244758, D_320166033_D_688216428, D_320166033_D_570311888, D_320166033_D_557852952, D_320166033_D_970217879, D_320166033_D_452103273, D_194944818_D_101804763, D_194944818_D_502068619, D_194944818_D_787391994, D_194944818_D_540340377, "SEASWTR1_5")
+
+funct_SEAYRS1(D_953722451_D_953722451, D_696017690, D_663869343, D_320166033_D_275244758, D_320166033_D_688216428, D_320166033_D_570311888, D_320166033_D_557852952, D_320166033_D_970217879, D_320166033_D_452103273, D_194944818_D_101804763, D_194944818_D_502068619, D_194944818_D_787391994, D_194944818_D_540340377, "SEASWTR3_5")
+
+
+#home6
+funct_SEAYRS1(D_118738120_D_118738120, D_424272506, D_275978701, D_383535171_D_666445636, D_383535171_D_398622449, D_383535171_D_888514303, D_383535171_D_905002640, D_383535171_D_687407917, D_383535171_D_932828568, D_508587741_D_686611963, D_508587741_D_900950849, D_508587741_D_103689435, D_508587741_D_659457234, "SEASWTR1_6")
+
+funct_SEAYRS1(D_541565665_D_541565665, D_424272506, D_275978701, D_383535171_D_666445636, D_383535171_D_398622449, D_383535171_D_888514303, D_383535171_D_905002640, D_383535171_D_687407917, D_383535171_D_932828568, D_508587741_D_686611963, D_508587741_D_900950849, D_508587741_D_103689435, D_508587741_D_659457234, "SEASWTR3_6")
+
+
+#home7
+funct_SEAYRS1(D_728256340_D_728256340, D_484550481, D_195803565, D_133566757_D_199489170, D_133566757_D_605155921, D_133566757_D_384403974, D_133566757_D_585153023, D_133566757_D_248996395, D_133566757_D_525778327, D_293954660_D_860984191, D_293954660_D_892150843, D_293954660_D_230376384, D_293954660_D_526462982, "SEASWTR1_7")
+
+funct_SEAYRS1(D_274257975_D_274257975, D_484550481, D_195803565, D_133566757_D_199489170, D_133566757_D_605155921, D_133566757_D_384403974, D_133566757_D_585153023, D_133566757_D_248996395, D_133566757_D_525778327, D_293954660_D_860984191, D_293954660_D_892150843, D_293954660_D_230376384, D_293954660_D_526462982, "SEASWTR3_7")
+
+
+#home8
+funct_SEAYRS1(D_603945794_D_603945794, D_773680071, D_282326355, D_509553290_D_295693777, D_509553290_D_646099557, D_509553290_D_367684056, D_509553290_D_389478638, D_509553290_D_949478044, D_509553290_D_298170847, D_268612977_D_599753334, D_268612977_D_467126157, D_268612977_D_421779583, D_268612977_D_587765197, "SEASWTR1_8")
+
+funct_SEAYRS1(D_636020848_D_636020848, D_773680071, D_282326355, D_509553290_D_295693777, D_509553290_D_646099557, D_509553290_D_367684056, D_509553290_D_389478638, D_509553290_D_949478044, D_509553290_D_298170847, D_268612977_D_599753334, D_268612977_D_467126157, D_268612977_D_421779583, D_268612977_D_587765197, "SEASWTR3_8")
+
+
+```
+
+
+
+
+
+#CHILDHOOD HOMES
+
+## CHILDADD2 Don't know
+```{r, echo=FALSE, warning=FALSE}
+
+#Only display if (CHILDTEST = NA) and (CHILDCITY = NA OR CHILDST = NA OR CHILDZIP = NA OR CHILDCOUNTRY = NA)
+funct_HOMEADD2(D_264797252_D_264797252, D_632533534_D_128827522, D_632533534_D_439447560, D_632533534_D_286781627, D_632533534_D_733929451, "CHILDADD2 Don't know")
+```
+
+## CHILDSTRNAME Cross Streets or Don't know
+```{r, echo=FALSE, warning=FALSE}
+#Only display if CHILDSTNUM = NA AND CHILDFULLST = NA AND ((CHILDCITY <> NA) or (CHILDST <> NA) or (CHILDZIP <> NA) or (CHILDCOUNTRY <> NA) or (CHILDCITY_FOLLOWUP <> NA) or (CHILDST_FOLLOWUP <> NA) or (CHILDZIP_FOLLOWUP <> NA) or (CHILDCOUNTRY_FOLLOWUP <> NA))
+funct_HOMEADD3(D_469914719_D_952124199, D_469914719_D_204186397, D_469914719_D_469914719, D_632533534_D_284547539, D_632533534_D_802585033, D_632533534_D_128827522, D_632533534_D_439447560, D_632533534_D_286781627, D_632533534_D_733929451, D_264797252_D_890792569, D_264797252_D_451394598, D_264797252_D_984908796, D_264797252_D_847327251, "CHILDSTRNAME Cross Streets or Don't know")
+
+```
+
+
+
+
+
+# WORK COMMUTE
+
+## CURWORK2 Don't know
+```{r, echo=FALSE, warning=FALSE}
+
+#Only display if CURWORKCITY = NA OR CURWORKST = NA OR CURWORKZIP = NA OR CURWORKCOUNTRY = NA
+funct_HOMEADD2(D_263588196_D_263588196, D_596318751_D_959804472, D_596318751_D_774707280, D_596318751_D_182144476, D_596318751_D_294634899, "CURWORK2 Don't know")
+
+```
+
+## CURWORKST_# Cross Streets or Don't know
+```{r, echo=FALSE, warning=FALSE}
+
+#Only display if CURWORKSTNUM = NA AND CURWORKFULLST = NA AND ((CURWORKCITY <> NA) or (CURWORKST <> NA) or (CURWORKZIP <> NA) or (CURWORKCOUNTRY <> NA) or (CURWORKCITY_FOLLOWUP <> NA) or (CURWORKST_FOLLOWUP <> NA) or (CURWORKZIP_FOLLOWUP <> NA) or (CURWORKCOUNTRY_FOLLOWUP <> NA))
+funct_HOMEADD3(D_845811202_D_510435329, D_845811202_D_845811202, D_845811202_D_520264332, D_596318751_D_493984171, D_596318751_D_253017624, D_596318751_D_959804472, D_596318751_D_774707280, D_596318751_D_182144476, D_596318751_D_294634899, D_263588196_D_583500714, D_263588196_D_742105146, D_263588196_D_101341673, D_263588196_D_237204853, "CURWORKST Cross Streets or Don't know")
+
+
+```
+
+## CURWORKT3,4,5
+```{r, echo=FALSE, warning=FALSE}
+
+#Only display if (CURWORKT2A_1 = 1) OR (CURWORKT2A_2 = 1) OR (CURWORKT2A_3 = 1) OR (CURWORKT2A_4 = 1) OR (CURWORKT2B_1 = 1) OR (CURWORKT2B_2 = 1) OR (CURWORKT2B_3 = 1) OR (CURWORKT2B_4 = 1) OR (CURWORKT2C_1 = 1) OR (CURWORKT2C_2 = 1) OR (CURWORKT2C_3 = 1) OR (CURWORKT2C_4 = 1) OR (CURWORKT2D_1 = 1) OR (CURWORKT2D_2 = 1) OR (CURWORKT2D_3 = 1) OR (CURWORKT2D_4 = 1) OR (CURWORKT2E_1 = 1) OR (CURWORKT2E_2 = 1) OR (CURWORKT2E_3 = 1) OR (CURWORKT2E_4 = 1) OR (CURWORKT2F_1 = 1) OR (CURWORKT2F_2 = 1) OR (CURWORKT2F_3 = 1) OR (CURWORKT2F_4 = 1) OR (CURWORKT2G_1 = 1) OR (CURWORKT2G_2 = 1) OR (CURWORKT2G_3 = 1) OR (CURWORKT2G_4 = 1) OR (CURWORKT2H_1 = 1) OR (CURWORKT2H_2 = 1) OR (CURWORKT2H_3 = 1) OR (CURWORKT2
+
+funct_CURWORKT3_4_5(D_155199731, D_181422361, D_333362587, "CURWORKT3,4,5")
+
+```
+
+## CURWORKT11,12,13
+```{r, echo=FALSE, warning=FALSE}
+
+#Only display if (CURWORKT2A_1 = 1) OR (CURWORKT2A_2 = 1) OR (CURWORKT2A_3 = 1) OR (CURWORKT2A_4 = 1) OR (CURWORKT2B_1 = 1) OR (CURWORKT2B_2 = 1) OR (CURWORKT2B_3 = 1) OR (CURWORKT2B_4 = 1) OR (CURWORKT2C_1 = 1) OR (CURWORKT2C_2 = 1) OR (CURWORKT2C_3 = 1) OR (CURWORKT2C_4 = 1) OR (CURWORKT2D_1 = 1) OR (CURWORKT2D_2 = 1) OR (CURWORKT2D_3 = 1) OR (CURWORKT2D_4 = 1) OR (CURWORKT2E_1 = 1) OR (CURWORKT2E_2 = 1) OR (CURWORKT2E_3 = 1) OR (CURWORKT2E_4 = 1) OR (CURWORKT2F_1 = 1) OR (CURWORKT2F_2 = 1) OR (CURWORKT2F_3 = 1) OR (CURWORKT2F_4 = 1) OR (CURWORKT2G_1 = 1) OR (CURWORKT2G_2 = 1) OR (CURWORKT2G_3 = 1) OR (CURWORKT2G_4 = 1) OR (CURWORKT2H_1 = 1) OR (CURWORKT2H_2 = 1) OR (CURWORKT2H_3 = 1) OR (CURWORKT2
+
+funct_CURWORKT11_12_13(D_186636914, D_936393993, D_168563469, "CURWORKT11,12,13")
+
+```
+
+
+
+## PREWORK2 Don't know
+```{r, echo=FALSE, warning=FALSE}
+
+#Only display if PREWORKCITY = NA OR PREWORKST = NA OR PREWORKZIP = NA OR PREWORKCOUNTRY = NA
+funct_HOMEADD2(D_350394531_D_350394531, D_992180692_D_962868433, D_992180692_D_108530997, D_992180692_D_110852652, D_992180692_D_867109611, "PREWORK2 Don't know")
+
+```
+
+## PREWORKST Cross Streets or Don't know
+```{r, echo=FALSE, warning=FALSE}
+
+#Only display if PREWORKSTNUM = NA AND PREWORKFULLST = NA AND ((PREWORKCITY <> NA) or (PREWORKST <> NA) or (PREWORKZIP <> NA) or (PREWORKCOUNTRY <> NA) or (PREWORKCITY_FOLLOWUP <> NA) or (PREWORKST_FOLLOWUP <> NA) or (PREWORKZIP_FOLLOWUP <> NA) or (PREWORKCOUNTRY_FOLLOWUP <> NA))
+funct_HOMEADD3(D_733317111_D_584350267, D_733317111_D_840147245, D_733317111_D_733317111, D_992180692_D_903896611, D_992180692_D_855583262, D_992180692_D_962868433, D_992180692_D_108530997, D_992180692_D_110852652, D_992180692_D_867109611, D_350394531_D_652022112, D_350394531_D_730666903, D_350394531_D_168091937, D_350394531_D_132779701, "PREWORKST Cross Streets or Don't know")
+  
+```
+
+
+## PREWORKT3,4
+```{r, echo=FALSE, warning=FALSE}
+
+## HAVE TO ANSWER PREWORK= YES TO SEE THESE QUESTIONS, PREWORKRES CANT =1, PREWORK1A CAN'T EQUAL 1
+
+funct_PREWORKT3_4(D_335218615,D_564557026, "PREWORKT3,4")
+
+#funct_MOVEIN_1(D_335218615, D_992180692_D_903896611, D_992180692_D_855583262, D_992180692_D_962868433, D_992180692_D_108530997, D_992180692_D_110852652, D_992180692_D_867109611, D_350394531_D_652022112, D_350394531_D_730666903, D_350394531_D_168091937, D_350394531_D_132779701, "PREWORKT3")
+
+#funct_MOVEIN_1(D_564557026, D_992180692_D_903896611, D_992180692_D_855583262, D_992180692_D_962868433, D_992180692_D_108530997, D_992180692_D_110852652, D_992180692_D_867109611, D_350394531_D_652022112, D_350394531_D_730666903, D_350394531_D_168091937, D_350394531_D_132779701, "PREWORKT4")
+
+```
+
+
+
+
+# SCHOOL COMMUTE
+
+## CURSCHT2 Don't know
+```{r, echo=FALSE, warning=FALSE}
+
+#Only display if CURSCHCITY = NA OR CURSCHST = NA OR CURSCHKZIP = NA OR CURSCHCOUNTRY = NA
+funct_HOMEADD2(D_668887646_D_668887646, D_914696832_D_161170041, D_914696832_D_660217075, D_914696832_D_884494489, D_914696832_D_403679963, "CURSCHT2 Don't know")
+
+```
+
+## CURSCHTKST Cross Streets or Don't know
+```{r, echo=FALSE, warning=FALSE}
+
+#Only display if CURSCHSTNUM = NA AND CURSCHFULLST = NA AND ((CURSCHCITY <> NA) or (CURSCHST <> NA) or (CURSCHZIP <> NA) or (CURSCHCOUNTRY <> NA) or (CURSCHCITY_FOLLOWUP <> NA) or (CURSCHST_FOLLOWUP <> NA) or (CURSCHZIP_FOLLOWUP <> NA) or (CURSCHCOUNTRY_FOLLOWUP <> NA))
+funct_HOMEADD3(D_443679537_D_494271326, D_443679537_D_952170182, D_443679537_D_443679537, D_914696832_D_970996351, D_914696832_D_249657148, D_914696832_D_161170041, D_914696832_D_660217075, D_914696832_D_884494489, D_914696832_D_403679963, D_668887646_D_225725599, D_668887646_D_977086216, D_668887646_D_997041632, D_668887646_D_147113671, "CURSCHTKST Cross Streets or Don't know")
+
+
+
+```
+
+## CURSCHT3,4,5
+```{r, echo=FALSE, warning=FALSE}
+
+#Only display if (CURSCHT2A_1 = 1) OR (CURSCHT2A_2 = 1) OR (CURSCHT2A_3 = 1) OR (CURSCHT2A_4 = 1) OR (CURSCHT2B_1 = 1) OR (CURSCHT2B_2 = 1) OR (CURSCHT2B_3 = 1) OR (CURSCHT2B_4 = 1) OR (CURSCHT2C_1 = 1) OR (CURSCHT2C_2 = 1) OR (CURSCHT2C_3 = 1) OR (CURSCHT2C_4 = 1) OR (CURSCHT2D_1 = 1) OR (CURSCHT2D_2 = 1) OR (CURSCHT2D_3 = 1) OR (CURSCHT2D_4 = 1) OR (CURSCHT2E_1 = 1) OR (CURSCHT2E_2 = 1) OR (CURSCHT2E_3 = 1) OR (CURSCHT2E_4 = 1) OR (CURSCHT2F_1 = 1) OR (CURSCHT2F_2 = 1) OR (CURSCHT2F_3 = 1) OR (CURSCHT2F_4 = 1) OR (CURSCHT2G_1 = 1) OR (CURSCHT2G_2 = 1) OR (CURSCHT2G_3 = 1) OR (CURSCHT2G_4 = 1) OR (CURSCHT2H_1 = 1) OR (CURSCHT2H_2 = 1) OR (CURSCHT2H_3 = 1) OR (CURSCHT2H_4 = 1)
+
+funct_CURSCHT3_4_5(D_136660779, D_107050954, D_559488982, "CURSCHT3,4,5")
+
+```
+
+## CURSCHT11,12,13
+```{r, echo=FALSE, warning=FALSE}
+
+#Only display if (CURSCHT10A_1 = 1) OR (CURSCHT10A_2 = 1) OR (CURSCHT10A_3 = 1) OR (CURSCHT10A_4 = 1) OR (CURSCHT10B_1 = 1) OR (CURSCHT10B_2 = 1) OR (CURSCHT10B_3 = 1) OR (CURSCHT10B_4 = 1) OR (CURSCHT10C_1 = 1) OR (CURSCHT10C_2 = 1) OR (CURSCHT10C_3 = 1) OR (CURSCHT10C_4 = 1) OR (CURSCHT10D_1 = 1) OR (CURSCHT10D_2 = 1) OR (CURSCHT10D_3 = 1) OR (CURSCHT10D_4 = 1) OR (CURSCHT10E_1 = 1) OR (CURSCHT10E_2 = 1) OR (CURSCHT10E_3 = 1) OR (CURSCHT10E_4 = 1) OR (CURSCHT10F_1 = 1) OR (CURSCHT10F_2 = 1) OR (CURSCHT10F_3 = 1) OR (CURSCHT10F_4 = 1) OR (CURSCHT10G_1 = 1) OR (CURSCHT10G_2 = 1) OR (CURSCHT10G_3 = 1) OR (CURSCHT10G_4 = 1) OR (CURSCHT10H_1 = 1) OR (CURSCHT10H_2 = 1) OR (CURSCHT10H_3 = 1) OR (CURSCHT10H_4 = 1)
+
+funct_CURSCHT11_12_13(D_705673076, D_333852852, D_776580384, "CURSCHT11,12,13")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

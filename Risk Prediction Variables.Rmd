@@ -1,0 +1,1298 @@
+---
+title: "Nico request: Risk prediction models using baseline survey data"
+subtitle: "Univariate distributions of key variables"
+author: "Kelsey Dowling"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r libraries, include=FALSE}
+
+
+#  pdf-engine: xelatex
+#tinytex::install_tinytex()
+
+library(bigrquery)
+library(epiDisplay) ##recommended applied here crosstable, tab1
+library(gmodels) ##recommended
+library(arsenal)
+library(gtsummary)
+library(rio)
+
+
+
+library(ggplot2)
+library(gridExtra)
+library(scales)
+library(gt)
+library(tinytex)
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(lubridate) ###date time
+library(stringr) ###to work on patterns, charaters
+options(tinytex.verbose = TRUE)
+
+bq_auth()
+```
+
+
+```{r merge1, include=FALSE, warning=FALSE}
+
+## MERGE MOD1V1, MOD1V2
+
+
+dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
+dd <- dplyr::bind_rows(dictionary,.id="CID")
+dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
+dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name')
+
+dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
+dd$CID <- rownames(dd)
+#https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
+#devtools::install_github("tidyverse/reprex")
+
+project <- "nih-nci-dceg-connect-prod-6d04"
+billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be consistent
+##517311251 Date/time Status of Completion of Background and Overall Health                         SrvBOH_TmComplete_v1r0
+##949302066 Flag for Baseline Module Background and Overall Health                        SrvBOH_BaseStatus_v1r0
+recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
+                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935'")
+recr_m1 <- bq_table_download(recr_M1,bigint = "integer64",n_max = Inf, page_size = 10000)
+cnames <- names(recr_m1)
+# Check that it doesn't match any non-number
+numbers_only <- function(x) !grepl("\\D", x)
+# to check variables in recr_noinact_wl1
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(recr_m1,varname)
+  recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+sql_M1_1 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
+sql_M1_2 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
+
+
+M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64") #1436 #1436 vars: 1507 01112023 
+M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64") #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
+
+mod1_v1 <- M1_V1
+cnames <- names(M1_V1)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v1,varname)
+  mod1_v1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+mod1_v2 <- M1_V2
+cnames <- names(M1_V2)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v2,varname)
+  mod1_v2[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+M1_V1.var <- colnames(M1_V1)
+M1_V2.var <- colnames(M1_V2)
+var.matched <- M1_V1.var[which(M1_V1.var %in% M1_V2.var)]
+length(var.matched)  #1275 #1278 vars 01112023 #1348 vars 05022023
+
+V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched] #232 #229 01112023 #159 05022023
+V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched] #253 #253 01112023 #545 05022023
+
+length(M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID])
+#[1] 59 with the completion of two versions of Module1 
+#[1] 62 with completing both versions of M1 ###double checked 03/28/2023
+#68 double checked 05/02/2023
+
+common.IDs <- M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID]
+M1_V1_common <- mod1_v1[,var.matched]
+
+M1_V2_common <- mod1_v2[,var.matched]
+M1_V1_common$version <- 1
+M1_V2_common$version <- 2
+
+##to check the completion of M1 among these duplicates
+partM1_dups <- recr_m1[which(recr_m1$Connect_ID %in% common.IDs),]
+table(partM1_dups$d_949302066)
+
+M1_common  <- rbind(M1_V1_common, M1_V2_common) #including 136 duplicates (version 1 and version 2) from 68 participants 05022023
+#M1_response <- matrix(data=NA, nrow=118, ncol=967)
+
+m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)] #230 vars 03282023 #160 vars 05/02/2023
+m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] #255 vars 03282023 #546 vars 05/02/2023
+m1_v1_only$version <- 1
+m1_v2_only$version <- 2
+#for (i in 1:length)
+##to check the completion in each version
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #1364 03282023 # 1370 05022023
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #4870 03282023 # 5731 05022023
+
+
+m1_common <- rbind(M1_V1_common,M1_V2_common)
+m1_common_v1 <- base::merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
+m1_combined_v1v2 <- base::merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
+m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] #7289 including duplicates 05022023
+
+m1_complete <- m1_complete %>% arrange(desc(version)) 
+
+
+m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),] 
+table(m1_complete_nodup$version)
+
+
+
+
+# parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
+# D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
+# D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, 
+# d_663265240, d_878865966, d_684635302, d_167958071,
+# d_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_914639140, d_311580100, d_371067537 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP`  
+# where Connect_ID IS NOT NULL"
+parts <- "SELECT Connect_ID, token, d_512820379, D_471593703, state_d_934298480, D_230663853,D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, d_663265240, d_878865966, d_684635302, d_167958071, d_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_914639140, d_311580100, d_371067537 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and (d_949302066='231311385')" 
+parts_table <- bq_project_query(project, parts)
+parts_data <- bq_table_download(parts_table, bigint = "integer64",n_max = Inf, page_size = 10000)
+
+parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID)
+
+
+merged= left_join(m1_complete_nodup, parts_data, by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
+dim(merged)
+
+
+
+
+data_tib_m1 <- as_tibble(merged)
+#dim(base_vars)
+
+knitr::opts_chunk$set(comment = NA)
+
+
+```
+
+
+
+
+
+```{r function1, warning=FALSE, include=FALSE}
+
+#Boxplot
+boxp_funct <- function(CID,Title, Xlab) {
+  CID_SYM <- rlang::ensym(CID)
+  data_tib_m1 %>% mutate(!!CID_SYM:=as.numeric(!!CID_SYM)) %>%
+    filter(!is.na(!!CID_SYM)) %>%
+    ggplot(aes(x=!!CID_SYM))+
+    xlab(Xlab) + geom_boxplot()+  ggtitle(Title)+
+    theme(axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()  #remove y axis ticks
+        )
+}
+
+
+##GT TABLE: Questions that all participants asked, update dictionary as new answer options come up
+dict <- list("104430631"="No", "353358909"="Yes", "589959753"="A little shorter", "623310018"="A lot shorter", "978204320"= "Grade School(Grades 1-8)", "935502060"="Some High School, No Diploma", "404564707"= "High School Graduate or GED", "432193665"="Some College, No Degree", "890756124"="Technical or Trade School After High School", "766964355"="Associate's Degree", "875342283"="Bachelor's Degree", "598242454"="Advanced Degree", "709650750"="Biological Child", "810290359"="Adopted Child", "509607548"="Step Child","784922042"="Related to me in some other way", "288105839"=" Yes, fraternal twins", "626558982"="Yes, triplets or higher multiple birth", "178420302"="Do not Know", "536341288"="Female", "576796184"="Intersex or Other", "654207589"="Male","555374628"="Full Sibling", "871673221"="Half Sibling, Same Mother",  "198654048"="Half Sibling, Same Father", "807835037"="Other", "274062548"="More than 3 months ago", "958538953"="In the past 3 months", "317567178"="In the past month", "484055234"="In the past year",  "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago","958538953"="In the past 3 months",  "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible", "764708931"="Very flexible","0"="No", "1"="Yes", "536341288"="Female", "218837028"="Woman (New Response)", "983318667"="Man (New Response)"  , "654207589"="Male","746038746"="Declined", "805712793"="Genderqueer","486192236"="Non-Binary", "807835037"="Other","873138103"="Transgender Woman","405267600"="Transgender Man", "220083334"="Very Feminine","541300533"="Mostly Feminine","878286618"="Somewhat Feminine","910745276"="Equally feminine and masculine","915528806"="Very masculine","265452386"="Mostly Masculine","510148951"="Somewhat Masculine","271882746"="Straight or heterosexual", "903084185"="Lesbian, gay, or homosexual", "999994434"="Bisexual")
+
+simple_funct1 <- function(CID, Title){  
+  CID_SYM <- rlang::ensym(CID)
+  dt_select <- data_tib_m1 %>%  select(Connect_ID, !!CID_SYM)
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%  
+  # summary_rows(
+  #   columns = c(n,percentage),    
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+}
+
+
+#GT table with one filter/skip logic
+one_logic_funct <- function(CID, CID_prev, Prev_Answer, Title){  
+  CID_SYM <- rlang::ensym(CID)
+  CID_SYM_P <- rlang::ensym(CID_prev)
+  dt_select <- data_tib_m1 %>%  filter(!!CID_SYM_P == Prev_Answer) %>%  select(Connect_ID, !!CID_SYM) 
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+}
+
+
+boxp_funct <- function(CID,Title, Xlab) {
+  CID_SYM <- rlang::ensym(CID)
+  merged %>% mutate(!!CID_SYM:=as.numeric(!!CID_SYM)) %>%
+    filter(!is.na(!!CID_SYM)) %>%
+    ggplot(aes(x=!!CID_SYM, fill=as.character(D_407056417)))+
+    xlab(Xlab) + geom_boxplot()+  ggtitle(Title)+
+    scale_fill_discrete(name = "Sex at Birth", labels=c("Female", "Male")) + 
+    scale_y_continuous(labels = scales::number_format(accuracy = 0.01))
+}
+
+
+#GT table for siblings
+sib_logic_funct <- function(CID, Sib_Num, Title){  
+  CID_SYM <- rlang::ensym(CID)
+  data_tib_m1$D_694265648 <- as.numeric(data_tib_m1$D_694265648)
+  dt_select <- data_tib_m1 %>%  filter(D_694265648 >= Sib_Num) %>%  select(Connect_ID, !!CID_SYM) 
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F,
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+}
+
+
+#GT table for children
+child_logic_funct <- function(CID, Child_Num, Title){  
+  CID_SYM <- rlang::ensym(CID)
+  data_tib_m1$D_446999144 <- as.numeric(data_tib_m1$D_446999144)
+  dt_select <- data_tib_m1 %>%  filter(D_446999144 >= Child_Num) %>%  select(Connect_ID, !!CID_SYM) 
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F,
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+}
+
+
+
+```
+
+
+```{r query3, include=FALSE}
+
+
+querymod3 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module3_v1_JP` where Connect_ID IS NOT NULL"
+mod3_table <- bq_project_query(project, querymod3)
+mod3_data <- bq_table_download(mod3_table, bigint = "integer64")
+mod3_data$Connect_ID <- as.numeric(mod3_data$Connect_ID)
+
+
+data_all3= left_join( mod3_data,parts_data, by="Connect_ID")
+
+data_all3 <- data_all3 %>% filter(d_976570371==231311385)
+
+data_tib_m3 <- as_tibble(data_all3)
+
+
+```
+
+## Age at Enrollment
+```{r age, warning=FALSE,echo=FALSE}
+
+which_age= data_tib_m1 %>%  mutate(age= case_when(state_d_934298480==124276120 ~ "Age 40-45",
+                                             state_d_934298480==450985724 ~ "Age 46-50",
+                                             state_d_934298480==363147933 ~ "Age 51-55",
+                                             state_d_934298480==636706443 ~ "Age 56-60",
+                                             state_d_934298480==771230670 ~ "Age 61-65",
+                                             !is.na(D_150344905) ~ "Answered with Corrected Age in Mod1",
+                                             TRUE  ~ "Skipped this question"))
+
+dt_all_ages_summary <- which_age  %>% dplyr::group_by(age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(age, n, percentage)  
+
+
+dt_all_ages_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Age of Participants at Recruitment")) %>% 
+  cols_label(n= md("**Number of Participants**"), age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(participants,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = age,
+    )
+  ) %>% opt_row_striping()
+
+```
+
+
+## BMI
+```{r bmi, echo=FALSE, warning=FALSE, message=FALSE}
+data_tib_m1$D_114314839_D_340854069=as.numeric(data_tib_m1$D_114314839_D_340854069)
+data_tib_m1$D_114314839_D_600462977=as.numeric(data_tib_m1$D_114314839_D_600462977)
+
+data_tib_m1$in_D_inches= (ifelse(is.na(data_tib_m1$D_114314839_D_340854069), 0,(data_tib_m1$D_114314839_D_340854069*12)))+ 
+  (ifelse(is.na(data_tib_m1$D_114314839_D_600462977), 0, (data_tib_m1$D_114314839_D_600462977))) 
+
+data_tib_m1$D_746012894=as.numeric(data_tib_m1$D_746012894) 
+data_tib_m1$D_746012894=round(data_tib_m1$D_746012894, digits=0)
+
+data_tib_m1= data_tib_m1 %>%  mutate(BMI= (D_746012894/in_D_inches^2)*703)
+
+bmi_box= data_tib_m1 %>%  filter(!is.na(BMI)) %>%  ggplot(aes(x=BMI))+
+    xlab("Score") + geom_boxplot()+  ggtitle("BMI Distribution of Participants") + xlim(c(0,100))
+
+
+
+which_age= data_tib_m1 %>%  mutate(BMI_range= case_when(BMI<18.5 ~ "Underweight",
+                                             BMI<25 ~ "Healthy Weight",
+                                             BMI<30 ~ "Overweight",
+                                             BMI>=30 ~ "Severely Overweight",
+                                             TRUE  ~ "Skipped this question"))
+which_age$BMI_range <- factor(which_age$BMI_range,levels=c("Underweight", "Healthy Weight", "Overweight", "Severely Overweight", "Skipped this question"))
+
+dt_all_ages_summary <- which_age  %>% dplyr::group_by(BMI_range) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(BMI_range, n, percentage)  
+
+
+dt_all_ages_summary_gt <- dt_all_ages_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("BMI")) %>% 
+  cols_label(n= md("**Number of Participants**"), BMI_range = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(participants,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = BMI_range,
+    ) 
+  ) %>% opt_row_striping() 
+
+tab_footnote(
+  dt_all_ages_summary_gt,
+  md("Skipped this question means either height or weight was skipped. \n BMI calculation of 703*(weight in lbs/ height in inches sqaured). \n BMI ranges as follows: Underweight as under 18.5, Healthy weight as 18.5-24.9, Overweight as 25-29.9, Severely overweight as 30 or over. "),
+  locations = cells_column_labels(columns = BMI_range),
+  placement = c("left")
+)
+
+# 
+# 
+# # Modify the table using gt functions
+# gt_table <- gt_table |>
+#   tab_footnote(
+#     md("BMI calculation of 703*(weight in lbs/ height in inches squared). BMI ranges as follows: Underweight as under 18.5, Healthy weight as 18.5-24.9, Overweight as 25-29.9, overweight as 30 or over."),
+#     locations = cells_column_labels(columns = "BMI_range"),
+#     placement = "left"
+#   )
+# 
+# gt_table
+
+```
+
+
+
+
+
+## Frequency of Cigarette Smoking
+
+```{r cigerette, echo=FALSE, warning=FALSE, message=FALSE}
+
+cig_frequency= data_tib_m3  %>% 
+  mutate(often= case_when((D_947205597_D_712653855==0 | (D_947205597_D_712653855==1 & (D_763164658==151488193| D_763164658==805449318)))~"Never a Cigarette Smoker",
+                             (D_947205597_D_712653855==1 & (D_763164658==486319890| D_763164658==132232896) & D_798549704==317567178)~"Currently a Cigarette Smoker",
+                             (D_947205597_D_712653855==1 & (D_763164658==486319890| D_763164658==132232896)  & (D_798549704==484055234 | D_798549704==802197176))~"Formerly a Cigarette Smoker",
+                             TRUE~"Skipped all these questions"))
+
+dt_cig_frequency_summary <- cig_frequency %>% group_by(often) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(often, n, percentage)
+
+
+dt_cig_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Frequency of Cigarette Smoking")) %>% 
+  cols_label(n= md("**Number of Participants**"), often = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = often,
+    )
+  ) %>% opt_row_striping()
+
+
+```
+
+
+
+## Frequency of Cigar Smoking
+
+```{r cigar, echo=FALSE, warning=FALSE, message=FALSE}
+
+
+cigar_frequency= data_tib_m3  %>% 
+  mutate(often= case_when(D_947205597_D_198133418==0 | (D_947205597_D_198133418==1 & (D_182431332==151488193| D_182431332==805449318))~"Never a Cigar Smoker",
+                             D_947205597_D_198133418==1 & (D_182431332==486319890| D_182431332==132232896) & D_798549704==317567178~"Currently a Cigar Smoker",
+                             D_947205597_D_198133418==1 & (D_182431332==486319890| D_182431332==132232896)  & (D_789271762==484055234 | D_789271762==802197176)~"Formerly a Cigar Smoker",
+                             TRUE~"Skipped all These Questions"))
+
+
+
+dt_cigar_frequency_summary <- cigar_frequency %>% group_by(often) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(often, n, percentage)
+
+dt_cigar_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Frequency of Cigar Smoking")) %>% 
+  cols_label(n= md("**Number of Participants**"), often = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = often,
+    )
+  ) %>% opt_row_striping()
+
+
+```
+
+
+
+
+## Frequency of E-cig Smoking
+
+```{r ecig, echo=FALSE, warning=FALSE, message=FALSE}
+
+
+e_cig_frequency= data_tib_m3  %>% 
+  mutate(often= case_when(D_947205597_D_706254326==0 | (D_947205597_D_706254326==1 & (D_624111331==151488193| D_624111331==805449318))~"Never a E-cigarette Smoker",
+                             D_947205597_D_706254326==1 & (D_624111331==486319890| D_624111331==132232896) & D_238422161==317567178~"Currently a E-cigarette Smoker",
+                             D_947205597_D_706254326==1 & (D_624111331==486319890| D_624111331==132232896)  & (D_238422161==484055234 | D_238422161==802197176)~"Formerly a E-cigarette Smoker",
+                             TRUE~"Skipped all These Questions"))
+
+
+
+dt_e_cig_frequency_summary <- e_cig_frequency %>% group_by(often) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(often, n, percentage)
+
+dt_e_cig_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Frequency of Electronic Cigarette Smoking")) %>% 
+  cols_label(n= md("**Number of Participants**"), often = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = often,
+    )
+  ) %>% opt_row_striping()
+
+
+```
+
+
+
+
+## Primary Relative Diagnosed with Cancer
+### Parents
+```{r PrimRelCancerMomDad, echo=FALSE, warning=FALSE, message=FALSE}
+
+# degree1_cancer= module3 %>%  filter(ifelse(D_276353712==353358909 | D_659784914==353358909 | D_607773106_1_1==353358909 | D_607773106_2_2==353358909 | 
+#                                       D_607773106_3_3==353358909 | D_607773106_4_4==353358909 | D_607773106_5_5==353358909 | D_607773106_6_6==353358909 |
+#                                       D_607773106_7_7==353358909| D_607773106_8_8==353358909 | D_607773106_9_9==353358909| D_607773106_10_10==353358909 |
+#                                       D_607773106_11_11==353358909 | D_607773106_12_12==353358909 | D_607773106_13_13==353358909 | D_718867914_1_1==353358909 | 
+#                                       D_718867914_2_2==353358909 | D_718867914_3_3==353358909 | D_718867914_4_4==353358909 | D_718867914_5_5==353358909 |
+#                                       D_718867914_6_6==353358909 | D_718867914_7_7==353358909 | D_718867914_8_8==353358909 | D_718867914_9_9==353358909 |
+#                                       D_718867914_10_10==353358909), 1, 0)
+
+
+family= data_tib_m1  %>%  mutate(status= case_when((D_276353712==353358909 | D_659784914==353358909) ~ "Yes", 
+                                                    TRUE ~ "No"))
+# family$percentage <- round(family$percentage, digits=2)
+# dt_fam_canc_summary <- family %>% group_by(status) %>%   summarize_at(c("freq", "percentage"), sum, na.rm = TRUE)
+# 
+# knitr::kable(dt_fam_canc_summary,col.names=c("Diagnosed","Number of Participants" , "Percentage of Participants"), caption='Primary Relative(s) Diagnosed With Cancer')
+# #,row.names=FALSE, align=c("l","c","c","c"), booktabs = TRUE )
+# 
+# dt_fam_canc_summary %>%  gt::gt() %>%  ## why is this not a proper gt_tbl??
+#   fmt_number(columns = "percentage", decimals = 2) %>%
+#   tab_header(title = md("Primary Relative(s) Diagnosed With Cancer")) %>%
+#   cols_label(status = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
+#     summary_rows(
+#     column = percentage,
+#     fns= list(
+#       Sum= ~sum(.)
+#     ), decimals=0) %>%
+#   tab_options(
+#       stub.font.weight = "bold"
+#     ) %>%
+#   tab_style(
+#     style = list(
+#       cell_text(weight = "bold")
+#     ),
+#     locations = cells_body(
+#       columns = status,
+#     )
+#   ) %>% opt_row_striping()
+
+
+
+dt_fam_canc_summary <- family %>% group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage)
+
+
+dt_fam_canc_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Primary Relative(s) Diagnosed With Cancer")) %>% 
+  cols_label(n= md("**Number of Participants**"), status = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = status,
+    )
+  ) %>% opt_row_striping()
+
+```
+
+
+
+### Siblings
+```{r PrimRelCancerSib, echo=FALSE, warning=FALSE, message=FALSE}
+
+family= data_tib_m1  %>%  mutate(status= case_when((D_607773106_1_1==353358909 | D_607773106_2_2==353358909 | 
+                                      D_607773106_3_3==353358909 | D_607773106_4_4==353358909 | D_607773106_5_5==353358909 | D_607773106_6_6==353358909 |
+                                      D_607773106_7_7==353358909| D_607773106_8_8==353358909 | D_607773106_9_9==353358909| D_607773106_10_10==353358909 |
+                                      D_607773106_11_11==353358909 | D_607773106_12_12==353358909 | D_607773106_13_13==353358909 | D_607773106_14_14==353358909 |
+                                        D_607773106_15_15==353358909 | D_607773106_16_16==353358909 | D_607773106_17_17==353358909 |
+                                        D_607773106_18_18==353358909 | D_607773106_19_19==353358909 | D_607773106_20_20==353358909 | D_607773106_21_21==353358909 |
+                                        D_607773106_22_22==353358909 | D_607773106_23_23==353358909 | D_607773106_24_24==353358909) ~ "Yes", 
+                                                    TRUE ~ "No"))
+# family$percentage <- round(family$percentage, digits=2)
+# dt_fam_canc_summary <- family %>% group_by(status) %>%   summarize_at(c("freq", "percentage"), sum, na.rm = TRUE)
+# 
+# knitr::kable(dt_fam_canc_summary,col.names=c("Diagnosed","Number of Participants" , "Percentage of Participants"), caption='Primary Relative(s) Diagnosed With Cancer')
+# #,row.names=FALSE, align=c("l","c","c","c"), booktabs = TRUE )
+# 
+# dt_fam_canc_summary %>%  gt::gt() %>%  ## why is this not a proper gt_tbl??
+#   fmt_number(columns = "percentage", decimals = 2) %>%
+#   tab_header(title = md("Primary Relative(s) Diagnosed With Cancer")) %>%
+#   cols_label(status = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
+#     summary_rows(
+#     column = percentage,
+#     fns= list(
+#       Sum= ~sum(.)
+#     ), decimals=0) %>%
+#   tab_options(
+#       stub.font.weight = "bold"
+#     ) %>%
+#   tab_style(
+#     style = list(
+#       cell_text(weight = "bold")
+#     ),
+#     locations = cells_body(
+#       columns = status,
+#     )
+#   ) %>% opt_row_striping()
+
+
+
+dt_fam_canc_summary <- family %>% group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage)
+
+
+dt_fam_canc_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Primary Relative(s) Diagnosed With Cancer")) %>% 
+  cols_label(n= md("**Number of Participants**"), status = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = status,
+    )
+  ) %>% opt_row_striping()
+
+```
+
+
+
+### Children
+```{r PrimRelCancerChild, echo=FALSE, warning=FALSE, message=FALSE}
+
+# degree1_cancer= module3 %>%  filter(ifelse(D_276353712==353358909 | D_659784914==353358909 | D_607773106_1_1==353358909 | D_607773106_2_2==353358909 | 
+#                                       D_607773106_3_3==353358909 | D_607773106_4_4==353358909 | D_607773106_5_5==353358909 | D_607773106_6_6==353358909 |
+#                                       D_607773106_7_7==353358909| D_607773106_8_8==353358909 | D_607773106_9_9==353358909| D_607773106_10_10==353358909 |
+#                                       D_607773106_11_11==353358909 | D_607773106_12_12==353358909 | D_607773106_13_13==353358909 | D_718867914_1_1==353358909 | 
+#                                       D_718867914_2_2==353358909 | D_718867914_3_3==353358909 | D_718867914_4_4==353358909 | D_718867914_5_5==353358909 |
+#                                       D_718867914_6_6==353358909 | D_718867914_7_7==353358909 | D_718867914_8_8==353358909 | D_718867914_9_9==353358909 |
+#                                       D_718867914_10_10==353358909), 1, 0)
+
+
+
+family= data_tib_m1  %>%  mutate(status= case_when((D_718867914_1_1==353358909 | 
+                                      D_718867914_2_2==353358909 | D_718867914_3_3==353358909 | D_718867914_4_4==353358909 | D_718867914_5_5==353358909 |
+                                      D_718867914_6_6==353358909 | D_718867914_7_7==353358909 | D_718867914_8_8==353358909 | D_718867914_9_9==353358909 |
+                                      D_718867914_10_10==353358909 | D_718867914_11_11==353358909 | D_718867914_12_12==353358909 |
+                                      D_718867914_13_13==353358909| D_718867914_14_14==353358909) ~ "Yes", 
+                                                    TRUE ~ "No"))
+# family$percentage <- round(family$percentage, digits=2)
+# dt_fam_canc_summary <- family %>% group_by(status) %>%   summarize_at(c("freq", "percentage"), sum, na.rm = TRUE)
+# 
+# knitr::kable(dt_fam_canc_summary,col.names=c("Diagnosed","Number of Participants" , "Percentage of Participants"), caption='Primary Relative(s) Diagnosed With Cancer')
+# #,row.names=FALSE, align=c("l","c","c","c"), booktabs = TRUE )
+# 
+# dt_fam_canc_summary %>%  gt::gt() %>%  ## why is this not a proper gt_tbl??
+#   fmt_number(columns = "percentage", decimals = 2) %>%
+#   tab_header(title = md("Primary Relative(s) Diagnosed With Cancer")) %>%
+#   cols_label(status = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
+#     summary_rows(
+#     column = percentage,
+#     fns= list(
+#       Sum= ~sum(.)
+#     ), decimals=0) %>%
+#   tab_options(
+#       stub.font.weight = "bold"
+#     ) %>%
+#   tab_style(
+#     style = list(
+#       cell_text(weight = "bold")
+#     ),
+#     locations = cells_body(
+#       columns = status,
+#     )
+#   ) %>% opt_row_striping()
+
+
+
+dt_fam_canc_summary <- family %>% group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage)
+
+
+dt_fam_canc_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Primary Relative(s) Diagnosed With Cancer")) %>% 
+  cols_label(n= md("**Number of Participants**"), status = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = status,
+    )
+  ) %>% opt_row_striping()
+
+```
+
+
+
+## RACE
+```{r Race, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+## Multi-racial
+
+multi_race=0    
+for (i in 1:length(data_tib_m1$Connect_ID)){
+  AI=ifelse((data_tib_m1$D_384191091_D_384191091_D_583826374[[i]]==1 & (data_tib_m1$D_384191091_D_384191091_D_636411467[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_458435048[[i]]==1|
+                                               data_tib_m1$D_384191091_D_384191091_D_706998638[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                               data_tib_m1$D_384191091_D_384191091_D_586825330[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                               data_tib_m1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  As=ifelse((data_tib_m1$D_384191091_D_384191091_D_636411467[[i]]==1 & (data_tib_m1$D_384191091_D_384191091_D_583826374[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_458435048[[i]]==1|
+                                                        data_tib_m1$D_384191091_D_384191091_D_706998638[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        data_tib_m1$D_384191091_D_384191091_D_586825330[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        data_tib_m1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Bl=ifelse((data_tib_m1$D_384191091_D_384191091_D_458435048[[i]]==1 & (data_tib_m1$D_384191091_D_384191091_D_583826374[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        data_tib_m1$D_384191091_D_384191091_D_706998638[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        data_tib_m1$D_384191091_D_384191091_D_586825330[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        data_tib_m1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Hs=ifelse((data_tib_m1$D_384191091_D_384191091_D_706998638[[i]]==1 & (data_tib_m1$D_384191091_D_384191091_D_583826374[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        data_tib_m1$D_384191091_D_384191091_D_458435048[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        data_tib_m1$D_384191091_D_384191091_D_586825330[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        data_tib_m1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Me=ifelse((data_tib_m1$D_384191091_D_384191091_D_973565052[[i]]==1 & (data_tib_m1$D_384191091_D_384191091_D_583826374[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        data_tib_m1$D_384191091_D_384191091_D_458435048[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        data_tib_m1$D_384191091_D_384191091_D_586825330[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        data_tib_m1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Hw=ifelse((data_tib_m1$D_384191091_D_384191091_D_586825330[[i]]==1 & (data_tib_m1$D_384191091_D_384191091_D_583826374[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        data_tib_m1$D_384191091_D_384191091_D_458435048[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        data_tib_m1$D_384191091_D_384191091_D_973565052[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        data_tib_m1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Wh=ifelse((data_tib_m1$D_384191091_D_384191091_D_412790539[[i]]==1 & (data_tib_m1$D_384191091_D_384191091_D_583826374[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        data_tib_m1$D_384191091_D_384191091_D_458435048[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        data_tib_m1$D_384191091_D_384191091_D_586825330[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        data_tib_m1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Ot=ifelse((data_tib_m1$D_384191091_D_384191091_D_807835037[[i]]==1 & (data_tib_m1$D_384191091_D_384191091_D_583826374[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        data_tib_m1$D_384191091_D_384191091_D_458435048[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        data_tib_m1$D_384191091_D_384191091_D_586825330[[i]]==1 | data_tib_m1$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        data_tib_m1$D_384191091_D_384191091_D_412790539[[i]]==1)), 1, 0)
+  multi_race= multi_race + sum(AI+As+Bl+Hs+Me+Hw+Wh+Ot, na.rm=T)
+
+}
+
+#cat("Percentage of multirace participants:", (multi_race/(dim(data_tib_m1)[1]))*100)
+   
+   
+
+data_tib_m1$multi_racial <- c(rep(1, times=multi_race), rep(0, times=(dim(data_tib_m1)[1]- multi_race)))
+
+
+
+## RACE
+
+which_race= data_tib_m1 %>%  mutate(race= case_when(multi_racial==1 ~ "Multi-Racial",
+                                                     D_384191091_D_384191091_D_583826374==1 ~ "American Indian or Native American",
+                                                     D_384191091_D_384191091_D_636411467==1 ~ "Asian/Asian American",
+                                                     D_384191091_D_384191091_D_458435048==1 ~ "Black, African American, or African",
+                                                     D_384191091_D_384191091_D_706998638==1 ~ "Hispanic, Latino, or Spanish",
+                                                     D_384191091_D_384191091_D_973565052==1 ~ "Middle Eastern or North African",
+                                                     D_384191091_D_384191091_D_586825330==1 ~ "Hawaiian or Pacific Islander",
+                                                     D_384191091_D_384191091_D_412790539==1 ~ "White",
+                                                     (D_384191091_D_384191091_D_807835037==1 | !is.na(D_384191091_D_747350323)) ~ "Other",
+                                                     D_384191091_D_384191091_D_746038746==1 ~ "Prefer Not to Answer",
+                                                     TRUE  ~ "Skipped this question"))
+
+dt_all_races_summary <- which_race  %>% dplyr::group_by(race) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup()  %>%  dplyr::select(race, n, percentage)
+
+dt_all_races_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Race/Ethnicity of Participants Who Completed BOH Section of First Survey")) %>% 
+  cols_label(n= md("**Number of Participants**"), race = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F,
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = race,
+    )
+  )
+
+```
+
+
+
+## RACEETH2-8 (Ethnicity)
+```{r Ethnicity, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+#American Indian/Native American
+dt_am_ind_ethn= data_tib_m1 %>%  filter(data_tib_m1$D_384191091_D_384191091_D_583826374==1)  
+
+
+dt_am_ind_ethn= dt_am_ind_ethn %>%  mutate(multb2 = ifelse(D_362270886_D_362270886_D_249603425==1, 1, 0) + ifelse(D_362270886_D_362270886_D_530063091==1, 1, 0) + ifelse(D_362270886_D_362270886_D_643489668==1, 1, 0) + 
+                                             ifelse(D_362270886_D_362270886_D_807835037==1, 1, 0) + ifelse(D_362270886_D_362270886_D_746038746==1, 1, 0))
+
+
+amer_eth= dt_am_ind_ethn %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Multi-Ethnic",
+                                                          D_362270886_D_362270886_D_249603425==1 ~ "American Indian",
+                                             D_362270886_D_362270886_D_530063091==1 ~ "Alaska Native",
+                                             D_362270886_D_362270886_D_643489668==1 ~ "Central or South American Indian",
+                                             (D_362270886_D_362270886_D_807835037==1 | !is.na(D_362270886_D_650100414)) ~ "Other",
+                                             D_362270886_D_362270886_D_746038746==1 ~ "Prefer Not to Answer",
+                                             TRUE ~ "Skipped this question"))
+
+dt_am_ind_ethn_summary <- amer_eth %>% group_by(ethnicity) %>%    dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage) 
+gtm3_print <- gt::gt(dt_am_ind_ethn_summary)
+
+
+dt_ethnic1 <- dt_am_ind_ethn_summary %>%  gt::gt(rowname_col = "row_lab") %>%
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("Ethnicity of American Indian/Native American Participants")) %>%
+  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
+  # summary_rows( groups=F,
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = ethnicity,
+    )
+  ) %>% opt_row_striping()
+tab_footnote(
+  dt_ethnic1,
+  md("The denomination of this table is all participants who selected this race/ethnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities. \n Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+  locations = cells_column_labels(columns = n),
+  placement = c("left")
+)
+
+
+
+#Asian/Asian American
+dt_asian= data_tib_m1 %>% filter(data_tib_m1$D_384191091_D_384191091_D_636411467==1)  
+
+dt_asian= dt_asian %>%  mutate(multb2 = ifelse(D_525535977_D_525535977_D_773844957==1, 1, 0) + ifelse(D_525535977_D_525535977_D_901439277==1, 1, 0) + ifelse(D_525535977_D_525535977_D_750168061==1, 1, 0) + 
+                                             ifelse(D_525535977_D_525535977_D_326604981==1, 1, 0) + ifelse(D_525535977_D_525535977_D_469918550==1, 1, 0) + ifelse(D_525535977_D_525535977_D_288079668==1, 1, 0) + ifelse(D_525535977_D_525535977_D_240721579==1, 1, 0) + ifelse(D_525535977_D_525535977_D_571633051==1, 1, 0) + ifelse(D_525535977_D_525535977_D_964924704==1, 1, 0) + ifelse(D_525535977_D_525535977_D_807835037==1, 1, 0) + ifelse(D_525535977_D_525535977_D_746038746==1, 1, 0))
+
+
+                                                          
+which_eth= dt_asian %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Multi-Ethnic",
+                                                     D_525535977_D_525535977_D_773844957==1 ~ "Asian indian",
+                                             D_525535977_D_525535977_D_901439277==1 ~ "Cambodian",
+                                             D_525535977_D_525535977_D_750168061==1 ~ "Chinese",
+                                             D_525535977_D_525535977_D_326604981==1 ~ "Filipino",
+                                             D_525535977_D_525535977_D_469918550==1 ~ "Hmong",
+                                             D_525535977_D_525535977_D_288079668==1 ~ "Japanese",
+                                             D_525535977_D_525535977_D_240721579==1 ~ "Korean",
+                                             D_525535977_D_525535977_D_571633051==1 ~ "Pakastani",
+                                             D_525535977_D_525535977_D_964924704==1 ~ "Vietnamese",
+                                             (D_525535977_D_525535977_D_807835037==1 | !is.na(D_525535977_D_396618548)) ~ "Other",
+                                             D_525535977_D_525535977_D_746038746==1 ~ "Prefer Not to Answer",
+                                             TRUE ~ "Skipped this question"))
+
+dt_asian_summary <- which_eth %>% group_by(ethnicity) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage) 
+
+dt_ethnic2 <- dt_asian_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Ethnicity of Asian and Asian American Participants")) %>% 
+  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F,
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = ethnicity,
+    )
+  ) %>% opt_row_striping()
+tab_footnote(
+  dt_ethnic2,
+  md("The denomination of this table is all participants who selected this race/ethnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities. \n Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+  locations = cells_column_labels(columns = n),
+  placement = c("left")
+)
+
+
+
+#Black/African/African American 
+dt_black= data_tib_m1 %>% filter(data_tib_m1$D_384191091_D_384191091_D_458435048==1)  
+
+dt_black= dt_black %>%  mutate(multb2 = ifelse(D_976808005_D_976808005_D_704774349==1, 1, 0) + ifelse(D_976808005_D_976808005_D_240854115==1, 1, 0) + ifelse(D_976808005_D_976808005_D_280957170==1, 1, 0) + 
+                                             ifelse(D_976808005_D_976808005_D_533776046==1, 1, 0) + ifelse(D_976808005_D_976808005_D_647105074==1, 1, 0) + ifelse(D_976808005_D_976808005_D_618222258==1, 1, 0) + ifelse(D_976808005_D_976808005_D_487027241==1, 1, 0) + ifelse(D_976808005_D_976808005_D_900838463==1, 1, 0) + ifelse(D_976808005_D_976808005_D_379093069==1, 1, 0) + ifelse(D_976808005_D_976808005_D_304643362==1, 1, 0) + ifelse(D_976808005_D_976808005_D_151821009==1, 1, 0) + ifelse(D_976808005_D_976808005_D_807835037==1, 1, 0) + ifelse(D_976808005_D_976808005_D_746038746==1, 1, 0))
+
+
+
+which_eth= dt_black %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Multi-Ethnic",
+                                                     D_976808005_D_976808005_D_704774349==1 ~ "African American",
+                                             D_976808005_D_976808005_D_240854115==1 ~ "Barbadian",
+                                             D_976808005_D_976808005_D_280957170==1 ~ "Caribbean",
+                                             D_976808005_D_976808005_D_533776046==1 ~ "Ethiopian",
+                                             D_976808005_D_976808005_D_647105074==1 ~ "Ghanauin",
+                                             D_976808005_D_976808005_D_618222258==1 ~ "Haitian",
+                                             D_976808005_D_976808005_D_487027241==1 ~ "Jamaican",
+                                             D_976808005_D_976808005_D_900838463==1 ~ "Liberian",
+                                             D_976808005_D_976808005_D_379093069==1 ~ "Nigerian",
+                                             D_976808005_D_976808005_D_304643362==1 ~ "Somali",
+                                             D_976808005_D_976808005_D_151821009==1 ~ "South African",
+                                             (D_976808005_D_976808005_D_807835037==1 | !is.na(D_976808005_D_852296096)) ~ "Other",
+                                             D_976808005_D_976808005_D_746038746==1 ~ "Prefer Not to Answer",
+                                             TRUE   ~ "Skipped this question"))
+
+
+
+dt_black_summary <- which_eth %>% group_by(ethnicity) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
+dt_ethnic3 <- dt_black_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Ethnicity of Black/African/African American Participants")) %>% 
+  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F,
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = ethnicity,
+    )
+  ) %>% opt_row_striping()
+tab_footnote(
+  dt_ethnic3,
+  md("The denomination of this table is all participants who selected this race/ethnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities. \n Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+  locations = cells_column_labels(columns = n),
+  placement = c("left")
+)
+
+
+
+#Hispanic/Latino/Spanish
+dt_hisp= data_tib_m1  %>% filter(data_tib_m1$D_384191091_D_384191091_D_706998638==1) 
+
+dt_hisp= dt_hisp %>%  mutate(multb2 = ifelse(D_308014437_D_308014437_D_810637250==1, 1, 0) + ifelse(D_308014437_D_308014437_D_248444252==1, 1, 0) + ifelse(D_308014437_D_308014437_D_764331628==1, 1, 0) + 
+                                             ifelse(D_308014437_D_308014437_D_412757551==1, 1, 0) + ifelse(D_308014437_D_308014437_D_981774939==1, 1, 0) + ifelse(D_308014437_D_308014437_D_432305109==1, 1, 0) + ifelse(D_308014437_D_308014437_D_862718552==1, 1, 0) + ifelse(D_308014437_D_308014437_D_988121468==1, 1, 0) + ifelse(D_308014437_D_308014437_D_773342525==1, 1, 0) + ifelse(D_308014437_D_308014437_D_807835037==1, 1, 0) + ifelse(D_308014437_D_308014437_D_746038746==1, 1, 0))
+
+
+
+which_eth= dt_hisp %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Multi-Ethnic",
+                                                    D_308014437_D_308014437_D_810637250==1 ~ "Columbian",
+                                             D_308014437_D_308014437_D_248444252==1 ~ "Cuban",
+                                             D_308014437_D_308014437_D_764331628==1 ~ "Dominican",
+                                             D_308014437_D_308014437_D_412757551==1 ~ "Ecuadorian",
+                                             D_308014437_D_308014437_D_981774939==1 ~ "Hondurian",
+                                             D_308014437_D_308014437_D_432305109==1 ~ "Mexican or Mexican American",
+                                             D_308014437_D_308014437_D_862718552==1 ~ "Puerto Rican",
+                                             D_308014437_D_308014437_D_988121468==1 ~ "Salvadorian",
+                                             D_308014437_D_308014437_D_773342525==1 ~ "Spanish",
+                                             (D_308014437_D_308014437_D_807835037==1 | !is.na(D_308014437_D_440307926)) ~ "Other",
+                                             D_308014437_D_308014437_D_746038746==1 ~ "Prefer Not to Answer",
+                                             TRUE   ~ "Skipped this question"))
+
+dt_hisp_summary <- which_eth %>% group_by(ethnicity) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
+
+dt_ethnic4 <- dt_hisp_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Ethnicity of Hispanic/Latino/Spanish Participants")) %>% 
+  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F,
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = ethnicity,
+    )
+  ) %>% opt_row_striping()
+tab_footnote(
+  dt_ethnic4,
+  md("The denomination of this table is all participants who selected this race/ethnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities. \n Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+  locations = cells_column_labels(columns = n),
+  placement = c("left")
+)
+
+
+
+#Middle Eastern or North African
+dt_mideast= data_tib_m1 %>%  filter(data_tib_m1$D_384191091_D_384191091_D_973565052==1)  
+
+dt_mideast= dt_mideast %>%  mutate(multb2 = ifelse(D_351657815_D_351657815_D_190152384==1, 1, 0) + ifelse(D_351657815_D_351657815_D_119632587==1, 1, 0) + ifelse(D_351657815_D_351657815_D_578616917==1, 1, 0) + 
+                                             ifelse(D_351657815_D_351657815_D_834030167==1, 1, 0) + ifelse(D_351657815_D_351657815_D_680575651==1, 1, 0) + ifelse(D_351657815_D_351657815_D_144320785==1, 1, 0) + ifelse(D_351657815_D_351657815_D_214951746==1, 1, 0) + ifelse(D_351657815_D_351657815_D_932563284==1, 1, 0) + ifelse(D_351657815_D_351657815_D_336596477==1, 1, 0) + ifelse(D_351657815_D_351657815_D_380583570==1, 1, 0) + ifelse(D_351657815_D_351657815_D_807835037==1, 1, 0) + ifelse(D_351657815_D_351657815_D_746038746==1, 1, 0))
+
+
+                                                    
+which_eth= dt_mideast %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Multi-Ethnic",
+                                                       D_351657815_D_351657815_D_190152384==1 ~ "Afghan",
+                                             D_351657815_D_351657815_D_119632587==1 ~ "Algerian",
+                                             D_351657815_D_351657815_D_578616917==1 ~ "Egyptian",
+                                             D_351657815_D_351657815_D_834030167==1 ~ "Iranian",
+                                             D_351657815_D_351657815_D_680575651==1 ~ "Iraqi",
+                                             D_351657815_D_351657815_D_144320785==1 ~ "Israeli",
+                                             D_351657815_D_351657815_D_214951746==1 ~ "Lebanese",
+                                             D_351657815_D_351657815_D_932563284==1 ~ "Moroccan",
+                                             D_351657815_D_351657815_D_336596477==1 ~ "Syrian",
+                                             D_351657815_D_351657815_D_380583570==1 ~ "Tunisian",
+                                             (D_351657815_D_351657815_D_807835037==1 | !is.na(D_351657815_D_576646485)) ~ "Other",
+                                             D_351657815_D_351657815_D_746038746==1 ~ "Prefer Not to Answer",
+                                             TRUE   ~ "Skipped this question"))
+
+dt_mideast_summary <- which_eth %>% group_by(ethnicity) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
+
+dt_ethnic5 <- dt_mideast_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Ethnicity of Middle Eastern or North African Participants")) %>% 
+  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F,
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = ethnicity,
+    )
+  ) %>% opt_row_striping()
+tab_footnote(
+  dt_ethnic5,
+  md("The denomination of this table is all participants who selected this race/ethnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities. \n Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+  locations = cells_column_labels(columns = n),
+  placement = c("left")
+)
+
+
+
+#Hawaiian/ Pacific Islander
+dt_hawi= data_tib_m1 %>%  filter(data_tib_m1$D_384191091_D_384191091_D_586825330==1)  
+
+dt_hawi= dt_hawi %>%  mutate(multb2 = ifelse(D_115616118_D_115616118_D_664730658==1, 1, 0) + ifelse(D_115616118_D_115616118_D_949727109==1, 1, 0) + ifelse(D_115616118_D_115616118_D_496132363==1, 1, 0) + 
+                                             ifelse(D_115616118_D_115616118_D_453456270==1, 1, 0) + ifelse(D_115616118_D_115616118_D_819018322==1, 1, 0) + ifelse(D_115616118_D_115616118_D_685406566==1, 1, 0) + ifelse(D_115616118_D_115616118_D_786290435==1, 1, 0) + ifelse(D_115616118_D_115616118_D_167028305==1, 1, 0) + ifelse(D_115616118_D_115616118_D_345861266==1, 1, 0) +  ifelse(D_115616118_D_115616118_D_807835037==1, 1, 0) + ifelse(D_115616118_D_115616118_D_746038746==1, 1, 0))
+
+                                                       
+which_eth= dt_hawi %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Multi-Ethnic",
+                                                    D_115616118_D_115616118_D_664730658==1 ~ "Chamorro",
+                                             D_115616118_D_115616118_D_949727109==1 ~ "Chuukese",
+                                             D_115616118_D_115616118_D_496132363==1 ~ "Fijian",
+                                             D_115616118_D_115616118_D_453456270==1 ~ "Marshallese",
+                                             D_115616118_D_115616118_D_819018322==1 ~ "Hawaiian",
+                                             D_115616118_D_115616118_D_685406566==1 ~ "Palauan",
+                                             D_115616118_D_115616118_D_786290435==1 ~ "Samoan",
+                                             D_115616118_D_115616118_D_167028305==1 ~ "Tahitian",
+                                             D_115616118_D_115616118_D_345861266==1 ~ "Tongan",
+                                             (D_115616118_D_115616118_D_807835037==1 | !is.na(D_115616118_D_403180970)) ~ "Other",
+                                             D_115616118_D_115616118_D_746038746==1 ~ "Prefer Not to Answer",
+                                             TRUE   ~ "Skipped this question"))
+
+dt_hawi_summary <- which_eth %>% group_by(ethnicity) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
+
+dt_ethnic6 <- dt_hawi_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Ethnicity of Hawaiian or Pacific Islander Participants")) %>% 
+  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F,
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = ethnicity,
+    )
+  ) %>% opt_row_striping()
+tab_footnote(
+  dt_ethnic6,
+  md("The denomination of this table is all participants who selected this race/ethnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities.\n Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+  locations = cells_column_labels(columns = n),
+  placement = c("left")
+)
+
+
+
+#White
+dt_white= data_tib_m1 %>% filter(data_tib_m1$D_384191091_D_384191091_D_412790539==1) 
+
+dt_white= dt_white %>%  mutate(multb2 = ifelse(D_797626610_D_797626610_D_664571574==1, 1, 0) + ifelse(D_797626610_D_797626610_D_163149180==1, 1, 0) + ifelse(D_797626610_D_797626610_D_192776753==1, 1, 0) + 
+                                             ifelse(D_797626610_D_797626610_D_733789220==1, 1, 0) + ifelse(D_797626610_D_797626610_D_418464677==1, 1, 0) + ifelse(D_797626610_D_797626610_D_859329001==1, 1, 0) + ifelse(D_797626610_D_797626610_D_267472307==1, 1, 0) + ifelse(D_797626610_D_797626610_D_918190932==1, 1, 0) + ifelse(D_797626610_D_797626610_D_381749264==1, 1, 0) + ifelse(D_797626610_D_797626610_D_704661219==1, 1, 0) + ifelse(D_797626610_D_797626610_D_773342525==1, 1, 0) +  ifelse(D_797626610_D_797626610_D_807835037==1, 1, 0) + ifelse(D_797626610_D_797626610_D_746038746==1, 1, 0))
+
+
+which_eth= dt_white %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Multi-Ethnic",
+                                                     D_797626610_D_797626610_D_664571574==1 ~ "Ducth",
+                                             D_797626610_D_797626610_D_163149180==1 ~ "English",
+                                             D_797626610_D_797626610_D_192776753==1 ~ "European",
+                                             D_797626610_D_797626610_D_733789220==1 ~ "French",
+                                             D_797626610_D_797626610_D_418464677==1 ~ "German",
+                                             D_797626610_D_797626610_D_859329001==1 ~ "Irish",
+                                             D_797626610_D_797626610_D_267472307==1 ~ "Italian",
+                                             D_797626610_D_797626610_D_918190932==1 ~ "Norwegian",
+                                             D_797626610_D_797626610_D_381749264==1 ~ "Polish",
+                                             D_797626610_D_797626610_D_704661219==1 ~ "Scottish",
+                                             D_797626610_D_797626610_D_773342525==1 ~ "Spanish",
+                                             (D_797626610_D_797626610_D_807835037==1 | !is.na(D_797626610_D_774928994)) ~ "Other",
+                                             D_797626610_D_797626610_D_746038746==1 ~ "Prefer Not to Answer",
+                                             TRUE   ~ "Skipped this question"))
+
+dt_white_summary <- which_eth %>% group_by(ethnicity) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
+gtm3_print <- gt::gt(dt_white_summary)
+
+dt_ethnic7 <- dt_white_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Ethnicity of White Participants")) %>% 
+  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F,
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = ethnicity,
+    )
+  ) %>% opt_row_striping()
+tab_footnote(
+  dt_ethnic7,
+  md("The denomination of this table is all participants who selected this race/ethnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities. \n Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
+  locations = cells_column_labels(columns = n),
+  placement = c("left")
+)
+
+
+```
+
+
+
+## SEX
+```{r SGM, warning=FALSE,echo=FALSE}
+simple_funct1(D_407056417, "Sex at birth")
+```
+
+
+
+
+

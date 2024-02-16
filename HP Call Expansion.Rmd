@@ -1,0 +1,701 @@
+---
+title: "HP Call Expansion"
+author: "Kelsey Dowling"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+
+
+
+```{r library, include=FALSE}
+#d_949302066='231311385' & 
+#d_100767870='353358909' & d_878865966='353358909' & d_167958071='353358909' & d_684635302='353358909'
+
+library(bigrquery)
+library(foreach)
+library(stringr)
+library(gtsummary)
+library(rio)
+library(epiDisplay)
+library(kableExtra)
+
+
+library(ggplot2)
+library(gridExtra)
+library(scales)
+library(gt)
+library(tinytex)
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(reshape)  ###to work on transition from long to wide or wide to long data
+library(listr) ###to work on a list of vector, files or..
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(stringr)
+
+bq_auth()
+```
+
+
+
+
+```{r merge1, include=FALSE, warning=FALSE}
+
+
+# Site = HP AND
+# Verification Status = Verified AND
+# Has one or more of survey modules 1-4 not submitted AND
+# Has any baseline blood collected (let’s not take into account urine or mouthwash this time around, just blood) AND
+# Not refused baseline survey AND
+# Not refused all study activities AND
+# Not withdrawn AND
+# Not deceased
+#-- add to this file the flags (not started, started, submitted) and dates submitted of Modules 1, 2, 3, 4 
+
+project <- "nih-nci-dceg-connect-prod-6d04"
+partsHP <- "SELECT Connect_ID, token, state_studyId_string, 
+d_821247024, d_827220437,
+d_949302066, d_517311251,
+d_536735468 , d_832139544,
+d_976570371, d_770257102,
+d_663265240, d_264644252,
+d_685002411_d_994064239,d_685002411_d_194410742,d_685002411_d_949501163,d_685002411_d_277479354, d_685002411_d_867203506,d_685002411_d_352996056,d_685002411_d_217367618,d_747006172,d_906417725,d_773707518,d_831041022,d_987563196, d_912301837,
+d_173836415_d_266600170_d_561681068, d_914594314, d_173836415_d_266600170_d_982213346
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP`
+where Connect_ID IS NOT NULL and 
+d_827220437='531629870' and d_821247024='197316935' and d_100767870='104430631' and  d_878865966='353358909' and
+d_685002411_d_994064239='104430631' and 
+d_906417725 = '104430631' and
+d_747006172='104430631' and d_987563196='104430631'"
+
+
+
+### If "HdRef_Basesrv_v1r0", "HdRef_Baseblood_v1r0", "HdRef_Baseurine_v1r0", "HdRef_Basesaliva_v1r0", "HdRef_Allsrv_v1r0", "HdRef_Allsample_v1r0", "HdRef_BlSpecSrv_v1r0", "HdWd_WdConsent_v1r0", "HdWd_Activepart_v1r0", "HdWd_HIPAArevoked_v1r0", "HdWd_Destroydata_v1r0", "HdWd_Deceased_v1r0", "SMMet_PartStatus_v1r0"
+
+#d_685002411_d_994064239,d_685002411_d_194410742,d_685002411_d_949501163,d_685002411_d_277479354, d_685002411_d_867203506,d_685002411_d_352996056,d_685002411_d_217367618,d_747006172,d_906417725,d_773707518,d_831041022,d_987563196, d_912301837
+
+
+notif <- "SELECT attempt, token FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` 
+where token is not null and category LIKE '%BL Survey Reminders%'"
+
+notif_table <- bq_project_query(project, notif)
+notif_data <- bq_table_download(notif_table, bigint = "integer64")
+
+parts_tableHP <- bq_project_query(project, partsHP)
+parts_dataHP <- bq_table_download(parts_tableHP, bigint = "integer64")
+
+
+HPs1 <-  left_join(parts_dataHP, notif_data, by="token")
+
+#HPs1 <- HPs1 %>% filter(attempt== "1st contact" | attempt=="2nd contact" | attempt== "3rd contact" | attempt== "4th contact" | attempt== "5th contact" | attempt== "6th contact")
+
+# Add a column for total contacts received by each participant
+HPs1$total_contacts <- as.numeric(substr(HPs1$attempt, 1, 1))
+
+# Add a new column for latest contact
+latest_contact <- aggregate(total_contacts ~ Connect_ID, data = HPs1, FUN = max)
+HPs1 <- merge(HPs1, latest_contact, by = "Connect_ID", suffixes = c("", "_latest"))
+
+
+
+
+#not including blood collection until later
+HPs <- HPs1 %>%  select(Connect_ID, token, state_studyId_string, d_821247024, d_827220437,d_949302066, d_517311251,d_536735468 , d_832139544,d_976570371, d_770257102,d_663265240, d_264644252, d_685002411_d_994064239, d_685002411_d_194410742, d_685002411_d_949501163, d_685002411_d_277479354, d_685002411_d_867203506,d_685002411_d_352996056,d_685002411_d_217367618,d_747006172,d_906417725,d_773707518,d_831041022,d_987563196, d_912301837, d_173836415_d_266600170_d_561681068, d_173836415_d_266600170_d_982213346, total_contacts_latest)
+
+
+dim(HPs)
+
+colnames(HPs) <- c("Connect_ID", "token", "StudyID", "Verification_Status", "Site", "Mod1Status",  "Mod1CompletionTime", "Mod2Status",  "Mod2CompletionTime", "Mod3Status",  "Mod3CompletionTime", "Mod4Status",  "Mod4CompletionTime", "HdRef_Basesrv_v1r0", "HdRef_Baseblood_v1r0", "HdRef_Baseurine_v1r0", "HdRef_Basesaliva_v1r0", "HdRef_Allsrv_v1r0", "HdRef_Allsample_v1r0", "HdRef_BlSpecSrv_v1r0", "HdWd_WdConsent_v1r0", "HdWd_Activepart_v1r0", "HdWd_HIPAArevoked_v1r0", "HdWd_Destroydata_v1r0", "HdWd_Deceased_v1r0", "SMMet_PartStatus_v1r0", "BioFin_ResearchBldTmBL_v1r0", "BioClin_ClinBloodTmBL_v1r0", "Survey_Reminders")
+#head(data_tib)
+
+# AfterOct <- HPs %>%  filter(Mod1CompletionTime <= as.Date('2023-10-23'))
+# dim(AfterOct)
+# BeforeOct <- HPs %>%  filter(Mod1CompletionTime >= as.Date('2023-10-24'))
+# dim(BeforeOct)
+```
+
+
+```{r Notif_Before, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+
+
+
+HP_notif_summary <- HPs %>%
+  group_by(Connect_ID, token, StudyID,  Verification_Status, Site, Mod1Status,  Mod1CompletionTime, Mod2Status,  Mod2CompletionTime, Mod3Status,  Mod3CompletionTime, Mod4Status,  Mod4CompletionTime, HdRef_Basesrv_v1r0, HdRef_Baseblood_v1r0, HdRef_Baseurine_v1r0, HdRef_Basesaliva_v1r0, HdRef_Allsrv_v1r0, HdRef_Allsample_v1r0, HdRef_BlSpecSrv_v1r0, HdWd_WdConsent_v1r0, HdWd_Activepart_v1r0, HdWd_HIPAArevoked_v1r0, HdWd_Destroydata_v1r0, HdWd_Deceased_v1r0, SMMet_PartStatus_v1r0, BioFin_ResearchBldTmBL_v1r0, BioClin_ClinBloodTmBL_v1r0, Survey_Reminders) %>%
+  #summarize(n = n(), percentage = 100 * n / nrow(.)) %>%
+  ungroup() %>%
+  #select(Connect_ID, StudyID, Contacts)
+  select(Connect_ID, token, StudyID, Verification_Status, Site, Mod1Status,  Mod1CompletionTime, Mod2Status,  Mod2CompletionTime, Mod3Status,  Mod3CompletionTime, Mod4Status,  Mod4CompletionTime, HdRef_Basesrv_v1r0, HdRef_Baseblood_v1r0, HdRef_Baseurine_v1r0, HdRef_Basesaliva_v1r0, HdRef_Allsrv_v1r0, HdRef_Allsample_v1r0, HdRef_BlSpecSrv_v1r0, HdWd_WdConsent_v1r0, HdWd_Activepart_v1r0, HdWd_HIPAArevoked_v1r0, HdWd_Destroydata_v1r0, HdWd_Deceased_v1r0, SMMet_PartStatus_v1r0, BioFin_ResearchBldTmBL_v1r0, BioClin_ClinBloodTmBL_v1r0, Survey_Reminders)
+
+# Select unique rows based on Connect_ID
+HP_notif_unique_rows <- HP_notif_summary %>%
+  distinct(Connect_ID, .keep_all = TRUE)
+
+# Group by Connect_ID and StudyID and calculate the maximum reminder
+HP_notif_rows_amax <- HP_notif_unique_rows %>%
+  group_by(Connect_ID, token, StudyID, Verification_Status, Site, Mod1Status,  Mod1CompletionTime, Mod2Status,  Mod2CompletionTime, Mod3Status,  Mod3CompletionTime, Mod4Status,  Mod4CompletionTime, HdRef_Basesrv_v1r0, HdRef_Baseblood_v1r0, HdRef_Baseurine_v1r0, HdRef_Basesaliva_v1r0, HdRef_Allsrv_v1r0, HdRef_Allsample_v1r0, HdRef_BlSpecSrv_v1r0, HdWd_WdConsent_v1r0, HdWd_Activepart_v1r0, HdWd_HIPAArevoked_v1r0, HdWd_Destroydata_v1r0, HdWd_Deceased_v1r0, SMMet_PartStatus_v1r0, BioFin_ResearchBldTmBL_v1r0, BioClin_ClinBloodTmBL_v1r0) %>%
+  summarize('Last Survey Reminder Sent' = max(Survey_Reminders))
+
+#colnames(HP_notif_rows_amax) <- c('Connect ID', 'Study ID',"Total Survey Reminders Received")
+
+# Print the final table
+print(HP_notif_rows_amax)
+
+
+
+
+desktop_path <- file.path(Sys.getenv("USERPROFILE"), "Desktop")
+csv_file_path <- file.path(desktop_path, "HP_CallExpansion_Everyone.csv")
+write.csv(HP_notif_rows_amax, csv_file_path,row.names = F,na="")
+
+```
+
+
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+
+HP_called <- list(5549368122,
+6216507232,
+7861596319,
+7036233132,
+4701341007,
+9608554206,
+3925324653,
+7648093771,
+9362577431,
+6378268673,
+3224400691,
+6995170664,
+3817268544,
+8476297200,
+2749312100,
+6878891939,
+3277702969,
+2903008241,
+8590089906,
+4881945571,
+1180990365,
+2433129053,
+5925973720,
+1678894294,
+8885449757,
+5013147171,
+5841272306,
+8471558348,
+7278627106,
+3297761010,
+3678647280,
+1279657648,
+7614926149,
+7819896176,
+7975260521,
+2052792727,
+1840395824,
+5116512266,
+9750023244,
+1802777545,
+1872366186,
+7588180161,
+6793129256,
+3737383856,
+1989344044,
+2118148449,
+8580658384,
+3680800277,
+6449466842,
+1921909960,
+3468225577,
+3670211191,
+4237387974,
+3330286816,
+7845320677,
+3967805117,
+4657477836,
+5855114362,
+9328565982,
+8545212328,
+5940828771,
+6423105636,
+7696621595,
+7502469001,
+1413831317,
+8095376375,
+8013519918,
+5441069027,
+9264049723,
+6553554259,
+5801326667,
+6529048389,
+3047111828,
+7162531577,
+8563963205,
+8543369943,
+1372793054,
+9077843789,
+8136190251,
+8835936717,
+1800120628,
+9556849522,
+3262838353,
+2011435406,
+4025314546,
+1069192913,
+4222298847,
+9401970725,
+3804599785,
+5145258904,
+1722053397,
+5262515569,
+3365506380,
+5744775310,
+1493261261,
+2642536968,
+7205279746,
+5634099646,
+3626888274,
+5914355155,
+9876529947,
+6895279505,
+9696914982,
+6903349448,
+9384417378,
+2173322506,
+2933464028,
+1181967434,
+1952609533,
+5007396937,
+2125537402,
+4394063006,
+4143899202,
+2587942110,
+5049930214,
+8784791919,
+5654132961,
+4140521731,
+6789260528,
+6885907842,
+4815837345,
+8122138493,
+5515603450,
+1629667108,
+1449283311,
+9051079015,
+1685853949,
+9075219832,
+5249640047,
+8786538848,
+2869642272,
+3158012992,
+7010754979,
+9601092357,
+6156485255,
+2369888929,
+1013027756,
+4760300858,
+7807377239,
+7698644932,
+3677088174,
+2018755910,
+4748949569,
+8713561953,
+4555442569,
+9543299415,
+5314168206,
+7253207458,
+5323194381,
+6453436784,
+1331148776,
+9761995699,
+4105839139,
+5424792505,
+5046780581,
+1661789130,
+5155263346,
+6052243367,
+1835922218,
+2504025827,
+8315687602,
+8328309106,
+2534976805,
+1026213599,
+3972591324,
+6265201702,
+7390287495,
+5027589499,
+7585021543,
+5297537300,
+7680290174,
+7833036355,
+3375540091,
+6378896429,
+5828789566,
+2680335099,
+7341126823,
+9294618649,
+8734246827,
+2055921040,
+2919470068,
+4981641476,
+8558357793,
+9130952440,
+3632396969,
+5023211237,
+1132635877,
+4482963060,
+3499382065,
+3543509502,
+2006846321,
+7649411960,
+6914417487,
+5708339799,
+4192132506
+)
+
+
+
+
+HP_didnt_call <- HP_notif_rows_amax %>%
+  filter(!(Connect_ID %in% HP_called))
+
+print(HP_didnt_call)
+
+
+desktop_path <- file.path(Sys.getenv("USERPROFILE"), "Desktop")
+csv_file_path <- file.path(desktop_path, "HP_LeftToCall.csv")
+write.csv(HP_didnt_call, csv_file_path,row.names = F,na="")
+
+
+```
+
+
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+
+  rs_blood <- "SELECT Connect_ID, d_678166505 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.biospecimen_JP` 
+  where Connect_ID is not null"
+  
+  rs_blood_table <- bq_project_query(project, rs_blood)
+  rs_blood_data <- bq_table_download(rs_blood_table, bigint = "integer64")
+  
+  
+  HP2 <-  left_join(parts_dataHP, rs_blood_data, by="Connect_ID")
+  
+  HPs_2 <- HP2 %>%  select(Connect_ID, d_914594314, d_173836415_d_266600170_d_561681068, d_173836415_d_266600170_d_982213346) %>%  #d_173836415_d_266600170_d_822274939,
+  
+  mutate(blood_col = ifelse(is.na(d_173836415_d_266600170_d_982213346), d_173836415_d_266600170_d_561681068, d_173836415_d_266600170_d_982213346))
+  
+  currentdate <- Sys.Date()
+  
+  CID_didnt_call <- as.list(HP_didnt_call$Connect_ID)
+
+HPs2 <- HPs_2 %>% filter(Connect_ID %in% CID_didnt_call)
+
+#d_173836415_d_266600170_d_561681068- 7 missing
+#d_678166505 - 7 missing
+  #d_173836415_d_266600170_d_982213346 --- missing people's dates here
+  
+
+#HP_table2 <- HPs2 %>%  mutate(BL_timepassed = difftime(currentdate, d_173836415_d_266600170_d_561681068, units="months")) %>%  
+#  mutate(BL_timepassed = ifelse(is.na(BL_timepassed), "Missing Blood Collection Time Stamp",BL_timepassed)) %>%  select(BL_timepassed) %>% tally()
+
+
+
+HPs__2 <- HPs2 %>%
+    mutate(BL_timepassed = interval(blood_col, currentdate) / months(1),
+           BL_timepassed = ifelse(BL_timepassed < 1, "Less than 1 month", ceiling(BL_timepassed))) %>%
+   select(BL_timepassed)
+ 
+HP_table2 <- as.data.frame(count(HPs__2, BL_timepassed))
+
+
+HP_table2$Percentage <- round((HP_table2$n / sum(HP_table2$n)) * 100, digits=1)
+
+# Create a summary row
+summary_row <- data.frame(BL_timepassed = "Total",
+                          n = sum(HP_table2$n),
+                          Percentage = 100)
+
+# Combine the frequency table with the summary row
+HP_blood_call <- rbind(HP_table2, summary_row)
+
+HP_blood_call$NP <- paste0(HP_blood_call$n, " (", HP_blood_call$Percentage, "%)")
+
+
+HP_blood_call_table <- HP_blood_call[c(18, 10:17, 1:9, 19), c(1,4)]
+
+HP_blood_call_table$BL_timepassed[c(2:18)] <- paste0(HP_blood_call_table$BL_timepassed[c(2:18)], " months")
+
+colnames(HP_blood_call_table) <- c("Months", "N%")
+
+knitr::kable(HP_blood_call_table, format.args = list(big.mark = ","), caption = 'Months Passed Since Blood Specimen Collection', booktabs = T, row.names=FALSE, align=c("l", "c")) %>% kable_styling(latex_options = "HOLD_position") %>% add_indent(c(1:18)) %>%  footnote(general=c("This table is generated for the participants that have not yet been called(from the HP_LeftToCall list)."),general_title="Note:",footnote_as_chunk = T,threeparttable = T)
+```
+
+
+
+
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+HPs_3 <- HPs2 %>%
+    mutate(Ver_timepassed = interval(d_914594314, currentdate) / months(1),
+           Ver_timepassed = ifelse(Ver_timepassed < 1, "Less than 1 month", ceiling(Ver_timepassed))) %>%
+   select(Ver_timepassed)
+ 
+HP_table3 <- as.data.frame(count(HPs_3, Ver_timepassed))
+
+
+HP_table3$Percentage <- round((HP_table3$n / sum(HP_table3$n)) * 100, digits=1)
+
+# Create a summary row
+summary_row3 <- data.frame(Ver_timepassed = "Total",
+                          n = sum(HP_table3$n),
+                          Percentage = 100)
+
+# Combine the frequency table with the summary row
+HP_ver_call <- rbind(HP_table3, summary_row3)
+
+HP_ver_call$NP <- paste0(HP_ver_call$n, " (", HP_ver_call$Percentage, "%)")
+
+
+HP_ver_call_table <- HP_ver_call[c(1:23), c(1,4)]
+
+HP_ver_call_table$Ver_timepassed[c(1:22)] <- paste0(HP_ver_call_table$Ver_timepassed[c(1:22)], " months")
+
+colnames(HP_ver_call_table) <- c("Months", "N%")
+
+knitr::kable(HP_ver_call_table, format.args = list(big.mark = ","), caption = 'Months Passed Since Verification', booktabs = T, row.names=FALSE, align=c("l", "c")) %>% kable_styling(latex_options = "HOLD_position") %>% add_indent(c(1:22)) %>%  footnote(general=c("This table is generated for the participants that have not yet been called(from the HP_LeftToCall list)."),general_title="Note:",footnote_as_chunk = T,threeparttable = T)
+```
+
+
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+# 
+# HP_mods <- HP_notif_rows_amax %>% filter(Connect_ID %in% CID_didnt_call)
+# 
+# modules <- HP_mods [,c("Connect_ID","Mod1Status","Mod2Status","Mod3Status","Mod4Status")] #"d_512820379", "d_914594314"
+# mods <- c("Mod1Status","Mod2Status","Mod3Status","Mod4Status")
+# modules$modules <- 0
+# modules$none <-0
+# for(i in 1:length(mods)){
+#   module <- modules[,mods[i]]
+#   count <- ifelse((!is.na(module) & module ==231311385), 1, 0)
+#   modules$modules <- count+modules$modules
+#   count1 <- ifelse((!is.na(module) & module==972455046), 1, 0)
+#   modules$none <- count1+modules$none
+# }
+# 
+# #table(modules$modules)
+# 
+# #table(modules$none)
+# library("crosstable")
+# #table(modules$modules,modules$Mod1Status)
+# #CrossTable(modules$Mod1Status, modules$modules,digits=4, prop.t=FALSE, prop.r=TRUE, prop.c=TRUE,prop.chisq=FALSE)
+# 
+# length(modules[which(modules$modules==3 & modules$Mod4Status==231311385 & modules$Mod2Status==231311385),])
+# 
+# modules1 <- modules %>% mutate(process = case_when( as.character(modules) == '1' ~ "One",
+#                                                    as.character(modules) == '2'  ~ "Two" ,
+#                                                    as.character(modules) =='3'  ~ "Three" ,
+#                                                    as.character(modules) =='0' ~ "Zero",   
+#                                                    as.character(modules) =='4' ~ "Four"))
+# 
+# modules1$process <- factor(modules1$process,levels=c("Zero", "One", "Two", "Three", "Four"))
+# 
+# 
+#  all_participants <-  modules1 %>%
+#   group_by(process) %>% tally() 
+#  
+# all_participants <- all_participants %>% mutate(percentage=100*n/sum(n))
+# 
+# #Concatenate number and percent of participants into one column instead of 2  
+# all_participants_np <- all_participants %>%  dplyr::mutate(np= paste0(n, "(", round(percentage, digits=1), "%)"))
+#   
+# # Create summary row for np_numeric
+# summary_row_allp <- all_participants_np %>% 
+#   summarise(np = paste0(sum(n, na.rm = TRUE), " (100%)"),
+#             process = "Total") %>% select(process, np)
+# 
+# all_participants_np <- all_participants_np %>% select(process, np)
+# 
+# # Bind summary row to dt_simple_funct1_summary
+# all_participants_summary <- bind_rows(all_participants_np, summary_row_allp)
+
+
+```
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+#knitr::kable(all_participants_summary, caption='Total Modules Completed', col.names=c("Total Modules", "N (%)"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(c(1:4))  %>% kable_styling(latex_options = "HOLD_position") %>%  footnote(general=c("This table is generated for the participants that have not yet been called (from the HP_LeftToCall list)."),general_title="Note:",footnote_as_chunk = T,threeparttable = T)
+
+
+
+```
+
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+
+ HP_mods <- HP_notif_rows_amax %>% filter(Connect_ID %in% CID_didnt_call)
+
+modules <- HP_mods [,c("Connect_ID","Mod1Status","Mod2Status","Mod3Status","Mod4Status")] #"d_512820379", "d_914594314"
+mods <- c("Mod1Status","Mod2Status","Mod3Status","Mod4Status")
+modules$modules <- 0
+modules$none <-0
+for(i in 1:length(mods)){
+  module <- modules[,mods[i]]
+  count <- ifelse((!is.na(module) & module ==231311385), 1, 0)
+  modules$modules <- count+modules$modules
+  count1 <- ifelse((!is.na(module) & module==972455046), 1, 0)
+  modules$none <- count1+modules$none
+}
+
+#table(modules$modules)
+
+#table(modules$none)
+library("crosstable")
+#table(modules$modules,modules$Mod1Status)
+#CrossTable(modules$Mod1Status, modules$modules,digits=4, prop.t=FALSE, prop.r=TRUE, prop.c=TRUE,prop.chisq=FALSE)
+
+length(modules[which(modules$modules==3 & modules$Mod4Status==231311385 & modules$Mod2Status==231311385),])
+
+modules1 <- modules %>% mutate(process = case_when(Mod1Status == '231311385' & as.character(modules) == '1' ~ "Module 1 only",
+                                                   (as.character(modules) == '2' & Mod1Status == '231311385' & Mod2Status == '231311385') |
+                                                   (as.character(modules) =='2' & Mod1Status == '231311385' & Mod3Status == '231311385') | 
+                                                   (as.character(modules) =='2' & Mod1Status == '231311385' & Mod4Status == '231311385') ~ "Module 1 plus 1 other module" ,  
+                                                   (as.character(modules) =='3' & Mod1Status == '231311385' & Mod2Status == '231311385' & Mod3Status == '231311385') | 
+                                                   (as.character(modules) =='3' & Mod1Status == '231311385' & Mod2Status == '231311385' & Mod4Status == '231311385') |
+                                                   (as.character(modules) =='3' & Mod1Status == '231311385' & Mod3Status == '231311385' & Mod4Status == '231311385') ~ "Module 1 plus 2 other modules",
+                                                   as.character(modules) =='0' ~ "None"))
+modules1$process <- factor(modules1$process,levels=c("None", "Module 1 only", "Module 1 plus 1 other module", "Module 1 plus 2 other modules"))
+
+
+ all_participants <-  modules1 %>%
+  group_by(process) %>% tally() 
+ 
+all_participants <- all_participants %>% mutate(percentage=100*n/sum(n))
+
+#Concatenate number and percent of participants into one column instead of 2  
+all_participants_np <- all_participants %>%  dplyr::mutate(np= paste0(n, "(", round(percentage, digits=1), "%)"))
+  
+# Create summary row for np_numeric
+summary_row_allp <- all_participants_np %>% 
+  summarise(np = paste0(sum(n, na.rm = TRUE), " (100%)"),
+            process = "Total") %>% select(process, np)
+
+all_participants_np <- all_participants_np %>% select(process, np)
+
+# Bind summary row to dt_simple_funct1_summary
+all_participants_summary <- bind_rows(all_participants_np, summary_row_allp)
+
+
+```
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+knitr::kable(all_participants_summary, caption='Total Modules Completed', col.names=c("Total Modules", "N (%)"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(c(1:4))  %>% kable_styling(latex_options = "HOLD_position") %>%  footnote(general=c("This table is generated for the participants that have not yet been called (from the HP_LeftToCall list)."),general_title="Note:",footnote_as_chunk = T,threeparttable = T)
+
+
+
+```
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+# total_contacts <- as.numeric(substr(HP_nfs$Survey_Reminders, 1, 1))
+# 
+# # Aggregate to find the maximum number of contacts for each participant
+# max_contacts <- aggregate(total_contacts ~ Connect_ID, data = HP_nfs, FUN = max)
+# 
+# # Tabulate the frequencies of maximum contacts
+max_contacts_frequencies <- as.data.frame(table(HP_mods$`Last Survey Reminder Sent`))
+# 
+colnames(max_contacts_frequencies) <- c("reminder", "n")
+# 
+max_contacts_frequencies$reminder <- paste0(max_contacts_frequencies$reminder, "th contact")
+# 
+# 
+max_contacts_frequencies <- max_contacts_frequencies %>% mutate(percentage=100*n/sum(n))
+# 
+# #Concatenate number and percent of participants into one column instead of 2  
+ max_contacts_frequencies_np <- max_contacts_frequencies %>%  dplyr::mutate(np= paste0(n, "(", round(percentage, digits=1), "%)"))
+
+# Create summary row for np_numeric
+summary_row_allp <- max_contacts_frequencies_np %>%
+  summarise(np = paste0(sum(n, na.rm = TRUE), " (100%)"),
+            reminder = "Total") %>% select(reminder, np)
+
+max_contacts_frequencies_np <- max_contacts_frequencies_np %>% select(reminder, np)
+
+# Bind summary row to dt_simple_funct1_summary
+max_contacts_frequencies_summary <- bind_rows(max_contacts_frequencies_np, summary_row_allp)
+
+
+knitr::kable(max_contacts_frequencies_summary, caption='Total Notifications Sent', col.names=c("Last Survey Reminder Sent", "N (%)"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(c(1:5))  %>% kable_styling(latex_options = "HOLD_position") %>%  footnote(general=c("This table is generated for the participants that have not yet been called (from the HP_LeftToCall list)."),general_title="Note:",footnote_as_chunk = T,threeparttable = T)
+
+```
+
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+
+# HP_nfs <- HPs %>% filter(Connect_ID %in% CID_didnt_call & (Survey_Reminders== "1st contact" | Survey_Reminders=="2nd contact" | Survey_Reminders== "3rd contact" | 
+#                                                              Survey_Reminders== "4th contact" | Survey_Reminders== "5th contact" | Survey_Reminders== "6th contact")) 
+# 
+# 
+# df_HP_emails <- as.data.frame(table(HP_nfs$Survey_Reminders))
+# 
+# df_HP_emails <- df_HP_emails[c(1:6),]
+# 
+# colnames(df_HP_emails) <- c("Survey_Reminders", "n")
+# 
+# pts <- length(unique(HP_nfs$Connect_ID))
+# 
+# kbl_notifHP <- df_HP_emails %>% mutate(percentage=100*n/pts,
+#                                        np= paste0(n, "(", round(percentage, digits=1), "%)"))
+  
+
+#knitr::kable(kbl_notifHP[, c(1,4)], caption='Total Notifications Sent', col.names=c("Last Survey Reminder Sent", "N (%)"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(c(1:6))  %>% kable_styling(latex_options = "HOLD_position") %>%  footnote(general=c("This table is generated for the participants that have not yet been called (from the HP_LeftToCall list)."),general_title="Note:",footnote_as_chunk = T,threeparttable = T)
+
+```
+
+
+<!-- ```{r Notif_After, warning=FALSE, echo=FALSE, message=FALSE} -->
+
+
+
+<!-- HP_notif_summary <- AfterOct %>% -->
+<!--   group_by(Connect_ID, StudyID, Mod1Status,  Mod1CompletionTime, Contacts) %>% -->
+<!--   #summarize(n = n(), percentage = 100 * n / nrow(.)) %>% -->
+<!--   ungroup() %>% -->
+<!--   #select(Connect_ID, StudyID, Contacts) -->
+<!--   select(Connect_ID, StudyID, Mod1Status,  Mod1CompletionTime, Contacts) -->
+
+<!-- # Select unique rows based on Connect_ID -->
+<!-- HP_notif_unique_rows <- HP_notif_summary %>% -->
+<!--   distinct(Connect_ID, .keep_all = TRUE) -->
+
+<!-- # Group by Connect_ID and StudyID and calculate the maximum reminder -->
+<!-- HP_notif_rows_amax <- HP_notif_unique_rows %>% -->
+<!--   group_by(Connect_ID, StudyID, Mod1Status,  Mod1CompletionTime) %>% -->
+<!--   summarize('Last Survey Reminder Sent' = max(Contacts)) -->
+
+<!-- #colnames(HP_notif_rows_amax) <- c('Connect ID', 'Study ID',"Total Survey Reminders Received") -->
+
+<!-- # Print the final table -->
+<!-- print(HP_notif_rows_amax) -->
+
+
+
+
+<!-- desktop_path <- file.path(Sys.getenv("USERPROFILE"), "Desktop") -->
+<!-- csv_file_path <- file.path(desktop_path, "HP_Mod1Comp_Before_November15th.csv") -->
+<!-- write.csv(HP_notif_rows_amax, csv_file_path,row.names = F,na="") -->
+
+<!-- ``` -->
+
+
+
+
+
+
+

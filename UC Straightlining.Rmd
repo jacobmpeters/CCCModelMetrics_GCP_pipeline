@@ -1,0 +1,3470 @@
+---
+title: "UC Straightlining"
+author: "Kelsey Dowling"
+date: "`r Sys.Date()`"
+---
+output:
+  pdf_document:
+    latex_engine: xelatex
+    orientation: landscapez
+---
+
+```{r alt_intro, include=FALSE}
+# #Alternative intro to get the R HTML so no tables are cutoff
+# ---
+# title: "UC Straightlining"
+# author: "Kelsey Dowling"
+# date: "`r Sys.Date()`"
+# ---
+# output: 
+#   pdf_document:
+#     fig_caption: yes
+#     latex_engine: xelatex
+#     orientation: landscape
+# ---
+      
+```
+
+
+```{r libraries, include=FALSE}
+
+#All libraries are listed up top; authentication for BQ will be necessary.
+#Functions used included before the start of the analysis .
+#Currently filtered by gender, and will eventually be done by age groups as well (D_117249500).
+
+
+
+rm(list = ls())
+library(bigrquery)
+library(foreach)
+library(stringr)
+#library(plyr)
+#library(expss) ###to add labels
+library(epiDisplay) ##recommended applied here crosstable, tab1
+library(gmodels) ##recommended
+library(magrittr)
+library(arsenal)
+library(gtsummary)
+library(rio)
+
+
+
+library(ggplot2)
+library(gridExtra)
+library(scales)
+library(gt)
+#install(tinytex)
+library(tinytex)
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(reshape)  ###to work on transition from long to wide or wide to long data
+library(listr) ###to work on a list of vector, files or..
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(stringr) ###to work on patterns, charaters
+library(knitr)
+library(kableExtra)
+
+
+options(tinytex.verbose = TRUE)
+
+bq_auth()
+```
+
+```{r M1merge, include=FALSE}
+dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
+dd <- dplyr::bind_rows(dictionary,.id="CID")
+dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
+dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name')
+
+dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
+dd$CID <- rownames(dd)
+#https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
+devtools::install_github("tidyverse/reprex")
+
+project <- "nih-nci-dceg-connect-prod-6d04"
+billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be consistent
+##517311251 Date/time Status of Completion of Background and Overall Health                         SrvBOH_TmComplete_v1r0
+##949302066 Flag for Baseline Module Background and Overall Health                        SrvBOH_BaseStatus_v1r0
+recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
+                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935' and d_949302066 ='231311385'")
+recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
+cnames <- names(recr_m1)
+# Check that it doesn't match any non-number
+numbers_only <- function(x) !grepl("\\D", x)
+# to check variables in recr_noinact_wl1
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(recr_m1,varname)
+  recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+sql_M1_1 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
+sql_M1_2 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
+
+
+M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64") #1436 #1436 vars: 1507 01112023 
+M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64") #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
+
+mod1_v1 <- M1_V1
+cnames <- names(M1_V1)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v1,varname)
+  mod1_v1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+mod1_v2 <- M1_V2
+cnames <- names(M1_V2)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v2,varname)
+  mod1_v2[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+M1_V1.var <- colnames(M1_V1)
+M1_V2.var <- colnames(M1_V2)
+var.matched <- M1_V1.var[which(M1_V1.var %in% M1_V2.var)]
+length(var.matched)  #1275 #1278 vars 01112023 #1348 vars 05022023
+
+V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched] #232 #229 01112023 #159 05022023
+V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched] #253 #253 01112023 #545 05022023
+
+length(M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID])
+#[1] 59 with the completion of two versions of Module1 
+#[1] 62 with completing both versions of M1 ###double checked 03/28/2023
+#68 double checked 05/02/2023
+
+common.IDs <- M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID]
+M1_V1_common <- mod1_v1[,var.matched]
+
+M1_V2_common <- mod1_v2[,var.matched]
+M1_V1_common$version <- 1
+M1_V2_common$version <- 2
+
+##to check the completion of M1 among these duplicates
+partM1_dups <- recr_m1[which(recr_m1$Connect_ID %in% common.IDs),]
+table(partM1_dups$d_949302066)
+
+M1_common  <- rbind(M1_V1_common, M1_V2_common) #including 136 duplicates (version 1 and version 2) from 68 participants 05022023
+#M1_response <- matrix(data=NA, nrow=118, ncol=967)
+
+m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)] #230 vars 03282023 #160 vars 05/02/2023
+m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] #255 vars 03282023 #546 vars 05/02/2023
+m1_v1_only$version <- 1
+m1_v2_only$version <- 2
+#for (i in 1:length)
+##to check the completion in each version
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #1364 03282023 # 1370 05022023
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #4870 03282023 # 5731 05022023
+
+#library(janitor)
+
+m1_common <- rbind(M1_V1_common,M1_V2_common)
+m1_common_v1 <- base::merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
+m1_combined_v1v2 <- base::merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
+m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] #7289 including duplicates 05022023
+
+m1_complete <- m1_complete %>% arrange(desc(version)) 
+
+
+m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),] 
+table(m1_complete_nodup$version)
+
+
+
+parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
+D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
+D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_827220437, 
+D_949302066 , D_517311251, D_205553981, D_117249500, d_430551721, d_517311251, d_544150384, d_564964481, d_117249500 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and (d_949302066='231311385')"
+parts_table <- bq_project_query(project, parts)
+parts_data <- bq_table_download(parts_table, bigint = "integer64")
+
+parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID) ###need to convert type- m1... is double and parts is character
+
+module1= left_join(m1_complete_nodup, parts_data, by="Connect_ID") 
+dim(module1)
+
+```
+
+```{r, warning=FALSE, echo=FALSE,  message=FALSE}
+# #Has a recruitment flag
+# merged <- merged %>% filter(D_512820379==486306141 | D_512820379==854703046)
+# 
+# 
+# #User consent submitted
+# merged <- merged %>% filter(D_919254129==353358909)
+# 
+# 
+# #User profile submitted
+# merged <- merged %>% filter(D_699625233==353358909)
+# 
+# 
+# #Verified by site
+# #cat("Verified by site:", sum(merged$D_821247024==197316935, na.rm=TRUE))
+# 
+# 
+# #Mod1 completed
+# module1 <- merged %>% filter(D_949302066==231311385)
+cat("Module 1 completed:", dim(module1)[[1]])
+
+
+data_tib_m1 <- as_tibble(module1)
+#dim(module1)
+
+knitr::opts_chunk$set(comment = NA)
+
+
+
+```
+
+```{r functions, warning=FALSE, include=FALSE}
+#Created Functions for this code
+
+#Histogram 
+hist_funct <- function(CID,Title, Xlab, Ylab) {
+  CID_SYM <- rlang::ensym(CID)
+  module1 %>% mutate(!!CID_SYM:=as.numeric(!!CID_SYM)) %>%
+    filter(!is.na(!!CID_SYM)) %>%
+    ggplot(aes(x=!!CID_SYM))+
+     xlab(Xlab) + ylab(Ylab) + geom_histogram()+  ggtitle(Title)+
+    geom_histogram(color="black")+ scale_y_continuous(breaks=pretty_breaks()) +
+    geom_vline(aes(xintercept=mean(!!CID_SYM, na.rm=T)), colour="red", linetype="solid")
+  
+}
+
+
+
+#Boxplot
+boxp_funct <- function(CID,Title, Xlab) {
+  CID_SYM <- rlang::ensym(CID)
+  module1 %>% mutate(!!CID_SYM:=as.numeric(!!CID_SYM)) %>%
+    filter(!is.na(!!CID_SYM)) %>%
+    ggplot(aes(x=!!CID_SYM))+
+    xlab(Xlab) + geom_boxplot()+  ggtitle(Title)+
+    theme(axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()  #remove y axis ticks
+        )
+}
+
+
+
+##GT TABLE: Questions that all participants asked, update dictionary as new answer options come up
+
+dict <- list("104430631"="No", "353358909"="Yes", "589959753"="A little shorter", "623310018"="A lot shorter", "978204320"= "Grade School(Grades 1-8)", "935502060"="Some High School, No Diploma", "404564707"= "High School Graduate or GED", "432193665"="Some College, No Degree", "890756124"="Technical or Trade School After High School", "766964355"="Associate's Degree", "875342283"="Bachelor's Degree", "598242454"="Advanced Degree", "709650750"="Biological Child", "810290359"="Adopted Child", "509607548"="Step Child", "784922042"="Related to me in some other way", "288105839"=" Yes, fraternal twins", "626558982"="Yes, triplets or higher multiple birth", "178420302"="Do not Know", "536341288"="Female", "576796184"="Intersex or Other", "654207589"="Male","555374628"="Full Sibling", "871673221"="Half Sibling, Same Mother",  "198654048"="Half Sibling, Same Father", "807835037"="Other", "274062548"="More than 3 months ago", "958538953"="In the past 3 months", "317567178"="In the past month", "484055234"="In the past year",  "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago","958538953"="In the past 3 months",  "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible", "764708931"="Very flexible","0"="No", "1"="Yes", "536341288"="Female", "218837028"="Woman", "983318667"="Man"  , "654207589"="Male","746038746"="Prefer Not to Answer", "805712793"="Genderqueer","486192236"="Non-Binary", "807835037"="Other","873138103"="Transgender Woman","405267600"="Transgender Man", "220083334"="Very Feminine","541300533"="Mostly Feminine","878286618"="Somewhat Feminine","910745276"="Equally feminine and masculine","915528806"="Very masculine","265452386"="Mostly Masculine","510148951"="Somewhat Masculine","271882746"="Straight or heterosexual", "903084185"="Lesbian, gay, or homosexual", "999994434"="Bisexual", "584368278"="Retired", "475665841"="Homemaker", "656816477"="Unemployed", "756948639"="Unble to Work (Disabled)", "181769837"="Other Employment Status","551525967"="Yes, Full-Time Student", "738284740"="Yes, Part Time Student", "288321056"="Married", "514080822"="Never Married","522680498"="Never Married but living with Partner","649436542"="Divorced","522680498"="Partner", "741094625"="Separated","733527132"="Widow" )
+
+
+
+simple_funct <- function(CID, Title){  
+  CID_SYM <- rlang::ensym(CID)
+  dt_select <- data_tib_m1 %>%  select(Connect_ID, !!CID_SYM)
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%  
+  # summary_rows( groups=F,
+  #   columns = c(n,percentage),    
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+}
+
+
+#GT table with one filter/skip logic
+one_logic_funct <- function(CID, CID_prev, Prev_Answer, Title){  
+  CID_SYM <- rlang::ensym(CID)
+  CID_SYM_P <- rlang::ensym(CID_prev)
+  dt_select <- data_tib_m1 %>%  filter(!!CID_SYM_P == Prev_Answer) %>%  select(Connect_ID, !!CID_SYM) 
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F,
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+}
+
+#GT table for siblings
+sib_logic_funct <- function(CID, Sib_Num, Title){  
+  CID_SYM <- rlang::ensym(CID)
+  data_tib_m1$D_694265648 <- as.numeric(data_tib_m1$D_694265648)
+  dt_select <- data_tib_m1 %>%  filter(D_694265648 >= Sib_Num) %>%  select(Connect_ID, !!CID_SYM) 
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows( groups=F,
+  #   column = c(n,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+}
+
+#GT table for children
+child_logic_funct <- function(CID, Child_Num, Title){  
+  CID_SYM <- rlang::ensym(CID)
+  data_tib_m1$D_446999144 <- as.numeric(data_tib_m1$D_446999144)
+  dt_select <- data_tib_m1 %>%  filter(D_446999144 >= Child_Num) %>%  select(Connect_ID, !!CID_SYM) 
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) %>% opt_row_striping()
+}
+
+#GT TABLE: Weight loss method
+
+
+
+```
+
+
+```{r MHGroup1, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+
+
+#mhgroup1= data_tib_m1 %>%  mutate(mult1= case_when()) -- add multiple choices 
+
+mhgroup1COUNT= data_tib_m1 %>%  mutate(cardiov= case_when(D_167101091_D_698944820==1 ~ "B-12 Deficiency",
+                                             D_167101091_D_838744325==1 ~ "Coronary Artery",
+                                             D_167101091_D_769790179==1 ~ "Congestive Heart Failure",
+                                             D_167101091_D_699553344==1 ~ "High Cholesterol",
+                                             D_167101091_D_700811160==1 ~ "Heart Attack",
+                                             D_167101091_D_336505365==1 ~ "Abnormal Heart Rhythm",
+                                             D_167101091_D_132548932==1 ~ "Chest Pain",
+                                             D_167101091_D_747787163==1 ~ "Heart Valve Problems",
+                                             D_167101091_D_693851465==1 ~ "High Blood Pressure",
+                                             D_167101091_D_512012656==1 ~ "Blood Clots",
+                                             D_167101091_D_619337095==1 ~ "Stroke",
+                                             D_167101091_D_535003378==1 ~ "None",
+                                             TRUE ~ "Skipped this question"))
+  
+dt_cardiov_summary <- mhgroup1COUNT  %>% dplyr::group_by(cardiov) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(cardiov, n, percentage) 
+
+
+gt_mh1<- dt_cardiov_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("MHGROUP1: Diagnosed Cardiovascular Conditions")) %>% 
+  cols_label(cardiov = md("**Answer**"), n= md("**Number of Participants**"),percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(participants,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = cardiov,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+ 
+tmp1<- data_tib_m1[, grepl("167101091", colnames(data_tib_m1))]
+cardio_dx <- NULL
+for (i in 1:12){
+  dt <- as.data.frame(tab1(tmp1[,i])$output.table)
+  dt$cardio_dx <- colnames(tmp1)[i]
+  cardio_dx <- rbind(cardio_dx,dt[2,])
+  
+}
+cardio_dx$cardio_dx ### how are their race variables being assigned here?? wrong variable matching. Flattening issue?
+
+cardio_dx$cardio_dx <- c("Chest Pain","Abnormal Heart Rhythm","Blood Clots","None","Stroke","High Blood Pressure","B-12 Deficiency","High Cholesterol","Heart Attack","Heart Valve Problems","Congestive Heart Failure","Coronary Artery")
+```
+```{r MHGroup1Table, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+# colnames(cardio_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
+# mgr1_1 <- cardio_dx[, c(4,1,2)]
+# 
+# colnames(cardio_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
+# mgr1_2 <- cardio_dx[, c(4,1,2)]
+
+colnames(cardio_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
+mgr1 <- cardio_dx[, c(4,1,2)]
+
+skipped_mhg1 <- sum(table(mhgroup1COUNT$cardiov=="Skipped this question")[2])
+mgr1[as.numeric(dim(mgr1)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(data_tib_m1)[[1]])*100,2))
+
+
+dt_mgr1 <- mgr1 %>%  gt::gt(rowname_col = "row_lab") %>%  
+  tab_header(title = md("MHGROUP1: Diagnosed Cardiovascular Conditions")) %>% 
+  cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"),  Condition = md("**Answer**")) %>% 
+  # summary_rows( groups=F,
+  #   column = c(Frequency,Percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  #grand_summary_rows(columns=c(Frequency, Percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Condition,
+    )
+  )
+tab_footnote(
+  dt_mgr1,
+  md("As this is a select all question, participants may select multiple responses."),
+  locations = cells_column_labels(columns = Percentage),
+  placement = c("left")
+)
+
+
+
+
+```
+
+
+
+
+
+## Respiratory Problems 
+```{r MHGroup2, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+
+mhgroup2= data_tib_m1 %>%  mutate(resp= case_when(D_894259747_D_359025642==1 ~ "Chronic Lung Disease",
+                                             D_894259747_D_407340134==1 ~ "Asthma",
+                                             D_894259747_D_427219143==1 ~ "Hay Fever",
+                                             D_894259747_D_535003378==1 ~ "None",
+                                             TRUE ~ "Skipped this question"))
+
+dt_resp_summary <- mhgroup2  %>% dplyr::group_by(resp) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(resp, n, percentage)
+
+
+gt_mh2<- dt_resp_summary %>%  gt::gt(rowname_col = "row_lab") %>%
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("MHGROUP2: Diagnosed Respiratory Conditions")) %>%
+  cols_label(n= md("**Number of Participants**"), resp = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
+  # summary_rows(
+  #   column = c(participants,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = resp,
+    )
+  ) %>% opt_row_striping()
+
+
+
+tmp2<- data_tib_m1[, grepl("894259747", colnames(data_tib_m1))]
+lung_dx <- NULL
+for (i in 1:4){
+  dt <- as.data.frame(tab1(tmp2[,i])$output.table)
+  dt$lung_dx <- colnames(tmp2)[i]
+  lung_dx <- rbind(lung_dx,dt[2,])
+  
+}
+
+lung_dx$lung_dx <- c("Chronic lung disease","Asthma", "Hay Fever", "None")
+```
+```{r MHGroup2Table, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+colnames(lung_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "lung_dx")
+mgr2 <- lung_dx[, c(4,1,2)]
+
+skipped_mhg2 <- sum(table(mhgroup2$resp=="Skipped this question")[2])
+mgr2[as.numeric(dim(mgr2)[[1]])+1,] <- c("Skipped this Question", skipped_mhg2, round((skipped_mhg2/dim(data_tib_m1)[[1]])*100,2))
+
+
+dt_mgr2 <- mgr2 %>%  gt::gt(rowname_col = "row_lab") %>%  
+  tab_header(title = md("MHGROUP2: Diagnosed Respiratory Conditions")) %>% 
+  cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"),  lung_dx = md("**Answer**")) %>% 
+  # summary_rows(
+  #   column = c(participants,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  #grand_summary_rows(columns=c(Frequency, Percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = lung_dx,
+    )
+  ) %>% 
+tab_footnote(
+    footnote = "As this is a select all question, participants may select multiple responses.",
+    locations=cells_column_labels(Percentage)
+  ) %>%
+  tab_footnote(
+    footnote = md("Hay Fever includes Allergy to pollen or Allergic Rhinitis."),
+    locations=cells_column_labels(lung_dx)
+  )
+
+dt_mgr2
+
+
+```
+
+
+
+
+## Digestive System Problems 
+```{r MHGroup3, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+
+mhgroup3= data_tib_m1 %>%  mutate(digest= case_when(D_180961306_D_406890409==1 ~ "Esophageal Acid Reflex",
+                                             D_180961306_D_704544306==1 ~ "Barrett's Esophagus",
+                                             D_180961306_D_691766591==1 ~ "Irritable Bowel Syndrome",
+                                             D_180961306_D_308645635==1 ~ "Inflammatory Bowel Disease",
+                                             D_180961306_D_731115613==1 ~ "Diverticulitis or Diverticulosis",
+                                             D_180961306_D_567284980==1 ~ "Ulcerative Colitis",
+                                             D_180961306_D_986548173==1 ~ "Crohn's Disease",
+                                             D_180961306_D_285995100==1 ~ "Celiac Disease",
+                                             D_180961306_D_545628561==1 ~ "Gallstones",
+                                             D_180961306_D_709786039==1 ~ "Liver Cirrhosis",
+                                             D_180961306_D_984479578==1 ~ "Pancreatitis",
+                                             D_180961306_D_535003378==1 ~ "None",
+                                             TRUE ~ "Skipped this question"))
+
+dt_digest_summary <- mhgroup3  %>% dplyr::group_by(digest) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(digest, n, percentage) 
+
+
+gt_mh3<- dt_digest_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("MHGROUP3: Diagnosed Digestive System Problems")) %>% 
+  cols_label(n= md("**Number of Participants**"),digest = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(participants,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = digest,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+tmp3<- data_tib_m1[, grepl("180961306", colnames(data_tib_m1))]
+dgst_dx <- NULL
+for (i in 1:12){
+  dt <- as.data.frame(tab1(tmp3[,i])$output.table)
+  dt$dgst_dx <- colnames(tmp3)[i]
+  dgst_dx <- rbind(dgst_dx,dt[2,])
+  
+}
+
+dgst_dx$dgst_dx
+dgst_dx$dgst_dx <- c("Celiac Disease", "Inflammatory Bowel Disease","Esophageal Acid Reflex","None","Gallstones","Ulcerative Colitis","Irritable Bowel Syndrome","Barrett's Esophagus","Liver Cirrhosis","Diverticulitis or Diverticulosis","Pancreatitis","Crohn's Disease")
+
+```
+```{r MHGroup3Tables, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+colnames(dgst_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "dgst_dx")
+mgr3 <- dgst_dx[, c(4,1,2)]
+
+skipped_mhg3 <- sum(table(mhgroup3$digest=="Skipped this question")[2])
+mgr3[as.numeric(dim(mgr3)[[1]])+1,] <- c("Skipped this Question", skipped_mhg3, round((skipped_mhg3/dim(data_tib_m1)[[1]])*100,2))
+
+
+dt_mgr3 <- mgr3 %>%  gt::gt(rowname_col = "row_lab") %>%  
+  tab_header(title = md("MHGROUP3: Diagnosed Digestive System Problems")) %>% 
+  cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"), dgst_dx = md("**Answer**")) %>% 
+  # summary_rows(
+  #   column = c(participants,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  #grand_summary_rows(columns=c(Frequency, Percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = dgst_dx,
+    )
+  )
+tab_footnote(
+  dt_mgr3,
+  md("As this is a select all question, participants may select multiple responses."),
+  locations = cells_column_labels(columns = Percentage),
+  placement = c("left")
+)
+
+
+```
+
+
+
+## Thyroid, Dibetes, and Grave's Disease 
+```{r MHGroup4, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+
+mhgroup4= data_tib_m1 %>%  mutate(thy_d_g= case_when(D_900541533_D_726539692==1 ~ "Thyroid Disorder", 
+                                             D_900541533_D_158044532==1 ~ "Diabetes",
+                                             D_900541533_D_943054522==1 ~ "Graves' Disease",
+                                             D_900541533_D_535003378==1 ~ "None",
+                                             TRUE ~ "Skipped this question"))
+
+dt_thy_d_g_summary <- mhgroup4 %>%  dplyr::group_by(thy_d_g) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(thy_d_g, n, percentage) 
+
+gt_mh4<- dt_thy_d_g_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("MHGROUP4: Diagnosed with Any of These Conditions")) %>% 
+  cols_label(n= md("**Number of Participants**"),thy_d_g = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(participants,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = thy_d_g,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+tmp4<- data_tib_m1[, grepl("900541533", colnames(data_tib_m1))]
+thyrd_dx <- NULL
+for (i in 1:4){
+  dt <- as.data.frame(tab1(tmp4[,i])$output.table)
+  dt$thyrd_dx <- colnames(tmp4)[i]
+  thyrd_dx <- rbind(thyrd_dx,dt[2,])
+  
+}
+thyrd_dx$thyrd_dx
+thyrd_dx$thyrd_dx <- c("Diabetes",  "None", "Thyroid Disorder", "Graves' Disease")
+```
+```{r MHGroup4Tables, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+colnames(thyrd_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "thyrd_dx")
+mgr4 <- thyrd_dx[, c(4,1, 2)]
+
+skipped_mhg4 <- sum(table(mhgroup4$thy_d_g=="Skipped this question")[2])
+mgr4[as.numeric(dim(mgr4)[[1]])+1,] <- c("Skipped this Question", skipped_mhg4, round((skipped_mhg4/dim(data_tib_m1)[[1]])*100,2))
+
+
+dt_mgr4 <- mgr4 %>%  gt::gt(rowname_col = "row_lab") %>%  
+  tab_header(title = md("MHGROUP4: Diagnosed with Any of These Conditions")) %>% 
+  cols_label(Frequency= md("**Number of Participants**"),Percentage=md("**Percentge of Participants**"), thyrd_dx = md("**Answer**")) %>% 
+  # summary_rows(
+  #   column = c(participants,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  #grand_summary_rows(columns=c(Frequency, Percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = thyrd_dx,
+    )
+  )
+tab_footnote(
+  dt_mgr4,
+  md("As this is a select all question, participants may select multiple responses."),
+  locations = cells_column_labels(columns = Percentage),
+  placement = c("left")
+)
+
+
+
+
+```
+
+
+
+## Kidney 
+```{r MHGroup5, include=FALSE}
+mhgroup5= data_tib_m1 %>%  mutate(kidn= case_when(D_874046190_D_827542780==1 ~ "Kidney Stones", 
+                                             D_874046190_D_167238688==1 ~ "Chronic Kindey Disease",
+                                             D_874046190_D_535003378==1 ~ "None",
+                                             TRUE ~ "Skipped this question"))
+
+dt_kidn_summary <- mhgroup5 %>% dplyr::group_by(kidn) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(kidn, n, percentage) 
+
+gt_mh5<- dt_kidn_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("MHGROUP5: Diagnosed with Kidney Conditions")) %>% 
+  cols_label(n= md("**Number of Participants**"), kidn = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(participants,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = kidn,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+tmp5<- data_tib_m1[, grepl("874046190", colnames(data_tib_m1))]
+kidn_dx <- NULL
+for (i in 1:3){
+  dt <- as.data.frame(tab1(tmp5[,i])$output.table)
+  dt$kidn_dx <- colnames(tmp5)[i]
+  kidn_dx <- rbind(kidn_dx,dt[2,])
+  
+}
+kidn_dx$kidn_dx
+kidn_dx$kidn_dx <- c("Chronic Kindey Disease",  "None", "Kidney Stones")
+```
+```{r MHGroup5Table, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+colnames(kidn_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "kidn_dx")
+mgr5 <- kidn_dx[, c(4,1, 2)]
+
+skipped_mhg5 <- sum(table(mhgroup5$kidn=="Skipped this question")[2])
+mgr5[as.numeric(dim(mgr5)[[1]])+1,] <- c("Skipped this Question", skipped_mhg5, round((skipped_mhg5/dim(data_tib_m1)[[1]])*100,2))
+
+
+
+dt_mgr5 <- mgr5 %>%  gt::gt(rowname_col = "row_lab") %>%  
+  tab_header(title = md("MHGROUP5: Diagnosed with Kidney Conditions")) %>% 
+  cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"), kidn_dx = md("**Answer**")) %>% 
+  # summary_rows(
+  #   column = c(participants,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  #grand_summary_rows(columns=c(Frequency, Percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = kidn_dx,
+    )
+  )
+tab_footnote(
+  dt_mgr5,
+  md("As this is a select all question, participants may select multiple responses."),
+  locations = cells_column_labels(columns = Percentage),
+  placement = c("left")
+)
+
+```
+
+
+## Systemic and Other Problems
+```{r MHGroup6, include=FALSE}
+mhgroup6= data_tib_m1 %>%  mutate(sysoth= case_when(D_543728565_D_636030086==1 ~ "Rheumatoid Arthritis", 
+                                             D_543728565_D_239687183==1 ~ "Lupus",
+                                             D_543728565_D_134592375==1 ~ "Gout",
+                                             D_543728565_D_535003378==1 ~ "None",
+                                             TRUE ~ "Skipped this question"))
+
+dt_sysoth_summary <- mhgroup6 %>% dplyr::group_by(sysoth) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(sysoth, n, percentage)
+
+
+gt_mh6<- dt_sysoth_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("MHGROUP6: Diagnosed with Systemic Conditions")) %>% 
+  cols_label(n= md("**Number of Participants**"), sysoth = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(participants,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = sysoth,
+    )
+  ) %>% opt_row_striping()
+
+
+
+
+tmp6<- data_tib_m1[, grepl("543728565", colnames(data_tib_m1))]
+systm_dx <- NULL
+for (i in 1:4){
+  dt <- as.data.frame(tab1(tmp6[,i])$output.table)
+  dt$systm_dx <- colnames(tmp6)[i]
+  systm_dx <- rbind(systm_dx,dt[2,])
+  
+}
+systm_dx$systm_dx
+systm_dx$systm_dx <- c("Gout", "Lupus",  "None", "Rheumatoid Arthritis")
+```
+```{r MHGroup6Table, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+colnames(systm_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "systm_dx")
+mgr6 <- systm_dx[, c(4,1, 2)]
+
+skipped_mhg6 <- sum(table(mhgroup6$sysoth=="Skipped this question")[2])
+mgr6[as.numeric(dim(mgr6)[[1]])+1,] <- c("Skipped this Question", skipped_mhg6, round((skipped_mhg6/dim(data_tib_m1)[[1]])*100,2))
+
+
+
+dt_mgr6 <- mgr6 %>%  gt::gt(rowname_col = "row_lab") %>%  
+  tab_header(title = md("MHGROUP6: Diagnosed with Systemic Conditions")) %>% 
+  cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"), systm_dx = md("**Answer**")) %>% 
+  # summary_rows(
+  #   column = c(participants,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  #grand_summary_rows(columns=c(Frequency, Percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = systm_dx,
+    )
+  )
+tab_footnote(
+  dt_mgr6,
+  md("As this is a select all question, participants may select multiple responses."),
+  locations = cells_column_labels(columns = Percentage),
+  placement = c("left")
+)
+
+```
+
+
+## Sexually Transmitted Diseases and Infections
+```{r MHGroup7, include=FALSE}
+mhgroup7= data_tib_m1 %>%  mutate(sti_std= case_when(D_874709643_D_164910211==1 ~ "Mono",
+                                             D_874709643_D_796616844==1 ~ "Shingles",
+                                             D_874709643_D_436689514==1 ~ "Chronic Hepatitus B or C",
+                                             D_874709643_D_296357383==1 ~ "Gonorrhea",
+                                             D_874709643_D_901077233==1 ~ "Chlamydia",
+                                             D_874709643_D_136956596==1 ~ "Trich",
+                                             D_874709643_D_455776698==1 ~ "Syphilis",
+                                             D_874709643_D_155874194==1 ~ "Genital Warts",
+                                             D_874709643_D_880962432==1 ~ "HPV",
+                                             D_874709643_D_691450854==1 ~ "HIV/AIDS",
+                                             D_874709643_D_535003378==1 ~ "None",
+                                             TRUE ~ "Skipped this question"))
+
+dt_sti_std_summary <- mhgroup7 %>% dplyr::group_by(sti_std) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(sti_std, n, percentage)
+
+gt_mh7<- dt_sti_std_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("MHGROUP7: Diagnosed Infections or Diseases")) %>% 
+  cols_label(n= md("**Number of Participants**"), sti_std = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(participants,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = sti_std,
+    )
+  ) %>% opt_row_striping()
+
+
+
+tmp7<- data_tib_m1[, grepl("874709643", colnames(data_tib_m1))]
+sti_dx <- NULL
+for (i in 1:11){
+  dt <- as.data.frame(tab1(tmp7[,i])$output.table)
+  dt$sti_dx <- colnames(tmp7)[i]
+  sti_dx <- rbind(sti_dx,dt[2,])
+  
+}
+sti_dx$sti_dx
+sti_dx$sti_dx <- c("Trich", "Genital Warts", "Mono","Gonorrhea", "Chronic Hepatitus B or C", "Syphilis", "None","HIV/AIDS","Shingles","HPV","Chlamydia")
+```
+```{r MHGroup7Table, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+colnames(sti_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "sti_dx")
+mgr7 <- sti_dx[, c(4,1, 2)]
+
+skipped_mhg7 <- sum(table(mhgroup7$sti_std=="Skipped this question")[2])
+mgr7[as.numeric(dim(mgr7)[[1]])+1,] <- c("Skipped this Question", skipped_mhg7, round((skipped_mhg7/dim(data_tib_m1)[[1]])*100,2))
+
+
+
+dt_mgr7 <- mgr7 %>%  gt::gt(rowname_col = "row_lab") %>%  
+  tab_header(title = md("MHGROUP7: Diagnosed Infections or Diseases")) %>% 
+  cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"),  sti_dx = md("**Answer**")) %>% 
+  # summary_rows(
+  #   column = c(participants,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  #grand_summary_rows(columns=c(Frequency, Percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = sti_dx,
+    )
+  )
+
+tab_footnote(
+  dt_mgr7,
+  md("As this is a select all question, participants may select multiple responses."),
+  locations = cells_column_labels(columns = Percentage),
+  placement = c("left")
+)
+
+```
+
+
+## Urinary and Reproductive System Problems 
+```{r MHGroup8, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+
+mhgroup8= data_tib_m1 %>%  mutate(urn_repro= case_when(D_725626004_D_509721537==1 ~ "Uterine Fibroids",
+                                             D_725626004_D_863286658==1 ~ "Endometriosis",
+                                             D_725626004_D_386524148==1 ~ "Polycystic Ovary System",
+                                             D_725626004_D_937208760==1 ~ "Enlarged Prostate",
+                                             D_725626004_D_746542057==1 ~ "Fibrocystic Breast or Benign Breast isease",
+                                             D_725626004_D_854945381==1 ~ "Ductal Carcinoma in situ",
+                                             D_725626004_D_535003378==1 ~ "None",
+                                             TRUE ~ "Skipped this question"))
+
+dt_urn_repro_summary <- mhgroup8 %>% dplyr::group_by(urn_repro) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(urn_repro, n, percentage)
+
+gt_mh8<- dt_urn_repro_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("MHGROUP8: Diagnosed Urinary and Reproductive Problems")) %>% 
+  cols_label(n= md("**Number of Participants**"), urn_repro = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(participants,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = urn_repro,
+    )
+  ) %>% opt_row_striping()
+
+
+
+tmp8<- data_tib_m1[, grepl("725626004", colnames(data_tib_m1))]
+urinrp_dx <- NULL
+for (i in 1:7){
+  dt <- as.data.frame(tab1(tmp8[,i])$output.table)
+  dt$urinrp_dx <- colnames(tmp8)[i]
+  urinrp_dx <- rbind(urinrp_dx,dt[2,])
+  
+}
+urinrp_dx$urinrp_dx
+urinrp_dx$urinrp_dx <- c("Polycystic Ovary System", "Uterine Fibroids", "None", "Fibrocystic Breast or Benign Breast isease","Ductal Carcinoma in situ","Endometriosis","Enlarged Prostate")
+```
+```{r MHGroup8Table, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+colnames(urinrp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "urinrp_dx")
+mgr8 <- urinrp_dx[, c(4,1, 2)]
+
+skipped_mhg8 <- sum(table(mhgroup8$urn_repro=="Skipped this question")[2])
+mgr8[as.numeric(dim(mgr8)[[1]])+1,] <- c("Skipped this Question", skipped_mhg8, round((skipped_mhg8/dim(data_tib_m1)[[1]])*100,2))
+
+
+
+dt_mgr8 <- mgr8 %>%  gt::gt(rowname_col = "row_lab") %>%  
+  tab_header(title = md("MHGROUP8: Diagnosed Urinary and Reproductive Problems")) %>% 
+  cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"),  urinrp_dx = md("**Answer**")) %>% 
+  # summary_rows(
+  #   column = c(participants,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  #grand_summary_rows(columns=c(Frequency, Percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = urinrp_dx,
+    )
+  )
+tab_footnote(
+  dt_mgr8,
+  md("As this is a select all question, participants may select multiple responses."),
+  locations = cells_column_labels(columns = Percentage),
+  placement = c("left")
+)
+
+
+
+```
+
+
+
+## Surgery 
+```{r MHGroup9, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+
+mhgroup9= data_tib_m1 %>%  mutate(surgery= case_when(D_624179836_D_797189152==1 ~ "Tonsillectomy",
+                                             D_624179836_D_633546100==1 ~ "Cholecystectomy",
+                                             D_624179836_D_866002271==1 ~ "Appendectomy",
+                                             D_624179836_D_118789503==1 ~ "Liposuction",
+                                             D_624179836_D_715563991==1 ~ "Gastric Bypass",
+                                             D_624179836_D_533491176==1 ~ "Breast Surgery",
+                                             D_624179836_D_220755749==1 ~ "Hysterectomy", 
+                                             D_624179836_D_465318416==1 ~ "Tubal Ligation",
+                                             D_624179836_D_630100221==1 ~ "Oophorectomy",
+                                             D_624179836_D_692881833==1 ~ "Salpingectomy",
+                                             D_624179836_D_654450030==1 ~ "Vasectomy",
+                                             D_624179836_D_532603425==1 ~ "Orchiectomy or Orchidectomy",
+                                             D_624179836_D_733236542==1 ~ "Prostatectomy",
+                                             D_624179836_D_961987554==1 ~ "Penectomy",
+                                             D_624179836_D_535003378==1 ~ "None",
+                                             TRUE ~ "Skipped this question"))
+
+dt_surgery_summary <- mhgroup9 %>% dplyr::group_by(surgery) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(surgery, n, percentage)
+
+gt_mh9<- dt_surgery_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("MHGROUP9: Surgeries Had")) %>% 
+  cols_label(n= md("**Number of Participants**"),surgery = md("**Type**"), percentage = md("**Percentage of Participants**")) %>% 
+  # summary_rows(
+  #   column = c(participants,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = surgery,
+    )
+  ) %>% opt_row_striping()
+
+
+
+tmp9<- data_tib_m1[, grepl("624179836", colnames(data_tib_m1))]
+srgy_dx <- NULL
+for (i in 1:15){
+  dt <- as.data.frame(tab1(tmp9[,i])$output.table)
+  dt$srgy_dx <- colnames(tmp9)[i]
+  srgy_dx <- rbind(srgy_dx,dt[2,])
+  
+}
+srgy_dx$srgy_dx
+srgy_dx$srgy_dx <- c("Liposuction", "Hysterectomy", "Tubal Ligation","Orchiectomy or Orchidectomy","Breast Surgery","None","Oophorectomy","Cholecystectomy","Vasectomy","Salpingectomy","Gastric Bypass","Prostatectomy", "Tonsillectomy","Appendectomy","Penectomy")
+```
+```{r MHGroup9Table, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+colnames(srgy_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "srgy_dx")
+mgr9 <- srgy_dx[, c(4,1, 2)]
+
+skipped_mhg8 <- sum(table(mhgroup9$surgery=="Skipped this question")[2])
+mgr9[as.numeric(dim(mgr9)[[1]])+1,] <- c("Skipped this Question", skipped_mhg8, round((skipped_mhg8/dim(data_tib_m1)[[1]])*100,2))
+
+
+dt_mgr9 <- mgr9 %>%  gt::gt(rowname_col = "row_lab") %>%  
+  tab_header(title = md("MHGROUP9: Surgeries Had")) %>% 
+  cols_label(Frequency= md("**Number of Participants**"),  Percentage=md("**Percentge of Participants**"), srgy_dx = md("**Answer**")) %>% 
+  # summary_rows(
+  #   column = c(participants,percentage),
+  #   fns= list(
+  #     Sum= ~sum(.)
+  #   ), decimals=0) %>%
+  #grand_summary_rows(columns=c(Frequency, Percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = srgy_dx,
+    )
+  )  %>% 
+tab_footnote(
+    footnote = "As this is a select all question, participants may select multiple responses.",
+    locations=cells_column_labels(Percentage)
+  ) %>%
+  tab_footnote(
+    footnote = md("Breast Surgyeries include: Breast implants, Mastopexy, Breast reconstruction, Breast reduction, Breast-Conserving Surgery (BCS), Lumpectomy, Partial Mastectomy, Segmental Mastectomy, Mastectomy, Double Mastectomy, Bilateral Mastectomy, Surgery for a breast abscess, Microdochectomy."),
+    locations=cells_column_labels(srgy_dx)
+  )
+
+dt_mgr9
+
+
+```
+
+
+
+
+
+```{r edu, warning=FALSE, echo=FALSE, message=FALSE}
+#Highest level of ed. achieved 
+
+edu= data_tib_m1  %>%  mutate(edlevel= case_when(D_367803647_D_367803647==978204320 ~ "Grade School(Grades 1-8)",
+                                                  D_367803647_D_367803647==935502060 ~ "Some High School, No Diploma",
+                                                  D_367803647_D_367803647==404564707 ~ "High School Graduate or GED",
+                                                  D_367803647_D_367803647==432193665 ~ "Some College, No Degree",
+                                                  D_367803647_D_367803647==890756124 ~ "Technical or Trade School After High School",
+                                                  D_367803647_D_367803647==766964355 ~ "Associate's Degree",
+                                                  D_367803647_D_367803647==875342283 ~ "Bachelor's Degree",
+                                                  D_367803647_D_367803647==598242454 ~ "Advanced Degree",
+                                                  D_367803647_D_367803647==807835037 ~ "Other",
+                                                  TRUE ~ "Skipped This Question"))
+
+edu$edlevel <- factor(edu$edlevel,levels=c("Grade School(Grades 1-8)", "Some High School, No Diploma", "High School Graduate or GED","Some College, No Degree","Technical or Trade School After High School","Associate's Degree","Bachelor's Degree","Advanced Degree", "Other", "Skipped This Question"))
+
+dt_edu_summary <- edu %>% dplyr::group_by(edlevel) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(edlevel, n, percentage)
+
+dt_edu_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("EDU: Highest Level of School Completed")) %>% 
+  cols_label(n= md("**Number of Participants**"), edlevel = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+    #summary_rows( groups=F,column = c(n,percentage), fns= list( Sum= ~sum(.)), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = edlevel,)) %>% opt_row_striping()
+
+edu_crostab <- module1 %>%  mutate(Site=case_when(d_827220437 == 531629870 ~ "HealthPartners", 
+                                                            d_827220437 == 548392715 ~"Henry Ford",
+                                                             d_827220437 == 303349821 ~ "Marshfield",
+                                                             d_827220437 == 657167265 ~ "Sanford", 
+                                                             d_827220437 == 809703864 ~ "UChicago",
+                                                             d_827220437 == 125001209 ~ "KPCO",
+                                                             d_827220437 == 327912200 ~ "KPGA",
+                                                             d_827220437 == 300267574 ~ "KPHI",
+                                                             d_827220437 == 452412599 ~ "KPNW",
+                                                             d_827220437 == 517700004 ~ "NCI",
+                                                             d_827220437 == 181769837 ~"Other"),
+                               edlevel= case_when(D_367803647_D_367803647==978204320 | D_367803647_D_367803647==935502060 ~ "<HS",
+                                                  D_367803647_D_367803647==404564707 ~ "HS or GED",
+                                                  D_367803647_D_367803647==432193665 | D_367803647_D_367803647==890756124 | D_367803647_D_367803647==807835037 ~ "Some college, technical school/other",
+                                                  D_367803647_D_367803647==766964355 | D_367803647_D_367803647==875342283 ~ "Associates/Bachelors Degree",
+                                                  D_367803647_D_367803647==598242454 ~ "Advanced Degree",
+                                                  TRUE ~ "Skipped This Question"),
+                               cardiov2 = case_when(D_167101091_D_535003378 == 1 ~ "None",
+                                                    TRUE ~ "Other"),
+                               cardiov= case_when(D_167101091_D_698944820==1 ~ "B-12 Deficiency",
+                                             D_167101091_D_838744325==1 ~ "Coronary Artery",
+                                             D_167101091_D_769790179==1 ~ "Congestive Heart Failure",
+                                             D_167101091_D_699553344==1 ~ "High Cholesterol",
+                                             D_167101091_D_700811160==1 ~ "Heart Attack",
+                                             D_167101091_D_336505365==1 ~ "Abnormal Heart Rhythm",
+                                             D_167101091_D_132548932==1 ~ "Chest Pain",
+                                             D_167101091_D_747787163==1 ~ "Heart Valve Problems",
+                                             D_167101091_D_693851465==1 ~ "High Blood Pressure",
+                                             D_167101091_D_512012656==1 ~ "Blood Clots",
+                                             D_167101091_D_619337095==1 ~ "Stroke",
+                                             D_167101091_D_535003378==1 ~ "None",
+                                             TRUE ~ "Skipped this question"),
+                               kidn= case_when(D_874046190_D_827542780==1 ~ "Kidney Stones", 
+                                             D_874046190_D_167238688==1 ~ "Chronic Kindey Disease",
+                                             D_874046190_D_535003378==1 ~ "None",
+                                             TRUE ~ "Skipped this question"),
+                               resp= case_when(D_894259747_D_359025642==1 ~ "Chronic Lung Disease",
+                                               D_894259747_D_407340134==1 ~ "Asthma",
+                                               D_894259747_D_427219143==1 ~ "Hay Fever",
+                                               D_894259747_D_535003378==1 ~ "None",
+                                               TRUE ~ "Skipped this question"),
+                               digest= case_when(D_180961306_D_535003378==1 ~ "None",
+                                                 TRUE ~ "Other"),
+                               thy_d_g= case_when(D_900541533_D_535003378==1 ~ "None",
+                                                  TRUE ~ "Other"),
+                               sysoth= case_when(D_543728565_D_636030086==1 ~ "Rheumatoid Arthritis", 
+                                                 D_543728565_D_239687183==1 ~ "Lupus",
+                                                 D_543728565_D_134592375==1 ~ "Gout",
+                                                 D_543728565_D_535003378==1 ~ "None",
+                                                 TRUE ~ "Other"),
+                               sti_std= case_when(D_874709643_D_535003378==1 ~ "None",
+                                                  TRUE~"Other"),
+                               urn_repro= case_when(D_725626004_D_535003378==1 ~ "None",
+                                                  TRUE ~ "Other"),
+                               surgery= case_when(D_624179836_D_535003378==1 ~ "None",
+                                                  TRUE ~ "Other"))
+
+
+
+edu_crostab$edlevel <- factor(edu_crostab$edlevel,levels=c("<HS", "HS or GED","Some college, technical school/other", "Associates/Bachelors Degree", "Advanced Degree","Skipped This Question"))
+edu_crostab$Site <- factor(edu_crostab$Site,levels=c("UChicago","HealthPartners","Marshfield","Sanford","Henry Ford","KPCO","KPGA","KPHI", "KPNW", "NCI", "Other"))
+edu_crostab <- edu_crostab %>%  filter(Site!="Unknown")
+
+edu_crostabs1 <- edu_crostab %>% dplyr::select(edlevel, Site ) %>% tbl_cross(
+    col = Site,
+    row = edlevel,
+    digits=c(0,1),
+    percent = "col",
+    label=list(Site="Site",
+                edlevel = " "),
+    missing="ifany",
+    margin_text="Total")
+
+edu_crostabs__1 <- edu_crostabs1 %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total") %>%
+  modify_caption("Education Levels Across Sites")  %>% 
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+
+edu_crostabs__1 %>% kable_styling(latex_options = "scale_down")
+#knitr::kable(edu_crostabs, booktabs = TRUE)  %>% kable_styling(latex_options = "scale_down") %>% landscape() 
+
+
+
+
+```
+
+
+```{r edu_test, warning=FALSE, echo=FALSE, message=FALSE}
+
+edu_crostabs2 <- edu_crostab %>%  filter(Site=="UChicago") %>% dplyr::select(edlevel, cardiov ) %>% tbl_cross(
+    col = cardiov,
+    row = edlevel,
+    digits=c(0,1),
+    percent = "col",
+    label=list(cardiov="Presence",
+                edlevel = " "),
+    missing="ifany",
+    margin_text="Total")
+
+edu_crostabs__2 <- edu_crostabs2 %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total") %>%
+  modify_caption("Education Levels vs No Cardiovascular Disease for UChicago")  %>% 
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+
+edu_crostabs__2  %>% landscape()
+
+
+
+
+edu_crostabs3 <- edu_crostab %>%  filter(Site=="HealthPartners") %>% dplyr::select(edlevel, cardiov ) %>% tbl_cross(
+    col = cardiov,
+    row = edlevel,
+    digits=c(0,1),
+    percent = "col",
+    label=list(cardiov="Presence",
+                edlevel = " "),
+    missing="ifany",
+    margin_text="Total")
+
+edu_crostabs__3 <- edu_crostabs3 %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total") %>%
+  modify_caption("Education Levels vs No Cardiovascular Disease for HealthPartners")  %>% 
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+
+edu_crostabs__3  %>% landscape()
+
+
+
+
+edu_crostabs4 <- edu_crostab %>%  filter(Site=="Henry Ford") %>% dplyr::select(edlevel, cardiov ) %>% tbl_cross(
+    col = cardiov,
+    row = edlevel,
+    digits=c(0,1),
+    percent = "col",
+    label=list(cardiov="Presence",
+                edlevel = " "),
+    missing="ifany",
+    margin_text="Total")
+
+edu_crostabs__4 <- edu_crostabs4 %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total") %>%
+  modify_caption("Education Levels vs No Cardiovascular Disease for Henry Ford")  %>% 
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+
+edu_crostabs__4  %>% landscape()
+
+
+
+
+edu_crostabs5 <- edu_crostab %>%  filter(Site=="Marshfield") %>% dplyr::select(edlevel, cardiov ) %>% tbl_cross(
+    col = cardiov,
+    row = edlevel,
+    digits=c(0,1),
+    percent = "col",
+    label=list(cardiov="Presence",
+                edlevel = " "),
+    missing="ifany",
+    margin_text="Total")
+
+edu_crostabs__5 <- edu_crostabs5 %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total") %>%
+  modify_caption("Education Levels vs No Cardiovascular Disease for Marshfield")  %>% 
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+
+edu_crostabs__5  %>% landscape()
+
+
+
+
+edu_crostabs6 <- edu_crostab %>%  filter(Site=="Sanford") %>% dplyr::select(edlevel, cardiov ) %>% tbl_cross(
+    col = cardiov,
+    row = edlevel,
+    digits=c(0,1),
+    percent = "col",
+    label=list(cardiov="Presence",
+                edlevel = " "),
+    missing="ifany",
+    margin_text="Total")
+
+edu_crostabs__6 <- edu_crostabs6 %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total") %>%
+  modify_caption("Education Levels vs No Cardiovascular Disease for Sanford")  %>% 
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+
+edu_crostabs__6  %>% landscape()
+
+
+edu_crostabs7 <- edu_crostab %>%  filter(Site=="KPCO") %>% dplyr::select(edlevel, cardiov ) %>% tbl_cross(
+    col = cardiov,
+    row = edlevel,
+    digits=c(0,1),
+    percent = "col",
+    label=list(cardiov="Presence",
+                edlevel = " "),
+    missing="ifany",
+    margin_text="Total")
+
+edu_crostabs__7 <- edu_crostabs7 %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total") %>%
+  modify_caption("Education Levels vs No Cardiovascular Disease for KPCO")  %>% 
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+
+edu_crostabs__7  %>% landscape()
+
+
+
+
+edu_crostabs8 <- edu_crostab %>%  filter(Site=="KPGA") %>% dplyr::select(edlevel, cardiov ) %>% tbl_cross(
+    col = cardiov,
+    row = edlevel,
+    digits=c(0,1),
+    percent = "col",
+    label=list(cardiov="Presence",
+                edlevel = " "),
+    missing="ifany",
+    margin_text="Total")
+
+edu_crostabs__8 <- edu_crostabs8 %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total") %>%
+  modify_caption("Education Levels vs No Cardiovascular Disease for KPGA")  %>% 
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+
+edu_crostabs__8  %>% landscape()
+
+
+
+
+edu_crostabs9 <- edu_crostab %>%  filter(Site=="KPHI") %>% dplyr::select(edlevel, cardiov ) %>% tbl_cross(
+    col = cardiov,
+    row = edlevel,
+    digits=c(0,1),
+    percent = "col",
+    label=list(cardiov="Presence",
+                edlevel = " "),
+    missing="ifany",
+    margin_text="Total")
+
+edu_crostabs__9 <- edu_crostabs9 %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total") %>%
+  modify_caption("Education Levels vs No Cardiovascular Disease for KPHI")  %>% 
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+
+edu_crostabs__9  %>% landscape()
+
+
+
+edu_crostabs9 <- edu_crostab %>%  filter(Site=="KPHI") %>% dplyr::select(edlevel, cardiov )
+
+kphi_edu_cardio <- edu_crostabs9 %>%  dplyr::group_by(edlevel) %>%  dplyr::summarize(n=sum(cardiov=="None"), percentage=100*n/(sum(edu_crostab$Site=="KPHI" & edu_crostab$cardiov=="None")))  %>% dplyr::ungroup() %>%  dplyr::select(edlevel, n, percentage) 
+
+kphi_edu_cardio <- kphi_edu_cardio %>% mutate(cardio_count= paste0(n, " (", round(percentage, digits=2), "%)")) %>%  select(edlevel, cardio_count)
+
+kphi_edu_cardio_gt <- kphi_edu_cardio %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Education Levels vs No Cardiovascular Disease for KPHI")) %>% 
+  cols_label(edlevel = md("**Education Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = edlevel,
+    )
+  ) 
+
+#total_kphi <- paste(sum(edu_crostab$Site=="KPHI" & edu_crostab$cardiov=="None"), "100%")
+
+#kphi_edu_cardio[nrow(kphi_edu_cardio)+1,] <- list("Total", total_kphi)
+
+
+
+edu_crostabs10 <- edu_crostab %>%  filter(Site=="KPNW") %>% dplyr::select(edlevel, cardiov )
+
+KPNW_edu_cardio <- edu_crostabs10 %>%  dplyr::group_by(edlevel) %>%  dplyr::summarize(n=sum(cardiov=="None"), percentage=100*n/(sum(edu_crostab$Site=="KPNW" & edu_crostab$cardiov=="None")))  %>% dplyr::ungroup() %>%  dplyr::select(edlevel, n, percentage) 
+
+KPNW_edu_cardio <- KPNW_edu_cardio %>% mutate(cardio_count= paste0(n, " (", round(percentage, digits=2), "%)")) %>%  select(edlevel, cardio_count)
+
+KPNW_edu_cardio_gt <- KPNW_edu_cardio %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Education Levels vs No Cardiovascular Disease for KPNW")) %>% 
+  cols_label(edlevel = md("**Education Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = edlevel,
+    )
+  ) 
+```
+
+
+
+
+
+```{r edu_cardio_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, cardiov2 == "None") %>%
+    group_by(edlevel) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(edlevel, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", edu_crostab)
+HP_summary <- calculate_summary("HealthPartners", edu_crostab)
+MF_summary <- calculate_summary("Marshfield", edu_crostab)
+SF_summary <- calculate_summary("Sanford", edu_crostab)
+HF_summary <- calculate_summary("Henry Ford", edu_crostab)
+kpco_summary <- calculate_summary("KPCO", edu_crostab)
+kpga_summary <- calculate_summary("KPGA", edu_crostab)
+kphi_summary <- calculate_summary("KPHI", edu_crostab)
+kpnw_summary <- calculate_summary("KPNW", edu_crostab)
+
+
+#unique_edlevels <- edu_crostab %>% distinct(edlevel)
+
+unique_edlevels <- edu_crostab %>%
+  mutate(edlevel = factor(edlevel, levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+                                              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question"))) %>%
+  distinct(edlevel)
+
+# Merge with the unique education levels data frame
+combined_df <- unique_edlevels %>%
+  left_join(UC_summary, by = "edlevel") %>%
+  left_join(HP_summary, by = "edlevel") %>%
+  left_join(MF_summary, by = "edlevel") %>%
+  left_join(SF_summary, by = "edlevel") %>%
+  left_join(HF_summary, by = "edlevel") %>%
+  left_join(kpco_summary, by = "edlevel") %>%
+  left_join(kpga_summary, by = "edlevel") %>%
+  left_join(kphi_summary, by = "edlevel") %>%
+  left_join(kpnw_summary, by = "edlevel") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Education Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Education Level` <- factor(
+#   combined_df$`Education Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(5,3,1,2,4,6), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Education Levels vs No Cardiovascular Disease for All Sites")) %>% 
+  #cols_label(edlevel = md("**Education Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Education Level",
+    )) 
+
+
+combined_df_knit
+
+
+
+
+```
+
+
+```{r edu_kidn_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, kidn == "None") %>%
+    group_by(edlevel) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(edlevel, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", edu_crostab)
+HP_summary <- calculate_summary("HealthPartners", edu_crostab)
+MF_summary <- calculate_summary("Marshfield", edu_crostab)
+SF_summary <- calculate_summary("Sanford", edu_crostab)
+HF_summary <- calculate_summary("Henry Ford", edu_crostab)
+kpco_summary <- calculate_summary("KPCO", edu_crostab)
+kpga_summary <- calculate_summary("KPGA", edu_crostab)
+kphi_summary <- calculate_summary("KPHI", edu_crostab)
+kpnw_summary <- calculate_summary("KPNW", edu_crostab)
+
+
+#unique_edlevels <- edu_crostab %>% distinct(edlevel)
+
+unique_edlevels <- edu_crostab %>%
+  mutate(edlevel = factor(edlevel, levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+                                              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question"))) %>%
+  distinct(edlevel)
+
+# Merge with the unique education levels data frame
+combined_df <- unique_edlevels %>%
+  left_join(UC_summary, by = "edlevel") %>%
+  left_join(HP_summary, by = "edlevel") %>%
+  left_join(MF_summary, by = "edlevel") %>%
+  left_join(SF_summary, by = "edlevel") %>%
+  left_join(HF_summary, by = "edlevel") %>%
+  left_join(kpco_summary, by = "edlevel") %>%
+  left_join(kpga_summary, by = "edlevel") %>%
+  left_join(kphi_summary, by = "edlevel") %>%
+  left_join(kpnw_summary, by = "edlevel") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Education Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Education Level` <- factor(
+#   combined_df$`Education Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(5,3,1,2,4,6), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Education Levels vs No Kidney Disease for All Sites")) %>% 
+  #cols_label(edlevel = md("**Education Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Education Level",
+    )) 
+
+
+combined_df_knit
+
+
+
+
+```
+
+
+```{r edu_resp_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, resp == "None") %>%
+    group_by(edlevel) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(edlevel, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", edu_crostab)
+HP_summary <- calculate_summary("HealthPartners", edu_crostab)
+MF_summary <- calculate_summary("Marshfield", edu_crostab)
+SF_summary <- calculate_summary("Sanford", edu_crostab)
+HF_summary <- calculate_summary("Henry Ford", edu_crostab)
+kpco_summary <- calculate_summary("KPCO", edu_crostab)
+kpga_summary <- calculate_summary("KPGA", edu_crostab)
+kphi_summary <- calculate_summary("KPHI", edu_crostab)
+kpnw_summary <- calculate_summary("KPNW", edu_crostab)
+
+
+#unique_edlevels <- edu_crostab %>% distinct(edlevel)
+
+unique_edlevels <- edu_crostab %>%
+  mutate(edlevel = factor(edlevel, levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+                                              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question"))) %>%
+  distinct(edlevel)
+
+# Merge with the unique education levels data frame
+combined_df <- unique_edlevels %>%
+  left_join(UC_summary, by = "edlevel") %>%
+  left_join(HP_summary, by = "edlevel") %>%
+  left_join(MF_summary, by = "edlevel") %>%
+  left_join(SF_summary, by = "edlevel") %>%
+  left_join(HF_summary, by = "edlevel") %>%
+  left_join(kpco_summary, by = "edlevel") %>%
+  left_join(kpga_summary, by = "edlevel") %>%
+  left_join(kphi_summary, by = "edlevel") %>%
+  left_join(kpnw_summary, by = "edlevel") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Education Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Education Level` <- factor(
+#   combined_df$`Education Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(5,3,1,2,4,6), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Education Levels vs No Respiratory Disease for All Sites")) %>% 
+  #cols_label(edlevel = md("**Education Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Education Level",
+    )) 
+
+
+combined_df_knit
+
+
+
+
+```
+
+
+```{r edu_digest_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, digest == "None") %>%
+    group_by(edlevel) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(edlevel, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", edu_crostab)
+HP_summary <- calculate_summary("HealthPartners", edu_crostab)
+MF_summary <- calculate_summary("Marshfield", edu_crostab)
+SF_summary <- calculate_summary("Sanford", edu_crostab)
+HF_summary <- calculate_summary("Henry Ford", edu_crostab)
+kpco_summary <- calculate_summary("KPCO", edu_crostab)
+kpga_summary <- calculate_summary("KPGA", edu_crostab)
+kphi_summary <- calculate_summary("KPHI", edu_crostab)
+kpnw_summary <- calculate_summary("KPNW", edu_crostab)
+
+
+#unique_edlevels <- edu_crostab %>% distinct(edlevel)
+
+unique_edlevels <- edu_crostab %>%
+  mutate(edlevel = factor(edlevel, levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+                                              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question"))) %>%
+  distinct(edlevel)
+
+# Merge with the unique education levels data frame
+combined_df <- unique_edlevels %>%
+  left_join(UC_summary, by = "edlevel") %>%
+  left_join(HP_summary, by = "edlevel") %>%
+  left_join(MF_summary, by = "edlevel") %>%
+  left_join(SF_summary, by = "edlevel") %>%
+  left_join(HF_summary, by = "edlevel") %>%
+  left_join(kpco_summary, by = "edlevel") %>%
+  left_join(kpga_summary, by = "edlevel") %>%
+  left_join(kphi_summary, by = "edlevel") %>%
+  left_join(kpnw_summary, by = "edlevel") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Education Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Education Level` <- factor(
+#   combined_df$`Education Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(5,3,1,2,4,6), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Education Levels vs No Digestive Disease for All Sites")) %>% 
+  #cols_label(edlevel = md("**Education Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Education Level",
+    )) 
+
+
+combined_df_knit
+
+
+
+
+```
+
+
+```{r edu_thy_d_g_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, thy_d_g == "None") %>%
+    group_by(edlevel) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(edlevel, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", edu_crostab)
+HP_summary <- calculate_summary("HealthPartners", edu_crostab)
+MF_summary <- calculate_summary("Marshfield", edu_crostab)
+SF_summary <- calculate_summary("Sanford", edu_crostab)
+HF_summary <- calculate_summary("Henry Ford", edu_crostab)
+kpco_summary <- calculate_summary("KPCO", edu_crostab)
+kpga_summary <- calculate_summary("KPGA", edu_crostab)
+kphi_summary <- calculate_summary("KPHI", edu_crostab)
+kpnw_summary <- calculate_summary("KPNW", edu_crostab)
+
+
+#unique_edlevels <- edu_crostab %>% distinct(edlevel)
+
+unique_edlevels <- edu_crostab %>%
+  mutate(edlevel = factor(edlevel, levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+                                              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question"))) %>%
+  distinct(edlevel)
+
+# Merge with the unique education levels data frame
+combined_df <- unique_edlevels %>%
+  left_join(UC_summary, by = "edlevel") %>%
+  left_join(HP_summary, by = "edlevel") %>%
+  left_join(MF_summary, by = "edlevel") %>%
+  left_join(SF_summary, by = "edlevel") %>%
+  left_join(HF_summary, by = "edlevel") %>%
+  left_join(kpco_summary, by = "edlevel") %>%
+  left_join(kpga_summary, by = "edlevel") %>%
+  left_join(kphi_summary, by = "edlevel") %>%
+  left_join(kpnw_summary, by = "edlevel") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Education Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Education Level` <- factor(
+#   combined_df$`Education Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(5,3,1,2,4,6), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Education Levels vs No Thyroid, Diabetes, or Graves Disease for All Sites")) %>% 
+  #cols_label(edlevel = md("**Education Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Education Level",
+    )) 
+
+
+combined_df_knit
+
+
+
+
+```
+
+
+```{r edu_sysoth_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, sysoth == "None") %>%
+    group_by(edlevel) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(edlevel, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", edu_crostab)
+HP_summary <- calculate_summary("HealthPartners", edu_crostab)
+MF_summary <- calculate_summary("Marshfield", edu_crostab)
+SF_summary <- calculate_summary("Sanford", edu_crostab)
+HF_summary <- calculate_summary("Henry Ford", edu_crostab)
+kpco_summary <- calculate_summary("KPCO", edu_crostab)
+kpga_summary <- calculate_summary("KPGA", edu_crostab)
+kphi_summary <- calculate_summary("KPHI", edu_crostab)
+kpnw_summary <- calculate_summary("KPNW", edu_crostab)
+
+
+#unique_edlevels <- edu_crostab %>% distinct(edlevel)
+
+unique_edlevels <- edu_crostab %>%
+  mutate(edlevel = factor(edlevel, levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+                                              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question"))) %>%
+  distinct(edlevel)
+
+# Merge with the unique education levels data frame
+combined_df <- unique_edlevels %>%
+  left_join(UC_summary, by = "edlevel") %>%
+  left_join(HP_summary, by = "edlevel") %>%
+  left_join(MF_summary, by = "edlevel") %>%
+  left_join(SF_summary, by = "edlevel") %>%
+  left_join(HF_summary, by = "edlevel") %>%
+  left_join(kpco_summary, by = "edlevel") %>%
+  left_join(kpga_summary, by = "edlevel") %>%
+  left_join(kphi_summary, by = "edlevel") %>%
+  left_join(kpnw_summary, by = "edlevel") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Education Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Education Level` <- factor(
+#   combined_df$`Education Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(5,3,1,2,4,6), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Education Levels vs No Systemic or Other Disease for All Sites")) %>% 
+  #cols_label(edlevel = md("**Education Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Education Level",
+    )) 
+
+
+combined_df_knit
+
+
+
+
+```
+
+
+
+```{r edu_sti_std_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, sti_std == "None") %>%
+    group_by(edlevel) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(edlevel, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", edu_crostab)
+HP_summary <- calculate_summary("HealthPartners", edu_crostab)
+MF_summary <- calculate_summary("Marshfield", edu_crostab)
+SF_summary <- calculate_summary("Sanford", edu_crostab)
+HF_summary <- calculate_summary("Henry Ford", edu_crostab)
+kpco_summary <- calculate_summary("KPCO", edu_crostab)
+kpga_summary <- calculate_summary("KPGA", edu_crostab)
+kphi_summary <- calculate_summary("KPHI", edu_crostab)
+kpnw_summary <- calculate_summary("KPNW", edu_crostab)
+
+
+#unique_edlevels <- edu_crostab %>% distinct(edlevel)
+
+unique_edlevels <- edu_crostab %>%
+  mutate(edlevel = factor(edlevel, levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+                                              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question"))) %>%
+  distinct(edlevel)
+
+# Merge with the unique education levels data frame
+combined_df <- unique_edlevels %>%
+  left_join(UC_summary, by = "edlevel") %>%
+  left_join(HP_summary, by = "edlevel") %>%
+  left_join(MF_summary, by = "edlevel") %>%
+  left_join(SF_summary, by = "edlevel") %>%
+  left_join(HF_summary, by = "edlevel") %>%
+  left_join(kpco_summary, by = "edlevel") %>%
+  left_join(kpga_summary, by = "edlevel") %>%
+  left_join(kphi_summary, by = "edlevel") %>%
+  left_join(kpnw_summary, by = "edlevel") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Education Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Education Level` <- factor(
+#   combined_df$`Education Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(5,3,1,2,4,6), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Education Levels vs No STD, STI or Infectious Disease for All Sites")) %>% 
+  #cols_label(edlevel = md("**Education Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Education Level",
+    )) 
+
+
+combined_df_knit
+
+
+
+
+```
+
+
+```{r edu_urn_repro_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, urn_repro == "None") %>%
+    group_by(edlevel) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(edlevel, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", edu_crostab)
+HP_summary <- calculate_summary("HealthPartners", edu_crostab)
+MF_summary <- calculate_summary("Marshfield", edu_crostab)
+SF_summary <- calculate_summary("Sanford", edu_crostab)
+HF_summary <- calculate_summary("Henry Ford", edu_crostab)
+kpco_summary <- calculate_summary("KPCO", edu_crostab)
+kpga_summary <- calculate_summary("KPGA", edu_crostab)
+kphi_summary <- calculate_summary("KPHI", edu_crostab)
+kpnw_summary <- calculate_summary("KPNW", edu_crostab)
+
+
+#unique_edlevels <- edu_crostab %>% distinct(edlevel)
+
+unique_edlevels <- edu_crostab %>%
+  mutate(edlevel = factor(edlevel, levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+                                              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question"))) %>%
+  distinct(edlevel)
+
+# Merge with the unique education levels data frame
+combined_df <- unique_edlevels %>%
+  left_join(UC_summary, by = "edlevel") %>%
+  left_join(HP_summary, by = "edlevel") %>%
+  left_join(MF_summary, by = "edlevel") %>%
+  left_join(SF_summary, by = "edlevel") %>%
+  left_join(HF_summary, by = "edlevel") %>%
+  left_join(kpco_summary, by = "edlevel") %>%
+  left_join(kpga_summary, by = "edlevel") %>%
+  left_join(kphi_summary, by = "edlevel") %>%
+  left_join(kpnw_summary, by = "edlevel") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Education Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Education Level` <- factor(
+#   combined_df$`Education Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(5,3,1,2,4,6), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Education Levels vs No Urinary or Reproductive Disease for All Sites")) %>% 
+  #cols_label(edlevel = md("**Education Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Education Level",
+    )) 
+
+
+combined_df_knit
+
+
+
+
+```
+
+
+```{r edu_surgery_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, surgery == "None") %>%
+    group_by(edlevel) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(edlevel, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", edu_crostab)
+HP_summary <- calculate_summary("HealthPartners", edu_crostab)
+MF_summary <- calculate_summary("Marshfield", edu_crostab)
+SF_summary <- calculate_summary("Sanford", edu_crostab)
+HF_summary <- calculate_summary("Henry Ford", edu_crostab)
+kpco_summary <- calculate_summary("KPCO", edu_crostab)
+kpga_summary <- calculate_summary("KPGA", edu_crostab)
+kphi_summary <- calculate_summary("KPHI", edu_crostab)
+kpnw_summary <- calculate_summary("KPNW", edu_crostab)
+
+
+#unique_edlevels <- edu_crostab %>% distinct(edlevel)
+
+unique_edlevels <- edu_crostab %>%
+  mutate(edlevel = factor(edlevel, levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+                                              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question"))) %>%
+  distinct(edlevel)
+
+# Merge with the unique education levels data frame
+combined_df <- unique_edlevels %>%
+  left_join(UC_summary, by = "edlevel") %>%
+  left_join(HP_summary, by = "edlevel") %>%
+  left_join(MF_summary, by = "edlevel") %>%
+  left_join(SF_summary, by = "edlevel") %>%
+  left_join(HF_summary, by = "edlevel") %>%
+  left_join(kpco_summary, by = "edlevel") %>%
+  left_join(kpga_summary, by = "edlevel") %>%
+  left_join(kphi_summary, by = "edlevel") %>%
+  left_join(kpnw_summary, by = "edlevel") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Education Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Education Level` <- factor(
+#   combined_df$`Education Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(5,3,1,2,4,6), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Education Levels vs No Surgery for All Sites")) %>% 
+  #cols_label(edlevel = md("**Education Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Education Level",
+    )) 
+
+
+combined_df_knit
+
+
+
+
+```
+
+
+```{r edu_ALLMHGROUPS_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, cardiov2 == "None",kidn == "None",resp == "None",digest == "None",
+           thy_d_g == "None",sysoth == "None",sti_std == "None",urn_repro == "None",surgery == "None") %>%
+    group_by(edlevel) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(edlevel, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", edu_crostab)
+HP_summary <- calculate_summary("HealthPartners", edu_crostab)
+MF_summary <- calculate_summary("Marshfield", edu_crostab)
+SF_summary <- calculate_summary("Sanford", edu_crostab)
+HF_summary <- calculate_summary("Henry Ford", edu_crostab)
+kpco_summary <- calculate_summary("KPCO", edu_crostab)
+kpga_summary <- calculate_summary("KPGA", edu_crostab)
+kphi_summary <- calculate_summary("KPHI", edu_crostab)
+kpnw_summary <- calculate_summary("KPNW", edu_crostab)
+
+
+#unique_edlevels <- edu_crostab %>% distinct(edlevel)
+
+unique_edlevels <- edu_crostab %>%
+  mutate(edlevel = factor(edlevel, levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+                                              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question"))) %>%
+  distinct(edlevel)
+
+# Merge with the unique education levels data frame
+combined_df <- unique_edlevels %>%
+  left_join(UC_summary, by = "edlevel") %>%
+  left_join(HP_summary, by = "edlevel") %>%
+  left_join(MF_summary, by = "edlevel") %>%
+  left_join(SF_summary, by = "edlevel") %>%
+  left_join(HF_summary, by = "edlevel") %>%
+  left_join(kpco_summary, by = "edlevel") %>%
+  left_join(kpga_summary, by = "edlevel") %>%
+  left_join(kphi_summary, by = "edlevel") %>%
+  left_join(kpnw_summary, by = "edlevel") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Education Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Education Level` <- factor(
+#   combined_df$`Education Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(5,3,1,2,4,6), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Education Levels vs Response of 'None' for All MH Groups for All Sites")) %>% 
+  #cols_label(edlevel = md("**Education Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Education Level",
+    )) 
+tab_footnote(
+combined_df_knit,
+  md("All MH Groups is defined here as 'MH Groups' from the BOH Module: Cardiovasular Disease, Respiratory Problems, Digestive System Probelms, Thyroid/Diabetes?Graves Disease, Kidney Disease, Systemic and Other Problems, STDs and STIs, Urinary and Reproductive Problems, and Surgical Procedures"),
+  #locations = cells_column_labels(columns = n),
+  placement = c("left")
+)
+
+
+
+
+```
+
+
+
+
+
+
+
+```{r income, warning=FALSE, echo=FALSE, message=FALSE}
+inc= data_tib_m1  %>%  mutate(status= case_when(D_759004335==209571450 ~ "35,000-49,000",
+                                                  D_759004335==212249150 ~ "50,000-74,000",
+                                                  D_759004335==374508062 ~ "0-9,000",
+                                                  #D_759004335==530094502 ~ "Error- Unlisted Response Selected", 
+                                                  D_759004335==742032816 ~ "200,000+", 
+                                                  D_759004335==745561936 ~ "25,000-34,000",
+                                                  D_759004335==746038746 ~ "Prefer not to Answer",
+                                                  D_759004335==777814771 ~ "75,000-99,000", 
+                                                  D_759004335==913602274 ~ "150,000-199,000", 
+                                                  D_759004335==922395188 ~ "100,000-149,000",
+                                                  D_759004335==976555124 ~ "10,000-24,000",
+                                                  D_759004335==178420302 ~ "Unknown",
+                                                  TRUE ~ "Skipped This Question"))
+
+inc$status <- factor(inc$status,levels=c("0-9,000","10,000-24,000","25,000-34,000","35,000-49,000","50,000-74,000","75,000-99,000","100,000-149,000","150,000-199,000",
+                                         "200,000+","Prefer not to Answer","Unknown","Skipped This Question"))
+
+dt_income_summary <- inc %>% group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage)
+
+gt_income_summary <- dt_income_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("INCOME: Total Family Income")) %>% 
+  cols_label(n= md("**Number of Participants**"), status = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+    # summary_rows( groups=F,column = c(n,percentage), fns= list( Sum= ~sum(.)), decimals=0) %>%
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = status,)) %>% opt_row_striping()
+
+
+
+
+
+inc_crostab <- inc %>%  mutate(Site= case_when(d_827220437 == 531629870 ~ "HealthPartners", 
+                                                            d_827220437 == 548392715 ~"Henry Ford",
+                                                             d_827220437 == 303349821 ~ "Marshfield",
+                                                             d_827220437 == 657167265 ~ "Sanford", 
+                                                             d_827220437 == 809703864 ~ "UChicago",
+                                                             d_827220437 == 125001209 ~ "KPCO",
+                                                             d_827220437 == 327912200 ~ "KPGA",
+                                                             d_827220437 == 300267574 ~ "KPHI",
+                                                             d_827220437 == 452412599 ~ "KPNW",
+                                                             d_827220437 == 517700004 ~ "NCI",
+                                                             d_827220437 == 181769837 ~"Other"),
+                               cardiov2 = case_when(D_167101091_D_535003378 == 1 ~ "None",
+                                                    TRUE ~ "Other"),
+                               kidn= case_when(D_874046190_D_827542780==1 ~ "Kidney Stones", 
+                                             D_874046190_D_167238688==1 ~ "Chronic Kindey Disease",
+                                             D_874046190_D_535003378==1 ~ "None",
+                                             TRUE ~ "Skipped this question"),
+                               resp= case_when(D_894259747_D_359025642==1 ~ "Chronic Lung Disease",
+                                               D_894259747_D_407340134==1 ~ "Asthma",
+                                               D_894259747_D_427219143==1 ~ "Hay Fever",
+                                               D_894259747_D_535003378==1 ~ "None",
+                                               TRUE ~ "Skipped this question"),
+                               digest= case_when(D_180961306_D_535003378==1 ~ "None",
+                                                 TRUE ~ "Other"),
+                               thy_d_g= case_when(D_900541533_D_535003378==1 ~ "None",
+                                                  TRUE ~ "Other"),
+                               sysoth= case_when(D_543728565_D_636030086==1 ~ "Rheumatoid Arthritis", 
+                                                 D_543728565_D_239687183==1 ~ "Lupus",
+                                                 D_543728565_D_134592375==1 ~ "Gout",
+                                                 D_543728565_D_535003378==1 ~ "None",
+                                                 TRUE ~ "Other"),
+                               sti_std= case_when(D_874709643_D_535003378==1 ~ "None",
+                                                  TRUE~"Other"),
+                               urn_repro= case_when(D_725626004_D_535003378==1 ~ "None",
+                                                  TRUE ~ "Other"),
+                               surgery= case_when(D_624179836_D_535003378==1 ~ "None",
+                                                  TRUE ~ "Other"))
+inc_crostab$Site <- factor(inc_crostab$Site,levels=c("UChicago","HealthPartners","Marshfield","Sanford","Henry Ford","KPCO","KPGA","KPHI", "KPNW", "NCI", "Other"))
+
+
+inc_crostabs <- inc_crostab %>% tbl_cross(
+    col = Site,
+    row = status,
+    digits=c(0,1),
+    percent = "col",
+    label=list(Site="Site",
+                status = " "),
+    missing="ifany",
+    margin_text="Total")
+
+inc_crostabs <- inc_crostabs %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total") %>%
+  modify_caption("Income Levels Across Sites") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+inc_crostabs %>% kable_styling(latex_options = "scale_down")
+#knitr::kable(inc_crostabs, booktabs = TRUE)  %>% kable_styling(latex_options = "scale_down") %>% landscape() 
+
+
+```
+
+
+
+```{r inc_cardio_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, cardiov2 == "None") %>%
+    group_by(status) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(status, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", inc_crostab)
+HP_summary <- calculate_summary("HealthPartners", inc_crostab)
+MF_summary <- calculate_summary("Marshfield", inc_crostab)
+SF_summary <- calculate_summary("Sanford", inc_crostab)
+HF_summary <- calculate_summary("Henry Ford", inc_crostab)
+kpco_summary <- calculate_summary("KPCO", inc_crostab)
+kpga_summary <- calculate_summary("KPGA", inc_crostab)
+kphi_summary <- calculate_summary("KPHI", inc_crostab)
+kpnw_summary <- calculate_summary("KPNW", inc_crostab)
+
+
+#unique_statuss <- inc_crostab %>% distinct(status)
+
+unique_statuss <- inc_crostab %>%
+  mutate(status = factor(status, levels = c("0-9,000","10,000-24,000","25,000-34,000","35,000-49,000","50,000-74,000","75,000-99,000","100,000-149,000","150,000-199,000",
+                                         "200,000+","Prefer not to Answer","Unknown","Error- Unlisted Response Selected","Skipped This Question"))) %>%
+  distinct(status)
+
+# Merge with the unique Income Levels data frame
+combined_df <- unique_statuss %>%
+  left_join(UC_summary, by = "status") %>%
+  left_join(HP_summary, by = "status") %>%
+  left_join(MF_summary, by = "status") %>%
+  left_join(SF_summary, by = "status") %>%
+  left_join(HF_summary, by = "status") %>%
+  left_join(kpco_summary, by = "status") %>%
+  left_join(kpga_summary, by = "status") %>%
+  left_join(kphi_summary, by = "status") %>%
+  left_join(kpnw_summary, by = "status") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Income Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Income Level` <- factor(
+#   combined_df$`Income Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(7,6,5,10,4,3,1,2,8,9,12,13,11), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Income Levels vs No Cardiovasucular Disease for All Sites")) %>% 
+  #cols_label(status = md("**Income Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Income Level",
+    )) 
+
+
+combined_df_knit
+
+
+
+
+```
+
+
+
+
+```{r inc_kidn_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, kidn == "None") %>%
+    group_by(status) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(status, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", inc_crostab)
+HP_summary <- calculate_summary("HealthPartners", inc_crostab)
+MF_summary <- calculate_summary("Marshfield", inc_crostab)
+SF_summary <- calculate_summary("Sanford", inc_crostab)
+HF_summary <- calculate_summary("Henry Ford", inc_crostab)
+kpco_summary <- calculate_summary("KPCO", inc_crostab)
+kpga_summary <- calculate_summary("KPGA", inc_crostab)
+kphi_summary <- calculate_summary("KPHI", inc_crostab)
+kpnw_summary <- calculate_summary("KPNW", inc_crostab)
+
+
+#unique_statuss <- inc_crostab %>% distinct(status)
+
+unique_statuss <- inc_crostab %>%
+  mutate(status = factor(status, levels = c("0-9,000","10,000-24,000","25,000-34,000","35,000-49,000","50,000-74,000","75,000-99,000","100,000-149,000","150,000-199,000",
+                                         "200,000+","Prefer not to Answer","Unknown","Error- Unlisted Response Selected","Skipped This Question"))) %>%
+  distinct(status)
+
+# Merge with the unique Income Levels data frame
+combined_df <- unique_statuss %>%
+  left_join(UC_summary, by = "status") %>%
+  left_join(HP_summary, by = "status") %>%
+  left_join(MF_summary, by = "status") %>%
+  left_join(SF_summary, by = "status") %>%
+  left_join(HF_summary, by = "status") %>%
+  left_join(kpco_summary, by = "status") %>%
+  left_join(kpga_summary, by = "status") %>%
+  left_join(kphi_summary, by = "status") %>%
+  left_join(kpnw_summary, by = "status") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Income Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Income Level` <- factor(
+#   combined_df$`Income Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(7,6,5,10,4,3,1,2,8,9,12,13,11), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Income Levels vs No Kidney Disease for All Sites")) %>% 
+  #cols_label(status = md("**Income Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Income Level",
+    )) 
+
+
+combined_df_knit
+
+
+
+
+```
+
+
+
+```{r inc_resp_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, resp == "None") %>%
+    group_by(status) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(status, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", inc_crostab)
+HP_summary <- calculate_summary("HealthPartners", inc_crostab)
+MF_summary <- calculate_summary("Marshfield", inc_crostab)
+SF_summary <- calculate_summary("Sanford", inc_crostab)
+HF_summary <- calculate_summary("Henry Ford", inc_crostab)
+kpco_summary <- calculate_summary("KPCO", inc_crostab)
+kpga_summary <- calculate_summary("KPGA", inc_crostab)
+kphi_summary <- calculate_summary("KPHI", inc_crostab)
+kpnw_summary <- calculate_summary("KPNW", inc_crostab)
+
+
+#unique_statuss <- inc_crostab %>% distinct(status)
+
+unique_statuss <- inc_crostab %>%
+  mutate(status = factor(status, levels = c("0-9,000","10,000-24,000","25,000-34,000","35,000-49,000","50,000-74,000","75,000-99,000","100,000-149,000","150,000-199,000",
+                                         "200,000+","Prefer not to Answer","Unknown","Error- Unlisted Response Selected","Skipped This Question"))) %>%
+  distinct(status)
+
+# Merge with the unique Income Levels data frame
+combined_df <- unique_statuss %>%
+  left_join(UC_summary, by = "status") %>%
+  left_join(HP_summary, by = "status") %>%
+  left_join(MF_summary, by = "status") %>%
+  left_join(SF_summary, by = "status") %>%
+  left_join(HF_summary, by = "status") %>%
+  left_join(kpco_summary, by = "status") %>%
+  left_join(kpga_summary, by = "status") %>%
+  left_join(kphi_summary, by = "status") %>%
+  left_join(kpnw_summary, by = "status") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Income Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Income Level` <- factor(
+#   combined_df$`Income Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(7,6,5,10,4,3,1,2,8,9,12,13,11), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Income Levels vs No Respiratory Disease for All Sites")) %>% 
+  #cols_label(status = md("**Income Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Income Level",
+    )) 
+
+
+combined_df_knit
+
+
+
+
+```
+
+
+
+```{r inc_digest_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, digest == "None") %>%
+    group_by(status) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(status, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", inc_crostab)
+HP_summary <- calculate_summary("HealthPartners", inc_crostab)
+MF_summary <- calculate_summary("Marshfield", inc_crostab)
+SF_summary <- calculate_summary("Sanford", inc_crostab)
+HF_summary <- calculate_summary("Henry Ford", inc_crostab)
+kpco_summary <- calculate_summary("KPCO", inc_crostab)
+kpga_summary <- calculate_summary("KPGA", inc_crostab)
+kphi_summary <- calculate_summary("KPHI", inc_crostab)
+kpnw_summary <- calculate_summary("KPNW", inc_crostab)
+
+
+#unique_statuss <- inc_crostab %>% distinct(status)
+
+unique_statuss <- inc_crostab %>%
+  mutate(status = factor(status, levels = c("0-9,000","10,000-24,000","25,000-34,000","35,000-49,000","50,000-74,000","75,000-99,000","100,000-149,000","150,000-199,000",
+                                         "200,000+","Prefer not to Answer","Unknown","Error- Unlisted Response Selected","Skipped This Question"))) %>%
+  distinct(status)
+
+# Merge with the unique Income Levels data frame
+combined_df <- unique_statuss %>%
+  left_join(UC_summary, by = "status") %>%
+  left_join(HP_summary, by = "status") %>%
+  left_join(MF_summary, by = "status") %>%
+  left_join(SF_summary, by = "status") %>%
+  left_join(HF_summary, by = "status") %>%
+  left_join(kpco_summary, by = "status") %>%
+  left_join(kpga_summary, by = "status") %>%
+  left_join(kphi_summary, by = "status") %>%
+  left_join(kpnw_summary, by = "status") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Income Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Income Level` <- factor(
+#   combined_df$`Income Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(7,6,5,10,4,3,1,2,8,9,12,13,11), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Income Levels vs No Digestive Disease for All Sites")) %>% 
+  #cols_label(status = md("**Income Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Income Level",
+    )) 
+
+
+combined_df_knit
+
+
+
+
+```
+
+
+
+
+```{r inc_thy_d_g_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, thy_d_g == "None") %>%
+    group_by(status) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(status, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", inc_crostab)
+HP_summary <- calculate_summary("HealthPartners", inc_crostab)
+MF_summary <- calculate_summary("Marshfield", inc_crostab)
+SF_summary <- calculate_summary("Sanford", inc_crostab)
+HF_summary <- calculate_summary("Henry Ford", inc_crostab)
+kpco_summary <- calculate_summary("KPCO", inc_crostab)
+kpga_summary <- calculate_summary("KPGA", inc_crostab)
+kphi_summary <- calculate_summary("KPHI", inc_crostab)
+kpnw_summary <- calculate_summary("KPNW", inc_crostab)
+
+
+#unique_statuss <- inc_crostab %>% distinct(status)
+
+unique_statuss <- inc_crostab %>%
+  mutate(status = factor(status, levels = c("0-9,000","10,000-24,000","25,000-34,000","35,000-49,000","50,000-74,000","75,000-99,000","100,000-149,000","150,000-199,000",
+                                         "200,000+","Prefer not to Answer","Unknown","Error- Unlisted Response Selected","Skipped This Question"))) %>%
+  distinct(status)
+
+# Merge with the unique Income Levels data frame
+combined_df <- unique_statuss %>%
+  left_join(UC_summary, by = "status") %>%
+  left_join(HP_summary, by = "status") %>%
+  left_join(MF_summary, by = "status") %>%
+  left_join(SF_summary, by = "status") %>%
+  left_join(HF_summary, by = "status") %>%
+  left_join(kpco_summary, by = "status") %>%
+  left_join(kpga_summary, by = "status") %>%
+  left_join(kphi_summary, by = "status") %>%
+  left_join(kpnw_summary, by = "status") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Income Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Income Level` <- factor(
+#   combined_df$`Income Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(7,6,5,10,4,3,1,2,8,9,12,13,11), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Income Levels vs No Thyroid, Diabetes, or Graves Disease for All Sites")) %>% 
+  #cols_label(status = md("**Income Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Income Level",
+    )) 
+
+
+combined_df_knit
+
+
+
+
+```
+
+
+
+```{r inc_sysoth_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, sysoth == "None") %>%
+    group_by(status) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(status, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", inc_crostab)
+HP_summary <- calculate_summary("HealthPartners", inc_crostab)
+MF_summary <- calculate_summary("Marshfield", inc_crostab)
+SF_summary <- calculate_summary("Sanford", inc_crostab)
+HF_summary <- calculate_summary("Henry Ford", inc_crostab)
+kpco_summary <- calculate_summary("KPCO", inc_crostab)
+kpga_summary <- calculate_summary("KPGA", inc_crostab)
+kphi_summary <- calculate_summary("KPHI", inc_crostab)
+kpnw_summary <- calculate_summary("KPNW", inc_crostab)
+
+
+#unique_statuss <- inc_crostab %>% distinct(status)
+
+unique_statuss <- inc_crostab %>%
+  mutate(status = factor(status, levels = c("0-9,000","10,000-24,000","25,000-34,000","35,000-49,000","50,000-74,000","75,000-99,000","100,000-149,000","150,000-199,000",
+                                         "200,000+","Prefer not to Answer","Unknown","Error- Unlisted Response Selected","Skipped This Question"))) %>%
+  distinct(status)
+
+# Merge with the unique Income Levels data frame
+combined_df <- unique_statuss %>%
+  left_join(UC_summary, by = "status") %>%
+  left_join(HP_summary, by = "status") %>%
+  left_join(MF_summary, by = "status") %>%
+  left_join(SF_summary, by = "status") %>%
+  left_join(HF_summary, by = "status") %>%
+  left_join(kpco_summary, by = "status") %>%
+  left_join(kpga_summary, by = "status") %>%
+  left_join(kphi_summary, by = "status") %>%
+  left_join(kpnw_summary, by = "status") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Income Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Income Level` <- factor(
+#   combined_df$`Income Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(7,6,5,10,4,3,1,2,8,9,12,13,11), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Income Levels vs No Systemic or Other Disease for All Sites")) %>% 
+  #cols_label(status = md("**Income Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Income Level",
+    )) 
+
+
+combined_df_knit
+
+
+
+
+```
+
+
+
+```{r inc_sti_std_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, sti_std == "None") %>%
+    group_by(status) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(status, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", inc_crostab)
+HP_summary <- calculate_summary("HealthPartners", inc_crostab)
+MF_summary <- calculate_summary("Marshfield", inc_crostab)
+SF_summary <- calculate_summary("Sanford", inc_crostab)
+HF_summary <- calculate_summary("Henry Ford", inc_crostab)
+kpco_summary <- calculate_summary("KPCO", inc_crostab)
+kpga_summary <- calculate_summary("KPGA", inc_crostab)
+kphi_summary <- calculate_summary("KPHI", inc_crostab)
+kpnw_summary <- calculate_summary("KPNW", inc_crostab)
+
+
+#unique_statuss <- inc_crostab %>% distinct(status)
+
+unique_statuss <- inc_crostab %>%
+  mutate(status = factor(status, levels = c("0-9,000","10,000-24,000","25,000-34,000","35,000-49,000","50,000-74,000","75,000-99,000","100,000-149,000","150,000-199,000",
+                                         "200,000+","Prefer not to Answer","Unknown","Error- Unlisted Response Selected","Skipped This Question"))) %>%
+  distinct(status)
+
+# Merge with the unique Income Levels data frame
+combined_df <- unique_statuss %>%
+  left_join(UC_summary, by = "status") %>%
+  left_join(HP_summary, by = "status") %>%
+  left_join(MF_summary, by = "status") %>%
+  left_join(SF_summary, by = "status") %>%
+  left_join(HF_summary, by = "status") %>%
+  left_join(kpco_summary, by = "status") %>%
+  left_join(kpga_summary, by = "status") %>%
+  left_join(kphi_summary, by = "status") %>%
+  left_join(kpnw_summary, by = "status") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Income Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Income Level` <- factor(
+#   combined_df$`Income Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(7,6,5,10,4,3,1,2,8,9,12,13,11), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Income Levels vs No STD, STI or Infectious Disease for All Sites")) %>% 
+  #cols_label(status = md("**Income Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Income Level",
+    )) 
+
+
+combined_df_knit
+
+
+
+
+```
+
+
+
+```{r inc_urn_repro_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, urn_repro == "None") %>%
+    group_by(status) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(status, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", inc_crostab)
+HP_summary <- calculate_summary("HealthPartners", inc_crostab)
+MF_summary <- calculate_summary("Marshfield", inc_crostab)
+SF_summary <- calculate_summary("Sanford", inc_crostab)
+HF_summary <- calculate_summary("Henry Ford", inc_crostab)
+kpco_summary <- calculate_summary("KPCO", inc_crostab)
+kpga_summary <- calculate_summary("KPGA", inc_crostab)
+kphi_summary <- calculate_summary("KPHI", inc_crostab)
+kpnw_summary <- calculate_summary("KPNW", inc_crostab)
+
+
+#unique_statuss <- inc_crostab %>% distinct(status)
+
+unique_statuss <- inc_crostab %>%
+  mutate(status = factor(status, levels = c("0-9,000","10,000-24,000","25,000-34,000","35,000-49,000","50,000-74,000","75,000-99,000","100,000-149,000","150,000-199,000",
+                                         "200,000+","Prefer not to Answer","Unknown","Error- Unlisted Response Selected","Skipped This Question"))) %>%
+  distinct(status)
+
+# Merge with the unique Income Levels data frame
+combined_df <- unique_statuss %>%
+  left_join(UC_summary, by = "status") %>%
+  left_join(HP_summary, by = "status") %>%
+  left_join(MF_summary, by = "status") %>%
+  left_join(SF_summary, by = "status") %>%
+  left_join(HF_summary, by = "status") %>%
+  left_join(kpco_summary, by = "status") %>%
+  left_join(kpga_summary, by = "status") %>%
+  left_join(kphi_summary, by = "status") %>%
+  left_join(kpnw_summary, by = "status") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Income Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Income Level` <- factor(
+#   combined_df$`Income Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(7,6,5,10,4,3,1,2,8,9,12,13,11), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Income Levels vs No Urinary or Reproductive Disease for All Sites")) %>% 
+  #cols_label(status = md("**Income Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Income Level",
+    )) 
+
+
+combined_df_knit
+
+
+
+
+```
+
+
+
+```{r inc_surgery_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, surgery == "None") %>%
+    group_by(status) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(status, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", inc_crostab)
+HP_summary <- calculate_summary("HealthPartners", inc_crostab)
+MF_summary <- calculate_summary("Marshfield", inc_crostab)
+SF_summary <- calculate_summary("Sanford", inc_crostab)
+HF_summary <- calculate_summary("Henry Ford", inc_crostab)
+kpco_summary <- calculate_summary("KPCO", inc_crostab)
+kpga_summary <- calculate_summary("KPGA", inc_crostab)
+kphi_summary <- calculate_summary("KPHI", inc_crostab)
+kpnw_summary <- calculate_summary("KPNW", inc_crostab)
+
+
+#unique_statuss <- inc_crostab %>% distinct(status)
+
+unique_statuss <- inc_crostab %>%
+  mutate(status = factor(status, levels = c("0-9,000","10,000-24,000","25,000-34,000","35,000-49,000","50,000-74,000","75,000-99,000","100,000-149,000","150,000-199,000",
+                                         "200,000+","Prefer not to Answer","Unknown","Error- Unlisted Response Selected","Skipped This Question"))) %>%
+  distinct(status)
+
+# Merge with the unique Income Levels data frame
+combined_df <- unique_statuss %>%
+  left_join(UC_summary, by = "status") %>%
+  left_join(HP_summary, by = "status") %>%
+  left_join(MF_summary, by = "status") %>%
+  left_join(SF_summary, by = "status") %>%
+  left_join(HF_summary, by = "status") %>%
+  left_join(kpco_summary, by = "status") %>%
+  left_join(kpga_summary, by = "status") %>%
+  left_join(kphi_summary, by = "status") %>%
+  left_join(kpnw_summary, by = "status") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Income Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Income Level` <- factor(
+#   combined_df$`Income Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(7,6,5,10,4,3,1,2,8,9,12,13,11), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Income Levels vs No Surgery for All Sites")) %>% 
+  #cols_label(status = md("**Income Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Income Level",
+    )) 
+
+
+combined_df_knit
+
+
+
+
+```
+
+
+
+```{r inc_ALLMHGROUPS_knit, warning=FALSE, echo=FALSE, message=FALSE}
+# Create a function to calculate counts and percentages
+calculate_summary <- function(site, data) {
+  summary <- data %>%
+    filter(Site == site, cardiov2 == "None", resp == "None", digest == "None", thy_d_g == "None", sysoth == "None",
+           sti_std == "None", urn_repro == "None", surgery == "None") %>%
+    group_by(status) %>%
+    summarize(
+      n = n()
+    ) %>%
+    mutate(
+      total_count = sum(n),  # Total count of "None" in the site
+      percentage = ifelse(total_count != 0, 100 * n / total_count, 0),
+      cardio_count = paste0(n, " (", round(percentage, digits = 2), "%)")
+    ) %>%
+    select(status, cardio_count)
+  
+  return(summary)
+}
+
+
+
+# Calculate summaries for KPHI and KPNW
+UC_summary <- calculate_summary("UChicago", inc_crostab)
+HP_summary <- calculate_summary("HealthPartners", inc_crostab)
+MF_summary <- calculate_summary("Marshfield", inc_crostab)
+SF_summary <- calculate_summary("Sanford", inc_crostab)
+HF_summary <- calculate_summary("Henry Ford", inc_crostab)
+kpco_summary <- calculate_summary("KPCO", inc_crostab)
+kpga_summary <- calculate_summary("KPGA", inc_crostab)
+kphi_summary <- calculate_summary("KPHI", inc_crostab)
+kpnw_summary <- calculate_summary("KPNW", inc_crostab)
+
+
+#unique_statuss <- inc_crostab %>% distinct(status)
+
+unique_statuss <- inc_crostab %>%
+  mutate(status = factor(status, levels = c("0-9,000","10,000-24,000","25,000-34,000","35,000-49,000","50,000-74,000","75,000-99,000","100,000-149,000","150,000-199,000",
+                                         "200,000+","Prefer not to Answer","Unknown","Error- Unlisted Response Selected","Skipped This Question"))) %>%
+  distinct(status)
+
+# Merge with the unique Income Levels data frame
+combined_df <- unique_statuss %>%
+  left_join(UC_summary, by = "status") %>%
+  left_join(HP_summary, by = "status") %>%
+  left_join(MF_summary, by = "status") %>%
+  left_join(SF_summary, by = "status") %>%
+  left_join(HF_summary, by = "status") %>%
+  left_join(kpco_summary, by = "status") %>%
+  left_join(kpga_summary, by = "status") %>%
+  left_join(kphi_summary, by = "status") %>%
+  left_join(kpnw_summary, by = "status") #, suffix = c("_UC","_HP","_MF","_SF","_HF","_KPCO","_KPGA","_KPHI", "_KPNW"))
+
+#combined_df
+colnames(combined_df) <- c("Income Level", "UC","HP","MF","SF","HF","KPCO","KPGA","KPHI", "KPNW")
+# # Assuming combined_df is your data frame
+# combined_df$`Income Level` <- factor(
+#   combined_df$`Income Level`,
+#   levels = c("<HS", "HS or GED", "Some college, technical school/other", 
+#              "Associates/Bachelors Degree", "Advanced Degree", "Skipped This Question")
+# )
+
+combined_df <- combined_df[c(7,6,5,10,4,3,1,2,8,9,12,13,11), ]
+
+combined_df_knit <- combined_df %>%  gt(rowname_col = "row_lab") %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Income Levels vs None for All MH Groups Disease for All Sites")) %>% 
+  #cols_label(status = md("**Income Level**"), cardio_count = md("**None**")) %>% 
+  #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "Income Level",
+    )) 
+
+tab_footnote(
+combined_df_knit,
+  md("All MH Groups is defined here as 'MH Groups' from the BOH Module: Cardiovasular Disease, Respiratory Problems, Digestive System Probelms, Thyroid/Diabetes?Graves Disease, Kidney Disease, Systemic and Other Problems, STDs and STIs, Urinary and Reproductive Problems, and Surgical Procedures"),
+  #locations = cells_column_labels(columns = n),
+  placement = c("left")
+)
+
+
+
+
+
+```
+
+

@@ -1,0 +1,281 @@
+---
+title: "SGM Drop-Out Rates"
+author: "Kelsey Dowling"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+
+
+
+
+```{r libraries, include=FALSE}
+
+#All libraries are listed up top; authentication for BQ will be necessary.
+#Functions used included before the start of the analysis .
+#Currently filtered by gender, and will eventually be done by age groups as well (D_117249500).
+
+
+
+rm(list = ls())
+library(bigrquery)
+library(foreach)
+library(stringr)
+#library(plyr)
+#library(expss) ###to add labels
+library(epiDisplay) ##recommended applied here crosstable, tab1
+library(gmodels) ##recommended
+library(magrittr)
+library(arsenal)
+library(gtsummary)
+library(rio)
+
+
+
+library(ggplot2)
+library(gridExtra)
+library(scales)
+library(gt)
+#install(tinytex)
+library(tinytex)
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(reshape)  ###to work on transition from long to wide or wide to long data
+library(listr) ###to work on a list of vector, files or..
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(stringr) ###to work on patterns, charaters
+library(kableExtra)
+
+
+options(tinytex.verbose = TRUE)
+
+bq_auth()
+```
+
+```{r M1merge, include=FALSE}
+dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
+dd <- dplyr::bind_rows(dictionary,.id="CID")
+dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
+dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name')
+
+dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
+dd$CID <- rownames(dd)
+#https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
+devtools::install_github("tidyverse/reprex")
+
+project <- "nih-nci-dceg-connect-prod-6d04"
+billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be consistent
+##517311251 Date/time Status of Completion of Background and Overall Health                         SrvBOH_TmComplete_v1r0
+##949302066 Flag for Baseline Module Background and Overall Health                        SrvBOH_BaseStatus_v1r0
+recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
+                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935' and d_949302066 ='231311385'")
+recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
+cnames <- names(recr_m1)
+# Check that it doesn't match any non-number
+numbers_only <- function(x) !grepl("\\D", x)
+# to check variables in recr_noinact_wl1
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(recr_m1,varname)
+  recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+sql_M1_1 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
+sql_M1_2 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
+
+
+M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64") #1436 #1436 vars: 1507 01112023 
+M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64") #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
+
+mod1_v1 <- M1_V1
+cnames <- names(M1_V1)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v1,varname)
+  mod1_v1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+mod1_v2 <- M1_V2
+cnames <- names(M1_V2)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v2,varname)
+  mod1_v2[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+M1_V1.var <- colnames(M1_V1)
+M1_V2.var <- colnames(M1_V2)
+var.matched <- M1_V1.var[which(M1_V1.var %in% M1_V2.var)]
+length(var.matched)  #1275 #1278 vars 01112023 #1348 vars 05022023
+
+V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched] #232 #229 01112023 #159 05022023
+V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched] #253 #253 01112023 #545 05022023
+
+length(M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID])
+#[1] 59 with the completion of two versions of Module1 
+#[1] 62 with completing both versions of M1 ###double checked 03/28/2023
+#68 double checked 05/02/2023
+
+common.IDs <- M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID]
+M1_V1_common <- mod1_v1[,var.matched]
+
+M1_V2_common <- mod1_v2[,var.matched]
+M1_V1_common$version <- 1
+M1_V2_common$version <- 2
+
+##to check the completion of M1 among these duplicates
+partM1_dups <- recr_m1[which(recr_m1$Connect_ID %in% common.IDs),]
+table(partM1_dups$d_949302066)
+
+M1_common  <- rbind(M1_V1_common, M1_V2_common) #including 136 duplicates (version 1 and version 2) from 68 participants 05022023
+#M1_response <- matrix(data=NA, nrow=118, ncol=967)
+
+m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)] #230 vars 03282023 #160 vars 05/02/2023
+m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] #255 vars 03282023 #546 vars 05/02/2023
+m1_v1_only$version <- 1
+m1_v2_only$version <- 2
+#for (i in 1:length)
+##to check the completion in each version
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #1364 03282023 # 1370 05022023
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #4870 03282023 # 5731 05022023
+
+#library(janitor)
+
+m1_common <- rbind(M1_V1_common,M1_V2_common)
+m1_common_v1 <- base::merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
+m1_combined_v1v2 <- base::merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
+m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] #7289 including duplicates 05022023
+
+m1_complete <- m1_complete %>% arrange(desc(version)) 
+
+
+m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),] 
+table(m1_complete_nodup$version)
+
+
+parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
+D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
+D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_827220437, d_906417725, d_747006172, d_685002411_d_994064239,
+D_949302066 , D_517311251, D_205553981, D_117249500, d_430551721, d_517311251, d_544150384, d_564964481, d_117249500, d_637147033,  d_440351122,
+d_919699172,d_141450621,d_576083042,d_431428747,d_121430614,d_523768810, d_639172801,d_175732191,d_150818546,d_624030581,d_285488731,d_596510649,                     d_866089092,d_990579614,d_131458944,d_372303208,d_777719027,d_620696506, d_352891568,d_958588520,d_875010152,d_404289911,d_538619788,d_715390138,
+d_734828170, d_659990606 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and (d_949302066='231311385')"
+parts_table <- bq_project_query(project, parts)
+parts_data <- bq_table_download(parts_table, bigint = "integer64")
+
+parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID) ###need to convert type- m1... is double and parts is character
+
+module1= left_join(m1_complete_nodup, parts_data, by="Connect_ID") 
+dim(module1)
+
+```
+
+```{r, warning=FALSE, echo=FALSE,  message=FALSE}
+
+# #Mod1 completed
+# module1 <- merged %>% filter(D_949302066==231311385)
+cat("Module 1 completed:", dim(module1)[[1]])
+
+#sgm <- module1 %>%  filter(D_555481393_D_555481393==807835037)
+
+
+data_tib_sgm <- as_tibble(module1)
+#dim(module1)
+
+knitr::opts_chunk$set(comment = NA)
+
+
+
+```
+
+```{r label, warning=FALSE, echo=FALSE, message=FALSE}
+ data_tib_sgm <- data_tib_sgm %>%  mutate(orientation=case_when(D_555481393_D_555481393==807835037 ~ "SGM Participants",
+                                                                TRUE ~ "Non-SGM participants"),
+                               withdrew= case_when(d_747006172== 353358909 ~ "Withdrew",
+                                                   TRUE ~ "Did not Withdraw"),
+                               refused= case_when(d_685002411_d_994064239== 353358909 ~ "Refused all Future Baseline Surveys",
+                                                   TRUE ~ "Did not Refuse"),
+                               wd_reason = case_when(d_919699172==353358909 ~ "I am no longer interested in the study",
+                                                     d_141450621==353358909 ~ "I am too busy/the study takes too much time",
+                                                     d_576083042==353358909 ~ "I think the payment or benefit to participant is not great enough",
+                                                     d_431428747==353358909 ~ "I am too sick/my health is too poor to participate",
+                                                     d_121430614==353358909 ~ "I do not have reliable access to the internet/a device - Refusal",
+                                                     d_523768810==353358909 ~ "I am worried about receiving results from the study", 
+                                                     d_639172801==353358909 ~ "I am worried the study might find something concerning about me",
+                                                     d_175732191==353358909 ~ "I am concerned about my privacy- Refusal",
+                                                     d_150818546==353358909 ~ "I do not trust the government- Refusal",
+                                                     d_624030581==353358909 ~ "I do not trust research/researchers- Refusal",
+                                                     d_285488731==353358909 ~ "I do not want my information shared with other researchers- Refusal",
+                                                     d_596510649==353358909 ~ "I am worried my information is not secure or there will be a data breach",               
+                                                     d_866089092==353358909 ~ "I am worried about data being given to my insurance company/effects on insurance (health, life, other)",
+                                                     d_990579614==353358909 ~ "I am worried about data being given to my employer/potential employer",
+                                                     d_131458944==353358909 ~ "I am worried that my information could be used to discriminate against me/my family - Refusal",
+                                                     d_372303208==353358909 ~ "I am worried that my information will be used by others to make a profit - Refusal",
+                                                     d_777719027==353358909 ~ "I have other privacy concerns- Refusal",
+                                                     d_620696506==353358909 ~ "I am not able to complete the study activities online- Refusal", 
+                                                     d_352891568==353358909 ~ "I do not like to do things online- Refusal",
+                                                     d_958588520==353358909 ~ "I am concerned about COVID-19- Refusal",
+                                                     d_875010152==353358909 ~ "Participant is now unable to participate",
+                                                     d_404289911==353358909 ~ "Participant is incarcerated",
+                                                     d_538619788==353358909 ~ "Reason not given- Refusal",
+                                                     d_637147033==353358909 ~ "I am concerned about providing information online",
+                                                     d_440351122==353358909 ~ "Too many technical problems with MyConnect",
+                                                     !is.na(d_715390138) ~ d_715390138,
+                                                     d_734828170==353358909 ~ "Other reasons"))
+
+
+```
+
+# Withdrew
+```{r WD, warning=FALSE, echo=FALSE, message=FALSE}
+wd_crostab <- data_tib_sgm %>% dplyr::select(withdrew, orientation ) %>% tbl_cross(
+    col = orientation,
+    row = withdrew,
+    digits=c(0,1),
+    percent = "col",
+    label=list(orientation=" ",
+                withdrew = " "),
+    missing="ifany",
+    margin_text="Total")
+
+wd_crostabs <-  wd_crostab %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total") %>%
+  modify_caption("Withdrawal Rates for SGM vs Non-SGM Particiapnts")  %>% 
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+wd_crostabs
+
+wd_reasons <-data_tib_sgm %>% filter(orientation=="SGM Participants" & withdrew=="Withdrew") %>% select(wd_reason, d_659990606)
+
+#table(wd_reasons)
+
+```
+
+# Refused all future baseline surveys
+```{r BL, warning=FALSE, echo=FALSE, message=FALSE}
+
+ref_crostab <- data_tib_sgm %>% dplyr::select(refused, orientation) %>% tbl_cross(
+    col = orientation,
+    row = refused,
+    digits=c(0,1),
+    percent = "col",
+    label=list(orientation=" ",
+                refused = " "),
+    missing="ifany",
+    margin_text="Total")
+
+ref_crostabs <-  ref_crostab %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total") %>%
+  modify_caption("Baseline Survey Refusal Rates for SGM vs Non-SGM Particiapnts")  %>% 
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+ref_crostabs
+
+```
