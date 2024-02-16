@@ -78,7 +78,7 @@ module1_qc_metrics:
     - "203464977998" # internal
   gcp_info:
     cloud_scheduler: ccc-module1-qc-metrics
-    frequency: "30 13 * * 1" # every Monday at 1:30 PM"
+    frequency: "45 13 * * 1" # every Monday at 1:30 PM"
 
 recruitment_qc_metrics:
   rmd_file_name: "Rectruitment Derived Variable QC.Rmd"
