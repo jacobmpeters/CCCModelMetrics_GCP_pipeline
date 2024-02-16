@@ -160,7 +160,8 @@ mens_ccc <- "WITH combined_survey AS (
   WHERE d_112151599 = '353358909'
 )
 
-SELECT p.Connect_ID, p.d_827220437, p.d_459098666, p.d_253883960, p.d_265193023, p.d_289750687
+SELECT p.Connect_ID, p.d_827220437, p.d_459098666, p.d_253883960, p.d_265193023, p.d_289750687, 
+p.d_764863765, p.d_222161762, p.d_459098666
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
 JOIN combined_survey c ON p.Connect_ID = c.Connect_ID
 WHERE (p.d_253883960 = '231311385' OR p.d_265193023 = '231311385')"
@@ -187,14 +188,40 @@ mens <-
   )
 
 #d_112151599=='353358909' & (d_253883960=='231311385' | d_265193023 =='231311385') & 
-mens_elg <- mens %>%  filter(is.na(d_289750687)) %>%  select(Site, Connect_ID, d_289750687)  %>%  sort_by(Site)
+mens_elg <- mens %>%  filter(is.na(d_289750687) & (d_764863765>=as.Date("2022-12-09") | d_222161762>=as.Date("2022-12-09"))) %>%  select(Site, Connect_ID, d_289750687)  %>%  sort_by(Site)
 
 colnames(mens_elg) <- c("Site", "Connect ID", "SrvMC_MenstSrvElig_v1r0")
 #knitr::kable(mens_elg) 
 
 mens_elg %>% gt()
 
+
+# test_rule <- mens %>%  filter(is.na(d_289750687)) %>% select(Connect_ID, Site, d_764863765, d_222161762, d_289750687, d_459098666) %>%  sort_by(Site)
+# 
+# test_rule$d_459098666[test_rule$d_459098666==231311385]="Completed"
+# test_rule$d_459098666[test_rule$d_459098666==972455046]="Not Started"
+# test_rule$d_459098666[test_rule$d_459098666==615768760]="Started"
+# 
+# colnames(test_rule) <- c("Connect_ID", "Site", "BU Survey Completion Date", "BUM Survey Completion Date", "Elig Mens Surv Flag", "Menstrual Cycle Survey Completion Status")
+# 
+# 
+# desktop_path <- file.path(Sys.getenv("USERPROFILE"), "Desktop")
+# csv_file_path <- file.path(desktop_path, "Menstral_Cycle_No_Flag.csv")
+# write.csv(test_rule, csv_file_path,row.names = F,na="")
+
 ```
+
+
+
+
+
+```{r}
+
+
+
+```
+
+
 
 
 \FloatBarrier
