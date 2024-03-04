@@ -1,18 +1,24 @@
+
 ---
 title: "Weekly CCC Metrics for Sections BOH, LAW, MRE, and SAS"
-author: "Kelsey Dowling"
-date: "`r Sys.Date()`"
-header-includes:  
-    \usepackage{placeins}
-
-
+author: "Kelsey Sanchez"
+date: 'Data Extracted and Report Ran: `r Sys.Date()`'
 output:
   pdf_document:
-    extra_dependencies: ["float"]
-    toc: false
+    extra_dependencies: float
+    toc: no
     keep_tex: yes
-    df_print: paged 
+    fig_width: 7
+    fig_height: 5
+    fig_caption: yes
+    df_print: paged
+header-includes: \usepackage[labelformat=empty]{caption} \usepackage{placeins} \usepackage{booktabs}
+  \usepackage{pdflscape}
 ---
+
+
+
+
 
 
 ```{r libraries, include=FALSE, warning=FALSE}
@@ -31,14 +37,12 @@ library(gmodels)
 library(epiDisplay)
 library(lubridate)
 library(tidyverse)
-library(gt)
 library(knitr)
-library(gtsummary)
 #install_tinytex()
-library(tinytex)
-library(vtable)
+#library(tinytex)
+#library(vtable)
 library(kableExtra)
-
+library(gtsummary)
 
 
 bq_auth()
@@ -50,6 +54,35 @@ bq_auth()
 # ```
 
 ```
+
+
+```{r, echo=FALSE}
+
+# cat("In order of how the sections appear on MyConnect, the Initial Survey Sections are: \n 
+# BOH= Background and Overall Health (Module 1)  \n
+# LAW= Where you Live and Work (Module 4)\n
+# MRE= Medications, Reproductive Health, Exercise, and Sleep (Module 2)\n
+# SAS= Smoking, Alcohol, and Sun Exposure (Module 3)")
+
+# Example vector with # symbol
+#my_vector <- c("In order of how the sections appear on MyConnect, the Initial Survey Sections are:", "BOH= Background and Overall Health (Module 1)", "LAW= Where you Live and Work (Module 4)","MRE= Medications, Reproductive Health, Exercise, and Sleep (Module 2)" , "SAS= Smoking, Alcohol, and Sun Exposure (Module 3)")
+
+# Printing vector without "#" symbol
+#cat(my_vector, sep = "\n", "\n", comment = "")
+
+#paste(my_vector, collapse = '\n') %>% cat()
+
+```
+
+In order of how the sections appear on MyConnect, the Initial Survey Sections are:  
+
+BOH= Background and Overall Health (Module 1)  
+
+LAW= Where you Live and Work (Module 4)
+
+MRE= Medications, Reproductive Health, Exercise, and Sleep (Module 2)
+
+SAS= Smoking, Alcohol, and Sun Exposure (Module 3)
 
 
 ```{r querystatus, include=FALSE}
@@ -130,75 +163,24 @@ bq_auth()
 ##Load Data from BQ
 
 project_cc = "nih-nci-dceg-connect-prod-6d04"
-queryreccc <- "SELECT  Connect_ID, d_512820379, d_821247024, d_914594314, d_832139544, d_949302066 , d_205553981, d_536735468 , d_976570371, d_663265240, d_265193023, d_222161762,d_770257102, d_264644252, d_265193023, d_541836531, d_386488297, d_452942800, d_517311251 , d_822499427 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IS NOT NULL  and (d_512820379='486306141' OR d_512820379='854703046')"
+queryreccc <- "SELECT  Connect_ID, d_512820379, d_821247024, d_914594314, d_832139544, d_949302066 , d_205553981, d_536735468 , d_976570371, d_663265240, d_265193023, d_222161762,d_770257102, d_264644252, d_265193023, d_541836531, d_386488297, d_452942800, d_517311251 , d_822499427, d_126331570, d_914639140, d_311580100, d_827220437, d_100767870 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IS NOT NULL  and (d_512820379='486306141' OR d_512820379='854703046')"
 
 rec_table_cc <- bq_project_query(project_cc, queryreccc)
 data_c <- bq_table_download(rec_table_cc, bigint = "integer64")
 
 
-data_ccc <- data_c %>%  filter(d_821247024==197316935) #need this separate filter for #5, which looks at participants unable to be verified
+data_ccc <- data_c %>%  filter(d_821247024==197316935) #need this separate filter to look at participants unable to be verified
 
 
 
-### Stratify by verified before all modules available in prod and, verified after all modules available in prod ###
-
-# started_m1= data_ccc %>%  filter(!is.na(d_205553981) & (d_949302066==615768760 | d_949302066==231311385))  #CID 4201878434 has no start date but completed module 1....
-# dim(started_m1)
-
-data_ccc_after <- data_ccc %>% filter(!is.na(d_914594314) & d_914594314>=as.Date("2022-07-05"))  #those verified AFTER all modules were available 
-data_tib2a <- as_tibble(data_ccc_after)
-
-data_ccc_before <- data_ccc %>% filter(!is.na(d_914594314) & d_914594314<"2022-07-05") #those verified BEFORE all were available
-data_tib2b <- as_tibble(data_ccc_before)
-
-
-active_c_after <- data_ccc_after %>% filter(d_512820379==486306141)
-#dim(active_c_after)
-passive_c_after <- data_ccc_after %>% filter(d_512820379==854703046)
-#dim(passive_c_after)
-
-active_c_before <- data_ccc_before %>% filter(d_512820379==486306141)
-#dim(active_c_before)
-passive_c_before <- data_ccc_before %>% filter(d_512820379==854703046)
-#dim(passive_c_before)
-
-active_all <- data_ccc %>% filter(d_512820379==486306141)
-#dim(active_all)
-passive_all <- data_ccc %>% filter(d_512820379==854703046)
-#dim(passive_all)
-
+data_ccc <- data_ccc %>% mutate(Recruit_Type= case_when(d_512820379==486306141 ~ "Active",
+                                                  d_512820379==854703046 ~ "Passive"))
 
 
 knitr::opts_chunk$set(comment = NA)
-```
 
 
-
-```{r Attrition, echo=FALSE}
-cat("Verified Participants:", dim(data_ccc)[[1]])
-cat("Date all sections available in prod: July 5, 2022")
-cat("Participants Verified Before All Sections Available:", dim(data_ccc_before)[[1]])
-cat("Participants Verified On or After All Sections Available:", dim(data_ccc_after)[[1]])
-```
-Some of the metrics below are stratified into separate tables by whether the participant was verified before all modules were available in prod verses on or after. These are denoted by 'Before' and 'After'.
-
-
-\newpage
-
-
-# 1.	% Submission of surveys by verified participants (including impossible scenarios)
-# 
-
-```{r SteupTable1a, include=FALSE, warning=FALSE, message=FALSE}
-####### ALL MODULES ########
-
-##BEFORE
-
-#1. Survey status of verified participants: None Completed, Some Completed (Combinations), All completed. This includes impossible selections for QC check
-
-##BEFORE ALL AV'L--- run through once with data_tib set to before data first for first startified table
-data_tib= as_tibble(data_ccc) #_before) #HAD TO MAKE A TIBBLE FOR GT() TABLE FUNCTION
-#head(data_tib)
+data_tib= as_tibble(data_ccc) 
 
 
 modules <- data_tib[,c("Connect_ID","d_512820379","d_949302066","d_536735468","d_976570371","d_663265240", "d_914594314")] 
@@ -218,2501 +200,659 @@ for(i in 1:length(mods)){
 #table(modules$none)
 
 #table(modules$modules,modules$d_949302066)
-CrossTable(modules$d_949302066, modules$modules,digits=4, prop.t=FALSE, prop.r=TRUE, prop.c=TRUE,prop.chisq=FALSE)
+#CrossTable(modules$d_949302066, modules$modules,digits=4, prop.t=FALSE, prop.r=TRUE, prop.c=TRUE,prop.chisq=FALSE)
 
 length(modules[which(modules$modules==3 & modules$d_663265240==231311385 & modules$d_536735468==231311385),])
 
-modules1 <- modules %>% mutate(process = case_when(d_949302066 == '231311385' & as.character(modules) == '1' ~ "BOH Section only",
-                                                   d_536735468 == '231311385' & as.character(modules) == '1' ~ "MRE Section only",
-                                                   d_976570371 == '231311385' & as.character(modules) == '1' ~ "SAS Section only",
-                                                   d_663265240 == '231311385' & as.character(modules) == '1' ~ "LAW Section only",
+modules1 <- modules %>% mutate(process = case_when(as.character(modules) =='0' ~ "None",
+                                                   d_949302066 == '231311385' & as.character(modules) == '1' ~ "BOH Section only",
                                                    as.character(modules) == '2' & d_949302066 == '231311385' & d_536735468 == '231311385' ~ "BOH and MRE Sections" ,
                                                    as.character(modules) =='2' & d_949302066 == '231311385' & d_976570371 == '231311385' ~ "BOH and SAS Sections" , 
-                                                   as.character(modules) =='2' & d_949302066 == '231311385' & d_663265240 == '231311385' ~ "BOH and LAW Sections" ,   
-                                                   as.character(modules) =='2' & d_536735468 == '231311385' & d_976570371 == '231311385' ~ "MRE and SAS Sections",
-                                                   as.character(modules) =='2' & d_536735468 == '231311385' & d_663265240 == '231311385' ~ "MRE and LAW Sections" ,
-                                                   as.character(modules) =='2' & d_976570371 == '231311385' & d_663265240 == '231311385' ~ "SAS and LAW Sections" , 
+                                                   as.character(modules) =='2' & d_949302066 == '231311385' & d_663265240 == '231311385' ~ "BOH and LAW Sections" ,  
                                                    as.character(modules) =='3' & d_949302066 == '231311385' & d_536735468 == '231311385' & d_976570371 == '231311385' ~ "BOH, MRE, and SAS Sections" ,  
                                                    as.character(modules) =='3' & d_949302066 == '231311385' & d_976570371 == '231311385' & d_663265240 == '231311385'~ "BOH, SAS, and LAW Sections" , 
-                                                   as.character(modules) =='3' & d_949302066 == '231311385' & d_536735468 == '231311385' & d_663265240 == '231311385' ~ "BOH, MRE, and LAW Sections",
-                                                   as.character(modules) =='3' & d_536735468 == '231311385' & d_976570371 == '231311385' & d_663265240 == '231311385' ~ "MRE, SAS, and LAW Sections" ,
-                                                   as.character(modules) =='0' ~ "None",   
-                                                   as.character(modules) =='4' ~ "All"))
+                                                   as.character(modules) =='3' & d_949302066 == '231311385' & d_536735468 == '231311385' & d_663265240 == '231311385' ~ "BOH, MRE, and LAW Sections",   
+                                                   as.character(modules) =='4' ~ "All")) 
+#style$descr <- factor(style$descr,levels=c("None", "BOH Section only", "BOH and MRE Sections", "BOH and SAS Sections", "BOH and LAW Sections", "BOH, MRE, and SAS Sections", "BOH, SAS, and LAW Sections", "BOH, MRE, and LAW Sections", "All"))
 
-modules1B <- modules1  %>% filter(d_914594314<"2022-07-05") #before
 
 #table(modules1$process)
-tab1(modules1B$process, decimal=2,sort.group = "decreasing", cum.percent = TRUE)$output.table
-
-
-```
-
-```{r Table1a, echo=FALSE, warning=FALSE, message=FALSE}
-#Make the automated table
-
-completion_summary <- modules1B  %>% dplyr::group_by(process) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(process, n, percentage) 
-
-completion_summary %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  fmt_number(columns = "n", decimals = 0) %>%
-  tab_header(title = html("Table 1a. Verified Participants Survey Completion (Before)")) %>% 
-  tab_footnote(
-    footnote = "This includes impossible scenarios: Sections LAW, MRE, and/or SAS being completed without BOH Section first completed. Only scenarios that have occured will show on this table.") %>%
-  cols_label(process = md("**Modules Completed**"), n = md("**Number of participants**"), percentage = md("**Percentage of Participants**")) %>% 
-  grand_summary_rows(columns=c(n, percentage), fns = ~sum(.,na.rm = T), formatter = fmt_number, decimals=0)|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = process,
-    )
-  ) %>%
-  tab_style(
-    style = cell_fill(color = "gray90"),
-      locations = cells_body(
-      rows = c(1,3,5,7,9)
-    )
-  ) 
-```
-
-
-
-```{r SetupTable1b, include=FALSE, warning=FALSE, message=FALSE}
-
-##AFTER 
-
-modules1A <- modules1  %>% filter(d_914594314>=as.Date("2022-07-05")) #after
-tab1(modules1A$process, decimal=2,sort.group = "decreasing", cum.percent = TRUE)$output.table
-
-
-
-
-
-```
-
-```{r Table1b, echo=FALSE, warning=FALSE, message=FALSE}
-#Make the automated table
-
-completion_summary <- modules1A  %>% dplyr::group_by(process) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(process, n, percentage) 
-
-completion_summary %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  fmt_number(columns = "n", decimals = 0) %>%
-  tab_header(title = html("Table 1b. Verified Participants Survey Completion (After)")) %>% 
-  tab_footnote(
-    footnote = "This includes impossible scenarios: Sections LAW, MRE, and/or SAS being completed without BOH Section first completed. Only scenarios that have occured will show on this table.") %>%
-  cols_label(process = md("**Sections Completed**"), n = md("**Number of participants**"), percentage = md("**Percentage of Participants**")) %>% 
-    # summary_rows(     groups= FALSE,
-    # columns = c(n, percentage),
-    # fns= list(
-    #   Sum= ~sum(.)
-    # ), decimals=0) %>% 
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T), formatter = fmt_number, decimals=0)|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = process,
-    )
-  ) %>%
-  tab_style(
-    style = cell_fill(color = "gray90"),
-      locations = cells_body(
-      rows = c(1,3,5,7,9)
-    )
-  ) %>%  opt_row_striping()
-```
-
-
-```{r SetupTable1c, include=FALSE, warning=FALSE, message=FALSE}
-
-##ALL PARTICIPANTS 
-
-
 tab1(modules1$process, decimal=2,sort.group = "decreasing", cum.percent = TRUE)$output.table
 
 
+#completion <- modules1 %>% select(Connect_ID, process) #have no idea why this isn't working
+completion <- modules1[, c(1,10)]
+all_data <- left_join(data_tib, completion, by="Connect_ID")
 
+all_data <- all_data %>%  mutate(Site = case_when(d_827220437==125001209 ~ "KP Colorado",
+                                                  d_827220437==327912200 ~ "KP Georgia",
+                                                  d_827220437==300267574 ~ "KP Hawaii",
+                                                  d_827220437==452412599 ~ "KP Northwest",
+                                                  d_827220437==548392715 ~ "Henry Ford",
+                                                  d_827220437==531629870 ~ "HealthPartners",
+                                                  d_827220437==303349821 ~ "Marshfield",
+                                                  d_827220437==657167265 ~ "Sanford",
+                                                  d_827220437==809703864 ~ "UChicago"),
+                                 BSL_compl = case_when(d_100767870==353358909 ~ "All Baseline Modules Completed",
+                                                       TRUE ~ "One or More Baseline Modules Not Completed"))
 
 ```
+
+ \newpage
+
+```{r newTable1, echo=FALSE, warning=FALSE, message=FALSE}
+
+
+comp_by_site <- all_data  %>% select(Site, BSL_compl) %>% 
+  tbl_cross(  col = BSL_compl,
+                  row = Site, 
+                   percent = "row",
+                   digits= c(0,1),
+                   label= c(Site~ "Site", BSL_compl ~ " "),
+                   missing="ifany",
+                   missing_text="0 ( 0 %)") 
+
+comp_by_site_totals <- as.data.frame(comp_by_site)
+comp_by_site_totals <- comp_by_site_totals[-1, ]
+comp_by_site_totals <- comp_by_site_totals[c(9,5, 2:4,6:8, 1,10), ]
+
+knitr::kable(comp_by_site_totals , caption='Table 1.Completion of Initial Surveys by Site', row.names=FALSE,align=c("l","c","c","c"), booktabs = TRUE) %>%  add_indent(c(1:9))  %>% kable_styling(latex_options = "scale_down")
+
+```
+
+
  
  \newpage
  
-```{r Table1c, echo=FALSE, warning=FALSE, message=FALSE}
+```{r Table2, echo=FALSE, warning=FALSE, message=FALSE}
 #Make the automated table
 
-completion_summary <- modules1  %>% dplyr::group_by(process) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(process, n, percentage) 
+all_srvy_comp <- all_data  %>% select(process, Recruit_Type) %>% 
+  tbl_cross(  col = Recruit_Type,
+                  row = process, 
+                   percent = "col",
+                   digits= c(0,1),
+                   label= c(process~ "Sections Submitted", Recruit_Type ~ " "),
+                   missing="ifany",
+                   missing_text="0 ( 0 %)") 
 
-completion_summary %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  fmt_number(columns = "n", decimals = 0) %>%
-  tab_header(title = html("Table 1c. All Verified Participants Survey Completion")) %>% 
-  tab_footnote(
-    footnote = "This includes impossible scenarios: Sections LAW, MRE, and/or SAS being completed without BOH Section first completed. Only scenarios that have occured will show on this table.") %>%
-  cols_label(process = md("**Sections Completed**"), n = md("**Number of participants**"), percentage = md("**Percentage of Participants**")) %>% 
-    # summary_rows(     groups= F,
-    # columns = c(n, percentage),
-    # fns= list(
-    #   Sum= ~sum(.)
-    # ), decimals=0) %>% 
-  grand_summary_rows(columns=c(n, percentage), fns = ~sum(.,na.rm = T), formatter = fmt_number, decimals=0)|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = process,
-    )
-  ) %>%
-  tab_style(
-    style = cell_fill(color = "gray90"),
-      locations = cells_body(
-      rows = c(1,3,5,7,9)
-    )
-  ) %>%  opt_row_striping()
-```
+all_srvy_comp_totals <- as.data.frame(all_srvy_comp)
+all_srvy_comp_totals <- all_srvy_comp_totals[-1, ]
+all_srvy_comp_totals <- all_srvy_comp_totals[c(9,5, 2:4,6:8, 1,10), ]
 
-\newpage
+overall_surveys <- knitr::kable(all_srvy_comp_totals ,col.names=c("Sections Submitted", "Active Verified","Passive Verified", "Total Verified"), caption='Table 2. Initial Survey Submission Among Verified Participants \n Stratified by Active and Passive Recruits', row.names=FALSE,align=c("l","c","c","c"), booktabs = TRUE) %>%  add_indent(c(1:9))  %>% kable_styling(latex_options = "scale_down")
 
-# 2.	Completion of baseline tasks with percentile of not started, started, submitted of each section (active, passive, and total) for verified participants. Note, each section will be stratified into one table before all sections were available in prod, and one table after all sections were available in prod.  
-
-
-## BOH Section
-
-
-
-```{r 2aSetUp, include=FALSE}
-
-############### MODULE 1 ########################################
-### Before all modules available 
-
-
-ccc2b <- data_tib2b %>% mutate(BOHstatus=case_when(d_949302066 == 972455046  ~ "BOH Section Not Started",
-                                               d_949302066 == 615768760  ~ "BOH Section Started",
-                                               d_949302066 == 231311385  ~ "BOH Section Completed"),
-                               VerStatus=case_when(d_512820379==486306141~"Active",
-                                                   d_512820379==854703046~"Passive"))
-ctable2a <- CrossTable(ccc2b$BOHstatus, ccc2b$VerStatus, prop.r=F, prop.c=F,prop.t=T, prop.chisq=F) #, percent_pattern="n, p_col")
-table2a <- as.data.frame(cbind(ctable2a$t,ctable2a$prop.t))
-colnames(table2a) <- c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP")
-
-table2a$ActiveP= 100*table2a$ActiveP
-table2a$PassiveP=100*table2a$PassiveP
-
-
-table2a <- table2a %>%   mutate(Total_Participants=list(table2a[1,1] + table2a[1,2], table2a[2,1] + table2a[2,2], table2a[3,1] + table2a[3,2]),
-                                TotalP=list(table2a[1,3] + table2a[1,4], table2a[2,3] + table2a[2,4], table2a[3,3] + table2a[3,4]))
-table2a$`Total_Participants` <- as.numeric(table2a$`Total_Participants`)
-table2a$`TotalP` <- as.numeric(table2a$`TotalP`)
-#ccc2b_summary <- table2a  %>% summarize_at(c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP", "Total_Participants",  "TotalP"), sum, na.rm = TRUE) 
-#table2a["Sum",] <- paste0( ccc2b_summary)
-
-table2a <- table2a %>%   mutate(status=list("BOH Section Completed", "BOH Section Not Started", "BOH Section Started"))
-table2a <- table2a[, c(7,1:6)]
+add_footnote(overall_surveys, "Note: All sections were in MyConnect on July 5,2022. There were 766 verified participants beore that date.", notation = "none")
 
 ```
 
 
+```{r Table3, echo=FALSE, warning=FALSE, message=FALSE}
 
-```{r Table2a, warning=FALSE, echo=FALSE,  max.width='80px', inlcude=FALSE}
+testing2df <- data.frame(Sections=character(),
+                 'Not Started'=integer(),
+                 Started=integer(),
+                 Submitted=integer(),
+                 Total=integer())
 
-  table2a %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "ActiveP", decimals = 2) %>% 
-  fmt_number(columns = "PassiveP", decimals = 2) %>%
-  fmt_number(columns = "TotalP", decimals = 2) %>%
-  tab_header(title = html("Table2a. BOH Section Completion Status of Verified Participants (Before)")) %>% 
-  cols_label("Active_Participants" = md("**(N)**"), "Passive_Participants" = md("**(N)**"), "Total_Participants" = md("**(N)**"), 
-             ActiveP = md("**%**"), PassiveP = md("**%**"), TotalP= md("**%**"),
-             status="Completion Status") %>% 
-               tab_footnote(
-                 footnote = "Verification completed prior to July 5,2022 when all sections became available in prod") %>%
-               tab_spanner(
-                 label="Active Participants",
-                 columns=vars("Active_Participants",ActiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Passive Participants",
-                 columns=vars("Passive_Participants",PassiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Total Participants",
-                 columns=vars("Total_Participants", TotalP)
-               ) %>% 
-grand_summary_rows(columns=c("Active_Participants", "Passive_Participants", "Total_Participants", TotalP, ActiveP, PassiveP),fns = ~sum(.,na.rm = T), formatter = fmt_number)|>
-               tab_options(
-                 heading.title.font.size = 25,
-                 heading.padding = 10,
-                 row_group.font.weight = "bolder",
-                 summary_row.background.color = "blanchedalmond", #<---- what to call the final summary in order to bold and color it
-                 row_group.background.color =    "#99CCFF",
-                 table.width=pct(50)
-               ) %>%
-               tab_style(
-                 style = list(
-                   cell_text(weight = "bold")
-                 ),
-                 locations = cells_body(
-                   columns = status,
-                 )
-               )  %>%
-               tab_style(
-                 style= list(
-                   cell_text(
-                     align="center"
-                   )
-                 ),
-                 locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-               )
+#testing2df[1, ] <- c("Section", "Not Started", "Started", "Submitted")
+testing2df[1, ] <- c("BOH", paste0(sum(all_data$d_949302066==972455046), " (", round(100*sum(all_data$d_949302066==972455046)/dim(all_data)[[1]], digits = 1), "%)"),
+                     paste0(sum(all_data$d_949302066==615768760), " (", round(100*sum(all_data$d_949302066==615768760)/dim(all_data)[[1]], digits = 1), "%)"),
+                     paste0(sum(all_data$d_949302066==231311385), " (", round(100*sum(all_data$d_949302066==231311385)/dim(all_data)[[1]], digits = 1), "%)"), 
+                     paste(dim(all_data)[[1]], "(100%)"))
+testing2df[2, ] <- c("MRE", paste0(sum(all_data$d_536735468==972455046), " (", round(100*sum(all_data$d_536735468==972455046)/dim(all_data)[[1]], digits = 1), "%)"),
+                     paste0(sum(all_data$d_536735468==615768760), " (", round(100*sum(all_data$d_536735468==615768760)/dim(all_data)[[1]], digits = 1), "%)"),
+                     paste0(sum(all_data$d_536735468==231311385), " (", round(100*sum(all_data$d_536735468==231311385)/dim(all_data)[[1]], digits = 1), "%)"), 
+                     paste(dim(all_data)[[1]], "(100%)"))
+testing2df[3, ] <- c("SAS", paste0(sum(all_data$d_976570371==972455046), " (", round(100*sum(all_data$d_976570371==972455046)/dim(all_data)[[1]], digits = 1), "%)"),
+                     paste0(sum(all_data$d_976570371==615768760), " (", round(100*sum(all_data$d_976570371==615768760)/dim(all_data)[[1]], digits = 1), "%)"),
+                     paste0(sum(all_data$d_976570371==231311385), " (", round(100*sum(all_data$d_976570371==231311385)/dim(all_data)[[1]], digits = 1), "%)"), 
+                     paste(dim(all_data)[[1]], "(100%)"))
+testing2df[4, ] <- c("LAW", paste0(sum(all_data$d_663265240==972455046), " (", round(100*sum(all_data$d_663265240==972455046)/dim(all_data)[[1]], digits = 1), "%)"),
+                     paste0(sum(all_data$d_663265240==615768760), " (", round(100*sum(all_data$d_663265240==615768760)/dim(all_data)[[1]], digits = 1), "%)"),
+                     paste0(sum(all_data$d_663265240==231311385), " (", round(100*sum(all_data$d_663265240==231311385)/dim(all_data)[[1]], digits = 1), "%)"), 
+                     paste(dim(all_data)[[1]], "(100%)"))
 
+
+
+knitr::kable(testing2df, caption='Table 3: Initial Survey Section Submission Status Among Verified Participants', col.names=c("Section", "Not Started", "Started", "Submitted", "Total Verified Participants"), row.names=FALSE, align=c("l","c","c","c","c"),digits=1, booktabs = TRUE)%>% kable_styling(latex_options = "hold_position")
 
 
 ```
 
 
 
-```{r 2bSetup, include=FALSE}
-  ### AFTER ALL MODULES AV'L 
-
-
-ccc2a <- data_tib2a %>% mutate(BOHstatus=case_when(d_949302066 == 972455046  ~ "BOH Section Not Started",
-                                               d_949302066 == 615768760  ~ "BOH Section Started",
-                                               d_949302066 == 231311385  ~ "BOH Section Completed"),
-                               VerStatus=case_when(d_512820379==486306141~"Active",
-                                                   d_512820379==854703046~"Passive"))
-ctable2b <- CrossTable(ccc2a$BOHstatus, ccc2a$VerStatus, prop.r=F, prop.c=F,prop.t=T, prop.chisq=F) #, percent_pattern="n, p_col")
-table2b <- as.data.frame(cbind(ctable2b$t,ctable2b$prop.t))
-colnames(table2b) <- c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP")
-
-table2b$ActiveP= 100*table2b$ActiveP
-table2b$PassiveP=100*table2b$PassiveP
-
-
-table2b <- table2b %>%   mutate(Total_Participants=list(table2b[1,1] + table2b[1,2], table2b[2,1] + table2b[2,2], table2b[3,1] + table2b[3,2]),
-                                TotalP=list(table2b[1,3] + table2b[1,4], table2b[2,3] + table2b[2,4], table2b[3,3] + table2b[3,4]))
-table2b$`Total_Participants` <- as.numeric(table2b$`Total_Participants`)
-table2b$`TotalP` <- as.numeric(table2b$`TotalP`)
-#ccc2a_summary <- table2b  %>% summarize_at(c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP", "Total_Participants",  "TotalP"), sum, na.rm = TRUE) 
-#table2b["Sum",] <- paste0( ccc2a_summary)
-
-table2b <- table2b %>%   mutate(status=list("BOH Section Completed", "BOH Section Not Started", "BOH Section Started"))
-table2b <- table2b[, c(7,1:6)]
-
-```
-
-```{r Table2b, echo=FALSE, warning=FALSE}
-
-  table2b %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "ActiveP", decimals = 2) %>% 
-  fmt_number(columns = "PassiveP", decimals = 2) %>%
-  fmt_number(columns = "TotalP", decimals = 2) %>%
-  tab_header(title = html("Table 2b. BOH Section Completion Status of Verified Participants (After)")) %>% 
-  cols_label("Active_Participants" = md("**(N)**"), "Passive_Participants" = md("**(N)**"), "Total_Participants" = md("**(N)**"), 
-             ActiveP = md("**%**"), PassiveP = md("**%**"), TotalP= md("**%**"),
-             status="Completion Status") %>% 
-               tab_footnote(
-                 footnote = "Verification completed on or after July 5,2022 when all sections became available in prod") %>%
-               tab_spanner(
-                 label="Active Participants",
-                 columns=vars("Active_Participants",ActiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Passive Participants",
-                 columns=vars("Passive_Participants",PassiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Total Participants",
-                 columns=vars("Total_Participants", TotalP)
-               ) %>% 
-grand_summary_rows(columns=c("Active_Participants", "Passive_Participants", "Total_Participants", TotalP, ActiveP, PassiveP),fns = ~sum(.,na.rm = T), formatter = fmt_number)|>
-               tab_options(
-                 heading.title.font.size = 25,
-                 heading.padding = 10,
-                 row_group.font.weight = "bolder",
-                 summary_row.background.color = "blanchedalmond", #<---- what to call the final summary in order to bold and color it
-                 row_group.background.color =    "#99CCFF",
-                 table.width=pct(50)
-               ) %>%
-               tab_style(
-                 style = list(
-                   cell_text(weight = "bold")
-                 ),
-                 locations = cells_body(
-                   columns = status,
-                 )
-               )  %>%
-               tab_style(
-                 style= list(
-                   cell_text(
-                     align="center"
-                   )
-                 ),
-                 locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-               )
-
-
-
-
-```
-
-
-```{r 2cSetup, include=FALSE}
-  ### TOTAL 
-
-
-
-ccc2all <- data_tib %>% mutate(BOHstatus=case_when(d_949302066 == 972455046  ~ "BOH Section Not Started",
-                                               d_949302066 == 615768760  ~ "BOH Section Started",
-                                               d_949302066 == 231311385  ~ "BOH Section Completed"),
-                               VerStatus=case_when(d_512820379==486306141~"Active",
-                                                   d_512820379==854703046~"Passive"))
-ctable2c <- CrossTable(ccc2all$BOHstatus, ccc2all$VerStatus, prop.r=F, prop.c=F,prop.t=T, prop.chisq=F) #, percent_pattern="n, p_col")
-table2c <- as.data.frame(cbind(ctable2c$t,ctable2c$prop.t))
-colnames(table2c) <- c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP")
-
-table2c$ActiveP= 100*table2c$ActiveP
-table2c$PassiveP=100*table2c$PassiveP
-
-
-table2c <- table2c %>%   mutate(Total_Participants=list(table2c[1,1] + table2c[1,2], table2c[2,1] + table2c[2,2], table2c[3,1] + table2c[3,2]),
-                                TotalP=list(table2c[1,3] + table2c[1,4], table2c[2,3] + table2c[2,4], table2c[3,3] + table2c[3,4]))
-table2c$`Total_Participants` <- as.numeric(table2c$`Total_Participants`)
-table2c$`TotalP` <- as.numeric(table2c$`TotalP`)
-#ccc2a_summary <- table2c  %>% summarize_at(c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP", "Total_Participants",  "TotalP"), sum, na.rm = TRUE) 
-#table2c["Sum",] <- paste0( ccc2a_summary)
-
-table2c <- table2c %>%   mutate(status=list("BOH Section Completed", "BOH Section Not Started", "BOH Section Started"))
-table2c <- table2c[, c(7,1:6)]
-
-```
-
-```{r Table 2c, echo=FALSE, warning=FALSE}
-
-table2c %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "ActiveP", decimals = 2) %>% 
-  fmt_number(columns = "PassiveP", decimals = 2) %>%
-  fmt_number(columns = "TotalP", decimals = 2) %>%
-  tab_header(title = html("Table 2c. BOH Section Completion Status of All Verified Participants")) %>% 
-  cols_label("Active_Participants" = md("**(N)**"), "Passive_Participants" = md("**(N)**"), "Total_Participants" = md("**(N)**"), 
-             ActiveP = md("**%**"), PassiveP = md("**%**"), TotalP= md("**%**"),
-             status="Completion Status") %>% 
-               tab_spanner(
-                 label="Active Participants",
-                 columns=vars("Active_Participants",ActiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Passive Participants",
-                 columns=vars("Passive_Participants",PassiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Total Participants",
-                 columns=vars("Total_Participants", TotalP)
-               ) %>% 
-grand_summary_rows(columns=c("Active_Participants", "Passive_Participants", "Total_Participants", TotalP, ActiveP, PassiveP),fns = ~sum(.,na.rm = T), formatter = fmt_number)|>
-               tab_options(
-                 heading.title.font.size = 25,
-                 heading.padding = 10,
-                 row_group.font.weight = "bolder",
-                 summary_row.background.color = "blanchedalmond", #<---- what to call the final summary in order to bold and color it
-                 row_group.background.color =    "#99CCFF",
-                 table.width=pct(50)
-               ) %>%
-               tab_style(
-                 style = list(
-                   cell_text(weight = "bold")
-                 ),
-                 locations = cells_body(
-                   columns = status,
-                 )
-               )  %>%
-               tab_style(
-                 style= list(
-                   cell_text(
-                     align="center"
-                   )
-                 ),
-                 locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-               )
-
-
-```
-
-\newpage
-## MRE Section
-
-```{r 2dSetUp, include=FALSE}
-### BEFORE ALL MODULES AV'L
-
-
-ccc2d <- data_tib2b %>% mutate(BOHstatus=case_when(d_536735468 == 972455046  ~ "MRE Section Not Started",
-                                               d_536735468 == 615768760  ~ "MRE Section Started",
-                                               d_536735468 == 231311385  ~ "MRE Section Completed"),
-                               VerStatus=case_when(d_512820379==486306141~"Active",
-                                                   d_512820379==854703046~"Passive"))
-ctable2d <- CrossTable(ccc2d$BOHstatus, ccc2d$VerStatus, prop.r=F, prop.c=F,prop.t=T, prop.chisq=F) #, percent_pattern="n, p_col")
-table2d <- as.data.frame(cbind(ctable2d$t,ctable2d$prop.t))
-colnames(table2d) <- c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP")
-
-table2d$ActiveP= 100*table2d$ActiveP
-table2d$PassiveP=100*table2d$PassiveP
-
-
-table2d <- table2d %>%   mutate(Total_Participants=list(table2d[1,1] + table2d[1,2], table2d[2,1] + table2d[2,2], table2d[3,1] + table2d[3,2]),
-                                TotalP=list(table2d[1,3] + table2d[1,4], table2d[2,3] + table2d[2,4], table2d[3,3] + table2d[3,4]))
-table2d$`Total_Participants` <- as.numeric(table2d$`Total_Participants`)
-table2d$`TotalP` <- as.numeric(table2d$`TotalP`)
-#ccc2d_summary <- table2d  %>% summarize_at(c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP", "Total_Participants",  "TotalP"), sum, na.rm = TRUE) 
-#table2d["Sum",] <- paste0( ccc2d_summary)
-
-table2d <- table2d %>%   mutate(status=list("MRE Section Completed", "MRE Section Not Started", "MRE Section Started"))
-table2d <- table2d[, c(7,1:6)]
-```
-
-```{r Table2d, echo=FALSE, warning=FALSE}
-
-
-  table2d %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "ActiveP", decimals = 2) %>% 
-  fmt_number(columns = "PassiveP", decimals = 2) %>%
-  fmt_number(columns = "TotalP", decimals = 2) %>%
-  tab_header(title = html("Table2d. MRE Section Completion Status of Verified Participants (Before)")) %>% 
-  cols_label("Active_Participants" = md("**(N)**"), "Passive_Participants" = md("**(N)**"), "Total_Participants" = md("**(N)**"), 
-             ActiveP = md("**%**"), PassiveP = md("**%**"), TotalP= md("**%**"),
-             status="Completion Status") %>% 
-               tab_footnote(
-                 footnote = "Verification completed prior to July 5,2022 when all sections became available in prod") %>%
-               tab_spanner(
-                 label="Active Participants",
-                 columns=vars("Active_Participants",ActiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Passive Participants",
-                 columns=vars("Passive_Participants",PassiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Total Participants",
-                 columns=vars("Total_Participants", TotalP)
-               ) %>% 
-grand_summary_rows(columns=c("Active_Participants", "Passive_Participants", "Total_Participants", TotalP, ActiveP, PassiveP),fns = ~sum(.,na.rm = T), formatter = fmt_number)|>
-               tab_options(
-                 heading.title.font.size = 25,
-                 heading.padding = 10,
-                 row_group.font.weight = "bolder",
-                 summary_row.background.color = "blanchedalmond", #<---- what to call the final summary in order to bold and color it
-                 row_group.background.color =    "#99CCFF",
-                 table.width=pct(50)
-               ) %>%
-               tab_style(
-                 style = list(
-                   cell_text(weight = "bold")
-                 ),
-                 locations = cells_body(
-                   columns = status,
-                 )
-               )  %>%
-               tab_style(
-                 style= list(
-                   cell_text(
-                     align="center"
-                   )
-                 ),
-                 locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-               )
-
-
-```
-
-
-```{r 2eSetup, include=FALSE}
-
-### AFTER ALL MODULES AV'L
-ccc2e <- data_tib2a %>% mutate(BOHstatus=case_when(d_536735468 == 972455046  ~ "MRE Section Not Started",
-                                               d_536735468 == 615768760  ~ "MRE Section Started",
-                                               d_536735468 == 231311385  ~ "MRE Section Completed"),
-                               VerStatus=case_when(d_512820379==486306141~"Active",
-                                                   d_512820379==854703046~"Passive"))
-ctable2e <- CrossTable(ccc2e$BOHstatus, ccc2e$VerStatus, prop.r=F, prop.c=F,prop.t=T, prop.chisq=F) #, percent_pattern="n, p_col")
-table2e <- as.data.frame(cbind(ctable2e$t,ctable2e$prop.t))
-colnames(table2e) <- c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP")
-
-table2e$ActiveP= 100*table2e$ActiveP
-table2e$PassiveP=100*table2e$PassiveP
-
-
-table2e <- table2e %>%   mutate(Total_Participants=list(table2e[1,1] + table2e[1,2], table2e[2,1] + table2e[2,2], table2e[3,1] + table2e[3,2]),
-                                TotalP=list(table2e[1,3] + table2e[1,4], table2e[2,3] + table2e[2,4], table2e[3,3] + table2e[3,4]))
-table2e$`Total_Participants` <- as.numeric(table2e$`Total_Participants`)
-table2e$`TotalP` <- as.numeric(table2e$`TotalP`)
-#ccc2e_summary <- table2e  %>% summarize_at(c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP", "Total_Participants",  "TotalP"), sum, na.rm = TRUE) 
-#table2e["Sum",] <- paste0( ccc2e_summary)
-
-table2e <- table2e %>%   mutate(status=list("MRE Section Completed", "MRE Section Not Started", "MRE Section Started"))
-table2e <- table2e[, c(7,1:6)]
-
-```
-
-```{r Table2e, echo=FALSE, warning=FALSE}
-
-  table2e %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "ActiveP", decimals = 2) %>% 
-  fmt_number(columns = "PassiveP", decimals = 2) %>%
-  fmt_number(columns = "TotalP", decimals = 2) %>%
-  tab_header(title = html("Table 2e. MRE Section Completion Status of Verified Participants (After)")) %>% 
-  cols_label("Active_Participants" = md("**(N)**"), "Passive_Participants" = md("**(N)**"), "Total_Participants" = md("**(N)**"), 
-             ActiveP = md("**%**"), PassiveP = md("**%**"), TotalP= md("**%**"),
-             status="Completion Status") %>% 
-               tab_footnote(
-                 footnote = "Verification completed on or after July 5,2022 when all sections became available in prod") %>%
-               tab_spanner(
-                 label="Active Participants",
-                 columns=vars("Active_Participants",ActiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Passive Participants",
-                 columns=vars("Passive_Participants",PassiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Total Participants",
-                 columns=vars("Total_Participants", TotalP)
-               ) %>% 
-grand_summary_rows(columns=c("Active_Participants", "Passive_Participants", "Total_Participants", TotalP, ActiveP, PassiveP),fns = ~sum(.,na.rm = T), formatter = fmt_number)|>
-               tab_options(
-                 heading.title.font.size = 25,
-                 heading.padding = 10,
-                 row_group.font.weight = "bolder",
-                 summary_row.background.color = "blanchedalmond", #<---- what to call the final summary in order to bold and color it
-                 row_group.background.color =    "#99CCFF",
-                 table.width=pct(50)
-               ) %>%
-               tab_style(
-                 style = list(
-                   cell_text(weight = "bold")
-                 ),
-                 locations = cells_body(
-                   columns = status,
-                 )
-               )  %>%
-               tab_style(
-                 style= list(
-                   cell_text(
-                     align="center"
-                   )
-                 ),
-                 locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-               )
-
-
-```
-
-
-```{r 2fSetup, include=FALSE}
-
-### ALL PARTICIPANTS 
-
-ccc2f <- data_tib %>% mutate(BOHstatus=case_when(d_536735468 == 972455046  ~ "MRE Section Not Started",
-                                               d_536735468 == 615768760  ~ "MRE Section Started",
-                                               d_536735468 == 231311385  ~ "MRE Section Completed"),
-                               VerStatus=case_when(d_512820379==486306141~"Active",
-                                                   d_512820379==854703046~"Passive"))
-ctable2f <- CrossTable(ccc2f$BOHstatus, ccc2f$VerStatus, prop.r=F, prop.c=F,prop.t=T, prop.chisq=F) #, percent_pattern="n, p_col")
-table2f <- as.data.frame(cbind(ctable2f$t,ctable2f$prop.t))
-colnames(table2f) <- c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP")
-
-table2f$ActiveP= 100*table2f$ActiveP
-table2f$PassiveP=100*table2f$PassiveP
-
-
-table2f <- table2f %>%   mutate(Total_Participants=list(table2f[1,1] + table2f[1,2], table2f[2,1] + table2f[2,2], table2f[3,1] + table2f[3,2]),
-                                TotalP=list(table2f[1,3] + table2f[1,4], table2f[2,3] + table2f[2,4], table2f[3,3] + table2f[3,4]))
-table2f$`Total_Participants` <- as.numeric(table2f$`Total_Participants`)
-table2f$`TotalP` <- as.numeric(table2f$`TotalP`)
-#ccc2e_summary <- table2f  %>% summarize_at(c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP", "Total_Participants",  "TotalP"), sum, na.rm = TRUE) 
-#table2f["Sum",] <- paste0( ccc2e_summary)
-
-table2f <- table2f %>%   mutate(status=list("MRE Section Completed", "MRE Section Not Started", "MRE Section Started"))
-table2f <- table2f[, c(7,1:6)]
-
-```
-
-```{r Table2f, echo=FALSE, warning=FALSE}
-
-  table2f %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "ActiveP", decimals = 2) %>% 
-  fmt_number(columns = "PassiveP", decimals = 2) %>%
-  fmt_number(columns = "TotalP", decimals = 2) %>%
-  tab_header(title = html("Table 2f. MRE Section Completion Status of All Verified Participants")) %>% 
-  cols_label("Active_Participants" = md("**(N)**"), "Passive_Participants" = md("**(N)**"), "Total_Participants" = md("**(N)**"), 
-             ActiveP = md("**%**"), PassiveP = md("**%**"), TotalP= md("**%**"),
-             status="Completion Status") %>% 
-               tab_spanner(
-                 label="Active Participants",
-                 columns=vars("Active_Participants",ActiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Passive Participants",
-                 columns=vars("Passive_Participants",PassiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Total Participants",
-                 columns=vars("Total_Participants", TotalP)
-               ) %>% 
-grand_summary_rows(columns=c("Active_Participants", "Passive_Participants", "Total_Participants", TotalP, ActiveP, PassiveP),fns = ~sum(.,na.rm = T), formatter = fmt_number)|>
-               tab_options(
-                 heading.title.font.size = 25,
-                 heading.padding = 10,
-                 row_group.font.weight = "bolder",
-                 summary_row.background.color = "blanchedalmond", #<---- what to call the final summary in order to bold and color it
-                 row_group.background.color =    "#99CCFF",
-                 table.width=pct(50)
-               ) %>%
-               tab_style(
-                 style = list(
-                   cell_text(weight = "bold")
-                 ),
-                 locations = cells_body(
-                   columns = status,
-                 )
-               )  %>%
-               tab_style(
-                 style= list(
-                   cell_text(
-                     align="center"
-                   )
-                 ),
-                 locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-               )
-
-
-```
-
-\newpage
-# 
-## SAS Section
-
-```{r 2gSetup, include=FALSE}
-
-### BEFORE ALL MODULES AV'L
-
-ccc2g <- data_tib2b %>% mutate(BOHstatus=case_when(d_976570371 == 972455046  ~ "SAS Section Not Started",
-                                               d_976570371 == 615768760  ~ "SAS Section Started",
-                                               d_976570371 == 231311385  ~ "SAS Section Completed"),
-                               VerStatus=case_when(d_512820379==486306141~"Active",
-                                                   d_512820379==854703046~"Passive"))
-ctable2g <- CrossTable(ccc2g$BOHstatus, ccc2g$VerStatus, prop.r=F, prop.c=F,prop.t=T, prop.chisq=F) #, percent_pattern="n, p_col")
-table2g <- as.data.frame(cbind(ctable2g$t,ctable2g$prop.t))
-colnames(table2g) <- c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP")
-
-table2g$ActiveP= 100*table2g$ActiveP
-table2g$PassiveP=100*table2g$PassiveP
-
-
-table2g <- table2g %>%   mutate(Total_Participants=list(table2g[1,1] + table2g[1,2], table2g[2,1] + table2g[2,2], table2g[3,1] + table2g[3,2]),
-                                TotalP=list(table2g[1,3] + table2g[1,4], table2g[2,3] + table2g[2,4], table2g[3,3] + table2g[3,4]))
-table2g$`Total_Participants` <- as.numeric(table2g$`Total_Participants`)
-table2g$`TotalP` <- as.numeric(table2g$`TotalP`)
-#ccc2g_summary <- table2g  %>% summarize_at(c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP", "Total_Participants",  "TotalP"), sum, na.rm = TRUE) 
-#table2g["Sum",] <- paste0( ccc2g_summary)
-
-table2g <- table2g %>%   mutate(status=list("SAS Section Completed", "SAS Section Not Started", "SAS Section Started"))
-table2g <- table2g[, c(7,1:6)]
-```
-
-```{r Table2g, echo=FALSE, warning=FALSE}
-#Make the automated table
-
-table2g %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "ActiveP", decimals = 2) %>% 
-  fmt_number(columns = "PassiveP", decimals = 2) %>%
-  fmt_number(columns = "TotalP", decimals = 2) %>%
-  tab_header(title = html("Table2g. SAS Section Completion Status of Verified Participants (Before)")) %>% 
-  cols_label("Active_Participants" = md("**(N)**"), "Passive_Participants" = md("**(N)**"), "Total_Participants" = md("**(N)**"), 
-             ActiveP = md("**%**"), PassiveP = md("**%**"), TotalP= md("**%**"),
-             status="Completion Status") %>% 
-               tab_footnote(
-                 footnote = "Verification completed prior to July 5,2022 when all sections became available in prod") %>%
-               tab_spanner(
-                 label="Active Participants",
-                 columns=vars("Active_Participants",ActiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Passive Participants",
-                 columns=vars("Passive_Participants",PassiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Total Participants",
-                 columns=vars("Total_Participants", TotalP)
-               ) %>% 
-grand_summary_rows(columns=c("Active_Participants", "Passive_Participants", "Total_Participants", TotalP, ActiveP, PassiveP),fns = ~sum(.,na.rm = T), formatter = fmt_number)|>
-               tab_options(
-                 heading.title.font.size = 25,
-                 heading.padding = 10,
-                 row_group.font.weight = "bolder",
-                 summary_row.background.color = "blanchedalmond", #<---- what to call the final summary in order to bold and color it
-                 row_group.background.color =    "#99CCFF",
-                 table.width=pct(50)
-               ) %>%
-               tab_style(
-                 style = list(
-                   cell_text(weight = "bold")
-                 ),
-                 locations = cells_body(
-                   columns = status,
-                 )
-               )  %>%
-               tab_style(
-                 style= list(
-                   cell_text(
-                     align="center"
-                   )
-                 ),
-                 locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-               )
-
-
-
-```
-
-
-```{r 2hSetup, include=FALSE}
-
-### AFTER ALL MODULES AV'L 
-ccc2h <- data_tib2a %>% mutate(BOHstatus=case_when(d_976570371 == 972455046  ~ "SAS Section Not Started",
-                                               d_976570371 == 615768760  ~ "SAS Section Started",
-                                               d_976570371 == 231311385  ~ "SAS Section Completed"),
-                               VerStatus=case_when(d_512820379==486306141~"Active",
-                                                   d_512820379==854703046~"Passive"))
-ctable2h <- CrossTable(ccc2h$BOHstatus, ccc2h$VerStatus, prop.r=F, prop.c=F,prop.t=T, prop.chisq=F) #, percent_pattern="n, p_col")
-table2h <- as.data.frame(cbind(ctable2h$t,ctable2h$prop.t))
-colnames(table2h) <- c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP")
-
-table2h$ActiveP= 100*table2h$ActiveP
-table2h$PassiveP=100*table2h$PassiveP
-
-
-table2h <- table2h %>%   mutate(Total_Participants=list(table2h[1,1] + table2h[1,2], table2h[2,1] + table2h[2,2], table2h[3,1] + table2h[3,2]),
-                                TotalP=list(table2h[1,3] + table2h[1,4], table2h[2,3] + table2h[2,4], table2h[3,3] + table2h[3,4]))
-table2h$`Total_Participants` <- as.numeric(table2h$`Total_Participants`)
-table2h$`TotalP` <- as.numeric(table2h$`TotalP`)
-#ccc2h_summary <- table2h  %>% summarize_at(c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP", "Total_Participants",  "TotalP"), sum, na.rm = TRUE) 
-#table2h["Sum",] <- paste0( ccc2h_summary)
-
-table2h <- table2h %>%   mutate(status=list("SAS Section Completed", "SAS Section Not Started", "SAS Section Started"))
-table2h <- table2h[, c(7,1:6)]
-
-
-```
-
-```{r Table2h, echo=FALSE, warning=FALSE}
-
-
-
- table2h %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "ActiveP", decimals = 2) %>% 
-  fmt_number(columns = "PassiveP", decimals = 2) %>%
-  fmt_number(columns = "TotalP", decimals = 2) %>%
-  tab_header(title = html("Table 2h. SAS Section Completion Status of Verified Participants (After)")) %>% 
-  cols_label("Active_Participants" = md("**(N)**"), "Passive_Participants" = md("**(N)**"), "Total_Participants" = md("**(N)**"), 
-             ActiveP = md("**%**"), PassiveP = md("**%**"), TotalP= md("**%**"),
-             status="Completion Status") %>% 
-               tab_footnote(
-                 footnote = "Verification completed on or after July 5,2022 when all sections became available in prod") %>%
-               tab_spanner(
-                 label="Active Participants",
-                 columns=vars("Active_Participants",ActiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Passive Participants",
-                 columns=vars("Passive_Participants",PassiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Total Participants",
-                 columns=vars("Total_Participants", TotalP)
-               ) %>% 
-grand_summary_rows(columns=c("Active_Participants", "Passive_Participants", "Total_Participants", TotalP, ActiveP, PassiveP),fns = ~sum(.,na.rm = T), formatter = fmt_number)|>
-               tab_options(
-                 heading.title.font.size = 25,
-                 heading.padding = 10,
-                 row_group.font.weight = "bolder",
-                 summary_row.background.color = "blanchedalmond", #<---- what to call the final summary in order to bold and color it
-                 row_group.background.color =    "#99CCFF",
-                 table.width=pct(50)
-               ) %>%
-               tab_style(
-                 style = list(
-                   cell_text(weight = "bold")
-                 ),
-                 locations = cells_body(
-                   columns = status,
-                 )
-               )  %>%
-               tab_style(
-                 style= list(
-                   cell_text(
-                     align="center"
-                   )
-                 ),
-                 locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-               )
-
-```
-
-```{r 2iSetup, include=FALSE}
-
-### ALL PARTICIPANTS  
-ccc2i <- data_tib %>% mutate(BOHstatus=case_when(d_976570371 == 972455046  ~ "SAS Section Not Started",
-                                               d_976570371 == 615768760  ~ "SAS Section Started",
-                                               d_976570371 == 231311385  ~ "SAS Section Completed"),
-                               VerStatus=case_when(d_512820379==486306141~"Active",
-                                                   d_512820379==854703046~"Passive"))
-ctable2i <- CrossTable(ccc2i$BOHstatus, ccc2i$VerStatus, prop.r=F, prop.c=F,prop.t=T, prop.chisq=F) #, percent_pattern="n, p_col")
-table2i <- as.data.frame(cbind(ctable2i$t,ctable2i$prop.t))
-colnames(table2i) <- c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP")
-
-table2i$ActiveP= 100*table2i$ActiveP
-table2i$PassiveP=100*table2i$PassiveP
-
-
-table2i <- table2i %>%   mutate(Total_Participants=list(table2i[1,1] + table2i[1,2], table2i[2,1] + table2i[2,2], table2i[3,1] + table2i[3,2]),
-                                TotalP=list(table2i[1,3] + table2i[1,4], table2i[2,3] + table2i[2,4], table2i[3,3] + table2i[3,4]))
-table2i$`Total_Participants` <- as.numeric(table2i$`Total_Participants`)
-table2i$`TotalP` <- as.numeric(table2i$`TotalP`)
-#ccc2i_summary <- table2i  %>% summarize_at(c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP", "Total_Participants",  "TotalP"), sum, na.rm = TRUE) 
-#table2i["Sum",] <- paste0( ccc2i_summary)
-
-table2i <- table2i %>%   mutate(status=list("SAS Section Completed", "SAS Section Not Started", "SAS Section Started"))
-table2i <- table2i[, c(7,1:6)]
-
-
-```
-
-```{r Table2i, echo=FALSE, warning=FALSE}
-
-
-table2i %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "ActiveP", decimals = 2) %>% 
-  fmt_number(columns = "PassiveP", decimals = 2) %>%
-  fmt_number(columns = "TotalP", decimals = 2) %>%
-  tab_header(title = html("Table 2i. SAS Section Completion Status of All Verified Participants")) %>% 
-  cols_label("Active_Participants" = md("**(N)**"), "Passive_Participants" = md("**(N)**"), "Total_Participants" = md("**(N)**"), 
-             ActiveP = md("**%**"), PassiveP = md("**%**"), TotalP= md("**%**"),
-             status="Completion Status") %>% 
-               tab_spanner(
-                 label="Active Participants",
-                 columns=vars("Active_Participants",ActiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Passive Participants",
-                 columns=vars("Passive_Participants",PassiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Total Participants",
-                 columns=vars("Total_Participants", TotalP)
-               ) %>% 
-grand_summary_rows(columns=c("Active_Participants", "Passive_Participants", "Total_Participants", TotalP, ActiveP, PassiveP),fns = ~sum(.,na.rm = T), formatter = fmt_number)|>
-               tab_options(
-                 heading.title.font.size = 25,
-                 heading.padding = 10,
-                 row_group.font.weight = "bolder",
-                 summary_row.background.color = "blanchedalmond", #<---- what to call the final summary in order to bold and color it
-                 row_group.background.color =    "#99CCFF",
-                 table.width=pct(50)
-               ) %>%
-               tab_style(
-                 style = list(
-                   cell_text(weight = "bold")
-                 ),
-                 locations = cells_body(
-                   columns = status,
-                 )
-               )  %>%
-               tab_style(
-                 style= list(
-                   cell_text(
-                     align="center"
-                   )
-                 ),
-                 locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-               )
-
-```
-
-\newpage
-# 
-## LAW Section
-
-```{r 2jSetup, include=FALSE}
-# 2.	Completion of baseline tasks with number and % not started, started, submitted of each module (active_c, passive_c and total)  
-
-###BEFORE ALL MODULES AV'L
-
-ccc2j <- data_tib2b %>% mutate(BOHstatus=case_when(d_663265240 == 972455046  ~ "LAW Section Not Started",
-                                               d_663265240 == 615768760  ~ "LAW Section Started",
-                                               d_663265240 == 231311385  ~ "LAW Section Completed"),
-                               VerStatus=case_when(d_512820379==486306141~"Active",
-                                                   d_512820379==854703046~"Passive"))
-ctable2j <- CrossTable(ccc2j$BOHstatus, ccc2j$VerStatus, prop.r=F, prop.c=F,prop.t=T, prop.chisq=F) #, percent_pattern="n, p_col")
-table2j <- as.data.frame(cbind(ctable2j$t,ctable2j$prop.t))
-colnames(table2j) <- c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP")
-
-table2j$ActiveP= 100*table2j$ActiveP
-table2j$PassiveP=100*table2j$PassiveP
-
-
-table2j <- table2j %>%   mutate(Total_Participants=list(table2j[1,1] + table2j[1,2], table2j[2,1] + table2j[2,2], table2j[3,1] + table2j[3,2]),
-                                TotalP=list(table2j[1,3] + table2j[1,4], table2j[2,3] + table2j[2,4], table2j[3,3] + table2j[3,4]))
-table2j$`Total_Participants` <- as.numeric(table2j$`Total_Participants`)
-table2j$`TotalP` <- as.numeric(table2j$`TotalP`)
-#ccc2j_summary <- table2j  %>% summarize_at(c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP", "Total_Participants",  "TotalP"), sum, na.rm = TRUE) 
-#table2j["Sum",] <- paste0( ccc2j_summary)
-
-table2j <- table2j %>%   mutate(status=list("LAW Section Completed", "LAW Section Not Started", "LAW Section Started"))
-table2j <- table2j[, c(7,1:6)]
-
-```
-
-```{r Table2j, echo=FALSE, warning=FALSE}
-
-table2j %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "ActiveP", decimals = 2) %>% 
-  fmt_number(columns = "PassiveP", decimals = 2) %>%
-  fmt_number(columns = "TotalP", decimals = 2) %>%
-  tab_header(title = html("Table2j. LAW Section Completion Status of Verified Participants (Before)")) %>% 
-  cols_label("Active_Participants" = md("**(N)**"), "Passive_Participants" = md("**(N)**"), "Total_Participants" = md("**(N)**"), 
-             ActiveP = md("**%**"), PassiveP = md("**%**"), TotalP= md("**%**"),
-             status="Completion Status") %>% 
-               tab_footnote(
-                 footnote = "Verification completed prior to July 5,2022 when all sections became available in prod") %>%
-               tab_spanner(
-                 label="Active Participants",
-                 columns=vars("Active_Participants",ActiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Passive Participants",
-                 columns=vars("Passive_Participants",PassiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Total Participants",
-                 columns=vars("Total_Participants", TotalP)
-               ) %>% 
-grand_summary_rows(columns=c("Active_Participants", "Passive_Participants", "Total_Participants", TotalP, ActiveP, PassiveP),fns = ~sum(.,na.rm = T), formatter = fmt_number)|>
-               tab_options(
-                 heading.title.font.size = 25,
-                 heading.padding = 10,
-                 row_group.font.weight = "bolder",
-                 summary_row.background.color = "blanchedalmond", #<---- what to call the final summary in order to bold and color it
-                 row_group.background.color =    "#99CCFF",
-                 table.width=pct(50)
-               ) %>%
-               tab_style(
-                 style = list(
-                   cell_text(weight = "bold")
-                 ),
-                 locations = cells_body(
-                   columns = status,
-                 )
-               )  %>%
-               tab_style(
-                 style= list(
-                   cell_text(
-                     align="center"
-                   )
-                 ),
-                 locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-               )
-
-```
-
-
-```{r 2kSetup, include=FALSE}
-### AFTER ALL MODULES AV'L 
-ccc2k <- data_tib2a %>% mutate(BOHstatus=case_when(d_663265240 == 972455046  ~ "LAW Section Not Started",
-                                               d_663265240 == 615768760  ~ "LAW Section Started",
-                                               d_663265240 == 231311385  ~ "LAW Section Completed"),
-                               VerStatus=case_when(d_512820379==486306141~"Active",
-                                                   d_512820379==854703046~"Passive"))
-ctable2k <- CrossTable(ccc2k$BOHstatus, ccc2k$VerStatus, prop.r=F, prop.c=F,prop.t=T, prop.chisq=F) #, percent_pattern="n, p_col")
-table2k <- as.data.frame(cbind(ctable2k$t,ctable2k$prop.t))
-colnames(table2k) <- c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP")
-
-table2k$ActiveP= 100*table2k$ActiveP
-table2k$PassiveP=100*table2k$PassiveP
-
-
-table2k <- table2k %>%   mutate(Total_Participants=list(table2k[1,1] + table2k[1,2], table2k[2,1] + table2k[2,2], table2k[3,1] + table2k[3,2]),
-                                TotalP=list(table2k[1,3] + table2k[1,4], table2k[2,3] + table2k[2,4], table2k[3,3] + table2k[3,4]))
-table2k$`Total_Participants` <- as.numeric(table2k$`Total_Participants`)
-table2k$`TotalP` <- as.numeric(table2k$`TotalP`)
-#ccc2k_summary <- table2k  %>% summarize_at(c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP", "Total_Participants",  "TotalP"), sum, na.rm = TRUE) 
-#table2k["Sum",] <- paste0( ccc2k_summary)
-
-table2k <- table2k %>%   mutate(status=list("LAW Section Completed", "LAW Section Not Started", "LAW Section Started"))
-table2k <- table2k[, c(7,1:6)]
-```
-
-```{r Table2k, echo=FALSE, warning=FALSE}
-
-
- table2k %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "ActiveP", decimals = 2) %>% 
-  fmt_number(columns = "PassiveP", decimals = 2) %>%
-  fmt_number(columns = "TotalP", decimals = 2) %>%
-  tab_header(title = html("Table 2k. LAW Section Completion Status of Verified Participants (After)")) %>% 
-  cols_label("Active_Participants" = md("**(N)**"), "Passive_Participants" = md("**(N)**"), "Total_Participants" = md("**(N)**"), 
-             ActiveP = md("**%**"), PassiveP = md("**%**"), TotalP= md("**%**"),
-             status="Completion Status") %>% 
-               tab_footnote(
-                 footnote = "Verification completed on or after July 5,2022 when all sections became available in prod") %>%
-               tab_spanner(
-                 label="Active Participants",
-                 columns=vars("Active_Participants",ActiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Passive Participants",
-                 columns=vars("Passive_Participants",PassiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Total Participants",
-                 columns=vars("Total_Participants", TotalP)
-               ) %>% 
-grand_summary_rows(columns=c("Active_Participants", "Passive_Participants", "Total_Participants", TotalP, ActiveP, PassiveP),fns = ~sum(.,na.rm = T), formatter = fmt_number)|>
-               tab_options(
-                 heading.title.font.size = 25,
-                 heading.padding = 10,
-                 row_group.font.weight = "bolder",
-                 summary_row.background.color = "blanchedalmond", #<---- what to call the final summary in order to bold and color it
-                 row_group.background.color =    "#99CCFF",
-                 table.width=pct(50)
-               ) %>%
-               tab_style(
-                 style = list(
-                   cell_text(weight = "bold")
-                 ),
-                 locations = cells_body(
-                   columns = status,
-                 )
-               )  %>%
-               tab_style(
-                 style= list(
-                   cell_text(
-                     align="center"
-                   )
-                 ),
-                 locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-               )
-```
-
-
-```{r 2lSetup, include=FALSE}
-### ALL PARTICIPANTS 
-ccc2l <- data_tib %>% mutate(BOHstatus=case_when(d_663265240 == 972455046  ~ "LAW Section Not Started",
-                                               d_663265240 == 615768760  ~ "LAW Section Started",
-                                               d_663265240 == 231311385  ~ "LAW Section Completed"),
-                               VerStatus=case_when(d_512820379==486306141~"Active",
-                                                   d_512820379==854703046~"Passive"))
-ctable2l <- CrossTable(ccc2l$BOHstatus, ccc2l$VerStatus, prop.r=F, prop.c=F,prop.t=T, prop.chisq=F) #, percent_pattern="n, p_col")
-table2l <- as.data.frame(cbind(ctable2l$t,ctable2l$prop.t))
-colnames(table2l) <- c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP")
-
-table2l$ActiveP= 100*table2l$ActiveP
-table2l$PassiveP=100*table2l$PassiveP
-
-
-table2l <- table2l %>%   mutate(Total_Participants=list(table2l[1,1] + table2l[1,2], table2l[2,1] + table2l[2,2], table2l[3,1] + table2l[3,2]),
-                                TotalP=list(table2l[1,3] + table2l[1,4], table2l[2,3] + table2l[2,4], table2l[3,3] + table2l[3,4]))
-table2l$`Total_Participants` <- as.numeric(table2l$`Total_Participants`)
-table2l$`TotalP` <- as.numeric(table2l$`TotalP`)
-#ccc2l_summary <- table2l  %>% summarize_at(c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP", "Total_Participants",  "TotalP"), sum, na.rm = TRUE) 
-#table2l["Sum",] <- paste0( ccc2l_summary)
-
-table2l <- table2l %>%   mutate(status=list("LAW Section Completed", "LAW Section Not Started", "LAW Section Started"))
-table2l <- table2l[, c(7,1:6)]
-```
-
-
-
-
-```{r Table2L, echo=FALSE, warning=FALSE}
-
-
- table2l %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "ActiveP", decimals = 2) %>% 
-  fmt_number(columns = "PassiveP", decimals = 2) %>%
-  fmt_number(columns = "TotalP", decimals = 2) %>%
-  tab_header(title = html("Table 2L. LAW Section Completion Status of All Verified Participants")) %>% 
-  cols_label("Active_Participants" = md("**(N)**"), "Passive_Participants" = md("**(N)**"), "Total_Participants" = md("**(N)**"), 
-             ActiveP = md("**%**"), PassiveP = md("**%**"), TotalP= md("**%**"),
-             status="Completion Status") %>% 
-               tab_spanner(
-                 label="Active Participants",
-                 columns=vars("Active_Participants",ActiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Passive Participants",
-                 columns=vars("Passive_Participants",PassiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Total Participants",
-                 columns=vars("Total_Participants", TotalP)
-               ) %>% 
-grand_summary_rows(columns=c("Active_Participants", "Passive_Participants", "Total_Participants", TotalP, ActiveP, PassiveP),fns = ~sum(.,na.rm = T), formatter = fmt_number)|>
-               tab_options(
-                 heading.title.font.size = 25,
-                 heading.padding = 10,
-                 row_group.font.weight = "bolder",
-                 summary_row.background.color = "blanchedalmond", #<---- what to call the final summary in order to bold and color it
-                 row_group.background.color =    "#99CCFF",
-                 table.width=pct(50)
-               ) %>%
-               tab_style(
-                 style = list(
-                   cell_text(weight = "bold")
-                 ),
-                 locations = cells_body(
-                   columns = status,
-                 )
-               )  %>%
-               tab_style(
-                 style= list(
-                   cell_text(
-                     align="center"
-                   )
-                 ),
-                 locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-               )
-```
-
-\newpage
-\FloatBarrier
-
-# 3. Time in minutes from verification to completion of each section- 25, 50, 75 percentiles (active, passive, and total). 
-
-
-```{r Setup3, include=FALSE}
-
-
-# 3.	Time from verification to completion of each module- Hours 25, 50, 75 percentile (active_c, passive_c and total)  
-#d_914594314 verified
-#d_517311251 Mod1 completion time stamp
-
-time.var1 <- c("d_914594314","d_517311251")
-
-###BEFORE
-#All verified participant totals that have completed mod1
-act_before= active_c_before %>% filter(d_949302066==231311385)
-#dim(act_before)
-pas_before= passive_c_before %>% filter(d_949302066==231311385)
-#dim(pas_before)
-mer_before= data_ccc_before %>% filter(d_949302066==231311385)
-#dim(mer_before)
-
-
-#Active
- # tmp1A <- data_tib2b %>%  filter(d_949302066==231311385 & d_512820379==486306141 & !is.na(d_914594314) & !is.na(d_517311251)) 
- # tmp1A <-  tmp1A %>% mutate(tmp1A$d_914594314 <- as.POSIXct(ymd_hms(tmp1A$d_914594314)),
- #                            tmp1A$d_517311251 <- as.POSIXct(ymd_hms(tmp1A$d_517311251)))
-
-
-
-act_before_time<- act_before[complete.cases(act_before[ , time.var1]), ]
-
-
-tmp1A <- act_before_time[,c("Connect_ID","d_914594314","d_517311251")]
-tmp1A$d_914594314 <- as.POSIXct(ymd_hms(tmp1A$d_914594314))
-tmp1A$d_517311251 <- as.POSIXct(ymd_hms(tmp1A$d_517311251))
-
-
-tmp1A$Mod1completionA <- difftime(tmp1A$d_517311251, tmp1A$d_914594314, units="hours")
-#summary(as.numeric(tmp1A$Mod1completionA)) #normal for some of these to be negative, active parts. can get verified later on
-
-
-st(tmp1A, vars = c('Mod1completionA'))
-
-
-#Passive
-pas_before_time<- pas_before[complete.cases(pas_before[ , time.var1]), ]
-
-
-tmp1P <- pas_before_time[,c("Connect_ID","d_914594314","d_517311251")]
-tmp1P$d_914594314 <- as.POSIXct(ymd_hms(tmp1P$d_914594314))
-tmp1P$d_517311251 <- as.POSIXct(ymd_hms(tmp1P$d_517311251))
-
-
-tmp1P$Mod1completionP <- difftime(tmp1P$d_517311251, tmp1P$d_914594314, units="hours")
-summary(as.numeric(tmp1P$Mod1completionP)) #good that these are all positive, passives NEED to be verified first 
-
-
-#Total
-mer_before_time<- mer_before[complete.cases(mer_before[ , time.var1]), ]
-
-
-tmp1T <- mer_before_time[,c("Connect_ID","d_914594314","d_517311251")]
-tmp1T$d_914594314 <- as.POSIXct(ymd_hms(tmp1T$d_914594314))
-tmp1T$d_517311251 <- as.POSIXct(ymd_hms(tmp1T$d_517311251))
-
-
-tmp1T$Mod1completionT <- difftime(tmp1T$d_517311251, tmp1T$d_914594314, units="hours")
-summary(as.numeric(tmp1T$Mod1completionT))
-
-
-
-```
-
-```{r Table3a_c,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
-
-
-Table3a = tmp1A %>% 
-  dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod1completionA,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionA, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod1completionA,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod1completionA,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod1completionA,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod1completionA, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod1completionA,na.rm = TRUE), digits=2), end = -1))
-
-knitr::kable(Table3a,caption='BOH Active (Before)',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #Table 3a.
-
-
-
-
-Table3b = tmp1P %>% 
-  dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod1completionP,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionP, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod1completionP,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod1completionP,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod1completionP,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod1completionP, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod1completionP,na.rm = TRUE), digits=2), end = -1))
-
-knitr::kable(Table3b,caption='BOH Passive (Before)',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #Table 3b. 
-
-
-
-Table3c = tmp1T %>% 
-  dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod1completionT,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionT, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod1completionT,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod1completionT,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod1completionT,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod1completionT, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod1completionT,na.rm = TRUE), digits=2), end = -1))
-
-knitr::kable(Table3c,caption='BOH Total (Before)',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #Table 3c.
-
-```
-
-
-```{r Tabl3dfSetup, include=FALSE}
-
-###AFTER
-#All verified participant totals that have completed mod1
-act_after= active_c_after %>% filter(d_949302066==231311385)
-#dim(act_after)
-pas_after= passive_c_after %>% filter(d_949302066==231311385)
-#dim(pas_after)
-mer_after= data_ccc_after %>% filter(d_949302066==231311385)
-#dim(mer_after)
-
-
-#Active
-act_after_time<- act_after[complete.cases(act_after[ , time.var1]), ]
-
-
-tmp1A_A <- act_after_time[,c("Connect_ID","d_914594314","d_517311251")]
-tmp1A_A$d_914594314 <- as.POSIXct(ymd_hms(tmp1A_A$d_914594314))
-tmp1A_A$d_517311251 <- as.POSIXct(ymd_hms(tmp1A_A$d_517311251))
-
-
-tmp1A_A$Mod1completionA <- difftime(tmp1A_A$d_517311251, tmp1A_A$d_914594314, units="hours")
-summary(as.numeric(tmp1A_A$Mod1completionA)) #normal for some of these to be negative, active parts. can get verified later on
-
-#Passive
-pas_after_time<- pas_after[complete.cases(pas_after[ , time.var1]), ]
-
-
-tmp1P_A <- pas_after_time[,c("Connect_ID","d_914594314","d_517311251")]
-tmp1P_A$d_914594314 <- as.POSIXct(ymd_hms(tmp1P_A$d_914594314))
-tmp1P_A$d_517311251 <- as.POSIXct(ymd_hms(tmp1P_A$d_517311251))
-
-
-tmp1P_A$Mod1completionP <- difftime(tmp1P_A$d_517311251, tmp1P_A$d_914594314, units="hours")
-summary(as.numeric(tmp1P_A$Mod1completionP)) #good that these are all positive, passsive NEED to be verified first 
-
-
-#Total
-mer_after_time<- mer_after[complete.cases(mer_after[ , time.var1]), ]
-
-
-tmp1T_A <- mer_after_time[,c("Connect_ID","d_914594314","d_517311251")]
-tmp1T_A$d_914594314 <- as.POSIXct(ymd_hms(tmp1T_A$d_914594314))
-tmp1T_A$d_517311251 <- as.POSIXct(ymd_hms(tmp1T_A$d_517311251))
-
-
-tmp1T_A$Mod1completionT <- difftime(tmp1T_A$d_517311251, tmp1T_A$d_914594314, units="hours")
-summary(as.numeric(tmp1T_A$Mod1completionT))
-```
-
-```{r Table3d_f,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
-
-
-Table3d = tmp1A_A %>% 
-  dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod1completionA,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionA, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod1completionA,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod1completionA,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod1completionA,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod1completionA, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod1completionA,na.rm = TRUE), digits=2), end = -1))
-
-knitr::kable(Table3d,caption='BOH Active (After)',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #Table 3d. 
-
-
-
-Table3e = tmp1P_A %>% 
-  dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod1completionP,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionP, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod1completionP,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod1completionP,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod1completionP,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod1completionP, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod1completionP,na.rm = TRUE), digits=2), end = -1))
-
-knitr::kable(Table3e,caption='BOH Passive (After)',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #Table 3e.
-
-
-
-Table3f = tmp1T_A %>% 
-  dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod1completionT,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionT, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod1completionT,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod1completionT,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod1completionT,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod1completionT, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod1completionT,na.rm = TRUE), digits=2), end = -1))
-
-knitr::kable(Table3f,caption='BOH Total (After)',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #Table 3f.
-```
-
-
-```{r 3giSetup, include=FALSE}
-
-#####ALL PARTICIPANTS 
-act_all= active_all%>% filter(d_949302066==231311385)
-#dim(act_all)
-pas_all= passive_all%>% filter(d_949302066==231311385)
-#dim(pas_all)
-mer_all= data_ccc %>% filter(d_949302066==231311385)
-#dim(mer_all)
-
-
-#Active
-act_all_time<- act_all[complete.cases(act_all[ , time.var1]), ]
-
-
-tmp1A_All <- act_all_time[,c("Connect_ID","d_914594314","d_517311251")]
-tmp1A_All$d_914594314 <- as.POSIXct(ymd_hms(tmp1A_All$d_914594314))
-tmp1A_All$d_517311251 <- as.POSIXct(ymd_hms(tmp1A_All$d_517311251))
-
-
-tmp1A_All$Mod1completionA <- difftime(tmp1A_All$d_517311251, tmp1A_All$d_914594314, units="hours")
-summary(as.numeric(tmp1A_All$Mod1completionA)) #normal for some of these to be negative, active parts. can get verified later on
-
-#Passive
-pas_all_time<- pas_all[complete.cases(pas_all[ , time.var1]), ]
-
-
-tmp1P_All <- pas_all_time[,c("Connect_ID","d_914594314","d_517311251")]
-tmp1P_All$d_914594314 <- as.POSIXct(ymd_hms(tmp1P_All$d_914594314))
-tmp1P_All$d_517311251 <- as.POSIXct(ymd_hms(tmp1P_All$d_517311251))
-
-
-tmp1P_All$Mod1completionP <- difftime(tmp1P_All$d_517311251, tmp1P_All$d_914594314, units="hours")
-summary(as.numeric(tmp1P_All$Mod1completionP)) #good that these are all positive, passsive NEED to be verified first 
-
-
-#Total
-mer_all_time<- mer_all[complete.cases(mer_all[ , time.var1]), ]
-
-
-tmp1T_All <- mer_all_time[,c("Connect_ID","d_914594314","d_517311251")]
-tmp1T_All$d_914594314 <- as.POSIXct(ymd_hms(tmp1T_All$d_914594314))
-tmp1T_All$d_517311251 <- as.POSIXct(ymd_hms(tmp1T_All$d_517311251))
-
-
-tmp1T_All$Mod1completionT <- difftime(tmp1T_All$d_517311251, tmp1T_All$d_914594314, units="hours")
-summary(as.numeric(tmp1T_All$Mod1completionT))
-```
-
-```{r Table3g_3i,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
-
-
-
-Table3g = tmp1A_All %>% 
-  dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod1completionA,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionA, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod1completionA,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod1completionA,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod1completionA,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod1completionA, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod1completionA,na.rm = TRUE), digits=2), end = -1))
-
-knitr::kable(Table3g,caption='All BOH Active',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #Table 3g. 
-
-
-
-Table3h = tmp1P_All %>%
-  dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod1completionP,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionP, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod1completionP,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod1completionP,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod1completionP,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod1completionP, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod1completionP,na.rm = TRUE), digits=2), end = -1))
- 
-knitr::kable(Table3h,caption='All BOH Passive',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #Table 3h.
-
-
-
-Table3i = tmp1T_All %>% 
-  dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod1completionT,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionT, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod1completionT,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod1completionT,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod1completionT,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod1completionT, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod1completionT,na.rm = TRUE), digits=2), end = -1))
-
-knitr::kable(Table3i,caption='All BOH Total',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #Table 3i.
-```
 
 
 
 \newpage
 \FloatBarrier
 
-```{r 3j_lSetp, include=FALSE}
 
-# \newpage
-# \FloatBarrier
-# 
-# 
-# \newpage
-# ## MRE Section 
-# \FloatBarrier
+```{r Table4.1, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, results='asis'}
 
+format_with_decimal <- function(x, digits = 1) {
+  formatted_number <- sprintf("%0.1f", x)
+  return(formatted_number)
+}
 
-# 3.	Time from verification to completion of each module (active, passive and total) 
-time.var2 <- c("d_914594314","d_832139544")
+all_data <- all_data %>% group_by(Connect_ID) %>% mutate(last_mod_ts = max(d_832139544, d_770257102, d_264644252)) %>% ungroup()
 
-
-##AFTER
-#All verified participant totals, verified active total and verified passive total
-act2 <- active_c_after %>%  filter(d_536735468==231311385)
-#dim(act2)
-pas2 <- passive_c_after %>% filter(d_536735468==231311385)
-#dim(pas2)
-mer2 <- data_ccc_after %>% filter(d_536735468==231311385)
-#dim(mer2)
-
-#Active
-act2_time<- act2[complete.cases(act2[ , time.var2]), ]
-
-tmp2A <- act2_time[,c("Connect_ID","d_914594314","d_832139544")]
-tmp2A$d_914594314 <- as.POSIXct(ymd_hms(tmp2A$d_914594314))
-tmp2A$d_832139544 <- as.POSIXct(ymd_hms(tmp2A$d_832139544))
+all_data <- all_data %>% mutate(days_ver_M1 = as.numeric(difftime(as.POSIXct(ymd_hms(d_517311251)), as.POSIXct(ymd_hms(d_914594314)), units="days")),
+                                days_ver_M2 = as.numeric(difftime(as.POSIXct(ymd_hms(d_832139544)), as.POSIXct(ymd_hms(d_914594314)), units="days")),
+                                days_ver_M3 = as.numeric(difftime(as.POSIXct(ymd_hms(d_770257102)), as.POSIXct(ymd_hms(d_914594314)), units="days")),
+                                days_ver_M4 = as.numeric(difftime(as.POSIXct(ymd_hms(d_264644252)), as.POSIXct(ymd_hms(d_914594314)), units="days")),
+                                days_ver_last = as.numeric(difftime(as.POSIXct(ymd_hms(last_mod_ts)), as.POSIXct(ymd_hms(d_914594314)), units="days")),
+                                ver_M1 = as.numeric(difftime(as.POSIXct(ymd_hms(d_517311251)), as.POSIXct(ymd_hms(d_914594314)), units="hours")),
+                                ver_M2 = as.numeric(difftime(as.POSIXct(ymd_hms(d_832139544)), as.POSIXct(ymd_hms(d_914594314)), units="hours")),
+                                ver_M3 = as.numeric(difftime(as.POSIXct(ymd_hms(d_770257102)), as.POSIXct(ymd_hms(d_914594314)), units="hours")),
+                                ver_M4 = as.numeric(difftime(as.POSIXct(ymd_hms(d_264644252)), as.POSIXct(ymd_hms(d_914594314)), units="hours")),
+                                ver_last = as.numeric(difftime(as.POSIXct(ymd_hms(last_mod_ts)), as.POSIXct(ymd_hms(d_914594314)), units="hours")),
+                                ver_M1_mins=ver_M1*60,
+                                ver_M2_mins=ver_M2*60,
+                                ver_M3_mins=ver_M3*60,
+                                ver_M4_mins=ver_M4*60)
 
 
-tmp2A$Mod2completionA <- difftime(tmp2A$d_832139544, tmp2A$d_914594314, units="hours")
-summary(as.numeric(tmp2A$Mod2completionA))   #normal for some of these to be negative, active parts. can get verified later on
+Table4a = all_data %>% group_by(Recruit_Type) %>% filter(d_949302066==231311385) %>% 
+  dplyr::summarize('N'=n(),
+                   Min = min(ver_M1, na.rm = TRUE),
+                   Q1 = quantile(ver_M1, 0.25, na.rm = TRUE),
+                   Median = median(ver_M1, na.rm = TRUE),
+                   Mean = mean(ver_M1, na.rm = TRUE), 
+                   SD= sd(ver_M1, na.rm = TRUE),
+                   Q3 = quantile(ver_M1, 0.75, na.rm = TRUE),
+                   'Perc.85' = quantile(ver_M1, 0.85, na.rm = TRUE),
+                   'Perc.90' = quantile(ver_M1, 0.90, na.rm = TRUE),
+                   'Perc.95' = quantile(ver_M1, 0.95, na.rm = TRUE),
+                   Max = max(ver_M1, na.rm = TRUE)) 
+
+
+Table4a2 = all_data %>% filter(d_949302066==231311385) %>% 
+  dplyr::summarize('N'=n(),
+                   Min = min(ver_M1, na.rm = TRUE),
+                   Q1 = quantile(ver_M1, 0.25, na.rm = TRUE),
+                   Median = median(ver_M1, na.rm = TRUE),
+                   Mean = mean(ver_M1, na.rm = TRUE), 
+                   SD= sd(ver_M1, na.rm = TRUE),
+                   Q3 = quantile(ver_M1, 0.75, na.rm = TRUE),
+                   'Perc.85' = quantile(ver_M1, 0.85, na.rm = TRUE),
+                   'Perc.90' = quantile(ver_M1, 0.90, na.rm = TRUE),
+                   'Perc.95' = quantile(ver_M1, 0.95, na.rm = TRUE),
+                   Max = max(ver_M1, na.rm = TRUE)) 
+
+
+Table4a1 <- Table4a #need to keep Table4a's first column name consistent to bind it later in the code
+names(Table4a1)[1] <- "Recruit Type"
+
+knitr::kable(Table4a1,caption='Table 4.1 Time (in hours) from Verification to BOH Submission \n Stratified by Active and Passive Recruits', row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") 
+
+
+knitr::kable(Table4a2,caption='Table 4.2 Time (in hours) from Verification to BOH Submission for All Participants',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") 
+```
+
+
+```{r Table5, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+
+
+Table4b = all_data %>%  filter(d_536735468==231311385) %>% 
+  dplyr::summarize('N'=n(),
+                   Min = min(ver_M2, na.rm = TRUE),
+                   Q1 = quantile(ver_M2, 0.25, na.rm = TRUE),
+                   Median = median(ver_M2, na.rm = TRUE),
+                   Mean = mean(ver_M2, na.rm = TRUE), 
+                   SD= sd(ver_M2, na.rm = TRUE),
+                   Q3 = quantile(ver_M2, 0.75, na.rm = TRUE),
+                   'Perc.85' = quantile(ver_M2, 0.85, na.rm = TRUE),
+                   'Perc.90' = quantile(ver_M2, 0.90, na.rm = TRUE),
+                   'Perc.95' = quantile(ver_M2, 0.95, na.rm = TRUE),
+                   Max = max(ver_M2, na.rm = TRUE)) 
+  
+
+
+
+Table4c = all_data %>%  filter(d_976570371==231311385) %>% 
+  dplyr::summarize('N'=n(),
+                   Min = min(ver_M3, na.rm = TRUE),
+                   Q1 = quantile(ver_M3, 0.25, na.rm = TRUE),
+                   Median = median(ver_M3, na.rm = TRUE),
+                   Mean = mean(ver_M3, na.rm = TRUE), 
+                   SD= sd(ver_M3, na.rm = TRUE),
+                   Q3 = quantile(ver_M3, 0.75, na.rm = TRUE),
+                   'Perc.85' = quantile(ver_M3, 0.85, na.rm = TRUE),
+                   'Perc.90' = quantile(ver_M3, 0.90, na.rm = TRUE),
+                   'Perc.95' = quantile(ver_M3, 0.95, na.rm = TRUE),
+                   Max = max(ver_M3, na.rm = TRUE)) 
+  
 
 
 
 
-#Passive
-pas2_time<- pas2[complete.cases(pas2[ , time.var2]), ]
+
+Table4d = all_data %>%   filter(d_663265240==231311385) %>%
+  dplyr::summarize('N'=n(),
+                   Min = min(ver_M4, na.rm = TRUE),
+                   Q1 = quantile(ver_M4, 0.25, na.rm = TRUE),
+                   Median = median(ver_M4, na.rm = TRUE),
+                   Mean = mean(ver_M4, na.rm = TRUE), 
+                   SD= sd(ver_M4, na.rm = TRUE),
+                   Q3 = quantile(ver_M4, 0.75, na.rm = TRUE),
+                   'Perc.85' = quantile(ver_M4, 0.85, na.rm = TRUE),
+                   'Perc.90' = quantile(ver_M4, 0.90, na.rm = TRUE),
+                   'Perc.95' = quantile(ver_M4, 0.95, na.rm = TRUE),
+                   Max = max(ver_M4, na.rm = TRUE))
+  
 
 
-tmp2P <- pas2_time[,c("Connect_ID","d_914594314","d_832139544")]
-tmp2P$d_914594314 <- as.POSIXct(ymd_hms(tmp2P$d_914594314))
-tmp2P$d_832139544 <- as.POSIXct(ymd_hms(tmp2P$d_832139544))
+
+Table4e = all_data %>%   filter(d_100767870==353358909) %>%
+  dplyr::summarize('N'=n(),
+                   Min = min(ver_last, na.rm = TRUE),
+                   Q1 = quantile(ver_last, 0.25, na.rm = TRUE),
+                   Median = median(ver_last, na.rm = TRUE),
+                   Mean = mean(ver_last, na.rm = TRUE), 
+                   SD= sd(ver_last, na.rm = TRUE),
+                   Q3 = quantile(ver_last, 0.75, na.rm = TRUE),
+                   'Perc.85' = quantile(ver_last, 0.85, na.rm = TRUE),
+                   'Perc.90' = quantile(ver_last, 0.90, na.rm = TRUE),
+                   'Perc.95' = quantile(ver_last, 0.95, na.rm = TRUE),
+                   Max = max(ver_last, na.rm = TRUE))
 
 
-tmp2P$Mod2completionP <- difftime(tmp2P$d_832139544, tmp2P$d_914594314, units="hours")
-summary(as.numeric(tmp2P$Mod2completionP)) #good that these are all positive, passives NEED to be verified first 
+tb5boh <- as.data.frame(Table4a2)
 
-#Total
-mer2_time<- mer2[complete.cases(mer2[ , time.var2]), ]
+table4 <- rbind(tb5boh, Table4b, Table4c, Table4d, Table4e)
 
+table4<- table4[, c(1:7, 9, 11)]
 
-tmp2T <- mer2_time[,c("Connect_ID","d_914594314","d_832139544")]
-tmp2T$d_914594314 <- as.POSIXct(ymd_hms(tmp2T$d_914594314))
-tmp2T$d_832139544 <- as.POSIXct(ymd_hms(tmp2T$d_832139544))
+table4[,10] <- c("BOH", "MRE", "SAS", "LAW", "All")
 
+table4<- table4[, c(10,1:9)]
 
-tmp2T$Mod2completionT <- difftime(tmp2T$d_832139544, tmp2T$d_914594314, units="hours")
-summary(as.numeric(tmp2T$Mod2completionT))
+current_colnames <- colnames(table4)
+current_colnames[1] <- "Section"
+colnames(table4) <- current_colnames
 
+knitr::kable(table4,caption='Table 5. Time (in hours) from Verification to Initial Survey Module Submission',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") 
 
 ```
 
 
-```{r Table3j_l,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
-
-Table3j = tmp2A %>%
-  dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod2completionA,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod2completionA, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod2completionA,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod2completionA,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod2completionA,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod2completionA, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod2completionA,na.rm = TRUE), digits=2), end = -1))
-
-knitr::kable(Table3j,caption='MRE Active (After)',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #Table 3j. 
-
-
-Table3k = tmp2P %>% 
-  dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod2completionP,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod2completionP, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod2completionP,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod2completionP,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod2completionP,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod2completionP, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod2completionP,na.rm = TRUE), digits=2), end = -1))
-
-knitr::kable(Table3k,caption='All MRE Passive (After)',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #Table 3k. 
-
-
-Table3l = tmp2T %>% 
-  dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod2completionT,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod2completionT, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod2completionT,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod2completionT,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod2completionT,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod2completionT, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod2completionT,na.rm = TRUE), digits=2), end = -1))
-
-knitr::kable(Table3l,caption='MRE Total (After)',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #Table 3l. 
-
-```
-
-\newpage
-\FloatBarrier
-```{r 3m_oSetup, include=FALSE}
-
-# 3.	Time from verification to completion of each module (active, passive and total) 
-#d_770257102 completed
-time.var3 <- c("d_914594314","d_770257102")
-
-
-#All verified participant totals, verified active total and verified passive total
-act3 <- active_c_after %>% filter(d_976570371==231311385)
-#dim(act3)
-pas3 <- passive_c_after %>% filter(d_976570371==231311385)
-#dim(pas3)
-mer3 <- data_ccc_after %>% filter(d_976570371==231311385)
-#dim(mer3)
-
-#Active
-act3_time<- act3[complete.cases(act3[ , time.var3]), ]
-
-
-tmp3A <- act3_time[,c("Connect_ID","d_914594314","d_770257102")]
-tmp3A$d_914594314 <- as.POSIXct(ymd_hms(tmp3A$d_914594314))
-tmp3A$d_770257102 <- as.POSIXct(ymd_hms(tmp3A$d_770257102))
-
-
-tmp3A$Mod3completionA <- difftime(tmp3A$d_770257102, tmp3A$d_914594314, units="hours")
-summary(as.numeric(tmp3A$Mod3completionA))
-
-
-#Passive
-pas3_time<- pas3[complete.cases(pas3[ , time.var3]), ]
-
-
-Ptmp3A <- pas3_time[,c("Connect_ID","d_914594314","d_770257102")]
-Ptmp3A$d_914594314 <- as.POSIXct(ymd_hms(Ptmp3A$d_914594314))
-Ptmp3A$d_770257102 <- as.POSIXct(ymd_hms(Ptmp3A$d_770257102))
-
-
-Ptmp3A$Mod3completionP <- difftime(Ptmp3A$d_770257102, Ptmp3A$d_914594314, units="hours")
-summary(as.numeric(Ptmp3A$Mod3completionP))
-
-
-#Total
-mer3_time<- mer3[complete.cases(mer3[ , time.var3]), ]
-
-
-Ttmp3T <- mer3_time[,c("Connect_ID","d_914594314","d_770257102")]
-Ttmp3T$d_914594314 <- as.POSIXct(ymd_hms(Ttmp3T$d_914594314))
-Ttmp3T$d_770257102 <- as.POSIXct(ymd_hms(Ttmp3T$d_770257102))
-
-
-Ttmp3T$Mod3completionT <- difftime(Ttmp3T$d_770257102, Ttmp3T$d_914594314, units="hours")
-summary(as.numeric(Ttmp3T$Mod3completionT))
-
-data_ccc$Connect_ID[which.max(Ttmp3T$Mod3completionT)]
-data_ccc$Connect_ID[which.min(Ttmp3T$Mod3completionT)]
-```
-
-```{r Table3m_o,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
-
-
-Table3m = tmp3A %>% 
-  dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod3completionA,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod3completionA, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod3completionA,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod3completionA,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod3completionA,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod3completionA, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod3completionA,na.rm = TRUE), digits=2), end = -1))
-
-knitr::kable(Table3m,caption='SAS Active (After)',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #Table 3m. 
-
-
-
-Table3n = Ptmp3A %>% 
-  dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod3completionP,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod3completionP, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod3completionP,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod3completionP,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod3completionP,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod3completionP, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod3completionP,na.rm = TRUE), digits=2), end = -1))
-
-knitr::kable(Table3n,caption='SAS Passive (After)',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #Table 3n. 
-
-
-
-Table3o = Ttmp3T %>% 
-  dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod3completionT,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod3completionT, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod3completionT,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod3completionT,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod3completionT,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod3completionT, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod3completionT,na.rm = TRUE), digits=2), end = -1))
-
-knitr::kable(Table3o,caption='SAS Total (After)',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #Table 3o. 
-```
-
-
-\newpage
 \FloatBarrier
 
-
-```{r 3p_rSetup, include=FALSE}
-
-# 3.	Time from verification to completion of each module (active, passive and total)  
-#264644252 completion
-
-time.var4 <- c("d_914594314","d_264644252")
-
-#All verified participant totals, verified active total and verified passive total
-act4 <- active_c_after %>%   filter(d_663265240==231311385)
-#dim(act4)
-pas4 <- passive_c_after  %>% filter(d_663265240==231311385)
-#dim(pas4)
-mer4 <- data_ccc_after %>% filter(d_663265240==231311385)
-#dim(mer4)
+```{r Table4_trend1, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, results='asis', include=FALSE}
 
 
-#Active
-act4_time<- act4[complete.cases(act4[ , time.var4]), ]
+
+combined_plot <- ggplot(all_data, aes(x = as.Date(d_914594314))) +
+  stat_summary(aes(y = ver_M1_mins, color = "BOH"), fun = "mean", geom = "line", size = 0.5) +
+  stat_summary(aes(y = ver_M2_mins, color = "MRE"), fun = "mean", geom = "line", size = 0.5) +
+  stat_summary(aes(y = ver_M3_mins, color = "SAS"), fun = "mean", geom = "line", size = 0.5) +
+  stat_summary(aes(y = ver_M4_mins, color = "LAW"), fun = "mean", geom = "line", size = 0.5) +
+  scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
+  scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
+  theme(
+    panel.background = element_blank(),
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold"),
+    axis.line = element_line(size = 0.2),
+    axis.text.x = element_text(angle = 60, hjust = 1),
+    axis.title.x = element_text(size = 14, face = "bold"),
+    axis.title.y = element_text(size = 14, face = "bold", color = "black"),
+    plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
+  ) +
+  theme(
+    plot.caption = element_text(hjust = 0),
+    legend.title = element_text(size = 8.5)
+  ) +
+  labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
+       properly view the average Submission Time frames.") +
+  ggtitle(label = "Figure 1. Overall Weekly Average Time (in minutes) \n from Verification to Initial Survey Submission") + 
+  labs(color = "Initial Survey")
+
+# Print or display the combined plot
+print(combined_plot)
 
 
-tmp4A <- act4_time[,c("Connect_ID","d_914594314","d_264644252")]
-tmp4A$d_914594314 <- as.POSIXct(ymd_hms(tmp4A$d_914594314))
-tmp4A$d_264644252 <- as.POSIXct(ymd_hms(tmp4A$d_264644252))
-
-
-tmp4A$Mod4completionA <- difftime(tmp4A$d_264644252, tmp4A$d_914594314, units="hours")
-summary(as.numeric(tmp4A$Mod4completionA))
-
-#Passive
-pas4_time<- pas4[complete.cases(pas4[ , time.var4]), ]
-
-Ptmp4A <- pas4_time[,c("Connect_ID","d_914594314","d_264644252")]
-Ptmp4A$d_914594314 <- as.POSIXct(ymd_hms(Ptmp4A$d_914594314))
-Ptmp4A$d_264644252 <- as.POSIXct(ymd_hms(Ptmp4A$d_264644252))
-
-
-Ptmp4A$Mod4completionP <- difftime(Ptmp4A$d_264644252, Ptmp4A$d_914594314, units="hours")
-summary(as.numeric(Ptmp4A$Mod4completionP))
-
-#Total
-mer4_time<- mer4[complete.cases(mer4[ , time.var4]), ]
-
-
-Ttmp4 <- mer4_time[,c("Connect_ID","d_914594314","d_264644252")]
-Ttmp4$d_914594314 <- as.POSIXct(ymd_hms(Ttmp4$d_914594314))
-Ttmp4$d_264644252 <- as.POSIXct(ymd_hms(Ttmp4$d_264644252))
-
-
-Ttmp4$Mod4completionT <- difftime(Ttmp4$d_264644252, Ttmp4$d_914594314, units="hours")
-summary(as.numeric(Ttmp4$Mod4completionT))
 
 ```
 
-```{r Table3p_r,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
+
+\FloatBarrier
+```{r Table4_trends2, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, results='asis', include=FALSE}
+
+timetrend2a <- ggplot(all_data, aes(x = as.Date(d_914594314), y = ver_M1_mins, color = Recruit_Type)) +
+  stat_summary(fun = "mean", geom = "line", size = 0.5) +
+  scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
+  scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
+  theme(
+    panel.background = element_blank(),
+    legend.position = "bottom",
+    axis.line = element_line(size = 0.2),
+    axis.text.x = element_text(angle = 60, hjust = 1),
+    axis.title.x = element_text(size = 14, face = "bold"),
+    axis.title.y = element_text(size = 14, face = "bold", color = "black"),
+    plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
+  ) +
+  theme(
+    plot.caption = element_text(hjust = 0),
+    legend.title = element_text(size = 8.5)
+  ) +
+  labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
+       properly view the average Submission Time frames.") +
+  ggtitle(label = "Figure 2.1 Weekly Average Time (in minutes) from Verification to BOH Submission") +
+  guides(color = guide_legend(title = "Recruitment Status"))
+
+timetrend2a
 
 
 
-Table3p = tmp4A %>% 
-  dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod4completionA,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod4completionA, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod4completionA,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod4completionA,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod4completionA,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod4completionA, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod4completionA,na.rm = TRUE), digits=2), end = -1))
+timetrend2b <- ggplot(all_data, aes(x = as.Date(d_914594314), y = ver_M2_mins, color = Recruit_Type)) +
+  stat_summary(fun = "mean", geom = "line", size = 0.5) +
+  scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
+  scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
+  theme(
+    panel.background = element_blank(),
+    legend.position = "bottom",
+    axis.line = element_line(size = 0.2),
+    axis.text.x = element_text(angle = 60, hjust = 1),
+    axis.title.x = element_text(size = 14, face = "bold"),
+    axis.title.y = element_text(size = 14, face = "bold", color = "black"),
+    plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
+  ) +
+  theme(
+    plot.caption = element_text(hjust = 0),
+    legend.title = element_text(size = 8.5)
+  ) +
+  labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
+       properly view the average Submission Time frames.") +
+  ggtitle(label = "Figure 2.2 Weekly Average Time (in minutes) from Verification to MRE Submission") +
+  guides(color = guide_legend(title = "Recruitment Status"))
 
-knitr::kable(Table3p,caption='LAW Active (After)',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #Table 3p. 
-
-
-
-Table3q = Ptmp4A %>% 
-  dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod4completionP,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod4completionP, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod4completionP,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod4completionP,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod4completionP,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod4completionP, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod4completionP,na.rm = TRUE), digits=2), end = -1))
-
-knitr::kable(Table3q,caption='LAW Passive (After)',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #Table 3q. 
+timetrend2b
 
 
 
-Table3r = Ttmp4 %>% 
-  dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod4completionT,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod4completionT, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod4completionT,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod4completionT,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod4completionT,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod4completionT, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod4completionT,na.rm = TRUE), digits=2), end = -1))
+timetrend2c <- ggplot(all_data, aes(x = as.Date(d_914594314), y = ver_M3_mins, color = Recruit_Type)) +
+  stat_summary(fun = "mean", geom = "line", size = 0.5) +
+  scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
+  scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
+  theme(
+    panel.background = element_blank(),
+    legend.position = "bottom",
+    axis.line = element_line(size = 0.2),
+    axis.text.x = element_text(angle = 60, hjust = 1),
+    axis.title.x = element_text(size = 14, face = "bold"),
+    axis.title.y = element_text(size = 14, face = "bold", color = "black"),
+    plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
+  ) +
+  theme(
+    plot.caption = element_text(hjust = 0),
+    legend.title = element_text(size = 8.5)
+  ) +
+  labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
+       properly view the average Submission Time frames.") +
+  ggtitle(label = "Figure 2.3 Weekly Average Time (in minutes) from Verification to SAS Submission") +
+  guides(color = guide_legend(title = "Recruitment Status"))
 
-knitr::kable(Table3r,caption='LAW Total (After)',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #Table 3r. 
+timetrend2c
+
+
+
+timetrend2d <- ggplot(all_data, aes(x = as.Date(d_914594314), y = ver_M4_mins, color = Recruit_Type)) +
+  stat_summary(fun = "mean", geom = "line", size = 0.5) +
+  scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
+  scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
+  theme(
+    panel.background = element_blank(),
+    legend.position = "bottom",
+    axis.line = element_line(size = 0.2),
+    axis.text.x = element_text(angle = 60, hjust = 1),
+    axis.title.x = element_text(size = 14, face = "bold"),
+    axis.title.y = element_text(size = 14, face = "bold", color = "black"),
+    plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
+  ) +
+  theme(
+    plot.caption = element_text(hjust = 0),
+    legend.title = element_text(size = 8.5)
+  ) +
+  labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
+       properly view the average Submission Time frames.") +
+  ggtitle(label = "Figure 2.4 Weekly Average Time (in minutes) from Verification to LAW Submission") +
+  guides(color = guide_legend(title = "Recruitment Status"))
+
+timetrend2d
 
 ```
+
+
+
+
 
 \newpage
+
+
+```{r Submission_Minutes, echo=FALSE, warning = FALSE}
+
+all_data <- all_data %>% mutate(comp_tm_M1 = as.numeric(difftime(as.POSIXct(ymd_hms(d_517311251)), as.POSIXct(ymd_hms(d_205553981)), units="hours")),
+                                comp_tm_M2 = as.numeric(difftime(as.POSIXct(ymd_hms(d_832139544)), as.POSIXct(ymd_hms(d_541836531)), units="hours")),
+                                comp_tm_M3 = as.numeric(difftime(as.POSIXct(ymd_hms(d_770257102)), as.POSIXct(ymd_hms(d_386488297)), units="hours")),
+                                comp_tm_M4 = as.numeric(difftime(as.POSIXct(ymd_hms(d_264644252)), as.POSIXct(ymd_hms(d_452942800)), units="hours")))
+
+all_data <- all_data %>%  
+  mutate(m1_comp_mins=(comp_tm_M1*60),
+         m2_comp_mins=(comp_tm_M2*60),
+         m3_comp_mins=(comp_tm_M3*60),
+         m4_comp_mins=(comp_tm_M4*60))
+
+
+Module1_in_minutes <- all_data %>% filter(d_949302066==231311385) %>%
+                                   mutate(time_frame=case_when(m1_comp_mins<5 ~ "Under 5 minutes",
+                                                               m1_comp_mins<10 ~ "5 to 10 minutes",
+                                                               m1_comp_mins<15 ~ "10 to 15 minutes",
+                                                               m1_comp_mins<20 ~ "15 to 20 minutes",
+                                                               m1_comp_mins<30 ~ "20 to 30 minutes",
+                                                               m1_comp_mins<45 ~ "30 to 45 minutes",
+                                                               m1_comp_mins<60 ~ "45 to 60 minutes",
+                                                               m1_comp_mins>=60 ~ "60 minutes+",
+                                                               is.na(d_517311251) | is.na(d_205553981) ~ "Missing Time Stamp(s)"))
+Module1_in_minutes$time_frame <- factor(Module1_in_minutes$time_frame,levels=c("Under 5 minutes","5 to 10 minutes","10 to 15 minutes","15 to 20 minutes","20 to 30 minutes","30 to 45 minutes","45 to 60 minutes","60 minutes+", "Missing Time Stamp(s)"))
+  
+Module1_in_minutes_summary <- Module1_in_minutes %>% dplyr::group_by(time_frame) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  
+  mutate(cumulative_percentage = cumsum(percentage)) %>% dplyr::select(time_frame, n, percentage, cumulative_percentage) 
+
+summary_row <- Module1_in_minutes_summary %>% 
+  summarize(n = sum(n), percentage = 100, cumulative_percentage = 100,
+            time_frame = "Total") 
+
+Module1_in_minutes_summary <- bind_rows(Module1_in_minutes_summary, summary_row)
+
+
+table6.1_sum <- Module1_in_minutes_summary %>% mutate(np = paste0(n, " (", round(percentage, digits=2), "%)"),
+                                                      cumulative_percentage = paste0(round(cumulative_percentage, digits=2), "%")) %>% select(time_frame, np, cumulative_percentage)
+
+knitr::kable(table6.1_sum, caption='Table 6.1 BOH Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c","c"),digits=1, booktabs = TRUE) %>%  add_indent(c(1:9))  %>% kable_styling(latex_options = "hold_position")
+
+
+
+Module2_in_minutes <- all_data %>% filter(d_536735468==231311385) %>% 
+                                   mutate(time_frame=case_when(m2_comp_mins<5 ~ "Under 5 minutes",
+                                                               m2_comp_mins<10 ~ "5 to 10 minutes",
+                                                               m2_comp_mins<15 ~ "10 to 15 minutes",
+                                                               m2_comp_mins<20 ~ "15 to 20 minutes",
+                                                               m2_comp_mins<30 ~ "20 to 30 minutes",
+                                                               m2_comp_mins<45 ~ "30 to 45 minutes",
+                                                               m2_comp_mins<60 ~ "45 to 60 minutes",
+                                                               m2_comp_mins>=60 ~ "60 minutes+",
+                                                               is.na(d_832139544) | is.na(d_541836531) ~ "Missing Time Stamp(s)"))
+
+Module2_in_minutes$time_frame <- factor(Module2_in_minutes$time_frame,levels=c("Under 5 minutes","5 to 10 minutes","10 to 15 minutes","15 to 20 minutes","20 to 30 minutes","30 to 45 minutes","45 to 60 minutes","60 minutes+", "Missing Time Stamp(s)"))
+Module2_in_minutes_summary <- Module2_in_minutes %>% dplyr::group_by(time_frame) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  
+  mutate(cumulative_percentage = cumsum(percentage)) %>% dplyr::select(time_frame, n, percentage, cumulative_percentage) 
+
+summary_row <- Module2_in_minutes_summary %>% 
+  summarize(n = sum(n), percentage = 100, cumulative_percentage = 100,
+            time_frame = "Total") 
+
+Module2_in_minutes_summary <- bind_rows(Module2_in_minutes_summary, summary_row)
+
+
+table6.2_sum <- Module2_in_minutes_summary %>% mutate(np = paste0(n, " (", round(percentage, digits=2), "%)"),
+                                                      cumulative_percentage = paste0(round(cumulative_percentage, digits=2), "%")) %>% select(time_frame, np, cumulative_percentage)
+
+knitr::kable(table6.2_sum, caption='Table 6.2 MRE Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(c(1:9))  %>% kable_styling(latex_options = "hold_position")
+
+
+
+
+Module3_in_minutes <- all_data %>%  filter(d_976570371==231311385) %>%
+                                   mutate(time_frame=case_when(m3_comp_mins<5 ~ "Under 5 minutes",
+                                                               m3_comp_mins<10 ~ "5 to 10 minutes",
+                                                               m3_comp_mins<15 ~ "10 to 15 minutes",
+                                                               m3_comp_mins<20 ~ "15 to 20 minutes",
+                                                               m3_comp_mins<30 ~ "20 to 30 minutes",
+                                                               m3_comp_mins<45 ~ "30 to 45 minutes",
+                                                               m3_comp_mins<60 ~ "45 to 60 minutes",
+                                                               m3_comp_mins>=60 ~ "60 minutes+",
+                                                               is.na(d_770257102) | is.na(d_386488297) ~ "Missing Time Stamp(s)"))
+
+Module3_in_minutes$time_frame <- factor(Module3_in_minutes$time_frame,levels=c("Under 5 minutes","5 to 10 minutes","10 to 15 minutes","15 to 20 minutes","20 to 30 minutes","30 to 45 minutes","45 to 60 minutes","60 minutes+", "Missing Time Stamp(s)"))
+
+Module3_in_minutes_summary <- Module3_in_minutes %>% dplyr::group_by(time_frame) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  
+  mutate(cumulative_percentage = cumsum(percentage)) %>% dplyr::select(time_frame, n, percentage, cumulative_percentage) 
+
+summary_row <- Module3_in_minutes_summary %>% 
+  summarize(n = sum(n), percentage = 100, cumulative_percentage = 100,
+            time_frame = "Total") 
+
+Module3_in_minutes_summary <- bind_rows(Module3_in_minutes_summary, summary_row)
+
+table6.3_sum <- Module3_in_minutes_summary %>% mutate(np = paste0(n, " (", round(percentage, digits=2), "%)"),
+                                                      cumulative_percentage = paste0(round(cumulative_percentage, digits=2), "%")) %>% select(time_frame, np, cumulative_percentage)
+
+knitr::kable(table6.3_sum, caption='Table 6.3 SAS Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(c(1:9)) %>% kable_styling(latex_options = "hold_position")
+
+
+
+Module4_in_minutes <- all_data %>%  filter(d_663265240==231311385) %>%
+                                   mutate(time_frame=case_when(m4_comp_mins<5 ~ "Under 5 minutes",
+                                                               m4_comp_mins<10 ~ "5 to 10 minutes",
+                                                               m4_comp_mins<15 ~ "10 to 15 minutes",
+                                                               m4_comp_mins<20 ~ "15 to 20 minutes",
+                                                               m4_comp_mins<30 ~ "20 to 30 minutes",
+                                                               m4_comp_mins<45 ~ "30 to 45 minutes",
+                                                               m4_comp_mins<60 ~ "45 to 60 minutes",
+                                                               m4_comp_mins>=60 ~ "60 minutes+",
+                                                               is.na(d_264644252) | is.na(d_452942800) ~ "Missing Time Stamp(s)"))
+
+
+Module4_in_minutes$time_frame <- factor(Module4_in_minutes$time_frame,levels=c("Under 5 minutes","5 to 10 minutes","10 to 15 minutes","15 to 20 minutes","20 to 30 minutes","30 to 45 minutes","45 to 60 minutes","60 minutes+", "Missing Time Stamp(s)"))
+
+Module4_in_minutes_summary <- Module4_in_minutes %>% dplyr::group_by(time_frame) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  
+  mutate(cumulative_percentage = cumsum(percentage)) %>% dplyr::select(time_frame, n, percentage, cumulative_percentage) 
+
+summary_row <- Module4_in_minutes_summary %>% 
+  summarize(n = sum(n), percentage = 100, cumulative_percentage = 100,
+            time_frame = "Total") 
+
+Module4_in_minutes_summary <- bind_rows(Module4_in_minutes_summary, summary_row)
+
+table6.4_sum <- Module4_in_minutes_summary %>% mutate(np = paste0(n, " (", round(percentage, digits=2), "%)"),
+                                                      cumulative_percentage = paste0(round(cumulative_percentage, digits=2), "%")) %>% select(time_frame, np, cumulative_percentage)
+
+knitr::kable(table6.4_sum, caption='Table 6.4 LAW Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(c(1:9)) %>% kable_styling(latex_options = "hold_position")
+
+
+```
+
+
 \FloatBarrier
 
-# 4.	Duration in minutes from start to submission for each section:  25, 50, 75 percentiles (active, passive, and total).  
-
-### Also listed are percentages of activate/passive/total participants completing the section in different time ranges. Note, each section will be stratified into one table before all sections were available in prod, and one table after all sections were available in prod.  
-
-# 
-## BOH Section 
+```{r Table7,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 
-
-```{r BOHtime, include=FALSE, warning = FALSE}
-#4.	Duration from start to submitted for each module (active_c, passive_c and total)  
-#d_205553981 time stamp started
-#d_517311251 time stamp finished 
-
-time.var.1 <- c("d_205553981","d_517311251")
-
-
-
-##All Participants
-sum(active_all$d_949302066==231311385, na.rm=TRUE)
-sum(passive_all$d_949302066==231311385, na.rm=TRUE)
-sum(data_ccc$d_949302066==231311385, na.rm=TRUE)
-
-
-#active_c
-act1= active_all %>% filter(active_all$d_949302066==231311385)
-#act1_time <- act1[complete.cases(time.var.1)]
-act1_time<- act1[complete.cases(act1[ , time.var.1]), ]
-
-
-Atmp1 <- act1_time[,c("Connect_ID","d_205553981","d_517311251")]
-Atmp1$d_205553981 <- as.POSIXct(ymd_hms(Atmp1$d_205553981))
-Atmp1$d_517311251 <- as.POSIXct(ymd_hms(Atmp1$d_517311251))
-
-
-Atmp1$Mod1completionA <- difftime(Atmp1$d_517311251, Atmp1$d_205553981, units="mins")
-summary(as.numeric(Atmp1$Mod1completionA))
-
-
-#passive_c
-pas1= passive_all %>% filter(passive_all$d_949302066==231311385)
-#pas1_time <- pas1[complete.cases(time.var.1)]
-pas1_time<- pas1[complete.cases(pas1[ , time.var.1]), ]
-
-
-Ptmp1 <- pas1_time[,c("Connect_ID","d_205553981","d_517311251")]
-Ptmp1$d_205553981 <- as.POSIXct(ymd_hms(Ptmp1$d_205553981))
-Ptmp1$d_517311251 <- as.POSIXct(ymd_hms(Ptmp1$d_517311251))
-
-
-Ptmp1$Mod1completionP <- difftime(Ptmp1$d_517311251, Ptmp1$d_205553981, units="mins")
-Ptmp1$Mod1completionP <- as.numeric(Ptmp1$Mod1completionP)
-summary(Ptmp1$Mod1completionP)
-
-
-
-#Total
-mer1a= data_ccc %>% filter(data_ccc$d_949302066==231311385)
-#mer1a_time <- mer1a[complete.cases(time.var.1)]
-mer1a_time<- mer1a[complete.cases(mer1a[ , time.var.1]), ]
-
-
-Ttmp1a <- mer1a_time[,c("Connect_ID","d_205553981","d_517311251", "d_512820379")]
-Ttmp1a$d_205553981 <- as.POSIXct(ymd_hms(Ttmp1a$d_205553981))
-Ttmp1a$d_517311251 <- as.POSIXct(ymd_hms(Ttmp1a$d_517311251))
-
-
-Ttmp1a$Mod1completionT.A <- round(difftime(Ttmp1a$d_517311251, Ttmp1a$d_205553981, units="mins"), digits=2)
-summary(as.numeric(Ttmp1a$Mod1completionT.A))
-
-
-
-
-#table 
-Ttmp1a$Mod1completionT.A <- as.numeric(Ttmp1a$Mod1completionT.A)
-ccc4_all_1 <- Ttmp1a %>% mutate(time_frame=case_when(Ttmp1a$Mod1completionT.A<10  ~ "Completed in Under 10 Minutes",
-                                                   20>=Ttmp1a$Mod1completionT.A & Ttmp1a$Mod1completionT.A>=10  ~ "Completed in 10-20 minutes",
-                                                   30>=Ttmp1a$Mod1completionT.A & Ttmp1a$Mod1completionT.A>20  ~ "Completed in 20-30 minutes",
-                                                  TRUE ~ "Completed in 30+ minutes"),
-                               VerStatus=case_when(d_512820379==486306141~"Active",
-                                                   d_512820379==854703046~"Passive"))
-
-
-
-ctable4a <- CrossTable(ccc4_all_1$time_frame, ccc4_all_1$VerStatus, prop.r=F, prop.c=F,prop.t=T, prop.chisq=F) #, percent_pattern="n, p_col")
-table4a <- as.data.frame(cbind(ctable4a$t,ctable4a$prop.t))
-colnames(table4a) <- c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP")
-
-table4a$ActiveP= 100*table4a$ActiveP
-table4a$PassiveP=100*table4a$PassiveP
-
-
-table4a <- table4a %>%   mutate(Total_Participants=list(table4a[1,1] + table4a[1,2], table4a[2,1] + table4a[2,2], table4a[3,1] + table4a[3,2], table4a[4,1] + table4a[4,2]),
-                                TotalP=list(table4a[1,3] + table4a[1,4], table4a[2,3] + table4a[2,4], table4a[3,3] + table4a[3,4], table4a[4,3] + table4a[4,4]))
-table4a$`Total_Participants` <- as.numeric(table4a$`Total_Participants`)
-table4a$`TotalP` <- as.numeric(table4a$`TotalP`)
-#ccc2l_summary <- table4a  %>% summarize_at(c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP", "Total_Participants",  "TotalP"), sum, na.rm = TRUE) 
-#table4a["Sum",] <- paste0( ccc2l_summary)
-
-table4a <- table4a[c(4,1:3), ]
-table4a <- table4a %>%   mutate(status=list("Completed in Under 10 Minutes", "Completed in 10-20 minutes", "Completed in 20-30 minutes", "Completed in 30+ minutes"))
-table4a <- table4a[, c(7,1:6)]
-
-
-
-```
-
-```{r BOHTable,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
-
-
-
-
-Table4a2 = Ttmp1a %>% #biochk_outlier,
+Table7a = all_data %>% 
   dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod1completionT.A,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod1completionT.A, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod1completionT.A,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod1completionT.A,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod1completionT.A,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod1completionT.A, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod1completionT.A,na.rm = TRUE), digits=2), end = -1))
+                   Min = min(m1_comp_mins, na.rm = TRUE),
+                   Q1 = quantile(m1_comp_mins, 0.25, na.rm = TRUE),
+                   Median = median(m1_comp_mins, na.rm = TRUE),
+                   Mean = mean(m1_comp_mins, na.rm = TRUE), 
+                   SD= sd(m1_comp_mins, na.rm = TRUE),
+                   Q3 = quantile(m1_comp_mins, 0.75, na.rm = TRUE),
+                   'Perc.85' = quantile(m1_comp_mins, 0.85, na.rm = TRUE),
+                   'Perc.90' = quantile(m1_comp_mins, 0.90, na.rm = TRUE),
+                   'Perc.95' = quantile(m1_comp_mins, 0.95, na.rm = TRUE),
+                   Max = max(m1_comp_mins, na.rm = TRUE)) 
 
-knitr::kable(Table4a2,caption='All BOH Total Participants',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #caption='Table 4a2. All BOH Total Participants'
-
-```
-
-```{r Table4a, echo=FALSE, warning = FALSE}
-
-
-table4a %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "ActiveP", decimals = 2) %>% 
-  fmt_number(columns = "PassiveP", decimals = 2) %>%
-  fmt_number(columns = "TotalP", decimals = 2) %>%
-  tab_header(title = html("Table 4a. BOH Section Completion Time of All Verified Participants")) %>% 
-  cols_label("Active_Participants" = md("**(N)**"), "Passive_Participants" = md("**(N)**"), "Total_Participants" = md("**(N)**"), 
-             ActiveP = md("**%**"), PassiveP = md("**%**"), TotalP= md("**%**"),
-             status="Completion Status") %>% 
-               tab_spanner(
-                 label="Active Participants",
-                 columns=vars("Active_Participants",ActiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Passive Participants",
-                 columns=vars("Passive_Participants",PassiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Total Participants",
-                 columns=vars("Total_Participants", TotalP)
-               ) %>% 
-grand_summary_rows(columns=c("Active_Participants", "Passive_Participants", "Total_Participants", TotalP, ActiveP, PassiveP),fns = ~sum(.,na.rm = T), formatter = fmt_number)|>
-               tab_options(
-                 heading.title.font.size = 25,
-                 heading.padding = 10,
-                 row_group.font.weight = "bolder",
-                 summary_row.background.color = "blanchedalmond", #<---- what to call the final summary in order to bold and color it
-                 row_group.background.color =    "#99CCFF",
-                 table.width=pct(50)
-               ) %>%
-               tab_style(
-                 style = list(
-                   cell_text(weight = "bold")
-                 ),
-                 locations = cells_body(
-                   columns = status,
-                 )
-               )  %>%
-               tab_style(
-                 style= list(
-                   cell_text(
-                     align="center"
-                   )
-                 ),
-                 locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-               )
-
-
-
-
-```
-
-
-
-\newpage
-
-# 
-## MRE Section
-\FloatBarrier
-
-```{r 4bSetup, include=FALSE, warning = FALSE}
-
-time.var.2 <- c("d_541836531","d_832139544")
-
-
-
-##All Participants 
-sum(active_all$d_536735468==231311385, na.rm=TRUE)
-sum(passive_all$d_536735468==231311385, na.rm=TRUE)
-sum(data_ccc$d_536735468==231311385, na.rm=TRUE)
-
-
-#Active
-actm2= active_all %>% filter(active_all$d_536735468==231311385)
-actm2_time<- actm2[complete.cases(actm2[ , time.var.2]), ]
-
-
-tmp <- actm2_time[,c("Connect_ID","d_541836531","d_832139544")]
-tmp$d_541836531 <- as.POSIXct(ymd_hms(tmp$d_541836531))
-tmp$d_832139544 <- as.POSIXct(ymd_hms(tmp$d_832139544))
-
-
-tmp$Mod2completionA <- difftime(tmp$d_832139544, tmp$d_541836531, units="mins")
-summary(as.numeric(tmp$Mod2completionA))
-
-
-
-#Passive
-pasm2= passive_all %>% filter(passive_all$d_536735468==231311385)
-pasm2_time<- pasm2[complete.cases(pasm2[ , time.var.2]), ]
-
-
-ptmp <- pasm2_time[,c("Connect_ID","d_541836531","d_832139544")]
-ptmp$d_541836531 <- as.POSIXct(ymd_hms(ptmp$d_541836531))
-ptmp$d_832139544 <- as.POSIXct(ymd_hms(ptmp$d_832139544))
-
-
-ptmp$Mod2completionP <- difftime(ptmp$d_832139544, ptmp$d_541836531, units="mins")
-summary(as.numeric(ptmp$Mod2completionP))
-
-
-
-#Total
-merm2= data_ccc %>% filter(data_ccc$d_536735468==231311385)
-merm2_time<- merm2[complete.cases(merm2[ , time.var.2]), ]
-
-
-Ttmp2A <- merm2_time[,c("Connect_ID","d_541836531","d_832139544", "d_512820379")]
-Ttmp2A$d_541836531 <- as.POSIXct(ymd_hms(Ttmp2A$d_541836531))
-Ttmp2A$d_832139544 <- as.POSIXct(ymd_hms(Ttmp2A$d_832139544))
-
-
-Ttmp2A$Mod2completionT.A <- difftime(Ttmp2A$d_832139544, Ttmp2A$d_541836531, units="mins")
-summary(as.numeric(Ttmp2A$Mod2completionT.A))
-
-
-
-
-ccc4_all_2 <- Ttmp2A %>% mutate(time_frame=case_when(Ttmp2A$Mod2completionT.A<10  ~ "Completed in Under 10 Minutes",
-                                                   20>=Ttmp2A$Mod2completionT.A & Ttmp2A$Mod2completionT.A>=10  ~ "Completed in 10-20 minutes",
-                                                   30>=Ttmp2A$Mod2completionT.A & Ttmp2A$Mod2completionT.A>20  ~ "Completed in 20-30 minutes",
-                                                  TRUE ~ "Completed in 30+ minutes"),
-                               VerStatus=case_when(d_512820379==486306141~"Active",
-                                                   d_512820379==854703046~"Passive"))
-
-
-
-ctable4b <- CrossTable(ccc4_all_2$time_frame, ccc4_all_2$VerStatus, prop.r=F, prop.c=F,prop.t=T, prop.chisq=F) #, percent_pattern="n, p_col")
-table4b <- as.data.frame(cbind(ctable4b$t,ctable4b$prop.t))
-colnames(table4b) <- c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP")
-
-table4b$ActiveP= 100*table4b$ActiveP
-table4b$PassiveP=100*table4b$PassiveP
-
-
-table4b <- table4b %>%   mutate(Total_Participants=list(table4b[1,1] + table4b[1,2], table4b[2,1] + table4b[2,2], table4b[3,1] + table4b[3,2], table4b[4,1] + table4b[4,2]),
-                                TotalP=list(table4b[1,3] + table4b[1,4], table4b[2,3] + table4b[2,4], table4b[3,3] + table4b[3,4], table4b[4,3] + table4b[4,4]))
-table4b$`Total_Participants` <- as.numeric(table4b$`Total_Participants`)
-table4b$`TotalP` <- as.numeric(table4b$`TotalP`)
-#ccc2l_summary <- table4b  %>% summarize_at(c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP", "Total_Participants",  "TotalP"), sum, na.rm = TRUE) 
-#table4b["Sum",] <- paste0( ccc2l_summary)
-
-table4b <- table4b[c(4,1:3), ]
-table4b <- table4b %>%   mutate(status=list("Completed in Under 10 Minutes", "Completed in 10-20 minutes", "Completed in 20-30 minutes", "Completed in 30+ minutes"))
-table4b <- table4b[, c(7,1:6)]
-
-
-
-```
-
-```{r MRETime,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
-
-
-
-Table7c = Ttmp2A %>% 
+Table7b = all_data %>%  
   dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod2completionT.A,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod2completionT.A, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod2completionT.A,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod2completionT.A,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod2completionT.A,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod2completionT.A, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod2completionT.A,na.rm = TRUE), digits=2), end = -1))
+                   Min = min(m2_comp_mins, na.rm = TRUE),
+                   Q1 = quantile(m2_comp_mins, 0.25, na.rm = TRUE),
+                   Median = median(m2_comp_mins, na.rm = TRUE),
+                   Mean = mean(m2_comp_mins, na.rm = TRUE), 
+                   SD= sd(m2_comp_mins, na.rm = TRUE),
+                   Q3 = quantile(m2_comp_mins, 0.75, na.rm = TRUE),
+                   'Perc.85' = quantile(m2_comp_mins, 0.85, na.rm = TRUE),
+                   'Perc.90' = quantile(m2_comp_mins, 0.90, na.rm = TRUE),
+                   'Perc.95' = quantile(m2_comp_mins, 0.95, na.rm = TRUE),
+                   Max = max(m2_comp_mins, na.rm = TRUE)) 
 
-knitr::kable(Table7c,caption='All MRE Total Participants',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #caption='Table 7c. All MRE Total Participants'
-```
-
-```{r MRE4b, echo=FALSE, warning = FALSE}
-
-
-table4b %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "ActiveP", decimals = 2) %>% 
-  fmt_number(columns = "PassiveP", decimals = 2) %>%
-  fmt_number(columns = "TotalP", decimals = 2) %>%
-  tab_header(title = html("Table 4b. MRE Section Completion Time of All Verified Participants")) %>% 
-  cols_label("Active_Participants" = md("**(N)**"), "Passive_Participants" = md("**(N)**"), "Total_Participants" = md("**(N)**"), 
-             ActiveP = md("**%**"), PassiveP = md("**%**"), TotalP= md("**%**"),
-             status="Completion Status") %>% 
-               tab_spanner(
-                 label="Active Participants",
-                 columns=vars("Active_Participants",ActiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Passive Participants",
-                 columns=vars("Passive_Participants",PassiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Total Participants",
-                 columns=vars("Total_Participants", TotalP)
-               ) %>% 
-grand_summary_rows(columns=c("Active_Participants", "Passive_Participants", "Total_Participants", TotalP, ActiveP, PassiveP),fns = ~sum(.,na.rm = T), formatter = fmt_number)|>
-               tab_options(
-                 heading.title.font.size = 25,
-                 heading.padding = 10,
-                 row_group.font.weight = "bolder",
-                 summary_row.background.color = "blanchedalmond", #<---- what to call the final summary in order to bold and color it
-                 row_group.background.color =    "#99CCFF",
-                 table.width=pct(50)
-               ) %>%
-               tab_style(
-                 style = list(
-                   cell_text(weight = "bold")
-                 ),
-                 locations = cells_body(
-                   columns = status,
-                 )
-               )  %>%
-               tab_style(
-                 style= list(
-                   cell_text(
-                     align="center"
-                   )
-                 ),
-                 locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-               )
-
-
-
-
-```
-
-\newpage
-
-# 
-## SAS Section
-\FloatBarrier
-
-```{r SASSetup, include= FALSE, warning=FALSE}
-#d_770257102 completed
-#d_386488297 start 
-
-time.var.3 <- c("d_386488297","d_770257102")
-
-
-
-##All Participants 
-sum(active_all$d_976570371==231311385, na.rm=TRUE)
-sum(passive_all$d_976570371==231311385, na.rm=TRUE)
-sum(data_ccc$d_976570371==231311385, na.rm=TRUE)
-
-
-#Active
-actm3= active_all %>% filter(active_all$d_976570371==231311385)
-actm3_time<- actm3[complete.cases(actm3[ , time.var.3]), ]
-
-
-tmp.3A <- actm3_time[,c("Connect_ID","d_386488297","d_770257102")]
-tmp.3A$d_386488297 <- as.POSIXct(ymd_hms(tmp.3A$d_386488297))
-tmp.3A$d_770257102 <- as.POSIXct(ymd_hms(tmp.3A$d_770257102))
-
-
-tmp.3A$Mod3completionA <- difftime(tmp.3A$d_770257102, tmp.3A$d_386488297, units="mins")
-summary(as.numeric(tmp.3A$Mod3completionA))
-
-
-
-#Passive
-pasm3= passive_all %>% filter(passive_all$d_976570371==231311385)
-pasm3_time<- pasm3[complete.cases(pasm3[ , time.var.3]), ]
-
-
-ptmp3 <- pasm3_time[,c("Connect_ID","d_386488297","d_770257102")]
-ptmp3$d_386488297 <- as.POSIXct(ymd_hms(ptmp3$d_386488297))
-ptmp3$d_770257102 <- as.POSIXct(ymd_hms(ptmp3$d_770257102))
-
-
-ptmp3$Mod3completionP <- difftime(ptmp3$d_770257102, ptmp3$d_386488297, units="mins")
-summary(as.numeric(ptmp3$Mod3completionP))
-
-
-
-#Total
-#Total
-merm3= data_ccc %>% filter(data_ccc$d_976570371==231311385)
-merm3_time<- merm3[complete.cases(merm3[ , time.var.3]), ]
-
-
-Ttmp3A <- merm3_time[,c("Connect_ID","d_386488297","d_770257102", "d_512820379")]
-Ttmp3A$d_386488297 <- as.POSIXct(ymd_hms(Ttmp3A$d_386488297))
-Ttmp3A$d_770257102 <- as.POSIXct(ymd_hms(Ttmp3A$d_770257102))
-
-
-Ttmp3A$Mod3completionT.A <- difftime(Ttmp3A$d_770257102, Ttmp3A$d_386488297, units="mins")
-summary(as.numeric(Ttmp3A$Mod3completionT.A))
-
-
-
-
-ccc4_all_3 <- Ttmp3A %>% mutate(time_frame=case_when(Mod3completionT.A<10  ~ "Completed in Under 10 Minutes",
-                                                   20>=Mod3completionT.A & Mod3completionT.A>=10  ~ "Completed in 10-20 minutes",
-                                                   30>=Mod3completionT.A & Mod3completionT.A>20  ~ "Completed in 20-30 minutes",
-                                                   Mod3completionT.A>30 ~ "Completed in 30+ minutes"),
-                               VerStatus=case_when(d_512820379==486306141~"Active",
-                                                   d_512820379==854703046~"Passive"))
-
-
-
-ctable4c <- CrossTable(ccc4_all_3$time_frame, ccc4_all_3$VerStatus, prop.r=F, prop.c=F,prop.t=T, prop.chisq=F) #, percent_pattern="n, p_col")
-table4c <- as.data.frame(cbind(ctable4c$t,ctable4c$prop.t))
-colnames(table4c) <- c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP")
-
-table4c$ActiveP= 100*table4c$ActiveP
-table4c$PassiveP=100*table4c$PassiveP
-
-
-table4c <- table4c %>%   mutate(Total_Participants=list(table4c[1,1] + table4c[1,2], table4c[2,1] + table4c[2,2], table4c[3,1] + table4c[3,2], table4c[4,1] + table4c[4,2]),
-                                TotalP=list(table4c[1,3] + table4c[1,4], table4c[2,3] + table4c[2,4], table4c[3,3] + table4c[3,4], table4c[4,3] + table4c[4,4]))
-table4c$`Total_Participants` <- as.numeric(table4c$`Total_Participants`)
-table4c$`TotalP` <- as.numeric(table4c$`TotalP`)
-
-
-table4c <- table4c[c(4,1:3), ]
-table4c <- table4c %>%   mutate(status=list("Completed in Under 10 Minutes", "Completed in 10-20 minutes", "Completed in 20-30 minutes", "Completed in 30+ minutes"))
-table4c <- table4c[, c(7,1:6)]
-
-
-
-```
-
-```{r SASTiming,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
-
-
-
-Table9c = Ttmp3A %>% #biochk_outlier,
+Table7c = all_data %>% 
   dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod3completionT.A,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod3completionT.A, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod3completionT.A,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod3completionT.A,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod3completionT.A,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod3completionT.A, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod3completionT.A,na.rm = TRUE), digits=2), end = -1))
-
-knitr::kable(Table9c,caption='All SAS Total Participants',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #caption='Table 9c. All SAS Total Participants'
-```
-
-```{r SAS4c, echo=FALSE, warning = FALSE}
-
-
-
-table4c %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "ActiveP", decimals = 2) %>% 
-  fmt_number(columns = "PassiveP", decimals = 2) %>%
-  fmt_number(columns = "TotalP", decimals = 2) %>%
-  tab_header(title = html("Table 4c. SAS Section Completion Time of All Verified Participants")) %>% 
-  cols_label("Active_Participants" = md("**(N)**"), "Passive_Participants" = md("**(N)**"), "Total_Participants" = md("**(N)**"), 
-             ActiveP = md("**%**"), PassiveP = md("**%**"), TotalP= md("**%**"),
-             status="Completion Status") %>% 
-               tab_spanner(
-                 label="Active Participants",
-                 columns=vars("Active_Participants",ActiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Passive Participants",
-                 columns=vars("Passive_Participants",PassiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Total Participants",
-                 columns=vars("Total_Participants", TotalP)
-               ) %>% 
-grand_summary_rows(columns=c("Active_Participants", "Passive_Participants", "Total_Participants", TotalP, ActiveP, PassiveP),fns = ~sum(.,na.rm = T), formatter = fmt_number)|>
-               tab_options(
-                 heading.title.font.size = 25,
-                 heading.padding = 10,
-                 row_group.font.weight = "bolder",
-                 summary_row.background.color = "blanchedalmond", #<---- what to call the final summary in order to bold and color it
-                 row_group.background.color =    "#99CCFF",
-                 table.width=pct(50)
-               ) %>%
-               tab_style(
-                 style = list(
-                   cell_text(weight = "bold")
-                 ),
-                 locations = cells_body(
-                   columns = status,
-                 )
-               )  %>%
-               tab_style(
-                 style= list(
-                   cell_text(
-                     align="center"
-                   )
-                 ),
-                 locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-               )
-
-
-
-```
-
-\newpage
-
-## LAW Section
-\FloatBarrier
-
-```{r LAW_Setup, include= FALSE, warning=FALSE}
-# 4.	Duration from start to submitted for each module (active, passive and total) 
-#264644252 completion
-#452942800 start 
-time.var.4 <- c("d_452942800","d_264644252")
-
-
-
-#Active
-actm4= active_all %>% filter(active_all$d_663265240==231311385)
-actm4_time<- actm4[complete.cases(actm4[ , time.var.4]), ]
-
-
-tmp.4 <- actm4_time[,c("Connect_ID","d_452942800","d_264644252")]
-tmp.4$d_452942800 <- as.POSIXct(ymd_hms(tmp.4$d_452942800))
-tmp.4$d_264644252 <- as.POSIXct(ymd_hms(tmp.4$d_264644252))
-
-
-tmp.4$Mod4completionA <- difftime(tmp.4$d_264644252, tmp.4$d_452942800, units="mins")
-summary(as.numeric(tmp.4$Mod4completionA))
-
-
-
-
-#Passive
-pasm4= passive_all %>% filter(passive_all$d_663265240==231311385)
-pasm4_time<- pasm4[complete.cases(pasm4[ , time.var.4]), ]
-
-
-ptmp4 <- pasm4_time[,c("Connect_ID","d_452942800","d_264644252")]
-ptmp4$d_452942800 <- as.POSIXct(ymd_hms(ptmp4$d_452942800))
-ptmp4$d_264644252 <- as.POSIXct(ymd_hms(ptmp4$d_264644252))
-
-
-ptmp4$Mod4completionP <- difftime(ptmp4$d_264644252, ptmp4$d_452942800, units="mins")
-summary(as.numeric(ptmp4$Mod4completionP))
-
-#Total
-merm4= data_ccc %>% filter(data_ccc$d_663265240==231311385)
-merm4_time<- merm4[complete.cases(merm4[ , time.var.4]), ]
-
-
-Ttmp.4 <- merm4_time[,c("Connect_ID","d_452942800","d_264644252", "d_512820379")]
-Ttmp.4$d_452942800 <- as.POSIXct(ymd_hms(Ttmp.4$d_452942800))
-Ttmp.4$d_264644252 <- as.POSIXct(ymd_hms(Ttmp.4$d_264644252))
-
-
-Ttmp.4$Mod4completionT.A <- difftime(Ttmp.4$d_264644252, Ttmp.4$d_452942800, units="mins")
-summary(as.numeric(Ttmp.4$Mod4completionT.A))
-
-
-
-
-
-
-ccc4_all_4 <- Ttmp.4 %>% mutate(time_frame=case_when(Mod4completionT.A<10  ~ "Completed in Under 10 Minutes",
-                                                   20>=Mod4completionT.A & Mod4completionT.A>=10  ~ "Completed in 10-20 minutes",
-                                                   30>=Mod4completionT.A & Mod4completionT.A>20  ~ "Completed in 20-30 minutes",
-                                                   Mod4completionT.A>30 ~ "Completed in 30+ minutes"),
-                               VerStatus=case_when(d_512820379==486306141~"Active",
-                                                   d_512820379==854703046~"Passive"))
-
-
-
-ctable4d <- CrossTable(ccc4_all_4$time_frame, ccc4_all_4$VerStatus, prop.r=F, prop.c=F,prop.t=T, prop.chisq=F) #, percent_pattern="n, p_col")
-table4d <- as.data.frame(cbind(ctable4d$t,ctable4d$prop.t))
-colnames(table4d) <- c("Active_Participants", "Passive_Participants", "ActiveP", "PassiveP")
-
-table4d$ActiveP= 100*table4d$ActiveP
-table4d$PassiveP=100*table4d$PassiveP
-
-
-table4d <- table4d %>%   mutate(Total_Participants=list(table4d[1,1] + table4d[1,2], table4d[2,1] + table4d[2,2], table4d[3,1] + table4d[3,2], table4d[4,1] + table4d[4,2]),
-                                TotalP=list(table4d[1,3] + table4d[1,4], table4d[2,3] + table4d[2,4], table4d[3,3] + table4d[3,4], table4d[4,3] + table4d[4,4]))
-table4d$`Total_Participants` <- as.numeric(table4d$`Total_Participants`)
-table4d$`TotalP` <- as.numeric(table4d$`TotalP`)
-
-
-table4d <- table4d[c(4,1:3), ]
-table4d <- table4d %>%   mutate(status=list("Completed in Under 10 Minutes", "Completed in 10-20 minutes", "Completed in 20-30 minutes", "Completed in 30+ minutes"))
-table4d <- table4d[, c(7,1:6)]
-
-
-
-
-```
-
-
-```{r AllLAWTable,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
-
-
-
-Table11c = Ttmp.4 %>% 
+                   Min = min(m3_comp_mins, na.rm = TRUE),
+                   Q1 = quantile(m3_comp_mins, 0.25, na.rm = TRUE),
+                   Median = median(m3_comp_mins, na.rm = TRUE),
+                   Mean = mean(m3_comp_mins, na.rm = TRUE), 
+                   SD= sd(m3_comp_mins, na.rm = TRUE),
+                   Q3 = quantile(m3_comp_mins, 0.75, na.rm = TRUE),
+                   'Perc.85' = quantile(m3_comp_mins, 0.85, na.rm = TRUE),
+                   'Perc.90' = quantile(m3_comp_mins, 0.90, na.rm = TRUE),
+                   'Perc.95' = quantile(m3_comp_mins, 0.95, na.rm = TRUE),
+                   Max = max(m3_comp_mins, na.rm = TRUE)) 
+  
+Table7d = all_data %>% 
   dplyr::summarize('N'=n(),
-                   Min = str_sub(round(min(Mod4completionT.A,na.rm = TRUE), digits=2), end = -1),
-                   Q1 = str_sub(round(quantile(Mod4completionT.A, 0.25,na.rm = TRUE), digits=2), end = -1),
-                   Median = str_sub(round(median(Mod4completionT.A,na.rm = TRUE), digits=2), end = -1),   #str_sub(, end = -4),
-                   Mean = str_sub(round(mean(Mod4completionT.A,na.rm = TRUE),digits=2), end = -1), 
-                   SD= str_sub(round(sd(Mod4completionT.A,na.rm = TRUE), digits=2), end = -1),
-                   Q3 = str_sub(round(quantile(Mod4completionT.A, 0.75,na.rm = TRUE), digits=2), end = -1),
-                   Max = str_sub(round(max(Mod4completionT.A,na.rm = TRUE), digits=2), end = -1))
-
-knitr::kable(Table9c,caption='All LAW Total Participants',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") #caption='Table 11c. All LAW Total Participants'
-```
-
-```{r LAW_4d, echo=FALSE, warning = FALSE}
+                   Min = min(m4_comp_mins, na.rm = TRUE),
+                   Q1 = quantile(m4_comp_mins, 0.25, na.rm = TRUE),
+                   Median = median(m4_comp_mins, na.rm = TRUE),
+                   Mean = mean(m4_comp_mins, na.rm = TRUE), 
+                   SD= sd(m4_comp_mins, na.rm = TRUE),
+                   Q3 = quantile(m4_comp_mins, 0.75, na.rm = TRUE),
+                   'Perc.85' = quantile(m4_comp_mins, 0.85, na.rm = TRUE),
+                   'Perc.90' = quantile(m4_comp_mins, 0.90, na.rm = TRUE),
+                   'Perc.95' = quantile(m4_comp_mins, 0.95, na.rm = TRUE),
+                   Max = max(m4_comp_mins, na.rm = TRUE))
 
 
-table4d %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "ActiveP", decimals = 2) %>% 
-  fmt_number(columns = "PassiveP", decimals = 2) %>%
-  fmt_number(columns = "TotalP", decimals = 2) %>%
-  tab_header(title = html("Table 4d. LAW Section Completion Time of All Verified Participants")) %>% 
-  cols_label("Active_Participants" = md("**(N)**"), "Passive_Participants" = md("**(N)**"), "Total_Participants" = md("**(N)**"), 
-             ActiveP = md("**%**"), PassiveP = md("**%**"), TotalP= md("**%**"),
-             status="Completion Status") %>% 
-               tab_spanner(
-                 label="Active Participants",
-                 columns=vars("Active_Participants",ActiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Passive Participants",
-                 columns=vars("Passive_Participants",PassiveP)
-               ) %>% 
-               tab_spanner(
-                 label="Total Participants",
-                 columns=vars("Total_Participants", TotalP)
-               ) %>% 
-grand_summary_rows(columns=c("Active_Participants", "Passive_Participants", "Total_Participants", TotalP, ActiveP, PassiveP),fns = ~sum(.,na.rm = T), formatter = fmt_number)|>
-               tab_options(
-                 heading.title.font.size = 25,
-                 heading.padding = 10,
-                 row_group.font.weight = "bolder",
-                 summary_row.background.color = "blanchedalmond", #<---- what to call the final summary in order to bold and color it
-                 row_group.background.color =    "#99CCFF",
-                 table.width=pct(50)
-               ) %>%
-               tab_style(
-                 style = list(
-                   cell_text(weight = "bold")
-                 ),
-                 locations = cells_body(
-                   columns = status,
-                 )
-               )  %>%
-               tab_style(
-                 style= list(
-                   cell_text(
-                     align="center"
-                   )
-                 ),
-                 locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-               )
+
+
+Table7 <- rbind(Table7a, Table7b, Table7c, Table7d)
+
+Table7<- Table7[, c(1:7, 9, 11)]
+
+Table7[,10] <- c("BOH", "MRE", "SAS", "LAW")
+
+Table7<- Table7[, c(10,1:9)]
+
+current_colnames <- colnames(Table7)
+current_colnames[1] <- "Section"
+colnames(Table7) <- current_colnames
+
+knitr::kable(Table7,caption='Table 7. Time (in minutes) from Start to Submit of Initial Survey Modules',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "HOLD_position") 
+
 
 ```
 
 
-\newpage
 
-# 5.	% Submission of surveys sections by active recruits who cannot be verified
-```{r Section5, echo=FALSE, warning = FALSE}
-# 5.	% Submission of surveys modules by active recruits who cannot be verified   
-#d_512820379==486306141 <-- active
+
+
+
+
+
+```{r Section8, echo=FALSE, warning = FALSE}
+
 
 
 cannot_ver <- data_c %>%  filter(d_821247024==219863910 & d_512820379==486306141) %>%  
@@ -2721,550 +861,115 @@ cannot_ver <- data_c %>%  filter(d_821247024==219863910 & d_512820379==486306141
 
 Numb5 <- cannot_ver %>% group_by(sect_comp) %>%    dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(sect_comp, n, percentage)
 
+Numb5_table <- Numb5 %>% mutate(np = paste0(n, " (", round(percentage, digits=2), "%)")) %>% select(sect_comp, np)
 
-Numb5 %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>%
-  tab_header(title = html("Sections Submitted by Non-Verified Active Participants")) %>% 
-  cols_label(sect_comp = md("**Sections Completed**"), n = md("**Participants (N)**"), percentage = md("**Percentage**")) %>% 
-  grand_summary_rows(columns=c(n, percentage), fns = ~sum(.,na.rm = T), formatter = fmt_number, decimals=0)|>
-  tab_options(
-    heading.title.font.size = 25,
-    heading.padding = 10,
-    row_group.font.weight = "bolder",
-    summary_row.background.color = "blanchedalmond", #<---- what to call the final summary in order to bold and color it
-    row_group.background.color =    "#99CCFF"
-  ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = sect_comp,
-    )
-  )  %>% 
-  tab_style(
-    style= list(
-      cell_text(
-        align="center"
-      )
-    ),
-    locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-  ) %>%  opt_row_striping()
+Numb5_table[dim(Numb5_table)[[1]]+1 , ] <- list("Total", paste(sum(Numb5$n), " (100%)"))
+
+knitr::kable(Numb5_table, caption='Table 8. Inital Survey Submission Status among Active Recruits who Could Not be Verified', col.names=c("Sections Submitted", "Active recruits"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(c(1:2)) %>% kable_styling(latex_options = "hold_position")
+
+
+## do this with other wide tables!! kable_styling(latex_options = "hold_position")
 
 ```
-
-
-
-
-
-
-
-
-# 6. Menstrual Cycle Survey Completion Status for Eligible Participants
-```{r Section6, include=FALSE}
-#8. Connect_IDs of those who completed the menstrual cycle survey---need to convert to SQL code since d_459098666 and D_299215535.D_112151599 are in participants table and aren't flattened
-
-mensR_ccc <- "SELECT Connect_ID, D_112151599
- FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.bioSurvey_v1_JP` where d_112151599='353358909'"
-mensC_ccc <- "SELECT Connect_ID, D_112151599
- FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.clinicalBioSurvey_v1_JP` where d_112151599='353358909'"
-prts_ccc <- "SELECT Connect_ID,  d_265193023,  d_459098666, d_827220437 from `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where (d_253883960='231311385' OR d_265193023='231311385')"
-#site_ccc <- "SELECT d_789843387 FROM `nih-nci-dceg-connect-prod-6d04.Biospecimens.FlatConnect.boxes_JP`"
-
-
-mensR_table_cc <- bq_project_query(project_cc, mensR_ccc)
-mensC_table_cc <- bq_project_query(project_cc, mensC_ccc)
-prts_table_cc <- bq_project_query(project_cc, prts_ccc)
-#site_table_cc <- bq_project_query(project_cc, site_ccc)
-
-mensR_data_ccc <- bq_table_download(mensR_table_cc, bigint = "integer64")
-mensC_data_ccc <- bq_table_download(mensC_table_cc, bigint = "integer64")
-prts_data_ccc <- bq_table_download(prts_table_cc, bigint = "integer64")
-#site_data_ccc <- bq_table_download(site_table_cc, bigint = "integer64")
-
-menstrual <- left_join(mensR_data_ccc, prts_data_ccc , by="Connect_ID") %>%  left_join(mensC_data_ccc , by="Connect_ID")
-
-#menstrual <- table7 %>% filter(D_112151599=='353358909' & d_265193023==231311385 )
-#dim(menstrual)
-
-
-
-
-
-table6 <- menstrual %>%  mutate(menst=case_when(d_459098666==231311385~"Completed",
-                                          TRUE~"Eligible but not Completed"))
-
-Numb6 <- table6 %>% group_by(menst) %>%    dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(menst, n, percentage)
-```
-
-
-```{r Table6, echo=FALSE, warning=FALSE}
-
-Numb6 %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>%
-  tab_header(title = html("Sections Submitted by Non-Verified Active Participants")) %>% 
-  cols_label(menst = md("**Sections Completed**"), n = md("**Participants (N)**"), percentage = md("**Percentage**")) %>% 
-  grand_summary_rows(columns=c(n, percentage), fns = ~sum(.,na.rm = T), formatter = fmt_number, decimals=0)|>
-  tab_options(
-    heading.title.font.size = 25,
-    heading.padding = 10,
-    row_group.font.weight = "bolder",
-    summary_row.background.color = "blanchedalmond", #<---- what to call the final summary in order to bold and color it
-    row_group.background.color =    "#99CCFF"
-  ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = menst,
-    )
-  )  %>% 
-  tab_style(
-    style= list(
-      cell_text(
-        align="center"
-      )
-    ),
-    locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-  ) %>%  opt_row_striping()
-
-
-
-
-
-```
-
 
 
 \newpage
 
-# 7.	Presence of survey completion time stamp, survey start time stamp, and survey completion flag for those who have completed a section. 
-```{r Section7, include=FALSE}
-#M1
-m1_cf=sum(data_ccc$d_949302066==231311385) #COMPLETION FLAGS
-m1_done= data_ccc %>% filter(d_949302066==231311385)
-m1_sts=sum(!is.na(m1_done$d_205553981)) #START TIME STAMP
-m1_cts=sum(!is.na(m1_done$d_517311251)) #COMPLETION TIME STAMP
-
-#M2
-m2_cf=sum(data_ccc$d_536735468==231311385) #COMPLETION FLAGS
-m2_done= data_ccc %>% filter(d_536735468==231311385)
-m2_sts=sum(!is.na(m2_done$d_541836531)) #START TIME STAMP
-m2_cts=sum(!is.na(m2_done$d_832139544)) #COMPLETION TIME STAMP
-
-#M3
-m3_cf=sum(data_ccc$d_976570371==231311385) #COMPLETION FLAGS
-m3_done= data_ccc %>% filter(d_976570371==231311385)
-m3_sts=sum(!is.na(m3_done$d_386488297)) #START TIME STAMP
-m3_cts=sum(!is.na(m3_done$d_770257102)) #COMPLETION TIME STAMP
-
-#M4
-m4_cf=sum(data_ccc$d_663265240==231311385) #COMPLETION FLAGS
-m4_done= data_ccc %>% filter(d_663265240==231311385)
-m4_sts=sum(!is.na(m4_done$d_452942800)) #START TIME STAMP
-m4_cts=sum(!is.na(m4_done$d_264644252)) #COMPLETION TIME STAMP
-
-#B.U.M.
-bum_cf=sum(data_ccc$d_265193023==231311385) #COMPLETION FLAGS
-bum_done= data_ccc %>% filter(d_265193023==231311385)
-bum_sts=sum(!is.na(bum_done$d_822499427)) #START TIME STAMP
-bum_cts=sum(!is.na(bum_done$d_222161762)) #COMPLETION TIME STAMP
-
-```
+```{r Menstrual, echo=FALSE, warning = FALSE, message=FALSE}
 
 
-```{r Flags, echo=FALSE}
-#ifelse(m1_cf==m1_sts & m1_sts==m1_cts, "BOH Section completion flags, start time stamps and completion time stamps are all equal as they should be", cat(m1_cf, "BOH Section Completion Flags", sep="\n", m1_sts,"BOH Section Start Time Stamps",  m1_cts, "BOH Section Completion Time Stamps"  ))
-cat("\t","BOH Section Completion Flags:", m1_cf)
-cat("\t","BOH Section Start Time Stamps:", m1_sts)
-cat("\t","BOH Section Completion Time Stamps:", m1_cts)
-cat("\t",if(m1_cf!=m1_sts | m1_cts!=m1_sts | m1_cf!=m1_cts){"Not equal!!"})
-cat("\n")
+mens_ccc <- "WITH combined_survey AS (
+  SELECT Connect_ID
+  FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.bioSurvey_v1_JP`
+  WHERE d_112151599 = '353358909'
 
-cat("\t", "MRE Section Completion Flags:", m2_cf)
-cat("\t", "MRE Section Start Time Stamps:", m2_sts)
-cat("\t", "MRE Section Completion Time Stamps:", m2_cts)
-cat("\t",if(m2_cf!=m2_sts | m2_cts!=m2_sts | m2_cf!=m2_cts){"Not equal!!"})
-cat("\n")
+  UNION DISTINCT
 
-cat("\t","SAS Section Completion Flags:", m3_cf)
-cat("\t","SAS Section Start Time Stamps:", m3_sts)
-cat("\t","SAS Section Completion Time Stamps:", m3_cts)
-cat("\t",if(m3_cf!=m3_sts | m3_cts!=m3_sts | m3_cf!=m3_cts){"Not equal!!"})
-cat("\n")
+  SELECT Connect_ID
+  FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.clinicalBioSurvey_v1_JP`
+  WHERE d_112151599 = '353358909'
+)
 
-cat("\t","LAW Section Completion Flags:", m4_cf)
-cat("\t","LAW Section Start Time Stamps:", m4_sts)
-cat("\t","LAW Section Completion Time Stamps:", m4_cts)
-cat("\t",if(m4_cf!=m4_sts | m4_cts!=m4_sts | m4_cf!=m4_cts){"Not equal!!"})
-cat("\n")
+SELECT p.Connect_ID, p.d_459098666, p.d_253883960, p.d_265193023
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+JOIN combined_survey c ON p.Connect_ID = c.Connect_ID
+WHERE (p.d_253883960 = '231311385' OR p.d_265193023 = '231311385')"
 
-cat("\t","Blood Urine Mouthwash Survey Completion Flags:", bum_cf)
-cat("\t","Blood Urine Mouthwash Survey Start Time Stamps:", bum_sts)
-cat("\t","Blood Urine Mouthwash Survey Completion Time Stamps:", bum_cts)
-cat("\t",if(bum_cf!=bum_sts | bum_cts!=bum_sts | bum_cf!=bum_cts){"Not equal!!"})
+
+mens_table_cc <- bq_project_query(project_cc, mens_ccc)
+menstrual <- bq_table_download(mens_table_cc, bigint = "integer64")
+
+mens_surv <- menstrual %>%  mutate(menst=case_when(d_459098666==231311385~"Submitted",
+                                                   d_459098666==615768760~"Started",
+                                                   d_459098666==972455046~"Not Started"),
+                                setting= case_when(d_265193023=='231311385' ~ "Among Research Collections",
+                                                   d_253883960=='231311385' ~ "Among Clinical Collections")) %>% 
+      tbl_cross(
+    row = menst,
+    col = setting,
+    digits=c(0,1),
+    percent = "col",
+    label=list(menst="Submission Status",
+                setting = " "),
+    missing="ifany",
+    margin_text="Total") 
+
+
+mens_surv_status <- 
+  mens_surv %>%
+  #bold_labels() %>%
+  #italicize_levels() %>%
+  modify_header(stat_0 = "Total") %>%
+  modify_caption("Table 9. Menstrual Cycle Survey Submission Status for Eligible Participants") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+add_footnote(mens_surv_status, "Note: Eligible participants are those that completed the Clinical Biospecimen Blood and Urine Survey or the Research Biospecimen Blood, Urine and Mouthwash survey. On that survey they must also have answered yes to SrvBlU_MENST60_v2r0, indicating that they have had a menstrual period in the last 60 days.", notation = "none")
 
 
 ```
 
 
 
-# 8.  Menstrual Cycle Survey Completeness Among Sites for Eligible Participants
-```{r, include=FALSE}
 
 
-# mens_ccc <- "SELECT Connect_ID, D_112151599 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.bioSurvey_v1_JP`  where Connect_ID is not null"
-# prts_ccc <- "SELECT Connect_ID,  d_265193023,  d_459098666, d_827220437, d_253883960 from `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP`  where Connect_ID is not null"
-# bio_ccc <- "SELECT Connect_ID, d_650516960 FROM `nih-nci-dceg-connect-dev.Connect.biospecimen` where d_650516960 is not null"
-# 
-# 
-# 
-# mens_table_cc <- bq_project_query(project_cc, mens_ccc)
-# prts_table_cc <- bq_project_query(project_cc, prts_ccc)
-# bio_table_cc <- bq_project_query(project_cc, bio_ccc)
-# 
-# 
-# mens_data_ccc <- bq_table_download(mens_table_cc, bigint = "integer64")
-# prts_data_ccc <- bq_table_download(prts_table_cc, bigint = "integer64")
-# bio_data_ccc <- bq_table_download(bio_table_cc, bigint = "integer64")
-# 
-# mens_data_ccc$Connect_ID <- as.numeric(mens_data_ccc$Connect_ID)
-# prts_data_ccc$Connect_ID <- as.numeric(prts_data_ccc$Connect_ID)
-# bio_data_ccc$Connect_ID <- as.numeric(bio_data_ccc$Connect_ID)
-# 
-# menstrual <- left_join(mens_data_ccc, prts_data_ccc , by="Connect_ID") %>%  left_join(bio_data_ccc, by="Connect_ID")
+```{r SSN, echo=FALSE, warning = FALSE}
+# ssn_surv = all_data %>%  mutate(started=case_when(d_126331570==615768760 ~ "Started",
+#                                                 d_126331570==231311385 ~ "Submitted",
+#                                                 TRUE ~ "Not Started"),
+#                                 provided4 =case_when(d_311580100==353358909 ~ "Full SSN Given",
+#                                                      d_914639140==353358909 ~ "Partial SSN Given",
+#                                                      TRUE ~ "No SSN given"))
+ssn_surv = all_data %>%  mutate(provided4 =case_when(d_311580100==353358909 ~ "Full SSN",
+                                                     d_914639140==353358909 ~ "Partial SSN",
+                                                     TRUE ~ "No SSN"))
+ssn_surv$provided4<- factor(ssn_surv$provided4,levels=c("Full SSN", "Partial SSN", "No SSN"))
 
-#menstrual <- menstrual %>% filter(D_112151599=='353358909' & (d_265193023==231311385| d_253883960==231311385)) #(d_289750687==353358909)
-```
+ssn_surv = ssn_surv %>% mutate(started=case_when(d_126331570==615768760 ~ "Started",
+                           d_126331570==231311385 ~ "Submitted",
+                           TRUE ~ "Not Started"))
 
 
 
-```{r Section8, include=FALSE}
-mensBUM_ccc <- "SELECT Connect_ID, D_112151599 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.bioSurvey_v1_JP`  where Connect_ID is not null and D_112151599='353358909'"
-mensBU_ccc <- "SELECT Connect_ID, D_112151599 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.clinicalBioSurvey_v1_JP` where Connect_ID is not null and D_112151599='353358909'"
-# prts_ccc <- "SELECT Connect_ID,  d_265193023,  d_459098666, d_827220437, d_253883960 from `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP`  where Connect_ID is not null"
-prts_ccc <- "SELECT Connect_ID, d_827220437, d_253883960, d_265193023, d_253883960,  d_459098666 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP`  where (d_265193023='231311385' OR d_253883960='231311385')"
-#bio_ccc <- "SELECT Connect_ID, d_650516960 FROM `nih-nci-dceg-connect-dev.Connect.biospecimen` where d_650516960 is not null"
+ 
+ssn_surv %>% tbl_cross(
+    row = started,
+    col = provided4,
+    digits=c(0,1),
+    percent = "row",
+    label=list(started="Submission Status",
+                provided4 = "Portion of SSN Given"),
+    missing="ifany",
+    margin_text="Total") %>% 
 
 
-
-mensBUM_table_cc <- bq_project_query(project_cc, mensBUM_ccc)
-mensBU_table_cc <- bq_project_query(project_cc, mensBU_ccc)
-prts_table_cc <- bq_project_query(project_cc, prts_ccc)
-#bio_table_cc <- bq_project_query(project_cc, bio_ccc)
-
-
-mensBUM_data_ccc <- bq_table_download(mensBUM_table_cc, bigint = "integer64")
-mensBU_data_ccc <- bq_table_download(mensBU_table_cc, bigint = "integer64")
-prts_data_ccc <- bq_table_download(prts_table_cc, bigint = "integer64")
-#bio_data_ccc <- bq_table_download(bio_table_cc, bigint = "integer64")
-
-mensBUM_data_ccc$Connect_ID <- as.numeric(mensBUM_data_ccc$Connect_ID)
-mensBU_data_ccc$Connect_ID <- as.numeric(mensBU_data_ccc$Connect_ID)
-prts_data_ccc$Connect_ID <- as.numeric(prts_data_ccc$Connect_ID)
-#bio_data_ccc$Connect_ID <- as.numeric(bio_data_ccc$Connect_ID)
-
-#mens <- merge(mensBUM_data_ccc, mensBU_data_ccc, by="Connect_ID")
-
-menstrualBUM <- left_join(prts_data_ccc ,mensBUM_data_ccc, by="Connect_ID") 
-
-menstrualBU <- left_join(prts_data_ccc ,mensBU_data_ccc, by="Connect_ID") 
-```
-
-
-
-```{r MensSite, echo=FALSE}
-
-# table(menstrual$d_827220437)
-# table(menstrual$d_265193023[menstrual$D_112151599==353358909])
-# table(menstrual$d_253883960)
-# table(menstrual$d_253883960[menstrual$D_112151599==353358909])
-# table(menstrual$d_253883960)
-# table(menstrual$D_112151599)
-
-
-
-res_mens <- menstrualBUM %>%  filter( (d_827220437==531629870 | d_827220437==548392715 | d_827220437==303349821 | d_827220437==657167265 | d_827220437==809703864) &  (D_112151599=='353358909' &  d_265193023==231311385))    
- #dim(res_mens)
-                                    
-res_mens <- res_mens %>%  mutate(Site=case_when(d_827220437==531629870 ~ "HealthPartners",
-                                                 d_827220437==548392715 ~ "Henry Ford ",
-                                                 d_827220437==303349821 ~ "Marshfield ",
-                                                 d_827220437==657167265 ~ "Sanford Health",
-                                                 d_827220437==809703864 ~ "UChicago "),
-                                 Status= case_when(d_459098666==972455046 ~ "Not Started",
-                                                   d_459098666==615768760 ~ "Started",
-                                                   d_459098666==231311385 ~ "Submitted"),
-                                 Not_Started = case_when(d_459098666==972455046 ~ 1,
-                                                         TRUE ~ 0),
-                                 Started = case_when(d_459098666==615768760 ~ 1,
-                                                         TRUE ~ 0),
-                                 Submitted = case_when(d_459098666==231311385 ~ 1,
-                                                         TRUE ~ 0))
-                                 #Eligibilty = case_when((D_112151599=='353358909' & (d_265193023==231311385| d_253883960==231311385)) ~ 1,TRUE ~ 0))
-#res_mens <- res_mens %>%  mutate(TotalC= sum(Not_Started, Started, Submitted))
-#res_mens <- res_mens %>%  mutate(Response_Rate= (Submitted/TotalC))
-
-
-  
-clin_mens <- menstrualBU %>%  filter((d_827220437==125001209 | d_827220437==327912200 | d_827220437==300267574 | d_827220437==452412599) & (D_112151599=='353358909' & d_253883960==231311385))
- #dim(clin_mens)                                   
-clin_mens <- clin_mens %>%  mutate(Site=case_when(d_827220437==125001209 ~ "Kaiser Permanente Colorado",
-                                                 d_827220437==327912200 ~ "Kaiser Permanente Georgia",
-                                                 d_827220437==300267574 ~ "Kaiser Permanente Hawaii",
-                                                 d_827220437==452412599 ~ "Kaiser Permanente Northwest"),
-                                 Status= case_when(d_459098666==972455046 ~ "Not Started",
-                                                   d_459098666==615768760 ~ "Started",
-                                                   d_459098666==231311385 ~ "Submitted"),
-                                 Not_Started = case_when(d_459098666==972455046 ~ 1,
-                                                         TRUE ~ 0),
-                                 Started = case_when(d_459098666==615768760 ~ 1,
-                                                         TRUE ~ 0),
-                                 Submitted = case_when(d_459098666==231311385 ~ 1,
-                                                         TRUE ~ 0))
-                                 #Eligibilty = case_when((D_112151599=='353358909' & (d_265193023==231311385| d_253883960==231311385)) ~ 1,TRUE ~ 0))
-#clin_mens <- clin_mens %>%  mutate(TotalC= sum(Not_Started, Started, Submitted))
-#clin_mens <- clin_mens %>%  mutate(Response_Rate= (Submitted/TotalC))
-
-
-
-
-
-
-
-
-
-RMens_summary <-res_mens %>%  group_by(Site)  %>% arrange(Site) %>%  summarize_at(c("Not_Started" , "Started" , "Submitted"), sum, na.rm = TRUE) 
-
-RMens_summary$TotalC <- list(sum(RMens_summary$Started[1], RMens_summary$Not_Started[1], RMens_summary$Submitted[1]),  sum(RMens_summary$Started[2], RMens_summary$Not_Started[2], RMens_summary$Submitted[2]),  sum(RMens_summary$Started[3], RMens_summary$Not_Started[3], RMens_summary$Submitted[3]),  sum(RMens_summary$Started[4], RMens_summary$Not_Started[4], RMens_summary$Submitted[4]),  sum(RMens_summary$Started[5], RMens_summary$Not_Started[5], RMens_summary$Submitted[5]) )
-RMens_summary$TotalC  <- as.numeric(RMens_summary$TotalC )
-
-
-RMens_summ <- RMens_summary %>%  mutate(#Elg_Pct = round((Eligibilty/sum(Eligibilty))*100, digits=1),
-                                           NS_Pct= paste0(Not_Started, " (", round((Not_Started/TotalC)*100, digits=1), "%)"),
-                                           S_Pct= paste0(Started, " (", round((Started/TotalC)*100, digits=1), "%)"),
-                                           Submitted_Pc= paste0(Submitted, " (", round((Submitted/TotalC)*100, digits=1), "%)"),
-                                           Response_Rate_Pct= paste0(round((Submitted/TotalC)*100, digits=1), "%"))
-
- RMens_summ1 <- RMens_summ[, c(1,5, 6,7,8,9)]
-# 
-# 
-# ## for now needing to manually add KP sites with blank data until clinical sites have eligible participants 
-# RMens_summ1[6,] <- list("Kaiser Permanente Colorado", "0 (0%)", "0 (0%)", "0 (0%)", 0, "0%")
-# RMens_summ1[7,] <- list("Kaiser Permanente Georgia", "0 (0%)", "0 (0%)", "0 (0%)", 0, "0%")
-# RMens_summ1[8,] <- list("Kaiser Permanente Hawaii", "0 (0%)", "0 (0%)", "0 (0%)", 0, "0%")
-# RMens_summ1[9,] <- list("Kaiser Permanente Northwest", "0 (0%)", "0 (0%)", "0 (0%)", 0, "0%")
-# 
-# 
-# 
-# #RMens_summ1[6,] <- list("Total", "100%", "100%", "100%", "100%", "100%")
-
-
-RMens_summ1 %>%  gt(rowname_col = "row_lab") %>%  
-  #fmt_number(columns = c("NS_Pct" , "S_Pct" , "Submitted_Pc", "Response_Rate_Pct"), decimals = 1) %>%
-  fmt_number(columns = "TotalC", decimals = 0) %>%
-  tab_header(title = html("Table 8a. Research Menstrual Cycle Survey Completeness \n and Response Rate by Site")) %>% 
-  cols_label(NS_Pct = md("**Not Started**"), S_Pct = md("**Started**"), Submitted_Pc = md("**Submitted**"), TotalC = md("**Total Eligible**"), Response_Rate_Pct = md("**Response Rate**")) %>% 
-  # summary_rows(
-  #   #    groups= T,
-  #   columns =  c(NS_Pct , S_Pct , Submitted_Pc,  TotalC, Response_Rate_Pct),
-  #   fns= list(
-  #     Total= ~sum(.)
-  #   ), decimals=0) %>%
-  # tab_style(
-  #   style = list(
-  #     cell_text(weight = "bold")
-  #   ),
-  #   locations = cells_body(
-  #     columns = c( NS_Pct , S_Pct , Submitted_Pc, TotalC, Response_Rate_Pct),
-  #   )
-  # )  %>% 
-  grand_summary_rows(columns=c(TotalC), fns = ~sum(.,na.rm = T), formatter = fmt_number, decimals=0)|>  #NS_Pct , S_Pct , Submitted_Pc,  , Response_Rate_Pct
-  tab_style(
-    style= list(
-      cell_text(
-        align="center"
-      )
-    ),
-    locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-  )
-```
-
-
-
-
-
-```{r, Table8b, echo=FALSE}
-
-
-CMens_summary <-clin_mens %>%  group_by(Site)  %>% arrange(Site) %>%  summarize_at(c("Not_Started" , "Started" , "Submitted"), sum, na.rm = TRUE) 
-
-CMens_summary$TotalC <- list(sum(CMens_summary$Started[1], CMens_summary$Not_Started[1], CMens_summary$Submitted[1]),  sum(CMens_summary$Started[2], CMens_summary$Not_Started[2], CMens_summary$Submitted[2]),  sum(CMens_summary$Started[3], CMens_summary$Not_Started[3], CMens_summary$Submitted[3]),  sum(CMens_summary$Started[4], CMens_summary$Not_Started[4], CMens_summary$Submitted[4])) 
-CMens_summary$TotalC  <- as.numeric(CMens_summary$TotalC )
-
-
-CMens_summ <- CMens_summary %>%  mutate(#Elg_Pct = round((Eligibilty/sum(Eligibilty))*100, digits=1),
-                                           NS_Pct= paste0(Not_Started, " (", round((Not_Started/TotalC)*100, digits=1), "%)"),
-                                           S_Pct= paste0(Started, " (", round((Started/TotalC)*100, digits=1), "%)"),
-                                           Submitted_Pc= paste0(Submitted, " (", round((Submitted/TotalC)*100, digits=1), "%)"),
-                                           Response_Rate_Pct= paste0(round((Submitted/TotalC)*100, digits=1), "%"))
-
-CMens_summ1 <- CMens_summ[, c(1,5, 6,7,8,9)]
-
-
-CMens_summ1 %>%  gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = c("NS_Pct" , "S_Pct" , "Submitted_Pc",  "Response_Rate_Pct"), decimals = 1) %>%
-  fmt_number(columns = c("TotalC"), decimals = 0) %>%
-  tab_header(title = html("Table 8b. Clinical Menstrual Cycle Survey Completness \n and Repsonse Rate by Site")) %>% 
-  cols_label(NS_Pct = md("**Not Started**"), S_Pct = md("**Started**"), Submitted_Pc = md("**Submitted**"),  TotalC = md("**Total Eligible**"),Response_Rate_Pct = md("**Response Rate**")) %>% 
-  # summary_rows(
-  #       groups= F,
-  #   columns =  c(NS_Pct , S_Pct , Submitted_Pc, TotalC, Response_Rate_Pct),
-  #   fns= list(
-  #     Total= ~sum(.)
-  #   ), decimals=0) %>%
-  # tab_style(
-  #   style = list(
-  #     cell_text(weight = "bold")
-  #   ),
-  #   locations = cells_body(
-  #     columns = c(NS_Pct , S_Pct , Submitted_Pc, TotalC, Response_Rate_Pct),
-  #   )
-  # )  %>%
-  grand_summary_rows(columns=c(TotalC), fns = ~sum(.,na.rm = T), formatter = fmt_number, decimals=0)|>  #NS_Pct , S_Pct , Submitted_Pc,  , Response_Rate_Pct
-  tab_style(
-    style= list(
-      cell_text(
-        align="center"
-      )
-    ),
-    locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-  )
-
-
+# ssn_surv %>%
+#   #bold_labels() %>%
+  #italicize_levels() %>%
+  modify_header(stat_0 = "Total") %>%
+  modify_caption("Table 10. Portion of SSN Given by Submission Status of SSN Survey") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
 
 ```
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-```{r, echo=FALSE}
-
-
-# res_mens <- menstrual %>%  filter((d_827220437==531629870 | d_827220437==548392715 | d_827220437==303349821 | d_827220437==657167265 | d_827220437==809703864) & 
-#                                     (D_112151599=='353358909' & (d_265193023==231311385| d_253883960==231311385)))
-# res_mens <- res_mens %>%  mutate(Site=case_when(d_827220437==531629870 ~ "HealthPartners",
-#                                                  d_827220437==548392715 ~ "Henry Ford Health System",
-#                                                  d_827220437==303349821 ~ "Marshfield Clinical Health System",
-#                                                  d_827220437==657167265 ~ "Sanford Health",
-#                                                  d_827220437==809703864 ~ "University of Chicago Medicine"),
-#                                  Status= case_when(d_459098666==972455046 ~ "Not Started",
-#                                                    d_459098666==615768760 ~ "Started",
-#                                                    d_459098666==231311385 ~ "Submitted"),
-#                                  Not_Started = case_when(d_459098666==972455046 ~ 1,
-#                                                          TRUE ~ 0),
-#                                  Started = case_when(d_459098666==615768760 ~ 1,
-#                                                          TRUE ~ 0),
-#                                  Submitted = case_when(d_459098666==231311385 ~ 1,
-#                                                          TRUE ~ 0))
-#                                  #Eligibilty = case_when((D_112151599=='353358909' & (d_265193023==231311385| d_253883960==231311385)) ~ 1,TRUE ~ 0))
-# #res_mens <- res_mens %>%  mutate(TotalC= sum(Not_Started, Started, Submitted))
-# #res_mens <- res_mens %>%  mutate(Response_Rate= (Submitted/TotalC))
-# 
-# 
-#   
-# clin_mens <- menstrual %>%  filter((d_827220437==125001209 | d_827220437==327912200 | d_827220437==300267574 | d_827220437==452412599) & 
-#   (D_112151599=='353358909' & (d_265193023==231311385| d_253883960==231311385)))
-# clin_mens <- clin_mens %>%  mutate(Site=case_when(d_827220437==125001209 ~ "Kaiser Permanente Colorado",
-#                                                  d_827220437==327912200 ~ "Kaiser Permanente Georgia",
-#                                                  d_827220437==300267574 ~ "Kaiser Permanente Hawaii",
-#                                                  d_827220437==452412599 ~ "Kaiser Permanente Northwest"),
-#                                  Status= case_when(d_459098666==972455046 ~ "Not Started",
-#                                                    d_459098666==615768760 ~ "Started",
-#                                                    d_459098666==231311385 ~ "Submitted"),
-#                                  Not_Started = case_when(d_459098666==972455046 ~ 1,
-#                                                          TRUE ~ 0),
-#                                  Started = case_when(d_459098666==615768760 ~ 1,
-#                                                          TRUE ~ 0),
-#                                  Submitted = case_when(d_459098666==231311385 ~ 1,
-#                                                          TRUE ~ 0))
-#                                  #Eligibilty = case_when((D_112151599=='353358909' & (d_265193023==231311385| d_253883960==231311385)) ~ 1,TRUE ~ 0))
-# #clin_mens <- clin_mens %>%  mutate(TotalC= sum(Not_Started, Started, Submitted))
-# #clin_mens <- clin_mens %>%  mutate(Response_Rate= (Submitted/TotalC))
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# RMens_summary <-res_mens %>%  group_by(Site)  %>% arrange(Site) %>%  summarize_at(c("Not_Started" , "Started" , "Submitted"), sum, na.rm = TRUE) 
-# 
-# RMens_summary$TotalC <- list(sum(RMens_summary$Started[1], RMens_summary$Not_Started[1], RMens_summary$Submitted[1]),  sum(RMens_summary$Started[2], RMens_summary$Not_Started[2], RMens_summary$Submitted[2]),  sum(RMens_summary$Started[3], RMens_summary$Not_Started[3], RMens_summary$Submitted[3]),  sum(RMens_summary$Started[4], RMens_summary$Not_Started[4], RMens_summary$Submitted[4]),  sum(RMens_summary$Started[5], RMens_summary$Not_Started[5], RMens_summary$Submitted[5]) )
-# RMens_summary$TotalC  <- as.numeric(RMens_summary$TotalC )
-# 
-# 
-# RMens_summ <- RMens_summary %>%  mutate(#Elg_Pct = round((Eligibilty/sum(Eligibilty))*100, digits=1),
-#                                            NS_Pct= paste0(Not_Started, " (", round((Not_Started/TotalC)*100, digits=1), "%)"),
-#                                            S_Pct= paste0(Started, " (", round((Started/TotalC)*100, digits=1), "%)"),
-#                                            Submitted_Pc= paste0(Submitted, " (", round((Submitted/TotalC)*100, digits=1), "%)"),
-#                                            Response_Rate_Pct= paste0(round((Submitted/TotalC)*100, digits=1), "%"))
-# 
-# 
-# RMens_summ1 <- RMens_summ[, c(1, 6,7,8,5,9)]
-# 
-# 
-# if(dim(clin_mens)[[1]]==0){
-# ## for now needing to manually add KP sites with blank data until clinical sites have eligible participants 
-# RMens_summ1[6,] <- list("Kaiser Permanente Colorado", "0 (0%)", "0 (0%)", "0 (0%)", 0, "0%")
-# RMens_summ1[7,] <- list("Kaiser Permanente Georgia", "0 (0%)", "0 (0%)", "0 (0%)", 0, "0%")
-# RMens_summ1[8,] <- list("Kaiser Permanente Hawaii", "0 (0%)", "0 (0%)", "0 (0%)", 0, "0%")
-# RMens_summ1[9,] <- list("Kaiser Permanente Northwest", "0 (0%)", "0 (0%)", "0 (0%)", 0, "0%")}
-# 
-# if(dim(clin_mens)[[1]]!=0){cat("KP must be added")}
-# 
-# 
-# 
-# #RMens_summ1[6,] <- list("Total", "100%", "100%", "100%", "100%", "100%")
-# 
-# RMens_summ1 %>%  gt() %>%  
-#   #fmt_number(columns = c("NS_Pct" , "S_Pct" , "Submitted_Pc", "Response_Rate_Pct"), decimals = 1) %>%
-#   tab_header(title = html("Menstrual Cycle Survey Completeness \n and Response Rate by Site")) %>% 
-#   cols_label(NS_Pct = md("**Not Started**"), S_Pct = md("**Started**"), Submitted_Pc = md("**Submitted**"), TotalC = md("**Total Eligible**"), Response_Rate_Pct = md("**Response Rate**")) %>% 
-#   #   summary_rows(     groups= FALSE,
-#   #   #    groups= T,
-#   #   columns =  c(NS_Pct , S_Pct , Submitted_Pc,  TotalC, Response_Rate_Pct),
-#   #   fns= list(
-#   #     Total= ~sum(.)
-#   #   ), decimals=0) %>%
-#   # tab_style(
-#   #   style = list(
-#   #     cell_text(weight = "bold")
-#   #   ),
-#   #   locations = cells_body(
-#   #     columns = c( NS_Pct , S_Pct , Submitted_Pc, TotalC, Response_Rate_Pct),
-#   #   )
-#   # )  %>% 
-#   tab_style(
-#     style= list(
-#       cell_text(
-#         align="center"
-#       )
-#     ),
-#     locations= cells_column_labels(columns=everything())  #<---- how to make all figures centered?
-#   )
-```

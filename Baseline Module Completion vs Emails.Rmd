@@ -1,5 +1,5 @@
 ---
-title: "Baseline Survey Completion Responses"
+title: "Baseline Survey Response Analysis by Email Attempts for Time Period January to October 2023"
 author: "Kelsey Dowling"
 date: "`r Sys.Date()`"
 header-includes:  
@@ -86,7 +86,7 @@ where parts.d_821247024=197316935 and category LIKE '%BL Survey Reminders%' and 
 #Would it be number 1? And then any tables referencing emails would have to look only at BL Survey reminders, and then any before contact 1 would include th
 
 notif_cc <- bq_project_query(project, notif)
-reminders <- bq_table_download(notif_cc, bigint = "integer64")
+reminders <- bq_table_download(notif_cc, bigint = 'integer64')
 
 
 ```
@@ -238,72 +238,59 @@ tab_footnote(
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 
 #From Deanna: To confirm the cadence in prod for the first 6 contacts of the post-verification emails, it is as follows: 0, 3, 6, 15, 24, 39 days post-verification.
+### DATA PATTERN FOUND!! IF THEY'RE VERIFIED BEFORE 3 PM USE  0, 3, 6, 15, 24, 39 days post-verification, 
+### IF THEY'RE VERIFIED AFTER 3PM THEY GET THE NOTIFICATION EMAIL THE NEXT DAY SO ESSENTIALLY 1th, 4th, 7th, 16th, 25th, 40th days post-verification 
+
+## Easiest way to do this was to say use the date of verification if they were verified before 3pm, use the day before if they were verified after 3pm, that way we don't need to add 1 to each case.
+# Essentially we're ading a day to verification, so take that away and the post-verification dates should allign
 
 
-# #Rounding contact date up to 4th, 7th, 16th, 25th, 40th
-# comp_time <- reminders %>%
-#   filter(reminders$d_100767870 == '353358909' & !is.na(d_914594314) & !is.na(latest_module_date)) %>%
-#   mutate(verification_date = as.POSIXct(d_914594314), #, origin = "1970-01-01"
-#          module_completion_date = as.POSIXct(latest_module_date), #, origin = "1970-01-01"
-#          days_difference = round(as.numeric(difftime(module_completion_date, verification_date, units = "days")))) %>%
-#   mutate(time_frame = case_when(
-#     days_difference <= 0 ~ "Survey Completed before Contact 1",
-#     between(days_difference, 1, 3) ~ "Survey Completed after Contact 1, before Contact 2",
-#     between(days_difference, 4, 6) ~ "Survey Completed after Contact 2, before Contact 3",
-#     between(days_difference, 7, 15) ~ "Survey Completed after Contact 3, before Contact 4",
-#     between(days_difference, 16, 24) ~ "Survey Completed after Contact 4, before Contact 5",
-#     between(days_difference, 25, 39) ~ "Survey Completed after Contact 5, before Contact 6",
-#     days_difference >= 40 ~ "Survey Completed after Contact 6"
-#   )) %>%
-#   group_by(time_frame) %>%
-#   summarise(n = n_distinct(Connect_ID))
-
-# 
-#Not rounding up, assuming they received the reminders on those dates regardless of time of day
 comp_time <- reminders %>%
-  filter(reminders$d_100767870 == '353358909' & !is.na(d_914594314) & !is.na(latest_module_date)) %>%
-  mutate(verification_date = as.POSIXct(d_914594314), #, origin = "1970-01-01"
+  filter(reminders$d_100767870 == '353358909' & !is.na(d_914594314) & !is.na(latest_module_date) & as.numeric(str_sub(d_914594314,12,13)) <15) %>%
+  mutate(verification_date = as.POSIXct(d_914594314),
          module_completion_date = as.POSIXct(latest_module_date), #, origin = "1970-01-01"
          days_difference = round(as.numeric(difftime(module_completion_date, verification_date, units = "days")))) %>%
   mutate(time_frame = case_when(
-    days_difference <= 0 ~ "Survey Completed before Contact 1",
+    days_difference <= 0 ~ "Survey Completed On or Before Date of Contact 1",
     between(days_difference, 1, 2) ~ "Survey Completed after Contact 1, before Contact 2",
     between(days_difference, 3, 5) ~ "Survey Completed after Contact 2, before Contact 3",
     between(days_difference, 6, 14) ~ "Survey Completed after Contact 3, before Contact 4",
     between(days_difference, 15, 23) ~ "Survey Completed after Contact 4, before Contact 5",
     between(days_difference, 24, 38) ~ "Survey Completed after Contact 5, before Contact 6",
     days_difference >= 39 ~ "Survey Completed after Contact 6"
-  )) %>%
+  )) %>% 
   group_by(time_frame) %>%
   summarise(n = n_distinct(Connect_ID))
 
 
-#Using hours of the day instead of rounding by day, and assuming reminders are sent on the 0th, 4th, 7th, 16th, 25th, 40th
-# comp_time <- reminders %>%
-#   filter(reminders$d_100767870 == '353358909' & !is.na(d_914594314) & !is.na(latest_module_date)) %>%
-#   mutate(verification_date = as.POSIXct(d_914594314), #, origin = "1970-01-01"
-#          module_completion_date = as.POSIXct(latest_module_date), #, origin = "1970-01-01"
-#          days_difference = round(as.numeric(difftime(module_completion_date, verification_date, units = "hours")))) %>%
-#   mutate(time_frame = case_when(
-#     days_difference <= 0 ~ "Survey Completed before Contact 1",
-#     between(days_difference, 24, 72) ~ "Survey Completed after Contact 1, before Contact 2",
-#     between(days_difference, 96, 144) ~ "Survey Completed after Contact 2, before Contact 3",
-#     between(days_difference, 168, 360) ~ "Survey Completed after Contact 3, before Contact 4",
-#     between(days_difference, 384, 576) ~ "Survey Completed after Contact 4, before Contact 5",
-#     between(days_difference, 600, 960) ~ "Survey Completed after Contact 5, before Contact 6",
-#     days_difference >= 984 ~ "Survey Completed after Contact 6"
-#   )) %>%
-#   group_by(time_frame) %>%
-#   summarise(n = n_distinct(Connect_ID))
+comp_time1 <- reminders %>%
+  filter(reminders$d_100767870 == '353358909' & !is.na(d_914594314) & !is.na(latest_module_date) & as.numeric(str_sub(d_914594314,12,13)) >=15) %>%
+  mutate(verification_date = as.POSIXct(d_914594314),
+         module_completion_date = as.POSIXct(latest_module_date), #, origin = "1970-01-01"
+         days_difference = round(as.numeric(difftime(module_completion_date, verification_date, units = "days")))) %>%
+  mutate(time_frame = case_when(
+    days_difference <= 1 ~ "Survey Completed On or Before Date of Contact 1",
+    between(days_difference, 2, 3) ~ "Survey Completed after Contact 1, before Contact 2",
+    between(days_difference, 4, 6) ~ "Survey Completed after Contact 2, before Contact 3",
+    between(days_difference, 7, 15) ~ "Survey Completed after Contact 3, before Contact 4",
+    between(days_difference, 16, 24) ~ "Survey Completed after Contact 4, before Contact 5",
+    between(days_difference, 25, 39) ~ "Survey Completed after Contact 5, before Contact 6",
+    days_difference >= 40 ~ "Survey Completed after Contact 6"
+  )) %>% 
+  group_by(time_frame) %>%
+  summarise(n = n_distinct(Connect_ID))
 
+comp_time[,3] <- comp_time1[,2]
 
-comp_time$time_frame <- factor(comp_time$time_frame, levels=c("Survey Completed before Contact 1","Survey Completed after Contact 1, before Contact 2","Survey Completed after Contact 2, before Contact 3",
+comp_time[,4] <- comp_time[,2] + comp_time[,3]
+
+comp_time_combined <- comp_time[,c(1,4)]
+
+comp_time_combined$time_frame <- factor(comp_time_combined$time_frame, levels=c("Survey Completed On or Before Date of Contact 1","Survey Completed after Contact 1, before Contact 2","Survey Completed after Contact 2, before Contact 3",
                                                                       "Survey Completed after Contact 3, before Contact 4","Survey Completed after Contact 4, before Contact 5",
                                                                       "Survey Completed after Contact 5, before Contact 6","Survey Completed after Contact 6"))
-comp_time <- comp_time[c(7,1:6), ]
-colnames(comp_time) <- c("All Reminders", "n")
-
-# Print the comp_time
+#comp_time_combined <- comp_time_combined[c(7,1:6), ]
+colnames(comp_time_combined) <- c("All Reminders", "n")
 
 
 
@@ -318,7 +305,7 @@ reminders_ct <- reminders %>% mutate(cnt_number=case_when(attempt=="1st contact"
                                                           attempt=="6th contact" ~ "Sent reminder email Contact 6"))
  attempt_counts <- reminders_ct %>%
      group_by(Connect_ID, cnt_number) %>%
-     slice_head() %>%  # Keep only the first row for each unique Connect_ID and contacts_number- that way the case_when doesn't eliminat participants with each case
+     slice_head() %>%  # Keep only the first row for each unique Connect_ID and contacts_number- that way the case_when doesn't eliminate participants with each case
      group_by(cnt_number) %>%
      summarise(Count = n_distinct(Connect_ID))
 
@@ -329,11 +316,11 @@ colnames(Sent_rows) <- c("All Reminders", "n")
 
 #Sent previous contact - people who finished
 EligibleList <- c("Eligible for reminder email Contact 2","Eligible for reminder email Contact 3", "Eligible for reminder email Contact 4", "Eligible for reminder email Contact 5", "Eligible for reminder email Contact 6")
-EligibleNumb <- c(sum(all_participants$n)- (sum(comp_time[1,2]) + sum(comp_time[2,2])), #eligible2= all participants-those who completed before contact 2
-                  Sent_rows[2,2] - sum(comp_time[3,2]) , #eligible for 3= sent contact 2- completed before contact 3
-                  Sent_rows[3,2] - sum(comp_time[4,2]), #eligible for 4= sent contact3-completed before contact 4
-                  Sent_rows[4,2] - sum(comp_time[5,2]), #eligible for 5= sent contact4- completed before contact 5
-                  Sent_rows[5,2] - sum(comp_time[6,2])) #eligible for 6 =sent contact5-completed before contact 6
+EligibleNumb <- c(sum(all_participants$n)- (sum(comp_time_combined[1,2]) + sum(comp_time_combined[2,2])), #eligible2= all participants-those who completed before contact 2
+                  Sent_rows[2,2] - sum(comp_time_combined[3,2]) , #eligible for 3= sent contact 2- completed before contact 3
+                  Sent_rows[3,2] - sum(comp_time_combined[4,2]), #eligible for 4= sent contact3-completed before contact 4
+                  Sent_rows[4,2] - sum(comp_time_combined[5,2]), #eligible for 5= sent contact4- completed before contact 5
+                  Sent_rows[5,2] - sum(comp_time_combined[6,2])) #eligible for 6 =sent contact5-completed before contact 6
 
 
 Eligible_rows <- data.frame(Column1 = EligibleList, Column2 = EligibleNumb)
@@ -342,7 +329,7 @@ colnames(Eligible_rows) <- c("All Reminders", "n")
 
 
 
-final_notif_emails <- bind_rows(comp_time, Sent_rows, Eligible_rows)
+final_notif_emails <- bind_rows(comp_time_combined, Sent_rows, Eligible_rows)
 final_notif_emails <- final_notif_emails[c(8,1,2,14,9,3,15,10,4,16,11,5,17,12,6,18,13,7), ]
 
 
@@ -407,8 +394,22 @@ tab_footnote(
  tab_footnote(
   footnote=("Reminders are not sent to participants who refuse baseline survey, refuse all future activities, withdraw, are deceased or request suspended contact. This may account for small discrepancies between the number eligible for a reminder and the number sent."),
   locations = cells_column_labels(columns = "All Reminders")
+)%>% 
+ tab_footnote(
+  footnote=("
+'Eligible for reminder' is calculated as those sent the previous reminder minus those who completed the survey after the previous reminder."),
+  locations = cells_column_labels(columns = "All Reminders")
+) %>% 
+ tab_footnote(
+  footnote=("
+'Sent reminder' does not take into account whether email was successfully delivered or opened. A small percentage of Connect emails are undeliverable and the percent opened is unknown."),
+  locations = cells_column_labels(columns = "All Reminders")
+) %>% 
+ tab_footnote(
+  footnote=("
+' Email reminder schedule: Contact 1 is sent on day of verification or next day if verified after 3pm eastern; Contact 2 on day 3 post verification; Contact 3 on day 6 post verification; Contact 4 on day 15 post verification; Contact 5 on day 24 post verification; and Contact 6 on day 39 post verification."),
+  locations = cells_column_labels(columns = "All Reminders")
 ) 
-
 
 email_reminders
   
