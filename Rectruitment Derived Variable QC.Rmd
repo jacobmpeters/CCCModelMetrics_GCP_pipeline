@@ -197,8 +197,8 @@ mens_elg <- mens_elg %>%  filter(!(Connect_ID %in% can_no_longer_contact))
 colnames(mens_elg) <- c("Site", "Connect ID", "SrvMC_MenstSrvElig_v1r0")
 #knitr::kable(mens_elg) 
 
+knitr::kable(mens_elg)  %>% kable_styling(latex_options = "scale_down")
 
-mens_elg %>% gt()
 
 
 # test_rule <- mens %>%  filter(is.na(d_289750687)) %>% select(Connect_ID, Site, d_764863765, d_222161762, d_289750687, d_459098666) %>%  sort_by(Site)
@@ -216,17 +216,10 @@ mens_elg %>% gt()
 
 ```
 
-
-
-
-
 ```{r}
 
 
-
 ```
-
-
 
 
 \FloatBarrier
