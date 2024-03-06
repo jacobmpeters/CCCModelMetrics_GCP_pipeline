@@ -219,7 +219,33 @@ knitr::kable(mens_elg)  %>% kable_styling(latex_options = "scale_down")
 ```{r}
 
 
+
+# test_rule <- mens %>%  filter(is.na(d_289750687)) %>% select(Connect_ID, Site, d_764863765, d_222161762, d_289750687, d_459098666) %>%  sort_by(Site)
+# 
+# test_rule$d_459098666[test_rule$d_459098666==231311385]="Completed"
+# test_rule$d_459098666[test_rule$d_459098666==972455046]="Not Started"
+# test_rule$d_459098666[test_rule$d_459098666==615768760]="Started"
+# 
+# colnames(test_rule) <- c("Connect_ID", "Site", "BU Survey Completion Date", "BUM Survey Completion Date", "Elig Mens Surv Flag", "Menstrual Cycle Survey Completion Status")
+# 
+# 
+# desktop_path <- file.path(Sys.getenv("USERPROFILE"), "Desktop")
+# csv_file_path <- file.path(desktop_path, "Menstral_Cycle_No_Flag.csv")
+# write.csv(test_rule, csv_file_path,row.names = F,na="")
+
 ```
+
+
+
+
+
+```{r}
+
+
+
+```
+
+
 
 
 \FloatBarrier
@@ -350,6 +376,7 @@ opt_out <- partsbq %>%  filter(!is.na(state_d_697256759) & state_d_158291096==10
 
 colnames(opt_out) <- c("Site", "Connect ID", "RcrtSI_OptOut_v1r0")
 knitr::kable(opt_out)  %>% kable_styling(latex_options = "scale_down")
+
 
 ```
 

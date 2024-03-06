@@ -218,7 +218,6 @@ if (nrow(Mod1NS) == 0) {
 } else {
   knitr::kable(Mod1NS) %>% kable_styling(latex_options = "scale_down")
 }
-
 ```
 
 
@@ -380,6 +379,7 @@ knitr::kable(alt_home)  %>% kable_styling(latex_options = "HOLD_position")
 \FloatBarrier
 ### 10. Alternative ZIP code should be no more than 9 digits; 5 with primary ZIP code and 9 if full ZIP code given 
 ```{r zip, echo=FALSE, warning=FALSE, message=FALSE}
+
 
 
 module1 <- module1   %>% mutate(zip_num= gsub("[^0-9]", "", D_857915436_D_379899229))
