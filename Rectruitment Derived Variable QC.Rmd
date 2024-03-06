@@ -216,11 +216,6 @@ knitr::kable(mens_elg)  %>% kable_styling(latex_options = "scale_down")
 
 ```
 
-```{r}
-
-
-```
-
 
 \FloatBarrier
 
