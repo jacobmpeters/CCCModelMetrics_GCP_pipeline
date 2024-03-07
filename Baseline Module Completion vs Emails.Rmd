@@ -263,6 +263,12 @@ check3 <- reminders %>% filter(d_100767870 == '104430631' & attempt=="4th contac
 length(unique(check3$Connect_ID)) #3142 without contact 4, 3014 with
 
 
+#From Deanna: To confirm the cadence in prod for the first 6 contacts of the post-verification emails, it is as follows: 0, 3, 6, 15, 24, 39 days post-verification.
+
+### DATA PATTERN FOUND!! IF THEY'RE VERIFIED BEFORE 3 PM USE  0, 3, 6, 15, 24, 39 days post-verification, 
+### IF THEY'RE VERIFIED AFTER 3PM THEY GET THE NOTIFICATION EMAIL THE NEXT DAY SO ESSENTIALLY 1th, 4th, 7th, 16th, 25th, 40th days post-verification 
+
+
 
 
 
@@ -455,6 +461,7 @@ colnames(comp_time_combined) <- c("All Reminders", "n")
 
 
 
+
 reminders_ct <- reminders %>% mutate(cnt_number=case_when(attempt=="1st contact" ~ "Sent reminder email Contact 1",
                                                           attempt=="2nd contact" ~ "Sent reminder email Contact 2",
                                                           attempt=="3rd contact" ~ "Sent reminder email Contact 3",
@@ -483,6 +490,7 @@ EligibleNumb <- c(sum(all_participants$n)- (sum(comp_time_combined[1,2]) + sum(c
 
 Eligible_rows <- data.frame(Column1 = EligibleList, Column2 = EligibleNumb)
 colnames(Eligible_rows) <- c("All Reminders", "n")
+
 
 
 
