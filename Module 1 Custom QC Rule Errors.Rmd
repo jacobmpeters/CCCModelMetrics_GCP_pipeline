@@ -1,5 +1,5 @@
 ---
-title: "Module 1 Custom QC Rules"
+title: "Module 1 Custom QC Rule Errors"
 author: "Kelsey Dowling"
 date: "`r Sys.Date()`"
 header-includes:  

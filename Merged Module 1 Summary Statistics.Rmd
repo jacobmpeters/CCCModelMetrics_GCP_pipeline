@@ -232,7 +232,7 @@ dim(module1)
 # 
 # #Mod1 completed
 # module1 <- merged %>% filter(D_949302066==231311385)
-cat("Module 1 completed:", dim(module1)[[1]])
+cat("Particiapnts with Module 1 Completion:", dim(module1)[[1]])
 
 
 data_tib_m1 <- as_tibble(module1)

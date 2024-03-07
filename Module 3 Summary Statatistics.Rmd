@@ -238,7 +238,7 @@ module3 <- merge_m3 %>% filter(D_699625233==353358909)
 
 
 
-cat("Module 3 Completed by : ", dim(module3)[[1]], " Participants")
+cat("Particiapnts with Module 3 Completion: ", dim(module3)[[1]])
 
 data_tib_all3 <- as_tibble(module3)
 
