@@ -77,7 +77,7 @@ d_685002411_d_194410742,d_685002411_d_949501163,d_685002411_d_277479354,d_685002
 D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, d_130371375_d_266600170_d_945795905, d_130371375_d_266600170_d_320023644,
 d_663265240, d_878865966, d_684635302, d_167958071,d_371067537, d_130371375_d_266600170_d_731498909, d_130371375_d_266600170_d_222373868, d_130371375_d_266600170_d_787567527,
 d_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_914639140, d_311580100 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
-where Connect_ID IS NOT NULL"
+where Connect_ID IS NOT NULL and d_831041022='104430631'"
 partsbq_table <- bq_project_query(project, parts_bq)
 partsbq <- bq_table_download(partsbq_table, bigint = "integer64")
 
@@ -200,41 +200,10 @@ colnames(mens_elg) <- c("Site", "Connect ID", "SrvMC_MenstSrvElig_v1r0")
 knitr::kable(mens_elg)  %>% kable_styling(latex_options = "scale_down")
 
 
-
-# test_rule <- mens %>%  filter(is.na(d_289750687)) %>% select(Connect_ID, Site, d_764863765, d_222161762, d_289750687, d_459098666) %>%  sort_by(Site)
-# 
-# test_rule$d_459098666[test_rule$d_459098666==231311385]="Completed"
-# test_rule$d_459098666[test_rule$d_459098666==972455046]="Not Started"
-# test_rule$d_459098666[test_rule$d_459098666==615768760]="Started"
-# 
-# colnames(test_rule) <- c("Connect_ID", "Site", "BU Survey Completion Date", "BUM Survey Completion Date", "Elig Mens Surv Flag", "Menstrual Cycle Survey Completion Status")
-# 
-# 
-# desktop_path <- file.path(Sys.getenv("USERPROFILE"), "Desktop")
-# csv_file_path <- file.path(desktop_path, "Menstral_Cycle_No_Flag.csv")
-# write.csv(test_rule, csv_file_path,row.names = F,na="")
-
 ```
 
 
-```{r, ignore=TRUE}
 
-
-
-# test_rule <- mens %>%  filter(is.na(d_289750687)) %>% select(Connect_ID, Site, d_764863765, d_222161762, d_289750687, d_459098666) %>%  sort_by(Site)
-# 
-# test_rule$d_459098666[test_rule$d_459098666==231311385]="Completed"
-# test_rule$d_459098666[test_rule$d_459098666==972455046]="Not Started"
-# test_rule$d_459098666[test_rule$d_459098666==615768760]="Started"
-# 
-# colnames(test_rule) <- c("Connect_ID", "Site", "BU Survey Completion Date", "BUM Survey Completion Date", "Elig Mens Surv Flag", "Menstrual Cycle Survey Completion Status")
-# 
-# 
-# desktop_path <- file.path(Sys.getenv("USERPROFILE"), "Desktop")
-# csv_file_path <- file.path(desktop_path, "Menstral_Cycle_No_Flag.csv")
-# write.csv(test_rule, csv_file_path,row.names = F,na="")
-
-```
 
 
 

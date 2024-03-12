@@ -168,7 +168,7 @@ table(m1_comb_nodup$version)
 
 parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853, d_949302066, d_536735468 ,d_976570371 , d_663265240, d_827220437
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
-where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and (d_949302066='231311385')"
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and (d_949302066='231311385')  and d_831041022='104430631'"
 parts_table <- bq_project_query(project, parts)
 parts_data <- bq_table_download(parts_table, bigint = "integer64")
 

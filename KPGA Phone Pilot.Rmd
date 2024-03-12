@@ -1,0 +1,215 @@
+---
+title: "KPGA Phone Pilot"
+author: "Kelsey Dowling"
+date: "`r Sys.Date()`"
+header-includes:  
+    \usepackage[labelformat=empty]{caption}
+    \usepackage{placeins}
+    \usepackage{booktabs}
+    \usepackage{pdflscape}
+
+
+output:
+  pdf_document:
+    extra_dependencies: ["float"]
+    toc: false
+    keep_tex: yes
+    fig_width: 7
+    fig_height: 5
+    fig_caption: true
+    df_print: paged 
+---
+
+
+
+
+```{r libraries, include=FALSE, warning=FALSE}
+
+#Load Libraries
+#old.packages()
+#update.packages()
+
+
+library(bigrquery)
+library(dplyr)
+library(gmodels)
+library(epiDisplay)
+library(lubridate)
+library(tidyverse)
+library(gt)
+library(knitr)
+library(gtsummary)
+#install_tinytex()
+library(tinytex)
+library(vtable)
+library(kableExtra)
+currentdate <- Sys.Date()
+
+
+
+bq_auth()
+```
+
+```{r bq_pull, include=FALSE, warning=FALSE}
+
+##Load Data from BQ
+#Not all 4 Basline Modules are Completed--- removed AND d_100767870=104430631
+#active
+#verified
+#no opt outs, withdrawals or refusals---- asked me to remove for first review 
+
+project <- "nih-nci-dceg-connect-prod-6d04"
+KPGA_bq <- "SELECT distinct(Connect_ID), d_173836415_d_266600170_d_156605577 as blood_urine_recv, 
+d_100767870 as all_mods_completed, 
+d_949302066 as m1_compl,
+d_536735468 as m2_compl,
+d_976570371 as m3_compl,
+d_663265240 as m4_compl,
+(d_949302066='231311385' or d_536735468='231311385' or d_976570371='231311385' or d_663265240='231311385') as some_completed,
+NOT(d_949302066='231311385' or d_536735468='231311385' or d_976570371='231311385' or d_663265240='231311385')  as none_compelted,
+d_914594314 as verif_time,
+d_747006172 as withdrawn,
+d_987563196 as desceased,
+d_685002411_d_994064239 as refused_bl_survey,
+d_685002411_d_194410742 as refused_blood,
+d_685002411_d_949501163 as refused_urine,
+d_906417725 as refused_all_future_study_activities,
+token
+FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p 
+where d_821247024='197316935' and d_827220437='327912200'"
+
+
+KPGA_cc <- bq_project_query(project, KPGA_bq)
+KPGA <- bq_table_download(KPGA_cc, bigint = 'integer64')
+
+
+```
+
+
+
+\FloatBarrier
+```{r no_exclusions, echo=FALSE, warning=FALSE, message=FALSE}
+
+KPGA <- KPGA %>% mutate(completion= case_when(all_mods_completed=="353358909" ~ "All Modules Completed",
+                                              (m1_compl=='231311385' | m2_compl=='231311385' | m3_compl=='231311385' | m4_compl=='231311385')~ "Some Modules Completed",
+                                              !(m1_compl=='231311385' & m2_compl=='231311385' & m3_compl=='231311385' & m4_compl=='231311385')~ "No Modules Completed"),
+                        group_calls = case_when(blood_urine_recv=="353358909" & completion=="Some Modules Completed" ~ "Group 1",
+                                                 blood_urine_recv=="353358909" & completion=="No Modules Completed" ~ "Group 2",
+                                                 blood_urine_recv=="104430631" & completion=="All Modules Completed"  ~ "Group 3",
+                                                 blood_urine_recv=="104430631" & completion=="No Modules Completed" ~ "Group 4")) %>% filter(!is.na(group_calls))
+
+all_KPGA <-  KPGA %>% 
+  group_by(group_calls) %>% tally() 
+
+
+all_KPGA %>% 
+  gt() %>%
+  tab_header(title = "All KPGA Groups, No Exclusions") %>%
+  cols_label(group_calls= md("Groups"), n = md("Number of Participants")) %>% 
+  fmt_number(columns = everything(), decimals = 0) %>%
+  grand_summary_rows(columns=c(n),fns = ~sum(.,na.rm = T)) 
+
+```
+
+\FloatBarrier
+```{r exclusions, echo=FALSE, warning=FALSE, message=FALSE}
+
+KPGA_excl <- KPGA %>%  filter(withdrawn=='104430631' & desceased=='104430631' & refused_bl_survey=='104430631' & refused_blood=='104430631' & 
+                           refused_urine=='104430631' & refused_all_future_study_activities=='104430631') %>% filter(!is.na(group_calls))
+
+excl_KPGA <-  KPGA_excl %>%
+  group_by(group_calls) %>% tally() 
+
+
+excl_KPGA %>% 
+  gt() %>%
+  tab_header(title = "All KPGA Groups, With Exlcusions") %>%
+  cols_label(group_calls= md("Groups"), n = md("Number of Participants")) %>% 
+  fmt_number(columns = everything(), decimals = 0) %>%
+  grand_summary_rows(columns=c(n),fns = ~sum(.,na.rm = T)) 
+
+```
+
+
+
+\FloatBarrier
+```{r final, echo=FALSE, warning=FALSE, message=FALSE}
+KPGA_excl_time <- KPGA_excl %>% 
+  mutate(days_difference = round(as.numeric(difftime(currentdate, verif_time, units = "days")))) %>%
+  mutate(time_frame = case_when(
+    days_difference < 30 ~ "<30 days since verification",
+    between(days_difference, 30,44) ~ "30-44 days since verification",
+    between(days_difference, 45,60) ~ "45-60 days since verification",
+    between(days_difference, 61,80) ~ "61-80 days since verification",
+    between(days_difference, 81,100) ~ "81-100 days since verification",
+    days_difference >= 101 ~ "101+ days since verification"
+  )) 
+
+KPGA_excl_time$time_frame <- factor(KPGA_excl_time$time_frame ,levels=c("<30 days since verification", "30-44 days since verification", "45-60 days since verification",
+                                                                        "61-80 days since verification", "81-100 days since verification", "101+ days since verification"))
+
+KPGA_excl_time <- KPGA_excl_time %>% 
+  group_by(time_frame) %>%
+  summarise(n = n_distinct(Connect_ID))
+
+
+KPGA_excl_time %>% 
+  gt() %>%
+  tab_header(title = "Days Since Verification, All KPGA Groups") %>%
+  cols_label(time_frame= md("Time Frame"), n = md("Number of Participants")) %>% 
+  fmt_number(columns = everything(), decimals = 0) %>%
+  grand_summary_rows(columns=c(n),fns = ~sum(.,na.rm = T)) 
+
+```
+
+
+
+\FloatBarrier
+```{r final, echo=FALSE, warning=FALSE, message=FALSE}
+
+# select category, attempt, count(*)
+# from `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` 
+# where category LIKE '%BL Survey Reminders%' or category LIKE '%KPGA Biospecimen Invitation reminders%'
+# group by category, attempt
+# order by category asc, attempt asc
+
+
+nf <- "select category, attempt, token
+from `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` 
+where category LIKE '%BL Survey Reminders%' OR category LIKE '%KPGA baseline biospecimen invitations%'"
+#group by category, attempt 
+#order by category asc, attempt asc"
+
+nf_cc <- bq_project_query(project, nf)
+notifications <- bq_table_download(nf_cc, bigint = 'integer64')
+
+
+KPGA_notication <- left_join(KPGA_excl, notifications, by="token")
+
+KPGA_notications <- KPGA_notication %>%  select(category, attempt)
+
+KPGA_notications$category <- factor(KPGA_notications$category, levels=c("KPGA baseline biospecimen invitations", "Verified, BL Survey Reminders", 
+                                                                       "Verified, BL Survey Reminders New Pts 2nd contact", "Verified, BL Survey Reminders New Pts 3rd contact",
+                                                                      "Verified, BL Survey Reminders New Pts 4th Contact", "Verified, BL Survey Reminders New Pts 5th Contact",
+                                                                      "Verified, BL Survey Reminders New Pts 6th Contact", "Verified, BL Survey Reminders New Pts 7th Contact",
+                                                                      "Verified, BL Survey Reminders New Pts 8th Contact" , "Verified, BL Survey Reminders New Pts 9th Contact",
+                                                                      "Verified, BL Survey Reminders Backlog Pts", "Verified, BL Survey Reminders Backlog Pts 4th contact",
+                                                                      "Verified, BL Survey Reminders Backlog Pts 5th contact", "Verified, BL Survey Reminders BacklogPts 6th Contact",
+                                                                      "Verified, BL Survey Reminders BacklogPts 7th Contact", "Verified, BL Survey Reminders BacklogPts 8th Contact",
+                                                                      "Verified, BL Survey Reminders BacklogPts 9th Contact"))
+KPGA_notications$attempt <- factor(KPGA_notications$attempt,levels=c("1st contact", "2nd contact", "3rd contact", "4th contact", "5th contact", "6th contact", 
+                                                                   "7th contact", "7th Contact", "8th contact", "8th Contact", "9th contact" ))
+
+KPGA_notications$attempt[KPGA_notications$attempt=="7th Contact"]="7th contact"
+KPGA_notications$attempt[KPGA_notications$attempt=="8th Contact"]="8th contact"
+
+KPGA_categroy <- KPGA_notications  %>% group_by(category, attempt) %>% tally()
+
+KPGA_categroy %>% 
+  gt() %>%
+  tab_header(title = "Contact Attempts of KPGA Participnats") %>%
+  cols_label(category= md("Notification Category"), attempt= md("Attempt Number"), n = md("Number of Participants")) %>% 
+  fmt_number(columns = everything(), decimals = 0) 
+
+```
+

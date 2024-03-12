@@ -593,7 +593,7 @@ email_reminders
 
 ## Same thing but by site 
 
-HP_reminders <- reminders %>% filter(d_827220437=="452412599")
+HP_reminders <- reminders %>% filter(d_827220437=="531629870")
 
 
 #From Deanna: To confirm the cadence in prod for the first 6 contacts of the post-verification emails, it is as follows: 0, 3, 6, 15, 24, 39 days post-verification.
