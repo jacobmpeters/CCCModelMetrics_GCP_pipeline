@@ -68,6 +68,7 @@ COPY ["./Module 4 Missingness Analysis.Rmd", "./Module 4 Missingness Analysis.Rm
 COPY ["./zip_to_lat_lon_North_America.csv", "./zip_to_lat_lon_North_America.csv"]
 COPY ["./Rectruitment Derived Variable QC.Rmd", "./Rectruitment Derived Variable QC.Rmd"]
 COPY ["./Module 1 Custom QC Rule Errors.Rmd", "./Module 1 Custom QC Rule Errors.Rmd"]
+COPY ["./3 Month Quality of Life Survey Summary Statistics.Rmd" , "./3 Month Quality of Life Survey Summary Statistics.Rmd"]
 
 
 # Run R code
