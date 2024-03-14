@@ -1,0 +1,260 @@
+---
+title: "3 Month QOL Summary Statistics"
+author: "Kelsey Dowling"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r libraries, include=FALSE}
+#rm(list = ls())
+
+
+#update.packages("tinytex")
+#require(devtools)
+#install_version("ggplot2", version = "0.9.1", repos = "http://cran.us.r-project.org")
+#tinytex::install_tinytex(version = "2020.10")
+#tinytex::reinstall_tinytex(repository = "illinois")
+
+
+
+library(bigrquery)
+library(foreach)
+library(stringr)
+#library(plyr)
+#library(expss) ###to add labels
+library(epiDisplay) ##recommended applied here crosstable, tab1
+library(gmodels) ##recommended
+library(magrittr)
+library(arsenal)
+library(gtsummary)
+library(rio)
+
+
+
+library(ggplot2)
+library(gridExtra)
+library(scales)
+library(gt)
+#install(tinytex)
+library(tinytex)
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(reshape)  ###to work on transition from long to wide or wide to long data
+library(listr) ###to work on a list of vector, files or..
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(stringr) ###to work on patterns, characters
+
+options(tinytex.verbose = TRUE)
+
+bq_auth()
+```
+
+```{r BQ_Pull, include=FALSE}
+
+project <- "nih-nci-dceg-connect-prod-6d04"
+PQOL3 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.promis_v1_JP` where Connect_ID is not null"
+parts <- "SELECT Connect_ID, token,  D_471593703, state_d_934298480, D_230663853,D_335767902, D_982402227, D_564964481, D_795827569, D_544150384,D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, d_663265240, d_878865966, d_684635302, d_167958071, d_914639140, d_311580100, d_371067537 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and d_320303124='231311385'" 
+
+parts_table <- bq_project_query(project, parts)
+parts_data <- bq_table_download(parts_table, bigint = "integer64",n_max = Inf, page_size = 10000)
+
+PQOL3_table <- bq_project_query(project, PQOL3)
+PQOL3_data <- bq_table_download(PQOL3_table, bigint = "integer64",n_max = Inf, page_size = 10000)
+
+parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID)
+PQOL3_data$Connect_ID <- as.numeric(PQOL3_data$Connect_ID)
+
+
+qol3= left_join(PQOL3_data, parts_data, by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
+dim(qol3)
+
+
+
+qol3_tib <- as_tibble(qol3)
+#dim(qol3_tib)
+
+knitr::opts_chunk$set(comment = NA)
+
+```
+
+
+```{r functions, include=FALSE}
+
+dict <- list("104430631"="No", "353358909"="Yes", "367964536"	 = "Without any difficulty", "193058048"	= "With a little difficulty", "263412634" = "With some difficulty", 
+             "734992634" = "With much difficulty", "221192556" = "Unable to do", "648960871" = "Never", "235613392"	 = "Rarely", "132099255" = "Sometimes", 
+             "211590917" = "Often", "907579123"	 = "Always", "111520945"	= "Not at all", "548628123" = "A little bit", "567908725"	 = "Somewhat", "760969884" = "Quite a bit",
+             "464631026" = "Very much", "878535894"	 = "Very poor","138752522"	= "Poor", "131550264"	= "Fair", "719933364" = "Good", "565881164" = "Very good")
+
+
+simple_funct <- function(CID, Title){  
+  CID_SYM <- rlang::ensym(CID)
+  dt_select <- qol3_tib %>%  select(Connect_ID, !!CID_SYM)
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+  
+  gt_yn %>%  gt::gt()  %>%  
+    fmt_number(columns = "percentage", decimals = 2) %>% 
+    tab_header(title = md(Title)) %>% 
+    cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%  
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+    tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+    tab_style(
+      style = list(
+        cell_text(weight = "bold")
+      ),
+      locations = cells_body(
+        columns = answer,
+      )
+    ) 
+}
+
+```
+
+# Physical Funciton
+```{r physical_function, warning=FALSE, echo=FALSE, message=FALSE}
+
+qol3_tib$D_284353934_D_559540891 <- factor(qol3_tib$D_284353934_D_559540891, levels=c(367964536,193058048, 263412634, 734992634, 221192556, "Skipped this Question"))
+qol3_tib$D_284353934_D_917425212 <- factor(qol3_tib$D_284353934_D_917425212, levels=c(367964536,193058048, 263412634, 734992634, 221192556, "Skipped this Question"))
+qol3_tib$D_284353934_D_783201540 <- factor(qol3_tib$D_284353934_D_783201540, levels=c(367964536,193058048, 263412634, 734992634, 221192556,  "Skipped this Question"))
+qol3_tib$D_284353934_D_780866928 <- factor(qol3_tib$D_284353934_D_780866928, levels=c(367964536,193058048, 263412634, 734992634, 221192556, "Skipped this Question"))
+
+
+simple_funct(D_284353934_D_559540891, "Ability to do chores such as vacuuming or yard work")
+simple_funct(D_284353934_D_917425212, "Ability to do go up and down stairs at a normal pace")
+simple_funct(D_284353934_D_783201540, "Ability to do go for a walk of at least 15 minutes")
+simple_funct(D_284353934_D_780866928, "Ability to run errands and shop")
+
+```
+
+
+# Anxiety in the last 7 days
+```{r anxiety, warning=FALSE, echo=FALSE, message=FALSE}
+
+qol3_tib$D_404946076_D_429680247 <- factor(qol3_tib$D_404946076_D_429680247, levels=c(648960871,235613392,132099255,211590917,907579123, "Skipped this Question"))
+qol3_tib$D_404946076_D_179665441 <- factor(qol3_tib$D_404946076_D_179665441, levels=c(648960871,235613392,132099255,211590917,907579123, "Skipped this Question"))
+qol3_tib$D_404946076_D_195292223 <- factor(qol3_tib$D_404946076_D_195292223, levels=c(648960871,235613392,132099255,211590917,907579123, "Unable to do", "Skipped this Question"))
+qol3_tib$D_404946076_D_829976839 <- factor(qol3_tib$D_404946076_D_829976839, levels=c(648960871,235613392,132099255,211590917,907579123, "Skipped this Question"))
+
+simple_funct(D_404946076_D_429680247, " I felt fearful")
+simple_funct(D_404946076_D_179665441, " I found it hard to focus on anything other than my anxiety")
+simple_funct(D_404946076_D_195292223, " My worries overwhelmed me")
+simple_funct(D_404946076_D_829976839, " I felt uneasy")
+```
+
+# Depression in the last 7 days
+```{r depression, warning=FALSE, echo=FALSE, message=FALSE}
+
+qol3_tib$D_715048033_D_468039454 <- factor(qol3_tib$D_715048033_D_468039454, levels=c(648960871,235613392,132099255,211590917,907579123, "Skipped this Question"))
+qol3_tib$D_715048033_D_361835532 <- factor(qol3_tib$D_715048033_D_361835532, levels=c(648960871,235613392,132099255,211590917,907579123, "Skipped this Question"))
+qol3_tib$D_715048033_D_803322918 <- factor(qol3_tib$D_715048033_D_803322918, levels=c(648960871,235613392,132099255,211590917,907579123, "Unable to do", "Skipped this Question"))
+qol3_tib$D_715048033_D_168582270 <- factor(qol3_tib$D_715048033_D_168582270, levels=c(648960871,235613392,132099255,211590917,907579123, "Skipped this Question"))
+
+simple_funct(D_715048033_D_468039454, " I felt worthless")
+simple_funct(D_715048033_D_361835532, " I felt helpless")
+simple_funct(D_715048033_D_803322918, " I felt depressed")
+simple_funct(D_715048033_D_168582270, " I felt hopeless")
+```
+
+# Fatigue in the last 7 days
+```{r fatigue, warning=FALSE, echo=FALSE, message=FALSE}
+
+qol3_tib$D_907490539_D_467404576 <- factor(qol3_tib$D_907490539_D_467404576, levels=c(111520945,548628123,567908725,760969884,464631026, "Skipped this Question"))
+qol3_tib$D_907490539_D_658945347 <- factor(qol3_tib$D_907490539_D_658945347, levels=c(111520945,548628123,567908725,760969884,464631026, "Skipped this Question"))
+qol3_tib$D_907490539_D_105063268 <- factor(qol3_tib$D_907490539_D_105063268, levels=c(111520945,548628123,567908725,760969884,464631026, "Unable to do", "Skipped this Question"))
+qol3_tib$D_907490539_D_787436735 <- factor(qol3_tib$D_907490539_D_787436735, levels=c(111520945,548628123,567908725,760969884,464631026, "Skipped this Question"))
+
+simple_funct(D_907490539_D_467404576, " I felt fatigued")
+simple_funct(D_907490539_D_658945347, " I had trouble starting things because I am tired")
+simple_funct(D_907490539_D_105063268, " I felt run-down")
+simple_funct(D_907490539_D_787436735, " Level of fatigue")
+```
+
+# Sleep in the last 7 days
+```{r sleep, warning=FALSE, echo=FALSE, message=FALSE}
+
+qol3_tib$D_336566965_D_992194402 <- factor(qol3_tib$D_336566965_D_992194402, levels=c(878535894,138752522,131550264,719933364,565881164, "Skipped this Question"))
+qol3_tib$D_336566965_D_624200915 <- factor(qol3_tib$D_336566965_D_624200915, levels=c(111520945,548628123,567908725,760969884,464631026, "Skipped this Question"))
+qol3_tib$D_336566965_D_526006101 <- factor(qol3_tib$D_336566965_D_526006101, levels=c(111520945,548628123,567908725,760969884,464631026, "Unable to do", "Skipped this Question"))
+qol3_tib$D_336566965_D_644233792 <- factor(qol3_tib$D_336566965_D_644233792, levels=c(111520945,548628123,567908725,760969884,464631026, "Skipped this Question"))
+
+simple_funct(D_336566965_D_992194402, "Quality of sleep")
+simple_funct(D_336566965_D_624200915, "Sleep was refreshing")
+simple_funct(D_336566965_D_526006101, "Problems sleeping")
+simple_funct(D_336566965_D_644233792, "Difficulty Falling Asleep")
+```
+
+# Physcial Fitness
+```{r physical_fittness, warning=FALSE, echo=FALSE, message=FALSE}
+
+qol3_tib$D_420392309_D_271090432 <- factor(qol3_tib$D_420392309_D_271090432, levels=c(648960871,235613392,132099255,211590917,907579123, "Skipped this Question"))
+qol3_tib$D_420392309_D_828608766 <- factor(qol3_tib$D_420392309_D_828608766, levels=c(648960871,235613392,132099255,211590917,907579123, "Skipped this Question"))
+qol3_tib$D_420392309_D_886047084 <- factor(qol3_tib$D_420392309_D_886047084, levels=c(648960871,235613392,132099255,211590917,907579123, "Unable to do", "Skipped this Question"))
+qol3_tib$D_420392309_D_226478149 <- factor(qol3_tib$D_420392309_D_226478149, levels=c(648960871,235613392,132099255,211590917,907579123, "Skipped this Question"))
+
+simple_funct(D_420392309_D_271090432, "I have trouble doing all of my regular leisure activities with others")
+simple_funct(D_420392309_D_828608766, "I have trouble doing all of the family activities that I want to do")
+simple_funct(D_420392309_D_886047084, "I have trouble doing all of my usual work (include work at home)")
+simple_funct(D_420392309_D_226478149, "I have trouble doing all of the activities with friends that I want to do")
+```
+
+# Pain in the last 7 days
+```{r pain , warning=FALSE, echo=FALSE, message=FALSE}
+
+qol3_tib$D_420560514_D_693503159 <- factor(qol3_tib$D_420560514_D_693503159, levels=c(111520945,548628123,567908725,760969884,464631026, "Skipped this Question"))
+qol3_tib$D_420560514_D_754781311 <- factor(qol3_tib$D_420560514_D_754781311, levels=c(111520945,548628123,567908725,760969884,464631026, "Skipped this Question"))
+qol3_tib$D_420560514_D_380975443 <- factor(qol3_tib$D_420560514_D_380975443, levels=c(111520945,548628123,567908725,760969884,464631026, "Unable to do", "Skipped this Question"))
+qol3_tib$D_420560514_D_426764225 <- factor(qol3_tib$D_420560514_D_426764225, levels=c(111520945,548628123,567908725,760969884,464631026, "Skipped this Question"))
+
+simple_funct(D_420560514_D_693503159, "Pain interfered with your day to day activities")
+simple_funct(D_420560514_D_754781311, "Pain interfere with work around the home")
+simple_funct(D_420560514_D_380975443, "Pain interfered with your ability to participate in social activities")
+simple_funct(D_420560514_D_426764225, "Pain interfered with your household chores")
+```
+
+# Social Satisfaction 
+```{r satisfy, warning=FALSE, echo=FALSE, message=FALSE}
+
+qol3_tib$D_261177801_D_313287837 <- factor(qol3_tib$D_261177801_D_313287837, levels=c(111520945,548628123,567908725,760969884,464631026, "Skipped this Question"))
+qol3_tib$D_261177801_D_598001940 <- factor(qol3_tib$D_261177801_D_598001940, levels=c(111520945,548628123,567908725,760969884,464631026, "Skipped this Question"))
+qol3_tib$D_261177801_D_733106290 <- factor(qol3_tib$D_261177801_D_733106290, levels=c(111520945,548628123,567908725,760969884,464631026, "Unable to do", "Skipped this Question"))
+qol3_tib$D_261177801_D_542492755 <- factor(qol3_tib$D_261177801_D_542492755, levels=c(111520945,548628123,567908725,760969884,464631026, "Skipped this Question"))
+ 
+simple_funct(D_261177801_D_313287837, "I am satisfied with my ability to do things for my family")
+simple_funct(D_261177801_D_598001940, "I am satisfied with my ability to do things for fun with others")
+simple_funct(D_261177801_D_733106290, "I feel good about my ability to do things for my friends")
+simple_funct(D_261177801_D_542492755, "I am satisfied with my ability to perform my daily routines")
+```
+
+# Social Isolation
+```{r Social_Isolation, warning=FALSE, echo=FALSE, message=FALSE}
+
+qol3_tib$D_326712049_D_437905191 <- factor(qol3_tib$D_326712049_D_437905191, levels=c(648960871,235613392,132099255,211590917,907579123, "Skipped this Question"))
+qol3_tib$D_326712049_D_387564567 <- factor(qol3_tib$D_326712049_D_387564567, levels=c(648960871,235613392,132099255,211590917,907579123, "Skipped this Question"))
+qol3_tib$D_326712049_D_479680555 <- factor(qol3_tib$D_326712049_D_479680555, levels=c(648960871,235613392,132099255,211590917,907579123, "Unable to do", "Skipped this Question"))
+qol3_tib$D_326712049_D_311938392 <- factor(qol3_tib$D_326712049_D_311938392, levels=c(648960871,235613392,132099255,211590917,907579123, "Skipped this Question"))
+
+simple_funct(D_326712049_D_437905191, "I feel left out")
+simple_funct(D_326712049_D_387564567, "I feel that people barely know me")
+simple_funct(D_326712049_D_479680555, "I feel isolated from others")
+simple_funct(D_326712049_D_311938392, "I feel that people are around me but not with me")
+```
+
+# Cognitive Function 
+```{r cognitive, warning=FALSE, echo=FALSE, message=FALSE}
+ 
+qol3_tib$D_230486322_D_960308206 <- factor(qol3_tib$D_230486322_D_960308206, levels=c(648960871,235613392,132099255,211590917,907579123, "Skipped this Question"))
+qol3_tib$D_230486322_D_974618086 <- factor(qol3_tib$D_230486322_D_974618086, levels=c(648960871,235613392,132099255,211590917,907579123, "Skipped this Question"))
+qol3_tib$D_230486322_D_115480943 <- factor(qol3_tib$D_230486322_D_115480943, levels=c(648960871,235613392,132099255,211590917,907579123, "Unable to do", "Skipped this Question"))
+qol3_tib$D_230486322_D_650091514 <- factor(qol3_tib$D_230486322_D_650091514, levels=c(648960871,235613392,132099255,211590917,907579123, "Skipped this Question"))
+
+simple_funct(D_230486322_D_960308206, "My thinking has been slow")
+simple_funct(D_230486322_D_974618086, "It has seemed like my brain was not working as well as usual")
+simple_funct(D_230486322_D_115480943, "I have had to work harder than usual to keep track of what I was doing")
+simple_funct(D_230486322_D_650091514, "I have had trouble shifting back and forth between different activities that require thinking")
+```
+
+
+

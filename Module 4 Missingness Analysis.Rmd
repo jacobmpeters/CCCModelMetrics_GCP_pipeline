@@ -11,7 +11,7 @@ Original Missingness Analysis of Module 4-- Reviewing the skipping of questions 
 Using the skip logic from Qx:https://nih.app.box.com/file/923661036132?s=o816d6804w154fqf5y161ii7ngvcezqg
 
 
-To avoid confusion, these tables will NOT have sums of missing responses at the bottom. Participants are able to skip one or all components of a question in Module 4.
+To avoid confusion, these tables will NOT have sums of missing responses at the bottom. Participants are able to skip one or all components of a question in Module 4; those counted in the 'skipped entire (question)' rows will be counted within all other rows of the table.
 
 
 ```{r libraries, include=FALSE}
@@ -289,6 +289,8 @@ dim(mergeall)
 module4 <- mergeall %>% filter(d_663265240==231311385)
 dim(module4)
 
+cat("Particiapnts with Module 4 Completion: ", dim(module4)[[1]])
+
 
 ```
 
@@ -372,8 +374,6 @@ dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%
       columns = Address1,
     )
   ) 
-
-
 
 
 

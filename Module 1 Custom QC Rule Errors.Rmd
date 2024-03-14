@@ -1,5 +1,5 @@
 ---
-title: "Module 1 Custom QC Rules"
+title: "Module 1 Custom QC Rule Errors"
 author: "Kelsey Dowling"
 date: "`r Sys.Date()`"
 header-includes:  
@@ -168,7 +168,7 @@ table(m1_comb_nodup$version)
 
 parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853, d_949302066, d_536735468 ,d_976570371 , d_663265240, d_827220437
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
-where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and (d_949302066='231311385')"
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and (d_949302066='231311385')  and d_831041022='104430631'"
 parts_table <- bq_project_query(project, parts)
 parts_data <- bq_table_download(parts_table, bigint = "integer64")
 
@@ -201,8 +201,8 @@ module1 <-
 
 
 
-\FloatBarrier
-### If Module 1 isn't completed, no other module can be started or completed
+
+### 1. If Module 1 isn't completed, no other module can be started or completed. Note this table is very wide, so if there are no errors found all that will be diplayed is "No errors".
 ```{r Mod1NS, echo=FALSE, warning=FALSE, message=FALSE}
 
 
@@ -211,13 +211,18 @@ Mod1NS <- module1 %>%  filter(d_949302066!='231311385' & #mod 1 not done
       select(Site, Connect_ID, d_949302066, d_536735468 ,d_976570371 , d_663265240 ) %>%  sort_by(Site)
 
 colnames(Mod1NS) <- c("Site", "Connect ID", "SrvBOH_BaseStatus_v1r0", "SrvMRE_BaseStatus_v1r0", "SrvSAS_BaseStatus_v1r0", "SrvLAW_BaseStatus_v1r0")
-knitr::kable(Mod1NS)  %>% kable_styling(latex_options = "scale_down")
 
+
+if (nrow(Mod1NS) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(Mod1NS) %>% kable_styling(latex_options = "scale_down")
+}
 ```
 
 
 \FloatBarrier
-### If 'none of the above' is selected for cardiovascular conditions, no other cardiovascular condition can be chosen. Note this table is very wide, so if there are no errors found all that will be diplayed is "No errors".
+### 2. If 'none of the above' is selected for cardiovascular conditions, no other cardiovascular condition can be chosen. Note this table is very wide, so if there are no errors found all that will be diplayed is "No errors".
 
 ```{r cardio_none, echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -238,7 +243,7 @@ if (nrow(cardio_none) == 0) {
 
 
 \FloatBarrier
-### If 'none of the above' is selected for digestive conditions, no other digestive condition can be chosen. Note this table is very wide, so if there are no errors found all that will be diplayed is "No errors".
+### 3. If 'none of the above' is selected for digestive conditions, no other digestive condition can be chosen. Note this table is very wide, so if there are no errors found all that will be diplayed is "No errors".
 
 ```{r digest_none, echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -258,7 +263,7 @@ if (nrow(digest_none) == 0) {
 
 
 \FloatBarrier
-### If 'none of the above' is selected for STDs and Other Infectious conditions, no other STD or condition can be chosen. Note this table is very wide, so if there are no errors found all that will be diplayed is "No errors".
+### 4. If 'none of the above' is selected for STDs and Other Infectious conditions, no other STD or condition can be chosen. Note this table is very wide, so if there are no errors found all that will be diplayed is "No errors".
 
 ```{r std_none, echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -278,7 +283,7 @@ if (nrow(std_none) == 0) {
 
 
 \FloatBarrier
-### If 'none of the above' is selected for urinary conditions, no other urinary condition can be chosen. Note this table is very wide, so if there are no errors found all that will be diplayed is "No errors".
+### 5. If 'none of the above' is selected for urinary conditions, no other urinary condition can be chosen. Note this table is very wide, so if there are no errors found all that will be diplayed is "No errors".
 
 ```{r urin_none, echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -298,7 +303,7 @@ if (nrow(urin_none) == 0) {
 
 
 \FloatBarrier
-### If 'none of the above' is selected for surgerical prodedures, no other surgeries can be chosen. Note this table is very wide, so if there are no errors found all that will be diplayed is "No errors".
+### 6. If 'none of the above' is selected for surgerical prodedures, no other surgeries can be chosen. Note this table is very wide, so if there are no errors found all that will be diplayed is "No errors".
 
 ```{r surgery_none, echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -318,7 +323,7 @@ if (nrow(surgery_none) == 0) {
 
 
 \FloatBarrier
-### If 'none of the above' is selected for breast surgeries, no other breast surgeries can be chosen. Note this table is very wide, so if there are no errors found all that will be diplayed is "No errors".
+### 7. If 'none of the above' is selected for breast surgeries, no other breast surgeries can be chosen. Note this table is very wide, so if there are no errors found all that will be diplayed is "No errors".
 
 ```{r brst_surg_none, echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -337,7 +342,7 @@ if (nrow(brst_surg_none) == 0) {
 ```
 
 \FloatBarrier
-### Alternative contact mobile number (SrvBOH_AltContCell_v1r0) must be numeric and 10 digits
+### 8. Alternative contact mobile number (SrvBOH_AltContCell_v1r0) must be numeric and 10 digits
 ```{r alt_mb_phone, echo=FALSE, warning=FALSE, message=FALSE}
 
 module1 <- module1   %>% mutate(mobile_num= gsub("[^0-9]", "", D_285718391_D_286149234))
@@ -354,7 +359,7 @@ knitr::kable(alt_mb)  %>% kable_styling(latex_options = "HOLD_position")
 
 
 \FloatBarrier
-### Alternative contact home number must be numeric and 10 digits
+### 9. Alternative contact home number must be numeric and 10 digits
 ```{r alt_home_phone, echo=FALSE, warning=FALSE, message=FALSE}
 
 
@@ -372,8 +377,9 @@ knitr::kable(alt_home)  %>% kable_styling(latex_options = "HOLD_position")
 
 
 \FloatBarrier
-### ZIP code should be no more than 9 digits; 5 with primary ZIP code and 9 if full ZIP code given 
-```{r alt_home_phone, echo=FALSE, warning=FALSE, message=FALSE}
+### 10. Alternative ZIP code should be no more than 9 digits; 5 with primary ZIP code and 9 if full ZIP code given 
+```{r zip, echo=FALSE, warning=FALSE, message=FALSE}
+
 
 
 module1 <- module1   %>% mutate(zip_num= gsub("[^0-9]", "", D_857915436_D_379899229))
@@ -382,7 +388,7 @@ zipcode <- module1 %>% filter(!is.na(module1$zip_num) & (nchar(module1$zip_num)!
 
 colnames(zipcode) <- c("Site", "Connect ID", "ZIP")
 
-table(nchar(zipcode$ZIP))
+#table(nchar(zipcode$ZIP))
 
 zipcodes <- zipcode %>%  filter(nchar(zipcode$ZIP)!=0 & nchar(zipcode$ZIP)!=5 & nchar(zipcode$ZIP)!=9)
 
