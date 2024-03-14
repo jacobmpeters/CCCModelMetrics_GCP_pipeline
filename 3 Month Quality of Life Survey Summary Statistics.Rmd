@@ -118,8 +118,9 @@ simple_funct <- function(CID, Title){
 
 qol3_tib$D_284353934_D_559540891 <- factor(qol3_tib$D_284353934_D_559540891, levels=c(367964536,193058048, 263412634, 734992634, 221192556, "Skipped this Question"))
 qol3_tib$D_284353934_D_917425212 <- factor(qol3_tib$D_284353934_D_917425212, levels=c(367964536,193058048, 263412634, 734992634, 221192556, "Skipped this Question"))
-qol3_tib$D_284353934_D_783201540 <- factor(qol3_tib$D_284353934_D_783201540, levels=c(367964536,193058048, 263412634, 734992634, 221192556, "Unable to do", "Skipped this Question"))
+qol3_tib$D_284353934_D_783201540 <- factor(qol3_tib$D_284353934_D_783201540, levels=c(367964536,193058048, 263412634, 734992634, 221192556,  "Skipped this Question"))
 qol3_tib$D_284353934_D_780866928 <- factor(qol3_tib$D_284353934_D_780866928, levels=c(367964536,193058048, 263412634, 734992634, 221192556, "Skipped this Question"))
+
 
 simple_funct(D_284353934_D_559540891, "Ability to do chores such as vacuuming or yard work")
 simple_funct(D_284353934_D_917425212, "Ability to do go up and down stairs at a normal pace")
