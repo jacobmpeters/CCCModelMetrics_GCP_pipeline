@@ -72,8 +72,8 @@ baseline_low_priority:
     frequency: "30 14 1 * *" # first of the month at 2:30 PM
     
 module1_qc_metrics:
-  rmd_file_name: "Module 1 Custom QC Rules.Rmd"
-  report_file_name: "Module_1_Custom_QC_Rules.pdf"
+  rmd_file_name: "Module 1 Custom QC Rule Errors.Rmd"
+  report_file_name: "Module_1_Custom_QC_Rule_Errors.pdf"
   box_folders:
     - "203464977998" # internal
   gcp_info:
