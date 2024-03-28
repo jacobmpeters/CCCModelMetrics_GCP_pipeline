@@ -1,0 +1,891 @@
+---
+title: "Notifications QC"
+author: "Kelsey Dowling"
+date: "Report reflects notifications data from: `r format(Sys.Date() - 8, '%B %d , %Y')` to `r format(Sys.Date() - 1, '%B %d , %Y')`"
+header-includes:  
+    \usepackage{placeins}
+
+
+output:
+  pdf_document:
+    extra_dependencies: ["float"]
+    toc: false
+    keep_tex: yes
+    fig_caption: true
+---
+
+
+This report reviews notification reminders to determine which messages were not sent per week as expected, duplicate notifications sent to participants, and notifications sent at a higher rate than expected. Tables of errors that have over 50 rows will be exported to a csv file and posted on Box here: https://nih.app.box.com/folder/254808757764
+
+
+```{r library, include=FALSE}
+library(bigrquery)
+library(foreach)
+library(stringr)
+library(gtsummary)
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(kableExtra)
+library(glue)
+
+bq_auth()
+
+project <- "nih-nci-dceg-connect-prod-6d04"
+
+#######################################################################
+
+### Set Box folders for output CSV files ###########
+use_test_box_folder <- TRUE # Local user sets this (Jake or Kelsey)
+
+# Over-ride if using plumber api on GCP (USER DOESN'T TOUCH THIS!)
+# Check if the environment variable exists and is not empty
+if (!is.null(Sys.getenv("USE_TEST_BOX_FOLDER")) &&
+    Sys.getenv("USE_TEST_BOX_FOLDER") != "") {
+  use_test_box_folder <- as.logical(Sys.getenv("USE_TEST_BOX_FOLDER"))
+}
+
+if (use_test_box_folder) {
+  boxfolder <- 249228373485 # test box folder
+} else {
+  boxfolder <- 254808757764 # destination of CSV files (not pdf)
+}
+
+
+##### Making sure personal C drives aren't referenced if this code is being used by others
+
+
+#Change to FALSE if referencing this code
+write_to_local_drive = F #F
+
+#local_drive="C:/Users/dowlingk2/Documents/Module-Missingness-and-Metrics/data/"    
+
+
+### This function below is put before any write.csv functions, and "filename" is updated. It determines wheteher the file will be created locally or not.
+#filename=
+local_drive= ifelse(write_to_local_drive, "C:/Users/dowlingk2/Documents/GitHub/ccc_module_metrics_gcp_pipeline/", "")
+
+currentDate <- Sys.Date()
+```
+
+
+# 1. Category/attempt combinations with no messages being sent on over the past week. Note: ‘Baseline Clinical Biospecimen Survey Reminder’ first contact attempt and the ‘Biospecimen Survey Reminder’ for research collection first contact attempt are not included in this report because they are sent client side and not tracked in the Notifications table.
+```{r Overage, echo=FALSE, warning=FALSE, message=FALSE}
+
+## Note there is no notification specID for BL Clin Bio Survey reminder and none for Biospecimen Survey Reminder 
+
+
+
+Week_Without_Notification <- "WITH AllPossibleNotifications AS (
+    SELECT DISTINCT 
+        category,
+        attempt
+    FROM 
+        `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP`
+    WHERE 
+        category NOT IN (
+            'Baseline Biospecimen Scheduling Invitation',
+            'Baseline Research Menstrual Cycle Survey Reminder 1',
+            'Baseline Research Menstrual Cycle Survey Reminder 1st contact',
+            'Baseline Research Menstrual Cycle Survey Reminder 2nd contact',
+            'Baseline Research Menstrual Cycle Survey Reminder 3rd contact',
+            'Baseline Research Menstrual Cycle Survey Reminder 4th contact',
+            'HP Baseline Research Biospecimen Scheduling Invitation',
+            'KPHI Support Message',
+            'MF Baseline Biospecimen Scheduling Invitation',
+            'Verified, BL Survey Reminders Backlog Pts 4th contact',
+            'Verified, BL Survey Reminders Backlog Pts 5th contact',
+            'Verified, BL Survey Reminders BacklogPts 6th Contact',
+            'Verified, BL Survey Reminders BacklogPts 7th Contact',
+            'Verified, BL Survey Reminders BacklogPts 8th Contact',
+            'Verified, BL Survey Reminders BacklogPts 9th Contact',
+            'Verified, BL Survey Reminder Backlog Pts',
+            'Verified, BL Survey Reminders Backlog Pts',
+            'Post-verification biospecimen update KPCO',
+            'Post-verification biospecimen update KPGA',
+            'Post-verification biospecimen update KPHI',
+            'Post-verification biospecimen update KPNW',
+            'Verified, BL Survey Reminders New Pts 7th Contact',
+            'Verified, BL Survey Reminders New Pts 8th Contact',
+            'Verified, BL Survey Reminders New Pts 9th Contact'
+        )
+),
+SentNotifications AS (
+    SELECT DISTINCT
+        category,
+        attempt
+    FROM 
+        `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP`
+    WHERE 
+        DATE(notification_time) BETWEEN (CURRENT_DATE()-7) AND (CURRENT_DATE()-1)
+)
+SELECT 
+    apn.category,
+    apn.attempt
+FROM 
+    AllPossibleNotifications apn
+LEFT JOIN 
+    SentNotifications sn
+ON 
+    apn.category = sn.category
+    AND apn.attempt = sn.attempt
+WHERE 
+    sn.category IS NULL
+    AND sn.attempt IS NULL
+    AND NOT (apn.category = 'Verified, BL Survey Reminders' AND apn.attempt = '2nd contact')
+ORDER BY 
+    apn.category, apn.attempt;
+
+
+
+"
+#    and nj.category NOT LIKE 'Verified, BL Survey Reminders New Pts%' - may or may not need to add
+
+Week_Without_Notification_table <- bq_project_query(project, Week_Without_Notification)
+Week_Without_Notification_after_march2024 <- bq_table_download(Week_Without_Notification_table, bigint = "integer64") 
+
+
+if (nrow(Week_Without_Notification_after_march2024) > 50) {
+  cat("There are", nrow(Week_Without_Notification_after_march2024), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(Week_Without_Notification_after_march2024,glue("{local_drive}Week_Without_Notifications_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(Week_Without_Notification_after_march2024) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(Week_Without_Notification_after_march2024) %>% kable_styling(latex_options = "HOLD_position")
+}
+}
+
+
+
+
+```
+
+
+
+\FloatBarrier
+
+
+# 2. Participants receiving more than one contact attempt from the same category on the same day.
+
+
+
+
+## The same participant received multiple 3 Month QOL Survey email reminders on the same day.
+```{r QOL_email, echo=FALSE, message=FALSE, warning=FALSE}
+QOL <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category LIKE '%3mo QOL Survey Reminders%' and date(notification_time) >= (CURRENT_DATE()-7) and notificationType='email'
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+QOL_table <- bq_project_query(project, QOL)
+QOL3_invite <- bq_table_download(QOL_table, bigint = "integer64") 
+
+# if (nrow(QOL3_invite) == 0) {
+#   cat("No errors\n")
+# } else {
+#   knitr::kable(QOL3_invite) %>% kable_styling(latex_options = "scale_down")
+# }
+
+if (nrow(QOL3_invite) > 50) {
+  cat("There are", nrow(QOL3_invite), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(QOL3_invite,glue("{local_drive}Multiple_QOL_Email_Notifications_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(QOL3_invite) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(QOL3_invite) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+
+```
+
+
+\FloatBarrier
+
+
+## The same participant received multiple 3 Month QOL Survey SMS reminders on the same day.
+```{r QOL_sms, echo=FALSE, message=FALSE, warning=FALSE}
+QOL <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category LIKE '%3mo QOL Survey Reminders%' and date(notification_time) >= (CURRENT_DATE()-7) and notificationType='sms'
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+if (nrow(QOL3_invite) > 50) {
+  cat("There are", nrow(QOL3_invite), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(QOL3_invite,glue("{local_drive}Multiple_QOL_SMS_Notifications_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(QOL3_invite) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(QOL3_invite) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+
+
+```
+
+
+
+
+\FloatBarrier
+## The same participant received multiple Baseline Research Biospecimen Survey reminders on the same day.  The first attempt is category name 'Biospecimen Survey Reminders' and attempts 2-5 are under category name 'Baseline Research Biospecimen Survey Reminders'. Note, first contact attempt is sent at the time of the sample donation and the 2nd contact attempt is sent at 8pm that same day; for that reason we expect up to 2 contacts a day per participant. This table will identify any count higher than 2 per day.
+
+\FloatBarrier
+```{r RsBio, echo=FALSE, message=FALSE, warning=FALSE}
+RsBio <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category='Biospecimen Survey Reminder' OR category LIKE '%Baseline Research Biospecimen Survey Reminders%' and date(notification_time) >= (CURRENT_DATE()-7) and notificationType='email'
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 2"
+
+RsBio_table <- bq_project_query(project, RsBio)
+Rs_BioSrvy_invite <- bq_table_download(RsBio_table, bigint = "integer64") #currently 32 people - all 2
+
+
+
+if (nrow(Rs_BioSrvy_invite) > 50) {
+  cat("There are", nrow(Rs_BioSrvy_invite), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(Rs_BioSrvy_invite,glue("{local_drive}Multiple_Rs_BioSrvy_invite_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(Rs_BioSrvy_invite) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(Rs_BioSrvy_invite) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+```
+
+
+
+\FloatBarrier
+## The same participant received multiple Baseline Clinical Biospecimen Survey reminders on the same day. The first attempt is category name 'Baseline Clinical Biospecimen Survey' and attempts 2-5 are under category name 'Baseline Clinical Blood and Urine Sample Survey Reminders'.
+```{r ClBio, echo=FALSE, message=FALSE, warning=FALSE}
+ClBio <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE (category LIKE '%Baseline Clinical Biospecimen Survey%' OR category LIKE '%Baseline Clinical Blood and Urine Sample Survey Reminders%') and date(notification_time) >= (CURRENT_DATE()-7)
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 2"
+
+ClBio_table <- bq_project_query(project, ClBio)
+Clin_BioSrvy_invite <- bq_table_download(ClBio_table, bigint = "integer64")
+
+
+if (nrow(Clin_BioSrvy_invite) > 50) {
+  cat("There are", nrow(Clin_BioSrvy_invite), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(Clin_BioSrvy_invite,glue("{local_drive}Multiple_Clin_BioSrvy_invite_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(Clin_BioSrvy_invite) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(Clin_BioSrvy_invite) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+```
+
+
+
+
+
+\FloatBarrier
+
+
+## The same participant received multiple Baseline Research Menstrual Cycle Survey reminders on the same day. 
+```{r BRM, echo=FALSE, message=FALSE, warning=FALSE}
+BRM <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category='Baseline Research Menstrual Cycle Survey Reminders' and date(notification_time) >= (CURRENT_DATE()-7)
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+BRM_table <- bq_project_query(project, BRM)
+BL_Rs_MensSrvy_invite <- bq_table_download(BRM_table, bigint = "integer64") #currently 39, max 4
+
+
+if (nrow(BL_Rs_MensSrvy_invite) > 50) {
+  cat("There are", nrow(BL_Rs_MensSrvy_invite), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(BL_Rs_MensSrvy_invite,glue("{local_drive}Multiple_BL_Rs_MensSrvy_invite_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(BL_Rs_MensSrvy_invite) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(BL_Rs_MensSrvy_invite) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+
+```
+
+\FloatBarrier
+
+## The same participant received multiple Baseline Clinical Menstrual Cycle Survey reminders on the same day.  
+```{r BCM, echo=FALSE, message=FALSE, warning=FALSE}
+BCM <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category LIKE '%Baseline Clinical Menstrual Cycle Survey%' and date(notification_time) >= (CURRENT_DATE()-7)
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+BCM_table <- bq_project_query(project, BCM)
+BL_Cl_MensSrvy_invite <- bq_table_download(BCM_table, bigint = "integer64") #currently 341, max 4
+
+
+if (nrow(BL_Cl_MensSrvy_invite) > 50) {
+  cat("There are", nrow(BL_Cl_MensSrvy_invite), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(BL_Cl_MensSrvy_invite,glue("{local_drive}Multiple_BL_Cl_MensSrvy_invite_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(BL_Cl_MensSrvy_invite) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(BL_Cl_MensSrvy_invite) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+```
+
+\FloatBarrier
+## The same participant received multiple Cannot Be Verified notifications on the same day. 
+```{r CBV, echo=FALSE, message=FALSE, warning=FALSE}
+CBV <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category LIKE '%Cannot Be Verified Notification%' and date(notification_time) >= (CURRENT_DATE()-7)
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+CBV_table <- bq_project_query(project, CBV)
+CBV_rem <- bq_table_download(CBV_table, bigint = "integer64")
+
+
+if (nrow(CBV_rem) > 50) {
+  cat("There are", nrow(CBV_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(CBV_rem,glue("{local_drive}Multiple_CBV_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(CBV_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(CBV_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+```
+
+\FloatBarrier
+## The same participant received multiple Data Destruction reminders on the same day. 
+```{r DDR, echo=FALSE, message=FALSE, warning=FALSE}
+DDR <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category LIKE '%Data Destruction Reminders%' and date(notification_time) >= (CURRENT_DATE()-7)
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+DDR_table <- bq_project_query(project, DDR)
+Destruction_rem <- bq_table_download(DDR_table, bigint = "integer64")
+
+
+if (nrow(Destruction_rem) > 50) {
+  cat("There are", nrow(Destruction_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(Destruction_rem,glue("{local_drive}Multiple_Destruction_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(Destruction_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(Destruction_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+
+```
+
+\FloatBarrier
+
+## The same participant received multiple HIPAA revocation reminders on the same day. 
+```{r HIPAA, echo=FALSE, message=FALSE, warning=FALSE}
+HIPAA <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category LIKE '%HIPAA revocation reminders%' and date(notification_time) >= (CURRENT_DATE()-7)
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+HIPAA_table <- bq_project_query(project, HIPAA)
+HIPAA_rem <- bq_table_download(HIPAA_table, bigint = "integer64")
+
+
+if (nrow(HIPAA_rem) > 50) {
+  cat("There are", nrow(HIPAA_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(HIPAA_rem,glue("{local_drive}Multiple_HIPAA_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(HIPAA_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(HIPAA_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+
+```
+
+
+\FloatBarrier
+## The same participant received multiple HP Baseline Biospecimen invitations on the same day. 
+```{r HPBB, echo=FALSE, message=FALSE, warning=FALSE}
+HPBB <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category='HP Baseline Biospecimen Invitation' and date(notification_time) >= (CURRENT_DATE()-7)
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+HPBB_table <- bq_project_query(project, HPBB)
+HPBio_rem <- bq_table_download(HPBB_table, bigint = "integer64") #currently 483, max 5
+
+
+if (nrow(HPBio_rem) > 50) {
+  cat("There are", nrow(HPBio_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(HPBio_rem,glue("{local_drive}Multiple_HPBio_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(HPBio_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(HPBio_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+
+```
+
+
+
+\FloatBarrier
+## The same participant received multiple HF Baseline Biospecimen Scheduling invitations on the same day. 
+```{r HFBB, echo=FALSE, message=FALSE, warning=FALSE}
+HFBB <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category LIKE '%HF Baseline Biospecimen Scheduling Invitation%' and date(notification_time) >= (CURRENT_DATE()-7)
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+HFBB_table <- bq_project_query(project, HFBB)
+HFBio_rem <- bq_table_download(HFBB_table, bigint = "integer64") #currently 483, max 5
+
+
+if (nrow(HFBio_rem) > 50) {
+  cat("There are", nrow(HFBio_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(HFBio_rem,glue("{local_drive}Multiple_HFBio_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(HFBio_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(HFBio_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+
+```
+
+
+
+\FloatBarrier
+## The same participant received multiple UC Baseline Biospecimen Scheduling invitations on the same day. 
+```{r UCBB, echo=FALSE, message=FALSE, warning=FALSE}
+UCBB <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category LIKE '%UC Baseline Biospecimen Scheduling Invitation%' and date(notification_time) >= (CURRENT_DATE()-7)
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+UCBB_table <- bq_project_query(project, UCBB)
+UCBio_rem <- bq_table_download(UCBB_table, bigint = "integer64") #currently 483, max 5
+
+
+if (nrow(UCBio_rem) > 50) {
+  cat("There are", nrow(UCBio_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(UCBio_rem,glue("{local_drive}Multiple_UCBio_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(UCBio_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(UCBio_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+
+```
+
+
+
+
+
+
+\FloatBarrier
+## The same participant received multiple KP baseline biospecimen invitations on the same day. 
+```{r KPBio, echo=FALSE, message=FALSE, warning=FALSE}
+KPBio <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category LIKE '%baseline biospecimen invitations%' and date(notification_time) >= (CURRENT_DATE()-7)
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+KPBio_table <- bq_project_query(project, KPBio)
+KPBio_rem <- bq_table_download(KPBio_table, bigint = "integer64") #currently 483, max 5
+
+
+if (nrow(HPBio_rem) > 50) {
+  cat("There are", nrow(HPBio_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(HPBio_rem,glue("{local_drive}Multiple_HPBio_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(HPBio_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(HPBio_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+```
+
+
+
+
+\FloatBarrier
+## The same participant received multiple newsletter notifications on the same day. 
+```{r news, echo=FALSE, message=FALSE, warning=FALSE}
+news <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category LIKE '%newsletter%' and date(notification_time) >= (CURRENT_DATE()-7)
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+news_table <- bq_project_query(project, news)
+news_rem <- bq_table_download(news_table, bigint = "integer64") #currently 5 - all 2
+
+
+if (nrow(news_rem) > 50) {
+  cat("There are", nrow(news_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(news_rem,glue("{local_drive}Multiple_news_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(news_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(news_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+```
+
+\FloatBarrier
+## The same participant received multiple post-consent user profile reminders on the same day. 
+```{r PCUP, echo=FALSE, message=FALSE, warning=FALSE}
+PCUP <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category LIKE '%post-consent user profile reminders%' and date(notification_time) >= (CURRENT_DATE()-7)
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+PCUP_table <- bq_project_query(project, PCUP)
+PC_UserPf_rem <- bq_table_download(PCUP_table, bigint = "integer64") #currently 10 - all 2
+
+
+if (nrow(PC_UserPf_rem) > 50) {
+  cat("There are", nrow(PC_UserPf_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(PC_UserPf_rem,glue("{local_drive}Multiple_PC_UserPf_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(PC_UserPf_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(PC_UserPf_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+```
+
+
+
+\FloatBarrier
+## The same participant received multiple Verified, BL Survey reminders on the same day. This includes the category 'Verified, BL Survey Reminders New Pts'
+```{r VBLSR, echo=FALSE, message=FALSE, warning=FALSE}
+VBLSR <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category LIKE 'Verified, BL Survey Reminders%' and date(notification_time) >= (CURRENT_DATE()-7)
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+VBLSR_table <- bq_project_query(project, VBLSR)
+Ver_BLSurv_rem <- bq_table_download(VBLSR_table, bigint = "integer64")
+
+
+if (nrow(Ver_BLSurv_rem) > 50) {
+  cat("There are", nrow(Ver_BLSurv_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(Ver_BLSurv_rem,glue("{local_drive}Multiple_Ver_BLSurv_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(Ver_BLSurv_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(Ver_BLSurv_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+```
+
+\FloatBarrier
+## The same participant received multiple Withdrawal reminders on the same day. 
+```{r WD, echo=FALSE, message=FALSE, warning=FALSE}
+WD <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category LIKE '%Withdrawal Reminders%' and date(notification_time) >= (CURRENT_DATE()-7)
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+WD_table <- bq_project_query(project, WD)
+WD_rem <- bq_table_download(WD_table, bigint = "integer64") #currently 4 - all 2
+
+
+if (nrow(WD_rem) > 50) {
+  cat("There are", nrow(WD_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(WD_rem,glue("{local_drive}Multiple_WD_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(WD_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(WD_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+```
+
+
+
+\FloatBarrier
+
+
+# 3. Number of messages per day this past week, compared to the specID daily averages since March 1,2024.
+
+```{r NumMess, echo=FALSE, message=FALSE, warning=FALSE}
+
+
+overage <- "WITH daily_counts AS (
+    SELECT
+        category,
+        attempt,
+        notificationSpecificationsID,
+        DATE(notification_time) AS notification_date,
+        COUNT(*) AS daily_count
+    FROM
+        `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP`
+    WHERE
+        DATE(notification_time) > '2024-02-29'
+        AND notificationSpecificationsID IS NOT NULL
+    GROUP BY
+        category,
+        attempt,
+        notificationSpecificationsID,
+        notification_date
+),
+
+average_daily AS (
+    SELECT
+        category,
+        attempt,
+        AVG(daily_count) AS average_daily_notifications
+    FROM
+        daily_counts
+    GROUP BY
+        category,
+        attempt
+)
+
+SELECT
+    dc.category,
+    dc.attempt,
+    dc.notificationSpecificationsID,
+    dc.notification_date,
+    dc.daily_count,
+    ad.average_daily_notifications
+FROM
+    daily_counts dc
+JOIN
+    average_daily ad
+ON
+    dc.category = ad.category
+    AND dc.attempt = ad.attempt
+WHERE
+    #dc.daily_count > ad.average_daily_notifications and
+    dc.notification_date >= (CURRENT_DATE()-7)
+ORDER BY dc.category,
+    dc.attempt;
+"
+
+
+
+overage_table <- bq_project_query(project, overage)
+overage_rem <- bq_table_download(overage_table, bigint = "integer64") #currently 390
+
+
+# ## Need to distinguish the newsletter types- once a quarter there will be two different news letter sent. Will be nofitifed by Ops to update the code in time. Each title only used once.
+# 
+# if (!is.na(table(overage_rem$category=="newsletter")[2])){overage_rem <- overage_rem %>% 
+#     mutate(category= case_when(notificationSpecificationsID=="16854ec4-90d9-46d4-86e7-127f25a894b6" ~"newsletter- 'What's Hot With Connect'",
+#                                notificationSpecificationsID=="667fe705-ae6c-476a-853b-38985f8a56a6" ~"newsletter- 'It's your Connect anniversary!'",
+#                                notificationSpecificationsID=="6c9cb931-e34a-4f8e-ac90-29773064596a" ~"newsletter- 'Tis the Season to Connect'",
+#                                notificationSpecificationsID=="82f5b976-4c5d-4ed1-be7f-df5170086456" ~"newsletter- 'Spring into Summer'",
+#                                notificationSpecificationsID=="971f991d-30da-46f0-be1a-8ed598c315da" ~"newsletter- 'Thank you for leading the way!'",
+#                                notificationSpecificationsID=="ca4ca27f-ae5b-4535-8751-759ab8836721" ~"newsletter- 'Winter Zzzz's: Elevate Your Sleep This Holiday Season'",
+#                                notificationSpecificationsID=="ead681a1-4380-40f8-97bb-3309c2773eb0" ~"newsletter- 'Connect Welcomes a Season of Growth'",
+#                                TRUE ~ overage_rem$category
+#                             ))}
+
+ 
+
+
+
+
+
+if (nrow(overage_rem) > 50) {
+  cat("There are", nrow(overage_rem), "rows. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(overage_rem,glue("{local_drive}Daily_Contact_Attempt_Count_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(overage_rem) == 0) {
+  cat("No rows\n")
+} else {
+  knitr::kable(overage_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+
+#post-consent user profile reminders between 1-4
+#Withdrawal Reminders between between 1-2
+#Verified, BL Survey Reminders New Pts between 18-51
+#Verified, BL Survey Reminders (1st contact) about 80
+#UC Baseline Biospecimen Scheduling Invitation about 9
+#All KP baseline biospecimen invitations between 5-22
+#HP Baseline Biospecimen Invitation about 12
+#HIPAA revocation reminders 1
+#HF Baseline Biospecimen Scheduling Invitation about 10
+#Data Destruction Reminders betwen 1-2
+#Cannot Be Verified Notification 1-2
+#Biospecimen Survey Reminder about 30
+#Baseline Research Menstrual Cycle Survey Reminders 2-4
+#Baseline Research Biospecimen Survey Reminders 2-6
+#Baseline Clinical Menstrual Cycle Survey Reminders 7-8
+#Baseline Clinical Blood and Urine Sample Survey Reminders 6-18
+#Baseline Clinical Biospecimen Survey Reminder 31
+#3mo QOL Survey Reminders 41-91
+
+
+
+#HP Baseline Research Biospecimen Scheduling Invitation----- DEFUNCT, NO LONGER BEING SENT
+#Baseline Biospecimen Scheduling Invitation----- DEFUNCT, NO LONGER BEING SENT
+#Baseline Research Menstrual Cycle Survey Reminder 1, Baseline Research Menstrual Cycle Survey Reminder 2nd/3rd/4th contact----- DEFUNCT, NO LONGER BEING SENT
+#KPHI Support Message----- DEFUNCT, NO LONGER BEING SENT
+#MF Baseline Biospecimen Scheduling Invitation----- DEFUNCT, NO LONGER BEING SENT
+#Post-verification biospecimen update KPCO/KPGA/KPNW/KPHI----- DEFUNCT, NO LONGER BEING SENT
+#Verified, BL Survey Reminder Backlog Pts/Verified, BL Survey Reminders 2nd attempt/ Verified, BL Survey Reminders New Pts 7th/8th/9th Contact----- DEFUNCT, NO LONGER BEING SENT
+
+```
+
+
