@@ -210,28 +210,11 @@ parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID) ###need to convert ty
 
 module1= left_join(m1_complete_nodup, parts_data, by="Connect_ID") 
 dim(module1)
-
 ```
 
-```{r, warning=FALSE, echo=FALSE,  message=FALSE}
-# #Has a recruitment flag
-# merged <- merged %>% filter(D_512820379==486306141 | D_512820379==854703046)
-# 
-# 
-# #User consent submitted
-# merged <- merged %>% filter(D_919254129==353358909)
-# 
-# 
-# #User profile submitted
-# merged <- merged %>% filter(D_699625233==353358909)
-# 
-# 
-# #Verified by site
-# #cat("Verified by site:", sum(merged$D_821247024==197316935, na.rm=TRUE))
-# 
-# 
-# #Mod1 completed
-# module1 <- merged %>% filter(D_949302066==231311385)
+
+```{r counts, warning=FALSE, echo=FALSE}
+
 cat("Particiapnts with Module 1 Completion:", dim(module1)[[1]])
 
 
@@ -278,7 +261,7 @@ boxp_funct <- function(CID,Title, Xlab) {
 
 ##GT TABLE: Questions that all participants asked, update dictionary as new answer options come up
 
-dict <- list("104430631"="No", "353358909"="Yes", "589959753"="A little shorter", "623310018"="A lot shorter", "978204320"= "Grade School(Grades 1-8)", "935502060"="Some High School, No Diploma", "404564707"= "High School Graduate or GED", "432193665"="Some College, No Degree", "890756124"="Technical or Trade School After High School", "766964355"="Associate's Degree", "875342283"="Bachelor's Degree", "598242454"="Advanced Degree", "709650750"="Biological Child", "810290359"="Adopted Child", "509607548"="Step Child", "784922042"="Related to me in some other way", "288105839"=" Yes, fraternal twins", "626558982"="Yes, triplets or higher multiple birth", "178420302"="Do not Know", "536341288"="Female", "576796184"="Intersex or Other", "654207589"="Male","555374628"="Full Sibling", "871673221"="Half Sibling, Same Mother",  "198654048"="Half Sibling, Same Father", "807835037"="Other", "274062548"="More than 3 months ago", "958538953"="In the past 3 months", "317567178"="In the past month", "484055234"="In the past year",  "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago","958538953"="In the past 3 months",  "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible", "764708931"="Very flexible","0"="No", "1"="Yes", "536341288"="Female", "218837028"="Woman", "983318667"="Man"  , "654207589"="Male","746038746"="Prefer Not to Answer", "805712793"="Genderqueer","486192236"="Non-Binary", "807835037"="Other","873138103"="Transgender Woman","405267600"="Transgender Man", "220083334"="Very Feminine","541300533"="Mostly Feminine","878286618"="Somewhat Feminine","910745276"="Equally feminine and masculine","915528806"="Very masculine","265452386"="Mostly Masculine","510148951"="Somewhat Masculine","271882746"="Straight or heterosexual", "903084185"="Lesbian, gay, or homosexual", "999994434"="Bisexual", "584368278"="Retired", "475665841"="Homemaker", "656816477"="Unemployed", "756948639"="Unble to Work (Disabled)", "181769837"="Other Employment Status","551525967"="Yes, Full-Time Student", "738284740"="Yes, Part Time Student", "288321056"="Married", "514080822"="Never Married","522680498"="Never Married but living with Partner","649436542"="Divorced","522680498"="Partner", "741094625"="Separated","733527132"="Widow" )
+dict <- list("104430631"="No", "353358909"="Yes", "589959753"="A little shorter", "623310018"="A lot shorter", "978204320"= "Grade School(Grades 1-8)", "935502060"="Some High School, No Diploma", "404564707"= "High School Graduate or GED", "432193665"="Some College, No Degree", "890756124"="Technical or Trade School After High School", "766964355"="Associate's Degree", "875342283"="Bachelor's Degree", "598242454"="Advanced Degree", "709650750"="Biological Child", "810290359"="Adopted Child", "509607548"="Step Child", "784922042"="Related to me in some other way", "288105839"=" Yes, fraternal twins", "626558982"="Yes, triplets or higher multiple birth", "178420302"="Do not Know", "536341288"="Female", "576796184"="Intersex or Other", "654207589"="Male","555374628"="Full Sibling", "871673221"="Half Sibling, Same Mother",  "198654048"="Half Sibling, Same Father", "807835037"="Other", "274062548"="More than 3 months ago", "958538953"="In the past 3 months", "317567178"="In the past month", "484055234"="In the past year",  "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago","958538953"="In the past 3 months",  "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible", "764708931"="Very flexible","0"="No", "1"="Yes", "536341288"="Female", "218837028"="Woman", "983318667"="Man"  , "654207589"="Male","746038746"="Prefer Not to Answer", "805712793"="Genderqueer","486192236"="Non-Binary", "807835037"="Other","873138103"="Transgender Woman","405267600"="Transgender Man", "220083334"="Very Feminine","541300533"="Mostly Feminine","878286618"="Somewhat Feminine","910745276"="Equally feminine and masculine","915528806"="Very masculine","265452386"="Mostly Masculine","510148951"="Somewhat Masculine","271882746"="Straight or heterosexual", "903084185"="Lesbian, gay, or homosexual", "999994434"="Bisexual", "197935377" ="Queer", "210894509"	= "No labels", "727200870" = "Asexual", "832978839"	 = "Mostly Straight", "854349138" = "Pansexual", "584368278"="Retired", "475665841"="Homemaker", "656816477"="Unemployed", "756948639"="Unble to Work (Disabled)", "181769837"="Other Employment Status","551525967"="Yes, Full-Time Student", "738284740"="Yes, Part Time Student", "288321056"="Married", "514080822"="Never Married","522680498"="Never Married but living with Partner","649436542"="Divorced","522680498"="Partner", "741094625"="Separated","733527132"="Widow" )
 
 
 
@@ -307,7 +290,7 @@ simple_funct <- function(CID, Title){
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 }
 
 
@@ -338,7 +321,7 @@ one_logic_funct <- function(CID, CID_prev, Prev_Answer, Title){
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 }
 
 #GT table for siblings
@@ -368,7 +351,7 @@ sib_logic_funct <- function(CID, Sib_Num, Title){
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 }
 
 #GT table for children
@@ -393,7 +376,7 @@ child_logic_funct <- function(CID, Child_Num, Title){
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 }
 
 #GT TABLE: Weight loss method
@@ -595,7 +578,7 @@ dt_all_races_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = race,
     )
-  ) #%>% opt_row_striping()
+  ) #
 ```
 
 ```{r RacePieChart, include=FALSE}
@@ -684,7 +667,7 @@ dt_am_ind_ethn_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping() %>%
+  )  %>%
   tab_footnote(
     footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
   locations = cells_column_labels(columns = n),
@@ -741,7 +724,7 @@ dt_asian_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping() %>%
+  )  %>%
   tab_footnote(
     footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
   locations = cells_column_labels(columns = n),
@@ -802,7 +785,7 @@ dt_black_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping() %>%
+  )  %>%
   tab_footnote(
     footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
   locations = cells_column_labels(columns = n),
@@ -859,7 +842,7 @@ dt_ethnic4 <- dt_hisp_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping() %>%
+  )  %>%
   tab_footnote(
     footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
   locations = cells_column_labels(columns = n),
@@ -918,7 +901,7 @@ dt_mideast_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping() %>%
+  )  %>%
   tab_footnote(
     footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
   locations = cells_column_labels(columns = n),
@@ -974,7 +957,7 @@ dt_hawi_summary <- which_eth %>% group_by(ethnicity) %>% dplyr::summarize(n=n(),
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping() %>%
+  )  %>%
   tab_footnote(
     footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
   locations = cells_column_labels(columns = n),
@@ -1033,7 +1016,7 @@ dt_white_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping() %>%
+  )  %>%
   tab_footnote(
     footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
   locations = cells_column_labels(columns = n),
@@ -1188,7 +1171,7 @@ dt_language_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = language,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -1299,7 +1282,7 @@ dtgender <- dt_appearence_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = descr,
     )
-   ) %>% opt_row_striping()
+   ) 
 tab_footnote(
   dtgender,
   md("These response options are mutually exclusive categories; only one response may be selected."),
@@ -1352,7 +1335,7 @@ dt_sex2_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = body_part,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -1420,7 +1403,7 @@ dt_skincnc_type_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Type,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 boxp_funct(D_904550680_D_206625031, "Age Diagnosed with Skin Cancer", "Age")
@@ -1473,7 +1456,7 @@ gt_mh1<- dt_cardiov_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = cardiov,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -1645,7 +1628,7 @@ gt_mh2<- dt_resp_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = resp,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -1770,7 +1753,7 @@ gt_mh3<- dt_digest_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = digest,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -1932,7 +1915,7 @@ gt_mh4<- dt_thy_d_g_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = thy_d_g,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -2045,7 +2028,7 @@ gt_mh5<- dt_kidn_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = kidn,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -2149,7 +2132,7 @@ gt_mh6<- dt_sysoth_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = sysoth,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -2264,7 +2247,7 @@ gt_mh7<- dt_sti_std_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = sti_std,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -2423,7 +2406,7 @@ gt_mh8<- dt_urn_repro_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = urn_repro,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -2586,7 +2569,7 @@ gt_mh9<- dt_surgery_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = surgery,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -2713,7 +2696,7 @@ dt_breast_sg_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = breast_sg,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 tmp_Brst <- data_tib_m1 %>%  filter(data_tib_m1$D_624179836_D_533491176==1)
@@ -3006,7 +2989,7 @@ dt_painsc_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = descr,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 #Affected Work?
@@ -3179,7 +3162,7 @@ WGT1825_summary %>%  gt::gt() %>%
     locations = cells_body(
       columns = meds,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 # #weight loss (25-35) on purpose?
@@ -3213,7 +3196,7 @@ WGT2535_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = meds,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 # #weight loss (35-45) on purpose?
@@ -3247,7 +3230,7 @@ WGT3545_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = meds,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 # #weight loss (45-55) on purpose?
@@ -3281,7 +3264,7 @@ WGT4555_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = meds,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 #how did you lose the weight 18-25? ------------------------- have to wait for correct denomination when Tony adds the missing flag variables 
@@ -3327,7 +3310,7 @@ dt_wt1825_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = weight,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -3369,7 +3352,7 @@ dt_wt2535_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = weight,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -3411,7 +3394,7 @@ dt_wt3545_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = weight,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -3454,7 +3437,7 @@ dt_wt4555_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = weight,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 #where do you carry your body weight 
 
@@ -3490,7 +3473,7 @@ dt_wt_carry_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = weight,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 #shorter now than 20s/30s?
@@ -3558,7 +3541,7 @@ dt_fem_hair_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = hair,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 ```
@@ -3610,7 +3593,7 @@ dt_male_hair_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = hair,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 ```
@@ -4021,7 +4004,7 @@ dt_dad_age_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4064,7 +4047,7 @@ dt_dad_dthage_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4336,7 +4319,7 @@ dt_sibcanc1_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4368,7 +4351,7 @@ dt_sibmult2_2_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this n
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4400,7 +4383,7 @@ dt_sibmult2_3_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this n
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4432,7 +4415,7 @@ dt_sibmult2_4_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this n
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4464,7 +4447,7 @@ dt_sibmult2_5_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this n
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4496,7 +4479,7 @@ dt_sibmult2_6_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this n
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4528,7 +4511,7 @@ dt_sibmult2_6_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this n
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4560,7 +4543,7 @@ dt_sibmult2_6_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this n
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4595,7 +4578,7 @@ dt_sibcanc1_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4627,7 +4610,7 @@ dt_sibmult2_2_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this n
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4659,7 +4642,7 @@ dt_sibmult2_3_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this n
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4691,7 +4674,7 @@ dt_sibmult2_4_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this n
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4723,7 +4706,7 @@ dt_sibmult2_5_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this n
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4755,7 +4738,7 @@ dt_sibmult2_6_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this n
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4787,7 +4770,7 @@ dt_sibmult2_6_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this n
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4819,7 +4802,7 @@ dt_sibmult2_6_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this n
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4929,7 +4912,7 @@ dt_sibcanc1_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4986,7 +4969,7 @@ sibling_bd_canc <- dt_body_sibling_summary %>%  gt::gt(rowname_col = "row_lab") 
     locations = cells_body(
       columns = bodyp,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 sibling_bd_canc
 
@@ -5562,7 +5545,7 @@ dt_ch1_d_age_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 
 #2
 dt_ch2_d_age= data_tib_m1  %>%   filter(D_446999144>1)
@@ -5582,7 +5565,7 @@ dt_ch2_d_age_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 
 
 #3
@@ -5603,7 +5586,7 @@ dt_ch3_d_age_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 
 
 #4
@@ -5625,7 +5608,7 @@ dt_ch4_d_age_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 
 #5
 dt_ch5_d_age= data_tib_m1  %>% filter(D_446999144>4)
@@ -5646,7 +5629,7 @@ dt_ch5_d_age_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 
 #6
 dt_ch6_d_age= data_tib_m1  %>% filter(D_446999144>5)
@@ -5667,7 +5650,7 @@ dt_ch6_d_age_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 
 
 
@@ -5702,7 +5685,7 @@ dt_chd1_d_age_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 
 #2
 dt_chd2_d_age= data_tib_m1  %>%  filter(D_418392907_2_2==104430631)
@@ -5722,7 +5705,7 @@ dt_chd2_d_age_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 
 
 #3
@@ -5743,7 +5726,7 @@ dt_chd3_d_age_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 
 
 #4
@@ -5764,7 +5747,7 @@ dt_chd4_d_age_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 
 #5
 dt_chd5_d_age= data_tib_m1 %>% filter(D_418392907_5_5==104430631)
@@ -5784,7 +5767,7 @@ dt_chd5_d_age_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 
 #6
 dt_chd6_d_age= data_tib_m1  %>% filter(D_418392907_6_6==104430631)
@@ -5804,7 +5787,7 @@ dt_chd6_d_age_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 
 
 #CHILDCANC
@@ -5841,7 +5824,7 @@ dt_CHILDcanc1_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this n
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 #CHILCANC2
@@ -5920,7 +5903,7 @@ kid_bd_canc <- dt_body_kid_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = bodyp,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 kid_bd_canc
 
@@ -6202,7 +6185,7 @@ dt_edu_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-    locations = cells_body(columns = edlevel,)) %>% opt_row_striping()
+    locations = cells_body(columns = edlevel,)) 
 
  
 
@@ -6242,7 +6225,7 @@ dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Address1,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 #current ocupational category
@@ -6275,7 +6258,7 @@ dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Address1,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 #name of current employer
@@ -6307,7 +6290,7 @@ dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Address1,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 #type of business for current employer
@@ -6396,7 +6379,7 @@ dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Address1,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 #yrs at current job--739294356
@@ -6418,7 +6401,7 @@ work5_ans= work5 %>%  mutate(answer= case_when(D_847533056==353358909 ~ "Yes",
 
 dtwork5_summary <- work5_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtwork5_summary %>%  gt() %>%  
+dtwork5_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("WORK5: Current Job the Longest Held Job")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -6469,7 +6452,7 @@ dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Address1,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 #Occupational category for longest held job--OCCUPTN2
@@ -6501,7 +6484,7 @@ dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Address1,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 #employers name for longest held job--EMPLYR2
@@ -6533,7 +6516,7 @@ dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Address1,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 #type of business for longest held job 
@@ -6592,7 +6575,7 @@ dt_long_bus_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = category,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 #Products made/services provided for longest held job--EMPLYRSRVCE2
@@ -6624,7 +6607,7 @@ dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Address1,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 #yrs at longest held position 
 module1 %>% mutate(D_686172464=as.numeric(as.character(D_686172464))) %>%
@@ -6664,7 +6647,7 @@ dt_income_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-    locations = cells_body(columns = status,)) %>% opt_row_striping()
+    locations = cells_body(columns = status,)) 
 
 
 
@@ -6674,7 +6657,9 @@ dt_income_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 #Number of people in the house
 ##sum(table(module1$D_173508724 ))
 hist_funct(D_641651634_D_173508724, "Number of People in Household", "People", "Frequency")
-cat("Don't know number of people in household:", sum(table(module1$D_641651634_D_641651634_D_746038746==1)))
+cat("Don't know number of people in household:", as.numeric(sum(table(module1$D_641651634_D_641651634_D_746038746==1))))
+
+
 
 #ALTADDRESS1/ALTADDRESS2/ALTCONTACT1/ALTCONTACT2 won't list for PII reasons
   altcont1= data_tib_m1 %>%  mutate(Contact= case_when(!is.na(D_986275155_D_661719912) & !is.na(D_986275155_D_801653230)~"Gave Full Name",
@@ -6684,7 +6669,7 @@ cat("Don't know number of people in household:", sum(table(module1$D_641651634_D
 dt_altcont1_summary <- altcont1 %>% dplyr::group_by(Contact) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Contact, n, percentage)
 
 
-dt_altcont1_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_altcont1_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("ALTCONTACT1: Contact Name In Case Participant Cannot Be Reached")) %>% 
   cols_label(n= md("**Number of Participants**"),Contact = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -6711,7 +6696,7 @@ altcont2= data_tib_m1 %>%  mutate(Contact= case_when(!is.na(D_285718391_D_286149
                                                        TRUE~"Skipped Alternative Contact Info"))
 dt_altcont2_summary <- altcont2 %>% dplyr::group_by(Contact) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Contact, n, percentage)
 
-dt_altcont2_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_altcont2_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("ALTCONTACT2: Phone/Email of Alternative Contact")) %>% 
   cols_label(n= md("**Number of Participants**"),Contact = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
