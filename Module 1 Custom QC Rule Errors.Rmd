@@ -39,7 +39,7 @@ library(gtsummary)
 library(rio)
 
 
-library(stringr)
+
 library(ggplot2)
 library(gridExtra)
 library(scales)
@@ -53,8 +53,9 @@ library(reshape)  ###to work on transition from long to wide or wide to long dat
 library(listr) ###to work on a list of vector, files or..
 library(sqldf) ##sql
 library(lubridate) ###date time
+=======
 library(stringr) ###to work on patterns, characters
-library(kableExtra)
+
 
 options(tinytex.verbose = TRUE)
 
