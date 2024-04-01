@@ -1,0 +1,633 @@
+---
+title: "Aleah's Proposal"
+author: "Kelsey Dowling"
+date: "`r Sys.Date()`"
+header-includes:  
+    \usepackage{placeins}
+    
+output: 
+  pdf_document:
+    extra_dependencies: ["float"]
+    keep_tex: true
+
+---
+
+
+This report compares the counts of successful digital, traditional, and other marketing tactics across different demographics and analyses the significance of their differences. 
+
+Digital marketing recruitment methods include: Connect Web, IHCS Web, Email/Text Invite, Patient Portal Invite, Social Media Post, IHCS Newsletter, and Video. 
+
+Traditional marketing recruitment methods include: Mailed Letter, Phone Invite, Dr/Staff, Connect Staff at IHCS, Connect in News, Local News/TV/Radio, Family/Friend, Another Participant, Poster at IHCS, Table at Event, Recorded Message. 
+
+Other marketing recruitment method includes only 'Other'. Those who did not answer how they heard about the study are excluded.
+
+```{r libraries, include=FALSE}
+
+#All libraries are listed up top; authentication for BQ will be necessary.
+#Functions used included before the start of the analysis .
+#Currently filtered by gender, and will eventually be done by age groups as well (D_117249500).
+
+
+
+rm(list = ls())
+library(bigrquery)
+library(foreach)
+library(stringr)
+#library(plyr)
+#library(expss) ###to add labels
+library(epiDisplay) ##recommended applied here crosstable, tab1
+library(gmodels) ##recommended
+library(magrittr)
+library(arsenal)
+library(gtsummary)
+library(rio)
+
+
+
+library(ggplot2)
+library(gridExtra)
+library(scales)
+library(gt)
+#install(tinytex)
+library(tinytex)
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(reshape)  ###to work on transition from long to wide or wide to long data
+library(listr) ###to work on a list of vector, files or..
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(stringr) ###to work on patterns, charaters
+library(kableExtra)
+library(janitor)
+
+
+options(tinytex.verbose = TRUE)
+
+bq_auth()
+```
+
+
+```{r M1merge, include=FALSE}
+dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
+dd <- dplyr::bind_rows(dictionary,.id="CID")
+dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
+dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name')
+
+dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
+dd$CID <- rownames(dd)
+#https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
+devtools::install_github("tidyverse/reprex")
+
+project <- "nih-nci-dceg-connect-prod-6d04"
+billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be consistent
+##517311251 Date/time Status of Completion of Background and Overall Health                         SrvBOH_TmComplete_v1r0
+##949302066 Flag for Baseline Module Background and Overall Health                        SrvBOH_BaseStatus_v1r0
+recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
+                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935' and d_949302066 ='231311385'")
+recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
+cnames <- names(recr_m1)
+# Check that it doesn't match any non-number
+numbers_only <- function(x) !grepl("\\D", x)
+# to check variables in recr_noinact_wl1
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(recr_m1,varname)
+  recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+sql_M1_1 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
+sql_M1_2 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
+
+
+M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64") #1436 #1436 vars: 1507 01112023 
+M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64") #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
+
+mod1_v1 <- M1_V1
+cnames <- names(M1_V1)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v1,varname)
+  mod1_v1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+mod1_v2 <- M1_V2
+cnames <- names(M1_V2)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v2,varname)
+  mod1_v2[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+M1_V1.var <- colnames(M1_V1)
+M1_V2.var <- colnames(M1_V2)
+var.matched <- M1_V1.var[which(M1_V1.var %in% M1_V2.var)]
+length(var.matched)  #1275 #1278 vars 01112023 #1348 vars 05022023
+
+V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched] #232 #229 01112023 #159 05022023
+V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched] #253 #253 01112023 #545 05022023
+
+length(M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID])
+#[1] 59 with the completion of two versions of Module1 
+#[1] 62 with completing both versions of M1 ###double checked 03/28/2023
+#68 double checked 05/02/2023
+
+common.IDs <- M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID]
+M1_V1_common <- mod1_v1[,var.matched]
+
+M1_V2_common <- mod1_v2[,var.matched]
+M1_V1_common$version <- 1
+M1_V2_common$version <- 2
+
+##to check the completion of M1 among these duplicates
+partM1_dups <- recr_m1[which(recr_m1$Connect_ID %in% common.IDs),]
+table(partM1_dups$d_949302066)
+
+M1_common  <- rbind(M1_V1_common, M1_V2_common) #including 136 duplicates (version 1 and version 2) from 68 participants 05022023
+#M1_response <- matrix(data=NA, nrow=118, ncol=967)
+
+m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)] #230 vars 03282023 #160 vars 05/02/2023
+m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] #255 vars 03282023 #546 vars 05/02/2023
+m1_v1_only$version <- 1
+m1_v2_only$version <- 2
+#for (i in 1:length)
+##to check the completion in each version
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #1364 03282023 # 1370 05022023
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #4870 03282023 # 5731 05022023
+
+#library(janitor)
+
+m1_common <- rbind(M1_V1_common,M1_V2_common)
+m1_common_v1 <- base::merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
+m1_combined_v1v2 <- base::merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
+m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] #7289 including duplicates 05022023
+
+m1_complete <- m1_complete %>% arrange(desc(version)) 
+
+
+m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),] 
+table(m1_complete_nodup$version)
+
+
+
+demo <- "SELECT 
+Connect_ID, token,
+d_827220437, state_d_706256705, state_d_934298480, d_142654897_d_177402915, d_142654897_d_196856782, d_142654897_d_206879104, d_142654897_d_241590841, d_142654897_d_285130077, d_142654897_d_326825649, d_142654897_d_461488577, d_142654897_d_462314689, d_142654897_d_520301146, d_142654897_d_549687190, d_142654897_d_607081902, d_142654897_d_639721694, d_142654897_d_642287621, d_142654897_d_684726272, d_142654897_d_791389099, d_142654897_d_819377306, d_142654897_d_829269606, d_142654897_d_942255248, d_142654897_d_967372009, d_335767902, d_914594314, state_d_849518448, state_d_706256705, d_949302066
+ FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where d_919254129= '353358909'"
+demo_table <- bq_project_query(project, demo)
+site_demographics <- bq_table_download(demo_table, bigint = "integer64")
+
+site_demographics$Connect_ID <- as.numeric(site_demographics$Connect_ID) ###need to convert type- m1... is double and demo is character
+
+proposal= left_join(m1_complete_nodup, site_demographics, by="Connect_ID") 
+dim(proposal)
+```
+
+
+
+```{r labeling, warning=FALSE, echo=FALSE, message=FALSE}
+
+#Race
+multi_race=0    
+for (i in 1:length(proposal$Connect_ID)){
+  AI=ifelse((proposal$D_384191091_D_384191091_D_583826374[[i]]==1 & (proposal$D_384191091_D_384191091_D_636411467[[i]]==1 | proposal$D_384191091_D_384191091_D_458435048[[i]]==1|
+                                                                      proposal$D_384191091_D_384191091_D_706998638[[i]]==1 | proposal$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                                      proposal$D_384191091_D_384191091_D_586825330[[i]]==1 | proposal$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                                      proposal$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  As=ifelse((proposal$D_384191091_D_384191091_D_636411467[[i]]==1 & (proposal$D_384191091_D_384191091_D_583826374[[i]]==1 | proposal$D_384191091_D_384191091_D_458435048[[i]]==1|
+                                                                      proposal$D_384191091_D_384191091_D_706998638[[i]]==1 | proposal$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                                      proposal$D_384191091_D_384191091_D_586825330[[i]]==1 | proposal$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                                      proposal$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Bl=ifelse((proposal$D_384191091_D_384191091_D_458435048[[i]]==1 & (proposal$D_384191091_D_384191091_D_583826374[[i]]==1 | proposal$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                                      proposal$D_384191091_D_384191091_D_706998638[[i]]==1 | proposal$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                                      proposal$D_384191091_D_384191091_D_586825330[[i]]==1 | proposal$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                                      proposal$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Hs=ifelse((proposal$D_384191091_D_384191091_D_706998638[[i]]==1 & (proposal$D_384191091_D_384191091_D_583826374[[i]]==1 | proposal$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                                      proposal$D_384191091_D_384191091_D_458435048[[i]]==1 | proposal$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                                      proposal$D_384191091_D_384191091_D_586825330[[i]]==1 | proposal$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                                      proposal$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Me=ifelse((proposal$D_384191091_D_384191091_D_973565052[[i]]==1 & (proposal$D_384191091_D_384191091_D_583826374[[i]]==1 | proposal$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                                      proposal$D_384191091_D_384191091_D_458435048[[i]]==1 | proposal$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                                      proposal$D_384191091_D_384191091_D_586825330[[i]]==1 | proposal$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                                      proposal$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Hw=ifelse((proposal$D_384191091_D_384191091_D_586825330[[i]]==1 & (proposal$D_384191091_D_384191091_D_583826374[[i]]==1 | proposal$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                                      proposal$D_384191091_D_384191091_D_458435048[[i]]==1 | proposal$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                                      proposal$D_384191091_D_384191091_D_973565052[[i]]==1 | proposal$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                                      proposal$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Wh=ifelse((proposal$D_384191091_D_384191091_D_412790539[[i]]==1 & (proposal$D_384191091_D_384191091_D_583826374[[i]]==1 | proposal$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                                      proposal$D_384191091_D_384191091_D_458435048[[i]]==1 | proposal$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                                      proposal$D_384191091_D_384191091_D_586825330[[i]]==1 | proposal$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                                      proposal$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Ot=ifelse((proposal$D_384191091_D_384191091_D_807835037[[i]]==1 & (proposal$D_384191091_D_384191091_D_583826374[[i]]==1 | proposal$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                                      proposal$D_384191091_D_384191091_D_458435048[[i]]==1 | proposal$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                                      proposal$D_384191091_D_384191091_D_586825330[[i]]==1 | proposal$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                                      proposal$D_384191091_D_384191091_D_412790539[[i]]==1)), 1, 0)
+  multi_race= multi_race + sum(AI+As+Bl+Hs+Me+Hw+Wh+Ot, na.rm=T)
+  
+}
+
+
+
+proposal$multi_racial <- c(rep(1, times=multi_race), rep(0, times=(dim(proposal)[1]- multi_race)))
+
+
+proposal= proposal %>%  mutate(Race= case_when(multi_racial==1 ~ "Multi-Racial",
+                                                    D_384191091_D_384191091_D_583826374==1 ~ "American Indian or Native American",
+                                                    D_384191091_D_384191091_D_636411467==1 ~ "Asian/Asian American",
+                                                    D_384191091_D_384191091_D_458435048==1 ~ "Black, African American, or African",
+                                                    D_384191091_D_384191091_D_706998638==1 ~ "Hispanic, Latino, or Spanish",
+                                                    D_384191091_D_384191091_D_973565052==1 ~ "Middle Eastern or North African",
+                                                    D_384191091_D_384191091_D_586825330==1 ~ "Hawaiian or Pacific Islander",
+                                                    D_384191091_D_384191091_D_412790539==1 ~ "White",
+                                                    (D_384191091_D_384191091_D_807835037==1 | !is.na(D_384191091_D_747350323)) ~ "Other",
+                                                    D_384191091_D_384191091_D_746038746==1 ~ "Prefer Not to Answer",
+                                                    TRUE  ~ "Skipped this question "),
+                               Income= case_when(D_759004335==209571450 ~ "35,000-49,000",
+                                                  D_759004335==212249150 ~ "50,000-74,000",
+                                                  D_759004335==374508062 ~ "0-9,000",
+                                                  D_759004335==530094502 ~ "Error- Unlisted Response Selected", 
+                                                  D_759004335==742032816 ~ "200,000+", 
+                                                  D_759004335==745561936 ~ "25,000-34,000",
+                                                  D_759004335==746038746 ~ "Prefer not to Answer",
+                                                  D_759004335==777814771 ~ "75,000-99,000", 
+                                                  D_759004335==913602274 ~ "150,000-199,000", 
+                                                  D_759004335==922395188 ~ "100,000-149,000",
+                                                  D_759004335==976555124 ~ "10,000-24,000",
+                                                  D_759004335==178420302 ~ "Unknown",
+                                                  TRUE ~ "Skipped This Question"),
+                               Education= case_when(D_367803647_D_367803647==978204320 ~ "Grade School(Grades 1-8)",
+                                                  D_367803647_D_367803647==935502060 ~ "Some High School, No Diploma",
+                                                  D_367803647_D_367803647==404564707 ~ "High School Graduate or GED",
+                                                  D_367803647_D_367803647==432193665 ~ "Some College, No Degree",
+                                                  D_367803647_D_367803647==890756124 ~ "Technical or Trade School After High School",
+                                                  D_367803647_D_367803647==766964355 ~ "Associate's Degree",
+                                                  D_367803647_D_367803647==875342283 ~ "Bachelor's Degree",
+                                                  D_367803647_D_367803647==598242454 ~ "Advanced Degree",
+                                                  D_367803647_D_367803647==807835037 ~ "Other",
+                                                  TRUE ~ "Skipped This Question"),
+                               Sex = case_when(D_407056417 == 536341288 ~ "Female",
+                                               D_407056417 == 654207589 ~ "Male",
+                                               D_407056417 == 576796184 ~ "Intersex or Other",
+                                               TRUE ~ "Missing"),
+                        Age = case_when(state_d_934298480 == 713781738 ~ "30-34",
+                                        state_d_934298480 == 631272782 ~ "35-39",
+                                        state_d_934298480 == 124276120 ~ "40-45",
+                                        state_d_934298480 == 450985724 ~ "46-50",
+                                        state_d_934298480 == 363147933 ~ "51-55",
+                                        state_d_934298480 == 636706443 ~ "56-60",
+                                        state_d_934298480 == 771230670 ~ "61-65",
+                                        state_d_934298480 == 722846087 ~ "66-70"),
+                        Site= case_when(d_827220437 == 531629870 ~ "HealthPartners", 
+                                        d_827220437 ==548392715 ~ "Henry Ford Health System", 
+                                        d_827220437 == 125001209 ~ "Kaiser Permanente Colorado",
+                                        d_827220437 == 327912200 ~ "Kaiser Permanente Georgia",
+                                        d_827220437 == 300267574 ~ "Kaiser Permanente Hawaii",
+                                        d_827220437 == 452412599 ~ "Kaiser Permanente Northwest",
+                                        d_827220437 == 303349821 ~ "Marshfield Clinic Health System",
+                                        d_827220437 == 657167265 ~ "Sanford Health", 
+                                        d_827220437 == 809703864 ~ "University of Chicago Medicine",
+                                        d_827220437 == 517700004 | d_827220437 == 13 ~ "National Cancer Institute",
+                                        d_827220437 == 181769837 ~ "Other"))
+
+proposal$Income <- factor(proposal$Income,levels=c("0-9,000","10,000-24,000","25,000-34,000","35,000-49,000","50,000-74,000","75,000-99,000","100,000-149,000","150,000-199,000",
+                                         "200,000+","Prefer not to Answer","Unknown","Error- Unlisted Response Selected","Skipped This Question"))
+proposal$Education <- factor(proposal$Education,levels=c("Grade School(Grades 1-8)", "Some High School, No Diploma", "High School Graduate or GED","Some College, No Degree","Technical or Trade School After High School","Associate's Degree","Bachelor's Degree","Advanced Degree", "Other", "Skipped This Question"))
+proposal$Age <- factor(proposal$Age,levels=c("30-34","35-39","40-45","46-50","51-55","56-60","61-65","66-70"))
+
+
+
+```
+
+\newpage
+# Module 1 Completed: All demographics defined
+\FloatBarrier
+
+```{r tables, warning=FALSE, echo=FALSE, message=FALSE, results='asis'}
+
+#Aleah needs these to be consented participants only with All consented participants from the start of recruitment in June 2021 until March 1st, 2024.
+
+
+#Dates refer to verification date
+proposal_aleah <- proposal %>%  filter( as.Date(d_914594314) < "2024-03-02")
+
+
+#digital includes:  Connect Web, IHCS Web, Email/Text Invite, Patient Portal, Social Media Post, IHCS Newsletter, Video
+#traditional includes: Mailed Letter, Phone Invite, Dr/Staff, Connect Staff at IHCS, Connect in News, Local News/TV/Radio, Family/Friend, Another Participant, Poster at IHCS, Table at Event, Recorded Message
+proposal_aleah <- proposal_aleah %>%  mutate(marketing = case_when((d_142654897_d_461488577==353358909 | d_142654897_d_607081902==353358909 |
+                                                                      d_142654897_d_241590841==353358909 | d_142654897_d_206879104==353358909 |
+                                                                      d_142654897_d_642287621==353358909 | d_142654897_d_285130077==353358909|
+                                                                      d_142654897_d_684726272==353358909) ~ "Digital",
+                                                                   (d_142654897_d_942255248==353358909 | d_142654897_d_639721694==353358909 |
+                                                                      d_142654897_d_196856782==353358909 | d_142654897_d_177402915==353358909 |
+                                                                      d_142654897_d_791389099==353358909 | d_142654897_d_520301146==353358909|
+                                                                      d_142654897_d_549687190==353358909 | d_142654897_d_326825649==353358909 | 
+                                                                      d_142654897_d_819377306==353358909 | d_142654897_d_829269606==353358909 |
+                                                                      d_142654897_d_967372009==353358909) ~ "Traditional",
+                                                                   d_142654897_d_462314689==353358909 ~ "Other",
+                                                             TRUE ~ "Skipped")) %>%  filter(marketing!="Skipped")
+
+proposal_aleah$marketing <- factor(proposal_aleah$marketing,levels=c("Digital","Traditional","Other"))
+
+# Define your demographic variables
+demographics <- c("Age", "Race", "Sex", "Income", "Education", "Site")
+
+
+# Loop through each demographic
+for (demo in demographics) {
+  # Generate cross-tabulation
+  compare <- proposal_aleah %>%
+    tbl_cross(
+      row = !!sym(demo),
+      col = marketing,
+      label = list(marketing ~ "Marketing Strategies", !!sym(demo) ~ demo),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total Consented Recruits"
+    )
+  
+  # Perform necessary modifications
+  compare[["table_body"]]$stat_0 <- sapply(strsplit(compare[["table_body"]]$stat_0, " "), "[", 1)
+  
+  # Generate table
+  compare_table <- compare %>%
+    modify_header() %>%
+    modify_caption(paste("Marketing Strategy Counts by", demo)) %>%
+    as_kable_extra(escape = FALSE, addtl_fmt = TRUE) %>% kable_styling(latex_options = "scale_down")
+  
+  # Add footnote with ifelse statement
+chi <- chisq.test(table(proposal_aleah[[demo]], proposal_aleah$marketing))
+footnote <- ifelse(chi$p.value < 0.05,
+                   paste0("With a p-value of ", chi$p.value, 
+                          ", we have evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."),
+                   paste0("With a p-value over 0.05, we have no evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."))
+compare_table <- add_footnote(compare_table, footnote)
+  
+   # Save the table with dynamic variable name
+  assign(paste0(demo, "_compare"), compare_table, envir = .GlobalEnv)
+  
+  # Print or save the table as desired
+  print(compare_table)
+}
+
+```
+
+\FloatBarrier
+
+```{r test_chi, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+
+
+## All significant 
+age_chi <- chisq.test(table(proposal_aleah$Age, proposal_aleah$marketing))
+race_chi <- chisq.test(table(proposal_aleah$Race, proposal_aleah$marketing))
+sex_chi <- chisq.test(table(proposal_aleah$Sex, proposal_aleah$marketing))
+inc_chi <- chisq.test(table(proposal_aleah$Income, proposal_aleah$marketing))
+ed_chi <- chisq.test(table(proposal_aleah$Education, proposal_aleah$marketing))
+site_chi <- chisq.test(table(proposal_aleah$Site, proposal_aleah$marketing))
+
+if (age_chi$p.value < 0.05) {
+  cat("With a p-value of", age_chi$p.value, "we have evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by age.")
+} else {
+  cat("With a p-value over 0.05, we have not evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by age.") }
+
+
+if (race_chi$p.value < 0.05) {
+  cat("With a p-value of", race_chi$p.value, "we have evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by race.")
+} else {
+  cat("With a p-value over 0.05, we have not evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by race.") }
+
+
+if (sex_chi$p.value < 0.05) {
+  cat("With a p-value of", sex_chi$p.value, "we have evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by sex.")
+} else {
+  cat("With a p-value over 0.05, we have not evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by sex.") }
+
+
+if (inc_chi$p.value < 0.05) {
+  cat("With a p-value of", inc_chi$p.value, "we have evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by income level.")
+} else {
+  cat("With a p-value over 0.05, we have not evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by income level.") }
+
+
+if (ed_chi$p.value < 0.05) {
+  cat("With a p-value of", ed_chi$p.value, "we have evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by education level.")
+} else {
+  cat("With a p-value over 0.05, we have not evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by education level.") }
+
+
+
+if (site_chi$p.value < 0.05) {
+  cat("With a p-value of", site_chi$p.value, "we have evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by site.")
+} else {
+  cat("With a p-value over 0.05, we have not evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by site.") }
+
+
+
+
+
+```
+
+\FloatBarrier
+\newpage
+# Module 1 not completed: Site defined demographics
+\FloatBarrier
+```{r site_labeling, warning=FALSE, echo=FALSE, message=FALSE}
+
+site_demographics= site_demographics %>%  filter(d_949302066 !=231311385) %>% 
+                                mutate(Race= case_when(state_d_849518448==768826601 ~ "White, Non-Hispanic",
+                                                       state_d_849518448==181769837 ~ "Other",
+                                                       state_d_849518448==178420302 ~ "Unavailable/Unknown"),
+                               Sex = case_when(state_d_706256705 == 536341288 ~ "Female",
+                                               state_d_706256705 == 654207589 ~ "Male",
+                                               state_d_706256705 == 830573274 ~ "Intersex or Other",
+                                               state_d_706256705==178420302 ~ "Unavailable/Unknown"),
+                        Age = case_when(state_d_934298480 == 713781738 ~ "30-34",
+                                        state_d_934298480 == 631272782 ~ "35-39",
+                                        state_d_934298480 == 124276120 ~ "40-45",
+                                        state_d_934298480 == 450985724 ~ "46-50",
+                                        state_d_934298480 == 363147933 ~ "51-55",
+                                        state_d_934298480 == 636706443 ~ "56-60",
+                                        state_d_934298480 == 771230670 ~ "61-65",
+                                        state_d_934298480 == 722846087 ~ "66-70"),
+                        Site= case_when(d_827220437 == 531629870 ~ "HealthPartners", 
+                                        d_827220437 ==548392715 ~ "Henry Ford Health System", 
+                                        d_827220437 == 125001209 ~ "Kaiser Permanente Colorado",
+                                        d_827220437 == 327912200 ~ "Kaiser Permanente Georgia",
+                                        d_827220437 == 300267574 ~ "Kaiser Permanente Hawaii",
+                                        d_827220437 == 452412599 ~ "Kaiser Permanente Northwest",
+                                        d_827220437 == 303349821 ~ "Marshfield Clinic Health System",
+                                        d_827220437 == 657167265 ~ "Sanford Health", 
+                                        d_827220437 == 809703864 ~ "University of Chicago Medicine",
+                                        d_827220437 == 517700004 | d_827220437 == 13 ~ "National Cancer Institute",
+                                        d_827220437 == 181769837 ~ "Other"))
+
+site_demographics$Age <- factor(site_demographics$Age,levels=c("30-34","35-39","40-45","46-50","51-55","56-60","61-65","66-70"))
+
+```
+\FloatBarrier
+
+
+```{r site_tables, warning=FALSE, echo=FALSE, message=FALSE, results='asis'}
+
+
+
+#Aleah needs these to be consented participants only with All consented participants from the start of recruitment in June 2021 until March 1st, 2024.
+
+
+#Dates refer to verification date
+site_demographics <- site_demographics %>%  filter( as.Date(d_914594314) < "2024-03-02")
+
+
+#digital includes:  Connect Web, IHCS Web, Email/Text Invite, Patient Portal, Social Media Post, IHCS Newsletter, Video
+#traditional includes: Mailed Letter, Phone Invite, Dr/Staff, Connect Staff at IHCS, Connect in News, Local News/TV/Radio, Family/Friend, Another Participant, Poster at IHCS, Table at Event, Recorded Message
+site_demographics <- site_demographics %>%  mutate(marketing = case_when((d_142654897_d_461488577==353358909 | d_142654897_d_607081902==353358909 |
+                                                                      d_142654897_d_241590841==353358909 | d_142654897_d_206879104==353358909 |
+                                                                      d_142654897_d_642287621==353358909 | d_142654897_d_285130077==353358909|
+                                                                      d_142654897_d_684726272==353358909) ~ "Digital",
+                                                                   (d_142654897_d_942255248==353358909 | d_142654897_d_639721694==353358909 |
+                                                                      d_142654897_d_196856782==353358909 | d_142654897_d_177402915==353358909 |
+                                                                      d_142654897_d_791389099==353358909 | d_142654897_d_520301146==353358909|
+                                                                      d_142654897_d_549687190==353358909 | d_142654897_d_326825649==353358909 | 
+                                                                      d_142654897_d_819377306==353358909 | d_142654897_d_829269606==353358909 |
+                                                                      d_142654897_d_967372009==353358909) ~ "Traditional",
+                                                                   d_142654897_d_462314689==353358909 ~ "Other",
+                                                             TRUE ~ "Skipped")) %>%  filter(marketing!="Skipped")
+site_demographics$marketing <- factor(site_demographics$marketing,levels=c("Digital","Traditional","Other"))
+
+# Define your demographic variables
+demographics <- c("Age", "Race", "Sex",  "Site")
+
+
+# Loop through each demographic
+for (demo in demographics) {
+  # Generate cross-tabulation
+  compare <- site_demographics %>%
+    tbl_cross(
+      row = !!sym(demo),
+      col = marketing,
+      label = list(marketing ~ "Marketing Strategies", !!sym(demo) ~ demo),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total Consented Recruits"
+    )
+  
+  # Perform necessary modifications
+  compare[["table_body"]]$stat_0 <- sapply(strsplit(compare[["table_body"]]$stat_0, " "), "[", 1)
+  
+  # Generate table
+  compare_table <- compare %>%
+    modify_header() %>%
+    modify_caption(paste("Marketing Strategy Counts by", demo)) %>%
+    as_kable_extra(escape = FALSE, addtl_fmt = TRUE) %>% kable_styling(latex_options = "scale_down")
+  
+    # Add footnote with ifelse statement
+chi <- chisq.test(table(proposal_aleah[[demo]], proposal_aleah$marketing))
+footnote <- ifelse(chi$p.value < 0.05,
+                   paste0("With a p-value of ", chi$p.value, 
+                          ", we have evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."),
+                   paste0("With a p-value over 0.05, we have no evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."))
+compare_table <- add_footnote(compare_table, footnote)
+  
+   # Save the table with dynamic variable name
+  assign(paste0(demo, "_compare"), compare_table, envir = .GlobalEnv)
+  
+  # Print or save the table as desired
+  print(compare_table)
+
+}
+
+
+
+
+```
+
+\FloatBarrier
+
+```{r site_test_chi, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+
+
+## All significant 
+age_chi <- chisq.test(table(site_demographics$Age, site_demographics$marketing))
+race_chi <- chisq.test(table(site_demographics$Race, site_demographics$marketing))
+sex_chi <- chisq.test(table(site_demographics$Sex, site_demographics$marketing))
+site_chi <- chisq.test(table(site_demographics$Site, site_demographics$marketing))
+
+if (age_chi$p.value < 0.05) {
+  cat("With a p-value of", age_chi$p.value, "we have evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by age.")
+} else {
+  cat("With a p-value over 0.05, we have not evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by age.") }
+
+
+if (race_chi$p.value < 0.05) {
+  cat("With a p-value of", race_chi$p.value, "we have evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by race.")
+} else {
+  cat("With a p-value over 0.05, we have not evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by race.") }
+
+
+if (sex_chi$p.value < 0.05) {
+  cat("With a p-value of", sex_chi$p.value, "we have evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by sex.")
+} else {
+  cat("With a p-value over 0.05, we have not evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by sex.") }
+
+
+if (site_chi$p.value < 0.05) {
+  cat("With a p-value of", site_chi$p.value, "we have evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by site.")
+} else {
+  cat("With a p-value over 0.05, we have not evidence that there is a signifiance in the \n difference of digital marketing success and traditional marketing success by site.") }
+
+
+
+
+
+```
+
+\newpage
+```{r site_tables_loops, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+
+# Define your demographic variables
+demographics <- c("Age", "Race", "Sex", "Site")
+
+# Loop through each demographic
+for (demo in demographics) {
+  # Generate cross-tabulation
+  compare <- site_demographics %>%
+    tbl_cross(
+      row = !!sym(demo),
+      col = marketing,
+      label = list(marketing ~ "Marketing Strategies", !!sym(demo) ~ demo),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total Consented Recruits"
+    )
+  
+  # Perform necessary modifications
+  compare[["table_body"]]$stat_0 <- sapply(strsplit(compare[["table_body"]]$stat_0, " "), "[", 1)
+  
+  # Generate table
+  compare_table <- compare %>%
+    modify_header() %>%
+    modify_caption(paste("Marketing Strategy Counts by", demo)) %>%
+    as_kable_extra(escape = FALSE, addtl_fmt = TRUE) %>% kable_styling(latex_options = "scale_down")
+  
+  # Print the table
+  print(compare_table)
+  
+  # Insert LaTeX command for float barrier
+  cat("\\FloatBarrier\n")
+  
+  # Perform Chi-squared test
+  chi <- chisq.test(table(site_demographics[[demo]], site_demographics$marketing))
+  if (chi$p.value < 0.05) {
+    cat("With a p-value of", chi$p.value, "we have evidence that there is a significance in the difference of digital marketing success and traditional marketing success by", demo, ".\\newpage")
+  } else {
+    cat("With a p-value over 0.05, we have not evidence that there is a significance in the difference of digital marketing success and traditional marketing success by", demo, ".\\newpage")
+  }
+  
+  # Print a separator between tables
+  #cat("\n")
+}
+
+```

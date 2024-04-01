@@ -595,7 +595,7 @@ plevel$descr <- factor(plevel$descr,levels=c("1","2","3","4","5","6","7","8","9"
 
 dt_painsc_summary <- plevel %>% dplyr::group_by(descr) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(descr, n, percentage) 
 
-dt_painsc_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_painsc_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("PAIN2: Rank of Pain")) %>% 
   cols_label(n= md("**Number of Participants**"), descr = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -628,7 +628,7 @@ affect$status <- factor(affect$status,levels=c("Not At All", "A Little Bit","A L
 
 dt_painaff_summary <- affect %>% dplyr::group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
 
-dt_painaff_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_painaff_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("PAIN3: Pain Affected Work")) %>% 
   cols_label(n= md("**Number of Participants**"), status = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -710,7 +710,7 @@ WGT1825= data_tib_base %>%  filter(diff25<(-0.05)) %>%  mutate(meds= case_when(D
 WGT1825_summary <- WGT1825 %>% group_by(meds) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
 
 
-WGT1825_summary %>%  gt() %>%  
+WGT1825_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Weight Loss Between 18-25 Years Old Purposeful")) %>% 
   cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -738,7 +738,7 @@ WGT2535= data_tib_base %>%  filter(diff35<(-0.05)) %>%  mutate(meds= case_when(D
 WGT2535_summary <- WGT2535 %>% group_by(meds) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
 
 
-WGT2535_summary %>%  gt(rowname_col = "row_lab") %>%  
+WGT2535_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Weight Loss Between 25-35 Years Old Purposeful")) %>% 
   cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -767,7 +767,7 @@ WGT3545= data_tib_base %>%  filter(diff45<(-0.05)) %>%  mutate(meds= case_when(D
 WGT3545_summary <- WGT3545 %>% group_by(meds) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
 
 
-WGT3545_summary %>%  gt(rowname_col = "row_lab") %>%  
+WGT3545_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Weight Loss Between 35-45 Years Old Purposeful")) %>% 
   cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -796,7 +796,7 @@ WGT4555= data_tib_base %>%  filter(diff55<(-0.05)) %>%  mutate(meds= case_when(D
 WGT4555_summary <- WGT4555 %>% group_by(meds) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
 
 
-WGT4555_summary %>%  gt(rowname_col = "row_lab") %>%  
+WGT4555_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Weight Loss Between 45-55 Years Old Purposeful")) %>% 
   cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -839,7 +839,7 @@ method$weight <- factor(method$weight,levels=c("Multiple Methods","Changed Diet"
 
 dt_wt1825_summary <- method %>% dplyr::group_by(weight) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(weight, n, percentage) 
 
-dt_wt1825_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_wt1825_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("WTLOSS2_1825: Method of Weight Loss Ages 18-25")) %>% 
   cols_label(n= md("**Number of Participants**"), weight = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -876,7 +876,7 @@ method$weight <- factor(method$weight,levels=c("Multiple Methods","Changed Diet"
 
 dt_wt2535_summary <- method %>% dplyr::group_by(weight) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(weight, n, percentage) 
 
-dt_wt2535_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_wt2535_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("WTLOSS2_2535: Method of Weight Loss Ages 25-35")) %>% 
   cols_label(n= md("**Number of Participants**"), weight = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -913,7 +913,7 @@ method$weight <- factor(method$weight,levels=c("Multiple Methods","Changed Diet"
 
 dt_wt3545_summary <- method %>% dplyr::group_by(weight) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(weight, n, percentage) 
 
-dt_wt3545_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_wt3545_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("WTLOSS2_3545: Method of Weight Loss Ages 35-45")) %>% 
   cols_label(n= md("**Number of Participants**"), weight = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -951,7 +951,7 @@ method$weight <- factor(method$weight,levels=c("Multiple Methods","Changed Diet"
 
 dt_wt4555_summary <- method %>%  dplyr::group_by(weight) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(weight, n, percentage) 
 
-dt_wt4555_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_wt4555_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("WTLOSS2_4555: Method of Weight Loss Ages 45-55")) %>% 
   cols_label(n= md("**Number of Participants**"), weight = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -1006,7 +1006,7 @@ location$weight <- factor(location$weight,levels=c( "Chest/Shoulders","Waist/Sto
 
 dt_wt_carry_summary <- location %>% dplyr::group_by(weight) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(weight, n, percentage) 
 
-dt_wt_carry_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_wt_carry_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("CARWEIGHT: Location of Carrying Body Weight")) %>% 
   cols_label(n= md("**Number of Participants**"), weight = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -1047,7 +1047,7 @@ loss$hair <- factor(loss$hair,levels=c("(0)No hair loss", "(1) Mild Loss on Side
 
 dt_fem_hair_summary <- loss %>% dplyr::group_by(hair) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(hair, n, percentage) 
 
-dt_fem_hair_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_fem_hair_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Level of Hair Loss (Female)")) %>% 
   cols_label(n= md("**Number of Participants**"), hair = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -1094,7 +1094,7 @@ loss$hair <- factor(loss$hair,levels=c("(0)No hair loss", "(1) Mild Loss on Side
 
 dt_male_hair_summary <- loss %>%  dplyr::group_by(hair) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(hair, n, percentage) 
 
-dt_male_hair_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_male_hair_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Level of Hair Loss (Male)")) %>% 
   cols_label(n= md("**Number of Participants**"), hair = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -1158,7 +1158,7 @@ hrm2 <- hrm2_dx[, c(4,1,2)]
 skipped_mhg1 <- sum(table(dt_hrmed_typ$med=="Skipped this question")[2])
 hrm2[as.numeric(dim(hrm2)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(data_tib_base)[[1]])*100,2))
 
-dt_hrm2 <- hrm2 %>%  gt(rowname_col = "row_lab") %>%
+dt_hrm2 <- hrm2 %>%  gt::gt(rowname_col = "row_lab") %>%
   tab_header(title = md("HRMED2: Type of Hair Thinning Medication")) %>%
   cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"),  Condition = md("**Answer**")) %>%
   tab_options(
@@ -1313,7 +1313,7 @@ MULT2_1= MULT2_1 %>%  mutate(meds= case_when(D_807431780_1_1==353358909 ~ "Yes",
 MULT2_1_summary <- MULT2_1 %>% group_by(meds) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
 
 
-MULT2_1_summary %>%  gt(rowname_col = "row_lab") %>%  
+MULT2_1_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("MULT2_1: Sibling 1 Your Twin or Multiple")) %>% 
   cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -1388,7 +1388,7 @@ CHILD$meds <- factor(CHILD$meds,levels=c("0","1","2","3","4","5-9", "10 or more"
 
 CHILD_summary <- CHILD %>% group_by(meds) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
 
-CHILD_summary %>%  gt(rowname_col = "row_lab") %>%  
+CHILD_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("CHILD: Number of Children")) %>% 
   cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -1494,7 +1494,7 @@ work3= work3 %>%  mutate(Address1= case_when(is.na(D_627122657)~"Skipped this Qu
 dt_work3_summary <- work3 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
   
   
-dt_work3_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_work3_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("WORK3: Title of Current Job")) %>% 
   cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -1528,7 +1528,7 @@ home1skip= home1skip %>%  mutate(Address1= case_when(is.na(D_761310265)~"Skipped
 dt_home1skip_summary <- home1skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
   
   
-dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("OCCUPTN1: Occupation Category of Current Job")) %>% 
   cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -1561,7 +1561,7 @@ home1skip= home1skip %>%  mutate(Address1= case_when(is.na(D_434316600)~"Skipped
 dt_home1skip_summary <- home1skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
   
   
-dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("EMPLYR1:Name of Current Employer")) %>% 
   cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -1589,7 +1589,7 @@ home1skip= home1skip %>%  mutate(Address1= case_when(is.na(D_868232409)~"Skipped
 dt_home1skip_summary <- home1skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
   
   
-dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("EMPLYRSRVCE1: Products or Services of Current Employer")) %>% 
   cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -1626,7 +1626,7 @@ WORK4$answer <- factor(WORK4$answer,levels=c("0","1-10","11-20","21-30","31-40",
 
 WORK4_summary <- WORK4 %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-WORK4_summary %>%  gt(rowname_col = "row_lab") %>% 
+WORK4_summary %>%  gt::gt(rowname_col = "row_lab") %>% 
   fmt_number(columns = "percentage", decimals = 2) %>%
   tab_header(title = md("WORK4: Years at Current Job")) %>%
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
@@ -1657,7 +1657,7 @@ work5_ans= work5 %>%  mutate(answer= case_when(D_847533056==353358909 ~ "Yes",
 
 dtwork5_summary <- work5_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtwork5_summary %>%  gt() %>%  
+dtwork5_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("WORK5: Current Job the Longest Held Job")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -1689,7 +1689,7 @@ home1skip= home1skip %>%  mutate(Address1= case_when(is.na(D_118061122)~"Skipped
 dt_home1skip_summary <- home1skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
   
   
-dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("WORK7: Job Title (Longest Held Position")) %>% 
   cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -1721,7 +1721,7 @@ home1skip= home1skip %>%  mutate(Address1= case_when(is.na(D_279637054)~"Skipped
 dt_home1skip_summary <- home1skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
   
   
-dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("OCCUPTN2: Occupation Category of Longest Held Job")) %>% 
   cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -1751,7 +1751,7 @@ home1skip= home1skip %>%  mutate(Address1= case_when(is.na(D_988878019)~"Skipped
 dt_home1skip_summary <- home1skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
   
   
-dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("EMPLYR1:Name of Longest Employer")) %>% 
   cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -1777,7 +1777,7 @@ home1skip= home1skip %>%  mutate(Address1= case_when(is.na(D_233198706)~"Skipped
 dt_home1skip_summary <- home1skip %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
   
   
-dt_home1skip_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("EMPLYRSRVCE2: Products or Services of Longest Employer")) %>% 
   cols_label(n= md("**Number of Participants**"),Address1 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -1843,7 +1843,7 @@ cat("Don't know number of people in household:", sum(table(merged$D_641651634_D_
 dt_altcont1_summary <- altcont1 %>% dplyr::group_by(Contact) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Contact, n, percentage)
 
 
-dt_altcont1_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_altcont1_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("ALTCONTACT1: Contact Name In Case Participant Cannot Be Reached")) %>% 
   cols_label(n= md("**Number of Participants**"),Contact = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -1870,7 +1870,7 @@ altcont2= data_tib_base %>%  mutate(Contact= case_when(!is.na(D_285718391_D_2861
                                                        TRUE~"Skipped Alternative Contact Info"))
 dt_altcont2_summary <- altcont2 %>% dplyr::group_by(Contact) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Contact, n, percentage)
 
-dt_altcont2_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_altcont2_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("ALTCONTACT2: Phone/Email of Alternative Contact")) %>% 
   cols_label(n= md("**Number of Participants**"),Contact = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -2255,7 +2255,7 @@ simple_funct2 <- function(CID, Title){
   dt_select <- data_tib_all2 %>%  select(Connect_ID, !!CID_SYM)
   gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
   
-  gt_yn %>%  gt(rowname_col = "row_lab")  %>%  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md(Title)) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%  
@@ -2284,7 +2284,7 @@ one_logic_funct2 <- function(CID, CID_prev, Prev_Answer, Title){
   dt_select <- data_tib_all2 %>%  filter(!!CID_SYM_P == Prev_Answer) %>%  select(Connect_ID, !!CID_SYM) 
   gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
   
-  gt_yn %>%  gt(rowname_col = "row_lab")  %>%  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md(Title)) %>% 
   cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -2392,7 +2392,7 @@ skipped_mhg1 <- sum(table(mds$medications=="Skipped this question")[2])
 mgr1[as.numeric(dim(mgr1)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(data_tib_all2)[[1]])*100,2))
 
 
-dt_mgr1 <- mgr1 %>%  gt() %>%  
+dt_mgr1 <- mgr1 %>%  gt::gt() %>%  
   tab_header(title = md("PAINREL1: Pain Relievers Used 4x a Month for 6+ Months")) %>% 
   cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"),  Condition = md("**Answer**")) %>% 
   tab_options(
@@ -2501,7 +2501,7 @@ skipped_mhg1 <- sum(table(dt_reasons_P1$reasons=="Skipped this question")[2])
 pain7_1[as.numeric(dim(pain7_1)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P1)[[1]])*100,2))
 
 
-dt_pain7_1 <- pain7_1 %>%  gt() %>%  
+dt_pain7_1 <- pain7_1 %>%  gt::gt() %>%  
   fmt_number(columns = "Percentage", decimals = 2) %>% 
   tab_header(title = md("PAINREL7_1: Reasons for taking baby aspirin regularly")) %>% 
   cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Answer**"), Percentage = md("**Percentage of Participants**")) %>% 
@@ -2601,7 +2601,7 @@ skipped_mhg1 <- sum(table(dt_reasons_P2$reasons=="Skipped this question")[2])
 pain7_2[as.numeric(dim(pain7_2)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P2)[[1]])*100,2))
 
 
-dt_pain7_2 <- pain7_2 %>%  gt() %>%  
+dt_pain7_2 <- pain7_2 %>%  gt::gt() %>%  
   fmt_number(columns = "Percentage", decimals = 2) %>% 
   tab_header(title = md("PAINREL7_2: Reasons for taking regular aspirin regularly")) %>% 
   cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Answer**"), Percentage = md("**Percentage of Participants**")) %>% 
@@ -2703,7 +2703,7 @@ skipped_mhg1 <- sum(table(dt_reasons_P3$reasons=="Skipped this question")[2])
 pain7_3[as.numeric(dim(pain7_3)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P3)[[1]])*100,2))
 
 
-dt_pain7_3 <- pain7_3 %>%  gt() %>%  
+dt_pain7_3 <- pain7_3 %>%  gt::gt() %>%  
   fmt_number(columns = "Percentage", decimals = 2) %>% 
   tab_header(title = md("PAINREL7_3: Reasons for taking ibuprofen regularly")) %>% 
   cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Answer**"), Percentage = md("**Percentage of Participants**")) %>% 
@@ -2805,7 +2805,7 @@ skipped_mhg1 <- sum(table(dt_reasons_P4$reasons=="Skipped this question")[2])
 pain7_4[as.numeric(dim(pain7_4)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P4)[[1]])*100,2))
 
 
-dt_pain7_4 <- pain7_4 %>%  gt() %>%  
+dt_pain7_4 <- pain7_4 %>%  gt::gt() %>%  
   fmt_number(columns = "Percentage", decimals = 2) %>% 
   tab_header(title = md("PAINREL7_4: Reasons for taking Acetaminophen regularly")) %>% 
   cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Answer**"), Percentage = md("**Percentage of Participants**")) %>% 
@@ -2909,7 +2909,7 @@ skipped_mhg1 <- sum(table(dt_reasons_P5$reasons=="Skipped this question")[2])
 pain7_5[as.numeric(dim(pain7_5)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P5)[[1]])*100,2))
 
 
-dt_pain7_5 <- pain7_5 %>%  gt() %>%  
+dt_pain7_5 <- pain7_5 %>%  gt::gt() %>%  
   fmt_number(columns = "Percentage", decimals = 2) %>% 
   tab_header(title = md("PAINREL7_5: Reasons for taking Naproxen regularly")) %>% 
   cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Answer**"), Percentage = md("**Percentage of Participants**")) %>% 
@@ -3010,7 +3010,7 @@ skipped_mhg1 <- sum(table(dt_reasons_P6$reasons=="Skipped this question")[2])
 pain7_6[as.numeric(dim(pain7_6)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P6)[[1]])*100,2))
 
 
-dt_pain7_6 <- pain7_6 %>%  gt() %>%  
+dt_pain7_6 <- pain7_6 %>%  gt::gt() %>%  
   fmt_number(columns = "Percentage", decimals = 2) %>% 
   tab_header(title = md("PAINREL7_6: Reasons for taking Celebrex regularly")) %>% 
   cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Answer**"), Percentage = md("**Percentage of Participants**")) %>% 
@@ -3115,7 +3115,7 @@ skipped_mhg1 <- sum(table(dt_reasons_P7$reasons=="Skipped this question")[2])
 pain7_7[as.numeric(dim(pain7_7)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P7)[[1]])*100,2))
 
 
-pain7_7 <- pain7_7 %>%  gt() %>%  
+pain7_7 <- pain7_7 %>%  gt::gt() %>%  
   fmt_number(columns = "Percentage", decimals = 2) %>% 
   tab_header(title = md("PAINREL7_7: Reasons for taking Opiods regularly")) %>% 
   cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Answer**"), Percentage = md("**Percentage of Participants**")) %>% 
@@ -3162,7 +3162,7 @@ chlot$answer <- factor(chlot$answer,levels=c("Statins", "Anti-hypertensive medic
 
 chlot_summary <- chlot %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-chlot_summary %>%  gt() %>%  
+chlot_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("CHOLHTN: Ever Used Any Cholesterol or Blood Pressure (Hypertension) \n Medications 4x/month for 6+ Months")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -3350,7 +3350,7 @@ brand= data_tib_all2  %>%  mutate(med= case_when(D_643361372_D_933374659==1 ~ "P
 
 acid_sup_summary <- brand %>% group_by(med) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(med, n, percentage)
 
-acid_sup_summary %>%  gt() %>%  
+acid_sup_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("ACIDSUP: Used Acid Suppressive Drugs 4x/month for 6+ Months")) %>% 
   cols_label(n= md("**Number of Participants**"), med = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -3493,7 +3493,7 @@ regt$howlong <- factor(regt$howlong,levels=c("Never", "Within 1 year","1 to 2 ye
 dt_regt_summary <- regt %>% group_by(howlong) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(howlong, n, percentage)
 
 
-dt_regt_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_regt_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>%
   fmt_number(columns = "n", decimals = 0) %>%
   tab_header(title = md("MENSHIS2: Length of Time Unitl Menstrual Cycle Regular")) %>% 
@@ -3528,7 +3528,7 @@ mens_lgth$length <- factor(mens_lgth$length,levels=c("Too iregular/HIUD used", "
 dt_mens_lgth_summary <- mens_lgth %>% group_by(length) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(length, n, percentage)
 
 
-dt_mens_lgth_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_mens_lgth_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>%
   fmt_number(columns = "n", decimals = 0) %>%
   tab_header(title = md("MENSHIS3: Length of Menstrual Cycle Once Regular")) %>% 
@@ -3568,7 +3568,7 @@ mens_lgth$length <- factor(mens_lgth$length,levels=c("Haven't had one","Frequenc
 dt_mens_lgt_summary <- mens_lgth %>% group_by(length) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(length, n, percentage)
 
 
-dt_mens_lgt_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_mens_lgt_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>%
   fmt_number(columns = "n", decimals = 0) %>%
   tab_header(title = md("MENSHIS5: Usual Length of Menstrual Cycle in the last 12 months")) %>% 
@@ -3613,7 +3613,7 @@ reasonpd= nopd %>%  mutate(length= case_when(D_614145455_D_614145455=="330745988
 dt_reasonpd_summary <- reasonpd %>% group_by(length) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(length, n, percentage)
 
 
-dt_reasonpd_summary %>%  gt(rowname_col = "row_lab") %>%  
+dt_reasonpd_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>%
   fmt_number(columns = "n", decimals = 0) %>%
   tab_header(title = md("MENSHIS7: Reason You Haven't Had Period")) %>% 
@@ -3684,7 +3684,7 @@ skipped_lang1 <- sum(table(expr$symptoms=="Skipped this question")[2])
 lang1[as.numeric(dim(lang1)[[1]])+1,] <- c("Skipped this Question", skipped_lang1, round((skipped_lang1/dim(expr)[[1]])*100,2))
 
 
-dt_lang1 <- lang1 %>%  gt(rowname_col = "row_lab") %>%  
+dt_lang1 <- lang1 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "Percentage", decimals = 2) %>% 
   tab_header(title = md("MENSHIS9: Experienced the following")) %>% 
   cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"),  Condition = md("**Answer**")) %>% 
@@ -3759,7 +3759,7 @@ out_preg1= out_preg1 %>%  mutate(outcome= case_when(D_391951010_1_1=="223216393"
 dt_out_preg1_summary <- out_preg1 %>% group_by(outcome) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(outcome, n, percentage)
 
 
-dt_out_preg1_summary %>%  gt() %>%  
+dt_out_preg1_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>%
   fmt_number(columns = "n", decimals = 0) %>%
   tab_header(title = md("PREG5_1: Outcome of First Pregnancy")) %>% 
@@ -3797,7 +3797,7 @@ out_preg2= out_preg2 %>%  mutate(outcome= case_when(D_391951010_2_2=="223216393"
 dt_out_preg2_summary <- out_preg2 %>% group_by(outcome) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(outcome, n, percentage)
 
 
-dt_out_preg2_summary %>%  gt() %>%  
+dt_out_preg2_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>%
   fmt_number(columns = "n", decimals = 0) %>%
   tab_header(title = md("PREG5_2: Outcome of Second Pregnancy")) %>% 
@@ -3836,7 +3836,7 @@ out_preg3= out_preg3 %>%  mutate(outcome= case_when(D_391951010_3_3=="223216393"
 dt_out_preg3_summary <- out_preg3 %>% group_by(outcome) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(outcome, n, percentage)
 
 
-dt_out_preg3_summary %>%  gt() %>%  
+dt_out_preg3_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>%
   fmt_number(columns = "n", decimals = 0) %>%
   tab_header(title = md("PREG5_3: Outcome of Third Pregnancy")) %>% 
@@ -3874,7 +3874,7 @@ out_preg4= out_preg4 %>%  mutate(outcome= case_when(D_391951010_4_4=="223216393"
 dt_out_preg4_summary <- out_preg4 %>% group_by(outcome) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(outcome, n, percentage)
 
 
-dt_out_preg4_summary %>%  gt() %>%  
+dt_out_preg4_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>%
   fmt_number(columns = "n", decimals = 0) %>%
   tab_header(title = md("PREG5_4: Outcome of Fourth Pregnancy")) %>% 
@@ -3909,7 +3909,7 @@ preg6_1_ans= fb_preg6_1 %>%  mutate(answer= case_when(D_281494550_1_1==582602017
 
 dtpreg6_1_summary <- preg6_1_ans %>% group_by(answer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtpreg6_1_summary %>%  gt() %>%  
+dtpreg6_1_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("PREG6_1: Infants delivered during first pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -3941,7 +3941,7 @@ preg6_2_ans= fb_preg6_2  %>%  mutate(answer= case_when(D_281494550_2_2==58260201
 dtpreg6_2_summary <- preg6_2_ans %>% group_by(answer) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 #gtm3_print
 
-dtpreg6_2_summary %>%  gt() %>%  
+dtpreg6_2_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("PREG6_2: Infants delivered during second pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -3971,7 +3971,7 @@ preg6_3_ans= fb_preg6_3 %>%  mutate(answer= case_when(D_281494550_3_3==582602017
                                              TRUE ~ "Skipped this question"))
 
 dtpreg6_3_summary <- preg6_3_ans %>% group_by(answer) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
-dtpreg6_3_summary %>%  gt() %>%  
+dtpreg6_3_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("PREG6_3: Infants delivered during second pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4000,7 +4000,7 @@ preg6_4_ans= fb_preg6_4 %>%  mutate(answer= case_when(D_281494550_4_4==582602017
 
 dtpreg6_4_summary <- preg6_4_ans %>% group_by(answer) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtpreg6_4_summary %>%  gt() %>%  
+dtpreg6_4_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("PREG6_4: Infants delivered during second pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4035,7 +4035,7 @@ preg7_1_ans= fb %>%  filter(fb$D_391951010_1_1==628445697 | fb$D_391951010_1_1==
 
 dtpreg7_1_summary <- preg7_1_ans %>% group_by(answer) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtpreg7_1_summary %>%  gt() %>%  
+dtpreg7_1_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("PREG7_1: Method of delivery during first pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4063,7 +4063,7 @@ preg7_1_ans=  fb %>%  filter(fb$D_391951010_1_1==628445697 | fb$D_391951010_1_1=
 
 dtpreg7_1_summary <- preg7_1_ans %>% group_by(answer) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtpreg7_1_summary %>%  gt() %>%  
+dtpreg7_1_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("PREG7_1: Method of delivery during first pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4090,7 +4090,7 @@ preg7_2_ans= fb %>%  filter(fb$D_391951010_2_2==628445697 | fb$D_391951010_2_2==
 
 dtpreg7_2_summary <- preg7_2_ans %>% group_by(answer) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtpreg7_2_summary %>%  gt() %>%  
+dtpreg7_2_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Preg7_2: Method of delivery during second pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4118,7 +4118,7 @@ preg7_3_ans= fb %>%  filter(fb$D_391951010_3_3==628445697 | fb$D_391951010_3_3==
 
 dtpreg7_3_summary <- preg7_3_ans %>% group_by(answer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtpreg7_3_summary %>%  gt() %>%  
+dtpreg7_3_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Preg7_3: Method of delivery during third pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4144,7 +4144,7 @@ preg7_4_ans= fb %>%  filter(fb$D_391951010_4_4==628445697 | fb$D_391951010_4_4==
 
 dtpreg7_4_summary <- preg7_4_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtpreg7_4_summary %>%  gt() %>%  
+dtpreg7_4_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Preg7_4: Method of delivery during fourth pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4174,7 +4174,7 @@ preg8_1_ans= fb %>%  filter(fb$D_391951010_1_1==628445697 | fb$D_391951010_1_1==
 
 dtpreg8_1_summary <- preg8_1_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtpreg8_1_summary %>%  gt() %>%  
+dtpreg8_1_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Preg8_1: Breast fed during first pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4201,7 +4201,7 @@ preg8_1_ans= fb %>%  filter(fb$D_391951010_1_1==628445697 | fb$D_391951010_1_1==
 
 dtpreg8_1_summary <- preg8_1_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtpreg8_1_summary %>%  gt() %>%  
+dtpreg8_1_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Preg8_1: Breast fed during first pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4230,7 +4230,7 @@ preg8_2_ans= fb %>%  filter(fb$D_391951010_2_2==628445697 | fb$D_391951010_2_2==
 
 dtpreg8_2_summary <- preg8_2_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtpreg8_2_summary %>%  gt() %>%  
+dtpreg8_2_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Preg8_2: Breast fed during second pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4256,7 +4256,7 @@ preg8_3_ans= fb %>%  filter(fb$D_391951010_3_3==628445697 | fb$D_391951010_3_3==
 
 dtpreg8_3_summary <- preg8_3_ans %>% group_by(answer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtpreg8_3_summary %>%  gt() %>%  
+dtpreg8_3_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Preg8_3: Breast fed during third pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4283,7 +4283,7 @@ preg8_4_ans= fb %>%  filter(fb$D_391951010_4_4==628445697 | fb$D_391951010_4_4==
 
 dtpreg8_4_summary <- preg8_4_ans %>% group_by(answer) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtpreg8_4_summary %>%  gt() %>%  
+dtpreg8_4_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Preg8_4: Breast fed during fourth pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4337,7 +4337,7 @@ preg10_1_ans= fb_preg10_1 %>%  mutate(answer= case_when(D_779052408_1_1==3533589
 
 dtpreg10_1_summary <- preg10_1_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtpreg10_1_summary %>%  gt() %>%  
+dtpreg10_1_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Preg10_1: Diagnosed with gestational diabetes during first pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4365,7 +4365,7 @@ preg10_2_ans= fb_preg10_2 %>%  mutate(answer= case_when(D_779052408_2_2==3533589
 
 dtpreg10_2_summary <- preg10_2_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtpreg10_2_summary %>%  gt() %>%  
+dtpreg10_2_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Preg10_2: Diagnosed with gestational diabetes during second pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4394,7 +4394,7 @@ preg10_3_ans= fb_preg10_3 %>%  mutate(answer= case_when(D_779052408_3_3==3533589
 
 dtpreg10_3_summary <- preg10_3_ans %>% group_by(answer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtpreg10_3_summary %>%  gt() %>%  
+dtpreg10_3_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Preg10_3: Diagnosed with gestational diabetes during third pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4423,7 +4423,7 @@ preg10_4_ans= fb_preg10_4 %>%  mutate(answer= case_when(D_779052408_4_4==3533589
 
 dtpreg10_4_summary <- preg10_4_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtpreg10_4_summary %>%  gt() %>%  
+dtpreg10_4_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Preg10_4: Diagnosed with gestational diabetes during fourth pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4454,7 +4454,7 @@ preg11_1_ans= fb %>%  filter(fb$D_391951010_1_1==628445697 | fb$D_391951010_1_1=
 
 dtpreg11_1_summary <- preg11_1_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtpreg11_1_summary %>%  gt() %>%  
+dtpreg11_1_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Preg11_1: Diagnosed with eclampsia or pre-eclampsia during first pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4484,7 +4484,7 @@ dtpreg11_2_summary <- preg11_2_ans %>% group_by(answer) %>%  dplyr::summarize(n=
 gtm3_print <- gt(dtpreg11_2_summary)
 #gtm3_print
 
-dtpreg11_2_summary %>%  gt() %>%  
+dtpreg11_2_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Preg11_2: Diagnosed with eclampsia or pre-eclampsia during second pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4517,7 +4517,7 @@ dtpreg11_3_summary <- preg11_3_ans %>% group_by(answer) %>%  dplyr::summarize(n=
 gtm3_print <- gt(dtpreg11_3_summary)
 #gtm3_print
 
-dtpreg11_3_summary %>%  gt() %>%  
+dtpreg11_3_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Preg11_3: Diagnosed with eclampsia or pre-eclampsia during third pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4548,7 +4548,7 @@ preg11_4_ans= fb %>%  filter(fb$D_391951010_4_4==628445697 | fb$D_391951010_4_4=
 
 dtpreg11_4_summary <- preg11_4_ans %>% group_by(answer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtpreg11_4_summary %>%  gt() %>%  
+dtpreg11_4_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Preg11_4: Diagnosed with eclampsia or pre-eclampsia during fourth pregnancy")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -4632,7 +4632,7 @@ skipped_mhg1 <- sum(table(preg_iss$issue=="Skipped this question")[2])
 fert4[as.numeric(dim(fert4)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(preg_iss)[[1]])*100,2))
 
 
-fert4 <- fert4 %>%  gt() %>%  
+fert4 <- fert4 %>%  gt::gt() %>%  
   fmt_number(columns = "Percentage", decimals = 2) %>% 
   tab_header(title = md("FERT4: Issue preventing pregnancy")) %>% 
   cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Answer**"), Percentage = md("**Percentage of Participants**")) %>% 
@@ -4712,7 +4712,7 @@ mgr1 <- fert6_dx[, c(4,1,2)]
 skipped_mhg1 <- sum(table(fert_med$meds=="Skipped this question")[2])
 mgr1[as.numeric(dim(mgr1)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(data_tib_base)[[1]])*100,2))
 
-dt_mgr1 <- mgr1 %>%  gt(rowname_col = "row_lab") %>%
+dt_mgr1 <- mgr1 %>%  gt::gt(rowname_col = "row_lab") %>%
   tab_header(title = md("FERT6: Used these fertility medications")) %>%
   cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"),  Condition = md("**Answer**")) %>%
   tab_options(
@@ -4804,7 +4804,7 @@ HORMED_med= dtHORMED %>%  mutate(meds= case_when( (as.numeric(multb2)>1) ~ "Mult
 dtHORMED_summary <- HORMED_med %>% group_by(meds) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
 
 
-dtHORMED_summary %>%  gt(rowname_col = "row_lab") %>%
+dtHORMED_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>%
   tab_header(title = md("HORMED: Ever used these hormone medications")) %>%
   cols_label(n= md("**Number of Participants**"), meds = md("**Medications**"), percentage = md("**Percentage of Participants**")) %>%
@@ -5012,7 +5012,7 @@ skipped_mhg1 <- sum(table(est_med$meds=="Skipped this question")[2])
 estro[as.numeric(dim(estro)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(est_med)[[1]])*100,2))
 
 
-estro <- estro %>%  gt() %>%  
+estro <- estro %>%  gt::gt() %>%  
   fmt_number(columns = "Percentage", decimals = 2) %>% 
   tab_header(title = md("ESTROHOR: Ever used these hormone medications")) %>% 
   cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Answer**"), Percentage = md("**Percentage of Participants**")) %>% 
@@ -5125,7 +5125,7 @@ prog_med$meds <- factor(prog_med$meds,levels=c("Oral Progestin", "Other Progesti
 dtPROGHOR_summary <- prog_med %>% group_by(meds) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
 
 
-dtPROGHOR_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtPROGHOR_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("PROGHOR: Ever used these hormone medications")) %>% 
   cols_label(n= md("**Number of Participants**"), meds = md("**Hormones**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -5188,7 +5188,7 @@ prog_med= dtCOMBHOR %>%  mutate(meds= case_when(D_563663099=="647504893"~"Everyd
 dtCOMBHOR_summary <- prog_med %>% group_by(meds) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
 
 
-dtCOMBHOR_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtCOMBHOR_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("PROGHOR6_1: Days per Cycle Oral Progestin Used")) %>% 
   cols_label(n= md("**Number of Participants**"), meds = md("**Hormones**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -5221,7 +5221,7 @@ prog_med= dtCOMBHOR %>%  mutate(meds= case_when(D_949663397=="647504893"~"Everyd
 dtCOMBHOR_summary <- prog_med %>% group_by(meds) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
 
 
-dtCOMBHOR_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtCOMBHOR_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("PROGHOR6_2: Days per Cycle Other Progestin Used")) %>% 
   cols_label(n= md("**Number of Participants**"), meds = md("**Hormones**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -5260,7 +5260,7 @@ est_med$meds <- factor(est_med$meds,levels=c("Combined oral estrogen plus proges
 dtCOMBHOR_summary <- est_med %>% group_by(meds) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
 
 
-dtCOMBHOR_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtCOMBHOR_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("COMBHOR: Ever Use Combined Estrogen and Progestin Medications")) %>% 
   cols_label(n= md("**Number of Participants**"), meds = md("**Hormones**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -5338,7 +5338,7 @@ prog_med= dtCOMBHOR %>%  mutate(meds= case_when(D_912818075=="647504893"~"Everyd
 dtCOMBHOR_summary <- prog_med %>% group_by(meds) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
 
 
-dtCOMBHOR_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtCOMBHOR_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("COMBHOR6_1: Days per Cycle Separate Pill Estrogen & Progestin Used")) %>% 
   cols_label(n= md("**Number of Participants**"), meds = md("**Hormones**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -5377,7 +5377,7 @@ seph_med= dtCOMBHOR %>%  mutate(meds= case_when(D_138836502=="647504893"~"Everyd
 dtseph_summary <- seph_med %>% group_by(meds) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
 
 
-dtseph_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtseph_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SEPHOR: Days per Cycle Separate Pill Estrogen & Progestin Used")) %>% 
   cols_label(n= md("**Number of Participants**"), meds = md("**Hormones**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -5409,7 +5409,7 @@ seph2_med= dtCOMBHOR %>%  mutate(meds= case_when(D_290126991=="647504893"~"Every
 dtseph2_summary <- seph2_med %>% group_by(meds) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
 
 
-dtseph2_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtseph2_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SEPHOR2: Days per Cycle Other Estrogen & Progestin Used")) %>% 
   cols_label(n= md("**Number of Participants**"), meds = md("**Hormones**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -5477,7 +5477,7 @@ skipped_mhg1 <- sum(table(dtTESTTHER2$meds=="Skipped this question")[2])
 testt2[as.numeric(dim(testt2)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dtTESTTHER2)[[1]])*100,2))
 
 
-dt_testt2 <- testt2 %>%  gt(rowname_col = "row_lab") %>%  
+dt_testt2 <- testt2 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "Percentage", decimals = 2) %>% 
   tab_header(title = md("TESTTHER2: Testosterone Medication Forms")) %>% 
   cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"),  Condition = md("**Answer**")) %>% 
@@ -5620,7 +5620,7 @@ WORKACTA_ans$answer <- factor(WORKACTA_ans$answer,levels=c("None", "Less than 30
 
 dtWORKACTA_summary <- WORKACTA_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtWORKACTA_summary %>%  gt(rowname_col = "row_lab") %>%
+dtWORKACTA_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>%
   tab_header(title = md("WORKACTA: Work over last 12 months: Sitting with Arm Movements")) %>%
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
@@ -5661,7 +5661,7 @@ WORKACTB_ans$answer <- factor(WORKACTB_ans$answer,levels=c("None", "Less than 30
 
 dtWORKACTB_summary <- WORKACTB_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtWORKACTB_summary %>%  gt(rowname_col = "row_lab") %>%
+dtWORKACTB_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>%
   tab_header(title = md("WORKACTB: Work over last 12 months: Standing with Walking")) %>%
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
@@ -5701,7 +5701,7 @@ WORKACTC_ans$answer <- factor(WORKACTC_ans$answer,levels=c("None", "Less than 30
 
 dtWORKACTC_summary <- WORKACTC_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtWORKACTC_summary %>%  gt(rowname_col = "row_lab") %>%
+dtWORKACTC_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>%
   tab_header(title = md("WORKACTC: Work over last 12 months: Walking and Carrying Materials")) %>%
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
@@ -5739,7 +5739,7 @@ WORKACTD_ans$answer <- factor(WORKACTD_ans$answer,levels=c("None", "Less than 30
 
 dtWORKACTD_summary <- WORKACTD_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtWORKACTD_summary %>%  gt(rowname_col = "row_lab") %>%
+dtWORKACTD_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>%
   tab_header(title = md("WORKACTD: Work over last 12 months: Walking and Heavy Manual Labor")) %>%
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
@@ -5781,7 +5781,7 @@ simple_funct2(D_649352910_D_654385712, "SITTINGA: Driving or Sitting in a Car, B
 
  dtSITTINGA_summary <- SITTINGA_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage) 
 
- dtSITTINGA_summary %>%  gt(rowname_col = "row_lab") %>% 
+ dtSITTINGA_summary %>%  gt::gt(rowname_col = "row_lab") %>% 
    fmt_number(columns = "percentage", decimals = 2) %>% 
    tab_header(title = md("SITTINGA: Driving or Sitting in a Car, Bus, or Train")) %>% 
    cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -5816,7 +5816,7 @@ simple_funct2(D_649352910_D_263483736, "SittingB: Watching TV or other Video Con
 
  SITTINGB_summary <- SITTINGB_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage) 
 
- SITTINGB_summary %>%  gt(rowname_col = "row_lab") %>% 
+ SITTINGB_summary %>%  gt::gt(rowname_col = "row_lab") %>% 
    fmt_number(columns = "percentage", decimals = 2) %>% 
    tab_header(title = md("SITTINGB: Watching TV or other Video Content")) %>% 
    cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -5851,7 +5851,7 @@ simple_funct2(D_649352910_D_806746224, "SittingC: Browsing or Playing Games")
 
  dtSITTINGC_summary <- SITTINGC_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage) 
 
- dtSITTINGC_summary %>%  gt(rowname_col = "row_lab") %>% 
+ dtSITTINGC_summary %>%  gt::gt(rowname_col = "row_lab") %>% 
    fmt_number(columns = "percentage", decimals = 2) %>% 
    tab_header(title = md("SITTINGC: Browsing or Playing Games")) %>% 
    cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -5886,7 +5886,7 @@ simple_funct2(D_649352910_D_396649512, "SittingD: Other Activity")
 
  dtSITTINGD_summary <- SITTINGD_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage) 
 
- dtSITTINGD_summary %>%  gt(rowname_col = "row_lab") %>% 
+ dtSITTINGD_summary %>%  gt::gt(rowname_col = "row_lab") %>% 
    fmt_number(columns = "percentage", decimals = 2) %>% 
    tab_header(title = md("SITTINGD: Other Activity")) %>% 
    cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -5927,7 +5927,7 @@ simple_funct2(D_733547268_D_980120253, "HOUSE1A: Frequency of Light Household Ch
 
  dtHOUSE1A_summary <- HOUSE1A_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage) 
 
- dtHOUSE1A_summary %>%  gt(rowname_col = "row_lab") %>% 
+ dtHOUSE1A_summary %>%  gt::gt(rowname_col = "row_lab") %>% 
    fmt_number(columns = "percentage", decimals = 2) %>% 
    tab_header(title = md("HOUSE1A: Frequency of Light Household Chores")) %>% 
    cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -5962,7 +5962,7 @@ simple_funct2(D_733547268_D_993029890, "HOUSE1B: Frequency of Moderate to Vigoro
 
  dtHOUSE1B_summary <- HOUSE1B_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage) 
 
- dtHOUSE1B_summary %>%  gt(rowname_col = "row_lab") %>% 
+ dtHOUSE1B_summary %>%  gt::gt(rowname_col = "row_lab") %>% 
    fmt_number(columns = "percentage", decimals = 2) %>% 
    tab_header(title = md("HOUSE1B: Frequency of Moderate to Vigorous Household Chores")) %>% 
    cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -5997,7 +5997,7 @@ simple_funct2(D_733547268_D_980196073, "HOUSE1C: Frequency of Caring for Pets")
 
  dtHOUSE1C_summary <- HOUSE1C_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage) 
 
- dtHOUSE1C_summary %>%  gt(rowname_col = "row_lab") %>% 
+ dtHOUSE1C_summary %>%  gt::gt(rowname_col = "row_lab") %>% 
    fmt_number(columns = "percentage", decimals = 2) %>% 
    tab_header(title = md("HOUSE1C: Frequency of Caring for Pets")) %>% 
    cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -6032,7 +6032,7 @@ simple_funct2(D_733547268_D_115422925, "HOUSE1D: Frequency of Caring for Kids/Ad
 
  dtHOUSE1D_summary <- HOUSE1D_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage) 
 
- dtHOUSE1D_summary %>%  gt(rowname_col = "row_lab") %>% 
+ dtHOUSE1D_summary %>%  gt::gt(rowname_col = "row_lab") %>% 
    fmt_number(columns = "percentage", decimals = 2) %>% 
    tab_header(title = md("HOUSE1D: Frequency of Caring for Kids/Adults")) %>% 
    cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -6068,7 +6068,7 @@ simple_funct2(D_733547268_D_115422925, "HOUSE1D: Frequency of Caring for Kids/Ad
 
  dtHOUSE1E_summary <- HOUSE1E_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage) 
 
- dtHOUSE1E_summary %>%  gt(rowname_col = "row_lab") %>% 
+ dtHOUSE1E_summary %>%  gt::gt(rowname_col = "row_lab") %>% 
    fmt_number(columns = "percentage", decimals = 2) %>% 
    tab_header(title = md("HOUSE1E: Frequency of Walking while Shopping")) %>% 
    cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -6101,7 +6101,7 @@ simple_funct2(D_733547268_D_115422925, "HOUSE1D: Frequency of Caring for Kids/Ad
  dt_house2a_summary <- h2a %>% group_by(time) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(time, n, percentage) 
 
 
- dt_house2a_summary %>%  gt(rowname_col = "row_lab") %>% 
+ dt_house2a_summary %>%  gt::gt(rowname_col = "row_lab") %>% 
    fmt_number(columns = "percentage", decimals = 2) %>% 
    tab_header(title = md("HOUSE2A: Time Spent doing Light Household Chores")) %>% 
    cols_label(n= md("**Number of Participants**"), time = md("**Time Spent**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -6135,7 +6135,7 @@ simple_funct2(D_733547268_D_115422925, "HOUSE1D: Frequency of Caring for Kids/Ad
  dt_house2b_summary <- h2b %>% group_by(time) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(time, n, percentage) 
 
 
- dt_house2b_summary %>%  gt(rowname_col = "row_lab") %>% 
+ dt_house2b_summary %>%  gt::gt(rowname_col = "row_lab") %>% 
    fmt_number(columns = "percentage", decimals = 2) %>% 
    tab_header(title = md("HOUSE2B: Time Spent doing Moderate to Vigorous Household Chores")) %>% 
    cols_label(n= md("**Number of Participants**"), time = md("**Time Spent**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -6169,7 +6169,7 @@ simple_funct2(D_733547268_D_115422925, "HOUSE1D: Frequency of Caring for Kids/Ad
  dt_house2c_summary <- h2c %>% group_by(time) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(time, n, percentage) 
 
 
- dt_house2c_summary %>%  gt(rowname_col = "row_lab") %>% 
+ dt_house2c_summary %>%  gt::gt(rowname_col = "row_lab") %>% 
    fmt_number(columns = "percentage", decimals = 2) %>% 
    tab_header(title = md("HOUSE2C: Time Spent Caring for Pets")) %>% 
    cols_label(n= md("**Number of Participants**"), time = md("**Time Spent**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -6203,7 +6203,7 @@ simple_funct2(D_733547268_D_115422925, "HOUSE1D: Frequency of Caring for Kids/Ad
  dt_house2d_summary <- h2d %>% group_by(time) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(time, n, percentage) 
 
 
- dt_house2d_summary %>%  gt(rowname_col = "row_lab") %>% 
+ dt_house2d_summary %>%  gt::gt(rowname_col = "row_lab") %>% 
    fmt_number(columns = "percentage", decimals = 2) %>% 
    tab_header(title = md("HOUSE2D: Time Spent Caring for Kids/Adults")) %>% 
    cols_label(n= md("**Number of Participants**"), time = md("**Time Spent**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -6237,7 +6237,7 @@ simple_funct2(D_733547268_D_115422925, "HOUSE1D: Frequency of Caring for Kids/Ad
  dt_house2e_summary <- h2e %>% group_by(time) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(time, n, percentage) 
 
 
- dt_house2e_summary %>%  gt(rowname_col = "row_lab") %>% 
+ dt_house2e_summary %>%  gt::gt(rowname_col = "row_lab") %>% 
    fmt_number(columns = "percentage", decimals = 2) %>% 
    tab_header(title = md("HOUSE2E: Time Spent Walking while Shopping")) %>% 
    cols_label(n= md("**Number of Participants**"), time = md("**Time Spent**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -6271,7 +6271,7 @@ simple_funct2(D_733547268_D_115422925, "HOUSE1D: Frequency of Caring for Kids/Ad
  dtLAWN1_summary <- chore_type %>% group_by(chore) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(chore, n, percentage) 
 
 
- dtLAWN1_summary %>%  gt(rowname_col = "row_lab") %>% 
+ dtLAWN1_summary %>%  gt::gt(rowname_col = "row_lab") %>% 
    fmt_number(columns = "percentage", decimals = 2) %>% 
    tab_header(title = md("LAWN1: Lawn, Garden and Home Repair Activities")) %>% 
    cols_label(n= md("**Number of Participants**"), chore = md("**Chores**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -6307,7 +6307,7 @@ simple_funct2(D_733547268_D_115422925, "HOUSE1D: Frequency of Caring for Kids/Ad
 
  dtLAWN2A_summary <- mod_ss %>% group_by(season) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(season, n, percentage) 
 
- dtLAWN2A_summary %>%  gt(rowname_col = "row_lab") %>%   
+ dtLAWN2A_summary %>%  gt::gt(rowname_col = "row_lab") %>%   
    fmt_number(columns = "percentage", decimals = 2) %>%  
    tab_header(title = md("LAWN2A: Seasons Moderate Chores Done (Can be more than one)")) %>%  
    cols_label(n= md("**Number of Participants**"), season = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%  
@@ -6342,7 +6342,7 @@ one_logic_funct2(D_992022740,D_204421360_D_797221287,1,"LAWN3A: Frequency of Mod
 
  dtLAWN3A_summary <- LAWN3A_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage) 
 
- dtLAWN3A_summary %>%  gt(rowname_col = "row_lab") %>%   
+ dtLAWN3A_summary %>%  gt::gt(rowname_col = "row_lab") %>%   
    fmt_number(columns = "percentage", decimals = 2) %>%  
    tab_header(title = md("LAWN3A: Frequency of Moderate Outdoor Chores")) %>%  
    cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%  
@@ -6377,7 +6377,7 @@ one_logic_funct2(D_429531329,D_204421360_D_797221287,1,"LAWN4A: Time Spent on Mo
 
  dtLAWN4A_summary <- LAWN4A_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage) 
 
- dtLAWN4A_summary %>%  gt(rowname_col = "row_lab") %>%   
+ dtLAWN4A_summary %>%  gt::gt(rowname_col = "row_lab") %>%   
    fmt_number(columns = "percentage", decimals = 2) %>%  
    tab_header(title = md("LAWN4A: Time Spent on Moderate Outdoor Chores")) %>%  
    cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%  
@@ -6415,7 +6415,7 @@ one_logic_funct2(D_429531329,D_204421360_D_797221287,1,"LAWN4A: Time Spent on Mo
  dtLAWN2B_summary <- vig_ss %>% group_by(season) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(season, n, percentage) 
 
 
- dtLAWN2B_summary %>%  gt(rowname_col = "row_lab") %>%   
+ dtLAWN2B_summary %>%  gt::gt(rowname_col = "row_lab") %>%   
    fmt_number(columns = "percentage", decimals = 2) %>%  
    tab_header(title = md("LAWN2B: Seasons Vigorous Chores Done (Can be more than one)")) %>%  
    cols_label(n= md("**Number of Participants**"), season = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%  
@@ -6447,7 +6447,7 @@ one_logic_funct2(D_888313306,D_204421360_D_500744195,1,"LAWN3B: Frequency of Vig
 
  dtLAWN3B_summary <- LAWN3B_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage) 
 
- dtLAWN3B_summary %>%  gt(rowname_col = "row_lab") %>%   
+ dtLAWN3B_summary %>%  gt::gt(rowname_col = "row_lab") %>%   
    fmt_number(columns = "percentage", decimals = 2) %>%  
    tab_header(title = md("LAWN3B: Frequency of Vigorous Outdoor Chores")) %>%  
    cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%  
@@ -6482,7 +6482,7 @@ one_logic_funct2(D_644018981,D_204421360_D_500744195,1,"LAWN4B: Time Spent on Vi
 
  dtLAWN4B_summary <- LAWN4B_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage) 
 
- dtLAWN4B_summary %>%  gt(rowname_col = "row_lab") %>%   
+ dtLAWN4B_summary %>%  gt::gt(rowname_col = "row_lab") %>%   
    fmt_number(columns = "percentage", decimals = 2) %>%  
    tab_header(title = md("LAWN4B: Time Spent on Moderate Outdoor Chores")) %>%  
    cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%  
@@ -6518,7 +6518,7 @@ one_logic_funct2(D_644018981,D_204421360_D_500744195,1,"LAWN4B: Time Spent on Vi
  dtLAWN2C_summary <- home_ss %>% group_by(season) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(season, n, percentage) 
 
 
- dtLAWN2C_summary %>%  gt(rowname_col = "row_lab") %>%   
+ dtLAWN2C_summary %>%  gt::gt(rowname_col = "row_lab") %>%   
    fmt_number(columns = "percentage", decimals = 2) %>%  
    tab_header(title = md("LAWN2C: Seasons Vigorous Chores Done (Can be more than one)")) %>%  
    cols_label(n= md("**Number of Participants**"), season = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%  
@@ -6551,7 +6551,7 @@ one_logic_funct2(D_352531133,D_204421360_D_383015037,1,"LAWN3B: Frequency of Hom
 
  dtLAWN3C_summary <- LAWN3C_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage) 
 
- dtLAWN3C_summary %>%  gt(rowname_col = "row_lab") %>%   
+ dtLAWN3C_summary %>%  gt::gt(rowname_col = "row_lab") %>%   
    fmt_number(columns = "percentage", decimals = 2) %>%  
    tab_header(title = md("LAWN3C: Frequency of Home Repair")) %>%  
    cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%  
@@ -6586,7 +6586,7 @@ one_logic_funct2(D_267261558,D_204421360_D_383015037,1,"LAWN4B: Time Spent on Ho
 
  dtLAWN4C_summary <- LAWN4C_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage) 
 
- dtLAWN4C_summary %>%  gt(rowname_col = "row_lab") %>%   
+ dtLAWN4C_summary %>%  gt::gt(rowname_col = "row_lab") %>%   
    fmt_number(columns = "percentage", decimals = 2) %>%  
    tab_header(title = md("LAWN4C: Time Spent on Home Repair")) %>%  
    cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%  
@@ -6631,7 +6631,7 @@ one_logic_funct2(D_168431681,D_591723682,"353358909","SLEEPSCHB: Days per Week S
 
  dtSLEEPSCHB_summary <- SLEEPSCHB_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage) 
 
- dtSLEEPSCHB_summary %>%  gt(rowname_col = "row_lab") %>%   
+ dtSLEEPSCHB_summary %>%  gt::gt(rowname_col = "row_lab") %>%   
    fmt_number(columns = "percentage", decimals = 2) %>%  
    tab_header(title = md("SLEEPSCHB: Days per Week Sleep Determined by Job or School")) %>%  
    cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%  
@@ -7029,7 +7029,7 @@ SLHABIT2_ans$answer <- factor(SLHABIT2_ans$answer,levels=c("Very sound or restfu
 
 dtSLHABIT2_summary <- SLHABIT2_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSLHABIT2_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtSLHABIT2_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SLHABIT2: Sleep Quality in the Last Four Weeks")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -7066,7 +7066,7 @@ SLHABIT3A_ans$answer <- factor(SLHABIT3A_ans$answer,levels=c("No chance", "Sligh
 
 dtSLHABIT3A_summary <- SLHABIT3A_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSLHABIT3A_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtSLHABIT3A_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SLHABIT3A: Chance of Falling Asleep while Sitting and Reading")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -7096,7 +7096,7 @@ SLHABIT3B_ans$answer <- factor(SLHABIT3B_ans$answer,levels=c("No chance", "Sligh
 
 dtSLHABIT3B_summary <- SLHABIT3B_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSLHABIT3B_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtSLHABIT3B_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SLHABIT3B: Chance of Falling Asleep while Watching TV")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -7126,7 +7126,7 @@ SLHABIT3C_ans$answer <- factor(SLHABIT3C_ans$answer,levels=c("No chance", "Sligh
 
 dtSLHABIT3C_summary <- SLHABIT3C_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSLHABIT3C_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtSLHABIT3C_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SLHABIT3C: Chance of Falling Asleep while Sitting Inactive")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -7155,7 +7155,7 @@ SLHABIT3D_ans$answer <- factor(SLHABIT3D_ans$answer,levels=c("No chance", "Sligh
 
 dtSLHABIT3D_summary <- SLHABIT3D_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSLHABIT3D_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtSLHABIT3D_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SLHABIT3D: Chance of Falling Asleep while Sitting as a Passenger in the Car")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -7184,7 +7184,7 @@ SLHABIT3E_ans$answer <- factor(SLHABIT3E_ans$answer,levels=c("No chance", "Sligh
 
 dtSLHABIT3E_summary <- SLHABIT3E_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSLHABIT3E_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtSLHABIT3E_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SLHABIT3E: Chance of Falling Asleep while Lying Resting in the Afternoon")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -7214,7 +7214,7 @@ SLHABIT3F_ans$answer <- factor(SLHABIT3F_ans$answer,levels=c("No chance", "Sligh
 
 dtSLHABIT3F_summary <- SLHABIT3F_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSLHABIT3F_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtSLHABIT3F_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SLHABIT3F: Chance of Falling Asleep while Sitting and Talking")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -7244,7 +7244,7 @@ SLHABIT3G_ans$answer <- factor(SLHABIT3G_ans$answer,levels=c("No chance", "Sligh
 
 dtSLHABIT3G_summary <- SLHABIT3G_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSLHABIT3G_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtSLHABIT3G_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SLHABIT3G: Chance of Falling Asleep while Sitting after Lunch w/o Alcohol")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -7361,7 +7361,7 @@ SNORING2_ans$answer <- factor(SNORING2_ans$answer,levels=c("Slightly Louder Than
 
 dtSNORING2_summary <- SNORING2_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSNORING2_summary %>%  gt(rowname_col = "row_lab") %>%
+dtSNORING2_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>%
   tab_header(title = md("SNORING2: Describe your Snoring")) %>%
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
@@ -7394,7 +7394,7 @@ SNORING3_ans$answer <- factor(SNORING3_ans$answer,levels=c("Almost every day", "
 
 dtSNORING3_summary <- SNORING3_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSNORING3_summary %>%  gt(rowname_col = "row_lab") %>%
+dtSNORING3_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>%
   tab_header(title = md("SNORING3: Frequency of Snoring")) %>%
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
@@ -7432,7 +7432,7 @@ SNORING5_ans$answer <- factor(SNORING5_ans$answer,levels=c("Almost every day", "
 
 dtSNORING5_summary <- SNORING5_ans %>% group_by(answer) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(answer, n, percentage)
 
-dtSNORING5_summary %>%  gt(rowname_col = "row_lab") %>%  
+dtSNORING5_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SNORING5: Frequency you Stop Breathing while Sleeping")) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -7489,7 +7489,7 @@ skipped_mhg1 <- sum(table(slp_cond$cond=="Skipped this question")[2])
 slprob1[as.numeric(dim(slprob1)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(slp_cond)[[1]])*100,2))
 
 
-dt_slprob1 <- slprob1 %>%  gt(rowname_col = "row_lab") %>%  
+dt_slprob1 <- slprob1 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "Percentage", decimals = 2) %>% 
   tab_header(title = md("SLPROB1: Diagnosed with Conditions")) %>% 
   cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"),  Condition = md("**Answer**")) %>% 
@@ -7558,7 +7558,7 @@ skipped_mhg1 <- sum(table(slp_tmnt$tmnt=="Skipped this question")[2])
 slprob2[as.numeric(dim(slprob2)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dtSLPROB2)[[1]])*100,2))
 
 
-dt_slprob2 <- slprob2 %>%  gt(rowname_col = "row_lab") %>%  
+dt_slprob2 <- slprob2 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "Percentage", decimals = 2) %>% 
   tab_header(title = md("SLPROB2: Treatments Used for Sleep Apnea")) %>% 
   cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"),  Condition = md("**Answer**")) %>% 
@@ -7629,7 +7629,7 @@ shftfl$flex <- factor(shftfl$flex,levels=c("Extremely flexible","Very flexible",
 dtSLPROB2_flexible <- shftfl %>% group_by(flex) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(flex, n, percentage)
 
 
-dtSLPROB2_flexible %>%  gt(rowname_col = "row_lab") %>%  
+dtSLPROB2_flexible %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SHIFTWORK8: Work Shift Flexibility")) %>% 
   cols_label(n= md("**Number of Participants**"), flex = md("**Flexibility**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -7763,7 +7763,7 @@ simple_funct3 <- function(CID, Title){
   gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% mutate(answer=recode(!!CID_SYM, !!!dict)) %>% 
     replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
   
-  gt_yn %>%  gt(rowname_col = "row_lab")  %>%  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md(Title)) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -7789,7 +7789,7 @@ one_logic_funct3 <- function(CID, CID_prev, Prev_Answer, Title){
   gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% 
     replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
   
-  gt_yn %>%  gt(rowname_col = "row_lab")  %>%  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md(Title)) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -7860,7 +7860,7 @@ sscreen2$oth_age <- factor(sscreen2$oth_age,levels=c("All sun exposed areas","So
 
 dt_sscreen2 <- sscreen2 %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
 
-dt_sscreen2 %>%  gt(rowname_col = "row_lab") %>%  
+dt_sscreen2 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SUNCREEN2: Body Parts Sunscreen Applied To")) %>% 
   cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -7881,7 +7881,7 @@ sscreen3$oth_age <- factor(sscreen3$oth_age,levels=c("Never","Rarely","Sometimes
 
 dt_sscreen3 <- sscreen3 %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
 
-dt_sscreen3 %>%  gt(rowname_col = "row_lab") %>%  
+dt_sscreen3 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SUNCREEN3: Frequency of Re-applying Sunscreen When Out in the Sun")) %>% 
   cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -7903,7 +7903,7 @@ sscreen4$oth_age <- factor(sscreen4$oth_age,levels=c("Less than 15","15 to 20","
 
 dt_sscreen4 <- sscreen4 %>% dplyr::group_by(oth_age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(oth_age, n, percentage) 
 
-dt_sscreen4 %>%  gt(rowname_col = "row_lab") %>%  
+dt_sscreen4 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("SUNSCREEN4: Highest SPF Used Most Often")) %>% 
   cols_label(n= md("**Number of Participants**"), oth_age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -7979,7 +7979,7 @@ simple_funct4 <- function(CID, Title){
   gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% 
     replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
   
-  gt_yn %>%  gt(rowname_col = "row_lab")  %>%  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md(Title)) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
@@ -8005,7 +8005,7 @@ one_logic_funct4 <- function(CID, CID_prev, Prev_Answer, Title){
   gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% 
     replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
   
-  gt_yn %>%  gt(rowname_col = "row_lab")  %>%  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md(Title)) %>% 
   cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
