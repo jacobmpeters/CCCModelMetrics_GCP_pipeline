@@ -163,7 +163,9 @@ SAS= Smoking, Alcohol, and Sun Exposure (Module 3)
 ##Load Data from BQ
 
 project_cc = "nih-nci-dceg-connect-prod-6d04"
-queryreccc <- "SELECT  Connect_ID, d_512820379, d_821247024, d_914594314, d_832139544, d_949302066 , d_205553981, d_536735468 , d_976570371, d_663265240, d_265193023, d_222161762,d_770257102, d_264644252, d_265193023, d_541836531, d_386488297, d_452942800, d_517311251 , d_822499427, d_126331570, d_914639140, d_311580100, d_827220437, d_100767870 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IS NOT NULL  and (d_512820379='486306141' OR d_512820379='854703046')"
+queryreccc <- "SELECT  Connect_ID, d_512820379, d_821247024, d_914594314, d_832139544, d_949302066 , d_205553981, d_536735468 , d_976570371, d_663265240, d_265193023, d_222161762,d_770257102, d_264644252, d_265193023, d_541836531, d_386488297, d_452942800, d_517311251 , d_822499427, d_126331570, d_914639140, d_311580100, d_827220437, d_100767870, d_831041022 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IS NOT NULL  and (d_512820379='486306141' OR d_512820379='854703046') " 
+
+#and d_831041022='104430631'-- not needed, according to 3/12/24 decisions we'll be keeping participant journeys in overall counts
 
 rec_table_cc <- bq_project_query(project_cc, queryreccc)
 data_c <- bq_table_download(rec_table_cc, bigint = "integer64")
