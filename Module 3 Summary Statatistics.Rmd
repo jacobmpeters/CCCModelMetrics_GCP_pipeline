@@ -575,46 +575,7 @@ funct_10_11 <- function(CID, CID_prev1, CID_prev9b, CID_prev4, CID_prev8c, Title
 }
 
 
-# two_logic_funct(D_790436165_D_79043616, D_763164658, 486319890, 132232896, "CIG3_never: Smoking on a Regular Basis")
-# 
-# data_tib_all3_CIG <- data_tib_all3 %>%  filter(data_tib_all3$D_763164658==486319890| data_tib_all3$D_763164658==132232896)
-# 
-# dt_cig3 <- data_tib_all3_CIG[ , c("Connect_ID", "D_790436165_D_790436165_D_648960871")] 
-# 
-# dtCIG3= dt_cig3 %>%  mutate(participants=rep(1, dim(dt_cig3)[[1]]))
-# 
-# dtCIG3$percentage= (dtCIG3$participants/dim(dtCIG3)[[1]])*100 
-# #dtCIG3= dtCIG3 %>%  mutate(percentage=(dtCIG3$participants/dim(dtCIG3)[[1]])*100) <--- doesn't work to avoid error message
-# 
-# 
-# cig3_ans= dtCIG3 %>%  mutate(answer= case_when(D_790436165_D_790436165_D_648960871=="[]" ~ "Answered with age",
-#                                              D_790436165_D_790436165_D_648960871=="[648960871]" ~ "Never smoked on a regular basis",
-#                                              is.na(D_790436165_D_790436165_D_648960871) ~ "Skipped this question"))
-# 
-# dtCIG3_summary <- cig3_ans %>% group_by(answer) %>%   summarize_at(c("participants","percentage"), sum, na.rm = TRUE) 
-# gtm3_print <- gt(dtCIG3_summary)
-# #gtm3_print
-# 
-# dtCIG3_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-#   fmt_number(columns = "percentage", decimals = 2) %>% 
-#   tab_header(title = md("CIG3_never: Smoking on a Regular Basis")) %>% 
-#   cols_label(answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-#   summary_rows(
-#     column = c(participants,percentage),
-#     fns= list(
-#       Sum= ~sum(.)
-#     ), decimals=0) %>%
-#   tab_options(
-#       stub.font.weight = "bold"
-#     ) %>%
-#   tab_style(
-#     style = list(
-#       cell_text(weight = "bold")
-#     ),
-#     locations = cells_body(
-#       columns = answer,
-#     )
-#   ) %>% opt_row_striping()
+
 
 ```
 

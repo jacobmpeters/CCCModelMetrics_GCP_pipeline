@@ -39,6 +39,7 @@ bq_auth()
 ```
 
 
+
 ```{r merge1, include=FALSE, warning=FALSE}
 
 ## MERGE MOD1V1, MOD1V2
@@ -206,35 +207,64 @@ boxp_funct <- function(CID,Title, Xlab) {
 
 
 ##GT TABLE: Questions that all participants asked, update dictionary as new answer options come up
-dict <- list("104430631"="No", "353358909"="Yes", "589959753"="A little shorter", "623310018"="A lot shorter", "978204320"= "Grade School(Grades 1-8)", "935502060"="Some High School, No Diploma", "404564707"= "High School Graduate or GED", "432193665"="Some College, No Degree", "890756124"="Technical or Trade School After High School", "766964355"="Associate's Degree", "875342283"="Bachelor's Degree", "598242454"="Advanced Degree", "709650750"="Biological Child", "810290359"="Adopted Child", "509607548"="Step Child","784922042"="Related to me in some other way", "288105839"=" Yes, fraternal twins", "626558982"="Yes, triplets or higher multiple birth", "178420302"="Do not Know", "536341288"="Female", "576796184"="Intersex or Other", "654207589"="Male","555374628"="Full Sibling", "871673221"="Half Sibling, Same Mother",  "198654048"="Half Sibling, Same Father", "807835037"="Other", "274062548"="More than 3 months ago", "958538953"="In the past 3 months", "317567178"="In the past month", "484055234"="In the past year",  "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago","958538953"="In the past 3 months",  "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible", "764708931"="Very flexible","0"="No", "1"="Yes", "536341288"="Female", "218837028"="Woman (New Response)", "983318667"="Man (New Response)"  , "654207589"="Male","746038746"="Declined", "805712793"="Genderqueer","486192236"="Non-Binary", "807835037"="Other","873138103"="Transgender Woman","405267600"="Transgender Man", "220083334"="Very Feminine","541300533"="Mostly Feminine","878286618"="Somewhat Feminine","910745276"="Equally feminine and masculine","915528806"="Very masculine","265452386"="Mostly Masculine","510148951"="Somewhat Masculine","271882746"="Straight or heterosexual", "903084185"="Lesbian, gay, or homosexual", "999994434"="Bisexual")
+dict <- list("104430631"="No", "353358909"="Yes", "589959753"="A little shorter", "623310018"="A lot shorter", "978204320"= "Grade School(Grades 1-8)", "935502060"="Some High School, No Diploma", "404564707"= "High School Graduate or GED", "432193665"="Some College, No Degree", "890756124"="Technical or Trade School After High School", "766964355"="Associate's Degree", "875342283"="Bachelor's Degree", "598242454"="Advanced Degree", "709650750"="Biological Child", "810290359"="Adopted Child", "509607548"="Step Child","784922042"="Related to me in some other way", "288105839"=" Yes, fraternal twins", "626558982"="Yes, triplets or higher multiple birth", "178420302"="Do not Know", "536341288"="Female", "576796184"="Intersex or Other", "654207589"="Male","555374628"="Full Sibling", "871673221"="Half Sibling, Same Mother",  "198654048"="Half Sibling, Same Father", "807835037"="Other", "274062548"="More than 3 months ago", "958538953"="In the past 3 months", "317567178"="In the past month", "484055234"="In the past year",  "802197176"="More than 1 year ago", "[]"="Answered with number", "[178420302]"="Answered Don't Know", "274062548"="More than 3 months ago","958538953"="In the past 3 months",  "490796638"="Not Flexible","719954633"="Extremely Flexible","929148006"="A Little Flexible","988873962"="Somewhat Flexible", "764708931"="Very flexible","0"="No", "1"="Yes", "536341288"="Female", "218837028"="Woman (New Response)", "983318667"="Man (New Response)"  , "654207589"="Male","746038746"="Declined", "805712793"="Genderqueer","486192236"="Non-Binary", "807835037"="Other","873138103"="Transgender Woman","405267600"="Transgender Man", "220083334"="Very Feminine","541300533"="Mostly Feminine","878286618"="Somewhat Feminine","910745276"="Equally feminine and masculine","915528806"="Very masculine","265452386"="Mostly Masculine","510148951"="Somewhat Masculine","271882746"="Straight or heterosexual", "903084185"="Lesbian, gay, or homosexual", "999994434"="Bisexual", "209571450" = "35,000-49,000","212249150" = "50,000-74,000","374508062" = "0-9,000","530094502" = "Error- Unlisted Response Selected", "742032816" = "200,000+", "745561936" = "25,000-34,000","746038746" = "Prefer not to Answer","777814771" = "75,000-99,000","913602274" = "150,000-199,000", "922395188" = "100,000-149,000","976555124" = "10,000-24,000")
 
 simple_funct1 <- function(CID, Title){  
   CID_SYM <- rlang::ensym(CID)
   dt_select <- data_tib_base %>%  select(Connect_ID, !!CID_SYM)
-  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
-  
-  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md(Title)) %>% 
-  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%  
+  gt_yn <- data_tib_base  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+
+
+gt_yn <- gt_yn %>%  dplyr::mutate(np= paste0(n, "(", round(percentage, digits=1), "%)"))
+
+gt_yn$answer <- factor(gt_yn$answer) #line causing the issues
+
+summary_row_simple1 <- gt_yn %>%
+  summarise(np = paste0(sum(n, na.rm = TRUE), " (100%)"),
+            answer = "Total") %>% select(answer, np)
+
+gt_yn <- gt_yn %>% select(answer, np)
+
+# Bind summary row to dt_simple_funct1_summary
+dt_simple_funct1_summary <- bind_rows(gt_yn, summary_row_simple1)
+
+#Get last row number for bolding the total
+last_row_index <- nrow(dt_simple_funct1_summary)
+
+  dt_simple_funct1_summary %>%  gt::gt(rowname_col = "row_lab")  %>%
+  #fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md(Title)) %>%
+  cols_label(answer = md("**Answer**"), np = md("**N (%)**")) %>%
   # summary_rows(
-  #   columns = c(n,percentage),    
+  #   columns = c(n,percentage),
   #   fns= list(
   #     Sum= ~sum(.)
   #   ), decimals=0) %>%
-    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+    #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = answer,
+      ) %>%
+   tab_style(
+     style = list(
+       cell_text(weight = "bold")
+     ),
+     locations = cells_body(
+       #rows = 1:(last_row_index-1),
+       columns = answer
+     )) %>%
+   tab_style(
+      style = list(
+        cell_text(indent = px(20))
+      ),
+      locations = cells_body(
+        rows = seq_len(nrow(dt_simple_funct1_summary)) != nrow(dt_simple_funct1_summary),
+        columns = vars(answer)
+      )
     )
-  ) %>% opt_row_striping()
-}
+   
+  #%>% tab_stub_indent(rows = everything(), indent = 2)
+ 
+ }
 
 
 #GT table with one filter/skip logic
@@ -244,27 +274,54 @@ one_logic_funct <- function(CID, CID_prev, Prev_Answer, Title){
   dt_select <- data_tib_base %>%  filter(!!CID_SYM_P == Prev_Answer) %>%  select(Connect_ID, !!CID_SYM) 
   gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
   
-  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
+  gt_yn <- gt_yn %>%  dplyr::mutate(np= paste0(n, "(", round(percentage, digits=1), "%)"))
+
+#gt_yn$answer <- factor(gt_yn$answer,levels=List_of_Levels) #line causing the issues
+
+summary_row_one_logic1 <- gt_yn %>%
+    summarise(np = paste0(sum(n, na.rm = TRUE), " (100%)"),
+              answer = "Total") %>% select(answer, np)
+
+gt_yn <- gt_yn %>% select(answer, np)
+
+# Bind summary row to dt_one_logic_funct1_summary
+dt_one_logic_funct1_summary <- bind_rows(gt_yn, summary_row_one_logic1)
+
+#Get last row number for bolding the total
+last_row_index <- nrow(dt_one_logic_funct1_summary) 
+
+  
+ dt_one_logic_funct1_summary %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md(Title)) %>% 
-  cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+   cols_label(answer = md("**Answer**"), np = md("**N (%)**")) %>%
+  #cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows(
   #   column = c(n,percentage),
   #   fns= list(
   #     Sum= ~sum(.)
   #   ), decimals=0) %>%
-    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+    #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
-    ) %>%
-  tab_style(
+    ) %>% 
+  # tab_style(
+  #   style = list(
+  #     cell_text(weight = "bold")
+  #   ),
+  #   locations = cells_body(
+  #     columns = answer,
+  #   )
+ tab_style(
     style = list(
-      cell_text(weight = "bold")
+        cell_text(indent = px(20),
+                  weight = "bold")
     ),
     locations = cells_body(
-      columns = answer,
-    )
-  ) %>% opt_row_striping()
+        rows = seq_len(nrow(dt_one_logic_funct1_summary)) != nrow(dt_one_logic_funct1_summary), 
+        columns = vars(answer)
+    ) 
+) 
 }
 
 
@@ -306,7 +363,7 @@ sib_logic_funct <- function(CID, Sib_Num, Title){
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 }
 
 
@@ -337,10 +394,132 @@ child_logic_funct <- function(CID, Child_Num, Title){
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 }
 
 
+
+
+# gt_total_func <- function(question_table, var_name, title){ 
+#   dt_first_table <- question_table %>%
+#     mutate(np = paste0(n, " (", round(percentage, digits = 1), "%)"))
+# 
+#   summary_row <- dt_first_table %>%
+#     summarise(np = paste0(sum(n, na.rm = TRUE), " (100%)"),
+#               !!var_name := "Total") %>%
+#     select(!!var_name, np)
+# 
+#   dt_first_table <- dt_first_table %>%
+#     select(!!var_name, np)
+# 
+#   dt_table_summary <- bind_rows(dt_first_table, summary_row)
+# 
+#   last_row_index <- nrow(dt_table_summary) 
+# 
+#   dt_table_summary %>%
+#     gt::gt() %>%  
+#     cols_label(!!var_name := md("**Answer**"), np = md("**N(%)**")) %>% 
+#     tab_header(title = md(title)) %>% 
+#     tab_options(
+#       stub.font.weight = "bold"
+#     )  %>%
+#     tab_style(
+#       style = list(
+#         cell_text(weight = "bold")
+#       ),
+#       locations = cells_body(
+#         columns = !!var_name
+#       )
+#     ) %>%
+#     tab_style(
+#       style = list(
+#         cell_text(indent = px(20))
+#       ),
+#       locations = cells_body(
+#         rows = seq_len(nrow(dt_table_summary)) != nrow(dt_table_summary),
+#         columns = vars(!!var_name)
+#       )
+#     )
+#   # for (i in seq_len(nrow(dt_table_summary))) {
+#   # if (i != nrow(dt_table_summary)) {
+#   #   gt_table <- gt_table %>%
+#   #     tab_style(
+#   #       style = cell_text(weight = "bold"),
+#   #       locations = cells_body(rows = i, columns = vars(!!var_name))
+#   #     ) %>%
+#   #     tab_style(
+#   #       style = cell_text(indent = px(20)),
+#   #       locations = cells_body(rows = i, columns = vars(!!var_name))
+#   #     )
+#   # }
+#   # }
+# }
+
+
+gt_total_func <- function(question_table, var_name, title){ 
+  dt_first_table <- question_table %>%
+    mutate(np = paste0(n, " (", round(percentage, digits = 1), "%)"))
+
+  summary_row <- dt_first_table %>%
+    summarise(np = paste0(sum(n, na.rm = TRUE), " (100%)"),
+              !!var_name := "Total") %>%
+    select(!!var_name, np)
+
+  dt_first_table <- dt_first_table %>%
+    select(!!var_name, np)
+
+  dt_table_summary <- bind_rows(dt_first_table, summary_row)
+
+  last_row_index <- nrow(dt_table_summary) 
+
+  gt_table <- dt_table_summary %>%
+    gt::gt() %>%  
+    cols_label(!!var_name := md("**Answer**"), np = md("**N(%)**")) %>% 
+    tab_header(title = md(title)) %>% 
+    tab_options(
+      stub.font.weight = "bold"
+    )  %>%
+    tab_style(
+      style = list(
+        cell_text(weight = "bold")
+      ),
+      locations = cells_body(
+        columns = !!var_name
+      )
+    )
+
+  for (i in seq_len(nrow(dt_table_summary))) {
+    if (i != nrow(dt_table_summary)) {
+      gt_table <- gt_table %>%
+        tab_style(
+          style = cell_text(weight = "bold"),
+          locations = cells_body(rows = i, columns = vars(!!var_name))
+        ) %>%
+        tab_style(
+          style = cell_text(indent = px(20)),
+          locations = cells_body(rows = i, columns = vars(!!var_name))
+        )
+    }
+  }
+  return(gt_table)
+}
+
+
+refactor_variables <- function(dataframe, variable_pattern, levels) {
+  selected_variables <- grep(variable_pattern, names(dataframe), value = TRUE)
+  for (variable_name in selected_variables) {
+    dataframe[[variable_name]] <- factor(dataframe[[variable_name]], levels = levels)
+  }
+  return(dataframe)
+}
+
+# Define variable pattern and levels once you get to the table
+# EX:
+# variable_pattern <- "^D_114280729_"
+# levels <- c(232063618, 948148236,  692824372, "Skipped this Question")
+# 
+# # Apply the function
+# CVD_tib <- refactor_variables(CVD_tib, variable_pattern, levels)
 
 ```
 
@@ -415,30 +594,9 @@ which_race= data_tib_base %>%  mutate(race= case_when(multi_racial==1 ~ "Multi-R
                                                      D_384191091_D_384191091_D_746038746==1 ~ "Prefer Not to Answer",
                                                      TRUE  ~ "Skipped this question"))
 
-dt_all_races_summary <- which_race  %>% dplyr::group_by(race) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup()  %>%  dplyr::select(race, n, percentage)
+which_race <- which_race  %>% dplyr::group_by(race) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup()  %>%  dplyr::select(race, n, percentage)
 
-dt_all_races_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Race/Ethnicity of Participants Who Completed BOH Section of First Survey")) %>% 
-  cols_label(n= md("**Number of Participants**"), race = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows( groups=F,
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = race,
-    )
-  )
-
+gt_total_func(which_race, "race", "Race/Ethnicity of Participants Who Completed BOH Section of First Survey")
 ```
 
 
@@ -464,40 +622,9 @@ amer_eth= dt_am_ind_ethn %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~
                                              TRUE ~ "Skipped this question"))
 
 dt_am_ind_ethn_summary <- amer_eth %>% group_by(ethnicity) %>%    dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage) 
-gtm3_print <- gt::gt(dt_am_ind_ethn_summary)
 
+gt_total_func(dt_am_ind_ethn_summary, "ethnicity", "Ethnicity of American Indian/Native American Participants")
 
-dt_am_ind_ethn_summary %>%  gt::gt(rowname_col = "row_lab") %>%
-  fmt_number(columns = "percentage", decimals = 2) %>%
-  tab_header(title = md("Ethnicity of American Indian/Native American Participants")) %>%
-  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
-  # summary_rows( groups=F,
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = ethnicity,
-    )
-  ) %>% opt_row_striping() %>%
-  tab_footnote(
-    footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
-  locations = cells_column_labels(columns = n),
-  placement = c("left")
-) %>%
-  tab_footnote(
-    footnote = md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
-  locations = cells_column_labels(columns = ethnicity),
-  placement = c("left")
-)
 
 
 #Asian/Asian American
@@ -524,37 +651,10 @@ which_eth= dt_asian %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Mul
 
 dt_asian_summary <- which_eth %>% group_by(ethnicity) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage) 
 
-dt_asian_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Ethnicity of Asian and Asian American Participants")) %>% 
-  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows( groups=F,
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = ethnicity,
-    )
-  ) %>% opt_row_striping() %>%
-  tab_footnote(
-    footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
-  locations = cells_column_labels(columns = n),
-  placement = c("left")
-) %>%
-  tab_footnote(
-    footnote = md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
-  locations = cells_column_labels(columns = ethnicity),
-  placement = c("left")
-)
+gt_total_func(dt_asian_summary, "ethnicity", "Ethnicity of Asian and Asian American Participants")
+
+
+
 
 
 #Black/African/African American 
@@ -584,38 +684,9 @@ which_eth= dt_black %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Mul
 
 
 dt_black_summary <- which_eth %>% group_by(ethnicity) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
+gt_total_func(dt_black_summary, "ethnicity", "Ethnicity of Black/African/African American Participants")
 
-dt_black_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Ethnicity of Black/African/African American Participants")) %>% 
-  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows( groups=F,
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = ethnicity,
-    )
-  ) %>% opt_row_striping() %>%
-  tab_footnote(
-    footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
-  locations = cells_column_labels(columns = n),
-  placement = c("left")
-) %>%
-  tab_footnote(
-    footnote = md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
-  locations = cells_column_labels(columns = ethnicity),
-  placement = c("left")
-)
+
 
 
 #Hispanic/Latino/Spanish
@@ -642,37 +713,10 @@ which_eth= dt_hisp %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Mult
 
 dt_hisp_summary <- which_eth %>% group_by(ethnicity) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
 
-dt_hisp_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Ethnicity of Hispanic/Latino/Spanish Participants")) %>% 
-  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows( groups=F,
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = ethnicity,
-    )
-  ) %>% opt_row_striping() %>%
-  tab_footnote(
-    footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
-  locations = cells_column_labels(columns = n),
-  placement = c("left")
-) %>%
-  tab_footnote(
-    footnote = md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
-  locations = cells_column_labels(columns = ethnicity),
-  placement = c("left")
-)
+gt_total_func(dt_hisp_summary, "ethnicity", "Ethnicity of Hispanic/Latino/Spanish Participants")
+
+
+
 
 
 #Middle Eastern or North African
@@ -700,37 +744,11 @@ which_eth= dt_mideast %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "M
 
 dt_mideast_summary <- which_eth %>% group_by(ethnicity) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
 
-dt_mideast_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Ethnicity of Middle Eastern or North African Participants")) %>% 
-  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows( groups=F,
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = ethnicity,
-    )
-  ) %>% opt_row_striping() %>%
-  tab_footnote(
-    footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
-  locations = cells_column_labels(columns = n),
-  placement = c("left")
-) %>%
-  tab_footnote(
-    footnote = md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
-  locations = cells_column_labels(columns = ethnicity),
-  placement = c("left")
-)
+gt_total_func(dt_mideast_summary, "ethnicity", "Ethnicity of Middle Eastern or North African Participants")
+
+
+
+
 
 
 #Hawaiian/ Pacific Islander
@@ -756,37 +774,8 @@ which_eth= dt_hawi %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Mult
 
 dt_hawi_summary <- which_eth %>% group_by(ethnicity) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
 
-dt_hawi_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Ethnicity of Hawaiian or Pacific Islander Participants")) %>% 
-  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows( groups=F,
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = ethnicity,
-    )
-  ) %>% opt_row_striping() %>%
-  tab_footnote(
-    footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
-  locations = cells_column_labels(columns = n),
-  placement = c("left")
-) %>%
-  tab_footnote(
-    footnote = md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
-  locations = cells_column_labels(columns = ethnicity),
-  placement = c("left")
-)
+gt_total_func(dt_hawi_summary, "ethnicity", "Ethnicity of Hawaiian or Pacific Islander Participants")
+
 
 
 #White
@@ -813,39 +802,9 @@ which_eth= dt_white %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Mul
                                              TRUE   ~ "Skipped this question"))
 
 dt_white_summary <- which_eth %>% group_by(ethnicity) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
-gtm3_print <- gt::gt(dt_white_summary)
 
-dt_white_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Ethnicity of White Participants")) %>% 
-  cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows( groups=F,
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = ethnicity,
-    )
-  ) %>% opt_row_striping() %>%
-  tab_footnote(
-    footnote = md("The denomination of this table is all participants who selected this race/etnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities."),
-  locations = cells_column_labels(columns = n),
-  placement = c("left")
-) %>%
-  tab_footnote(
-    footnote = md("Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
-  locations = cells_column_labels(columns = ethnicity),
-  placement = c("left")
-)
+gt_total_func(dt_white_summary, "ethnicity", "Ethnicity of White Participants")
+
 
 ```
 
@@ -853,7 +812,12 @@ dt_white_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ## SEX/ SEX2/ GENDER/ SEXORIENT
 ```{r SGM, warning=FALSE,echo=FALSE}
 
+#levels_list <- c("Female", "Male", "Intersex or Other", "Skipped this Question")
+data_tib_base$D_407056417 <- factor(data_tib_base$D_407056417,levels=c("Female", "Male", "Intersex or Other", "Skipped this Question"))
+
 simple_funct1(D_407056417, "Sex at birth")
+#"Female", "Male", "Intersex or Other", "Skipped this Question"
+
 
 
 #simple_funct1(D_289664241_D_289664241, "Gender")
@@ -870,36 +834,19 @@ style= data_tib_base  %>%  mutate(descr= case_when(D_289664241_D_289664241==5363
 
 style$descr <- factor(style$descr,levels=c("Woman", "Man", "Transgender Man", "Transgender Woman", "Genderqueer", "Non-binary", "Other", "Declined", "Skipped this question"))
 
-dt_appearence_summary <- style  %>% dplyr::group_by(descr) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(descr, n, percentage) 
+dt_appearence_summ <- style  %>% dplyr::group_by(descr) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))   %>% dplyr::ungroup() %>%  dplyr::select(descr, n, percentage)
 
+result <- gt_total_func(dt_appearence_summ, "descr", "Gender")
 
-dtgender <- dt_appearence_summary %>%  gt::gt(rowname_col = "row_lab") %>%
-  fmt_number(columns = "percentage", decimals = 2) %>%
-  tab_header(title = md("Gender")) %>%
-  cols_label(n= md("**Number of Participants**"),descr = md("**Description**"), percentage = md("**Percentage of Participants**")) %>%
-    # summary_rows( groups=F,
-    # column = c(participants,percentage),
-    # fns= list(
-    #   Sum= ~sum(.)
-    # ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = descr,
-    )
-   ) %>% opt_row_striping()
 tab_footnote(
-  dtgender,
+  result,
   md("These response options are mutually exclusive categories; only one response may be selected."),
   locations = cells_column_labels(columns = descr),
   placement = c("left")
 )
+
+
+
 
 
 # SEX2
@@ -923,77 +870,21 @@ which_sex2= dt_sex2 %>%  mutate(body_part= case_when(as.numeric(multb2)>1 ~ "Mul
                                              TRUE   ~ "Skipped this question"))
 
 dt_sex2_summary <- which_sex2 %>% group_by(body_part) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(body_part, n, percentage)
-gtm3_print <- gt::gt(dt_white_summary)
 
-dt_sex2_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Body Part of Intersex Participants")) %>% 
-  cols_label(n= md("**Number of Participants**"), body_part = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows( groups=F,
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = body_part,
-    )
-  ) %>% opt_row_striping()
+gt_total_func(dt_sex2_summary, "body_part", "Body Part of Intersex Participants")
 
 
 
 
 
 #Appearance/Style
-
-style= data_tib_base  %>%  mutate(descr= case_when(D_987107433==220083334 ~ "Very Feminine",
-                                               D_987107433==541300533 ~ "Mostly Feminine",
-                                               D_987107433==878286618 ~ "Somewhat Feminine",
-                                               D_987107433==910745276 ~ "Equally Feminine and Masculine",
-                                               D_987107433==915528806 ~ "Very Masculine",
-                                               D_987107433==265452386 ~ "Mostly Masculine",
-                                               D_987107433==510148951 ~ "Somewhat Masculine",
-                                               TRUE ~ "Skipped this question"))
-
-style$descr <- factor(style$descr,levels=c("Very Feminine", "Mostly Feminine", "Somewhat Feminine", "Equally Feminine and Masculine", "Very Masculine", "Mostly Masculine", "Somewhat Masculine", "Skipped this question"))
-
-dt_appearence_summary <- style  %>% dplyr::group_by(descr) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(descr, n, percentage) 
+data_tib_base$D_987107433 <- factor(data_tib_base$D_987107433, levels=c(220083334,541300533,878286618,910745276,510148951,265452386,915528806,746038746, "Skipped this Question"))
+simple_funct1(D_987107433, "STYLE: Appearence, Style, Dress, Mannerisms")
 
 
-dt_appearence_summary %>%  gt::gt(rowname_col = "row_lab") %>%
-  fmt_number(columns = "percentage", decimals = 2) %>%
-  tab_header(title = md("STYLE: Appearence, Style, Dress, Mannerisms")) %>%
-  cols_label(n= md("**Number of Participants**"),descr = md("**Description**"), percentage = md("**Percentage of Participants**")) %>%
-    # summary_rows( groups=F,
-    # column = c(participants,percentage),
-    # fns= list(
-    #   Sum= ~sum(.)
-    # ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = descr,
-    )
-   ) %>% opt_row_striping()
-
-
-
-
-simple_funct1(D_555481393_D_555481393, "SEXORIETNT: Sexual Orienation")
-
+data_tib_base$D_555481393_D_555481393 <- factor(data_tib_base$D_555481393_D_555481393, levels=c(271882746,903084185,999994434,727200870,854349138,832978839,197935377,410008111,831942158,210894509,807835037,178420302,746038746, "Skipped this Question"))
+simple_funct1(D_555481393_D_555481393, "SEXORIET: Sexual Orienation")
+#data_tib_base %>%  select(D_555481393_D_979809707) %>% filter(!is.na(D_555481393_D_979809707)) %>% gt::gt() %>% cols_label(D_555481393_D_979809707= md("**Response for 'Other' Sexual Orientation**"))
 
 
 
@@ -1004,7 +895,20 @@ simple_funct1(D_555481393_D_555481393, "SEXORIETNT: Sexual Orienation")
 ## LANG
 ```{r Language, include=FALSE}
 
-which_lang= data_tib_base %>%  mutate(language= case_when(D_588212264_D_588212264_D_163149180==1 ~ "English",
+data_tib_base <- data_tib_base %>%
+  mutate(multc1 = 0)  # Initialize the multc1 column with zeros
+
+# Filter columns based on pattern
+columns_to_sum <- colnames(data_tib_base)[grepl("D_207025341_D_207025341_D_", colnames(data_tib_base))]
+
+# Loop through each column and apply the operation
+for (col in columns_to_sum) {
+  data_tib_base <- data_tib_base %>%
+    mutate(multc1 = ifelse(.data[[col]] == 1, 1, 0) + .data$multc1)
+}
+
+which_lang= data_tib_base %>%  mutate(language= case_when(as.numeric(multc1)>1 ~ "Multi-Lingual",
+                                                        D_588212264_D_588212264_D_163149180==1 ~ "English",
                                                           D_588212264_D_588212264_D_773342525==1 ~ "Spanish",
                                                           D_588212264_D_588212264_D_918819379==1 ~ "Spanish Creole",
                                                           D_588212264_D_588212264_D_733789220==1 ~ "French",
@@ -1023,7 +927,7 @@ which_lang= data_tib_base %>%  mutate(language= case_when(D_588212264_D_58821226
                                                           D_588212264_D_588212264_D_288079668==1 ~ "Japanese",
                                                           D_588212264_D_588212264_D_669977999==1 ~ "Arabic",
                                                           (D_588212264_D_588212264_D_807835037==1 | !is.na(D_588212264_D_486535201)) ~ "Other",
-                                                          TRUE   ~ "Skipped this question"))
+                                                          TRUE   ~ "Skipped this Question"))
 
 dt_language_summary <- which_lang %>% group_by(language) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(language, n, percentage)
 
@@ -1047,69 +951,8 @@ dt_language_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = language,
     )
-  ) %>% opt_row_striping()
+  ) 
 
-
-
-
- 
-tmp1Lang<- data_tib_base[, grepl("588212264", colnames(data_tib_base))]
-
-tmp1Lang <- tmp1Lang[, c(2, 18, 20,15,17,5,13,9, 3,8, 12, 16, 4, 21,  11, 7, 6, 14, 19)]
-
-lang_dx <- NULL
-for (i in 1:19){
-  dt <- as.data.frame(tab1(tmp1Lang[,i])$output.table)
-  dt$lang_dx <- colnames(tmp1Lang)[i]
-  lang_dx <- rbind(lang_dx,dt[2,])
-  
-}
-lang_dx$lang_dx ### how are their race variables being assigned here?? wrong variable matching. Flattening issue?
-
-lang_dx$lang_dx <- c("English", "Spanish", "Spanish Creole", "French", "French Creole", "Italian", "Portuguese", "German", "Russian", "Polish", "Hindi", "Chinese","Korean", "Vietnamese", "Tagalog", "Ilocano", "Japanese", "Arabic", "Other")
-
-```
-```{r LanguageTable, warning=FALSE, echo=FALSE, message=FALSE}
-# colnames(lang_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
-# mgr1_1 <- lang_dx[, c(4,1,2)]
-# 
-# colnames(lang_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-# mgr1_2 <- lang_dx[, c(4,1,2)]
-
-colnames(lang_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-lang1 <- lang_dx[, c(4,1,2)]
-
-skipped_lang1 <- sum(table(which_lang$language=="Skipped this question")[2])
-lang1[as.numeric(dim(lang1)[[1]])+1,] <- c("Skipped this Question", skipped_lang1, round((skipped_lang1/dim(data_tib_base)[[1]])*100,2))
-
-
-dt_lang1 <- lang1 %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "Percentage", decimals = 2) %>% 
-  tab_header(title = md("LANG: Language Spoken in Childhood Home")) %>% 
-  cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentage of Participants**"),  Condition = md("**Answer**")) %>% 
-  # summary_rows( groups=F,
-  #   column = c(Frequency,Percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  #grand_summary_rows(columns=c(Frequency, Percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = Condition,
-    )
-  )
-tab_footnote(
-  dt_lang1,
-  md("As this is a select all question, participants may select multiple responses."),
-  locations = cells_column_labels(columns = Percentage),
-  placement = c("left")
-)
 
 
 
@@ -1133,28 +976,7 @@ skincnc_type$Type <- factor(skincnc_type$Type,levels=c("Basal Cell", "Squamous C
 
 dt_skincnc_type_summary <- skincnc_type %>% dplyr::group_by(Type) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Type, n, percentage)
 
-
-dt_skincnc_type_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("SKINCANC2: Type(s) or Skin Cancer Diagnosed")) %>% 
-  cols_label(n= md("**Number of Participants**"),Type = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(participants,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = Type,
-    )
-  ) %>% opt_row_striping()
+gt_total_func(dt_skincnc_type_summary, "Type", "SKINCANC2: Type(s) or Skin Cancer Diagnosed")
 
 
 boxp_funct(D_904550680_D_206625031, "Age Diagnosed with Skin Cancer", "Age")
@@ -1179,31 +1001,7 @@ mhgroup1COUNT= data_tib_base %>%  mutate(cardiov= case_when(D_167101091_D_698944
                                              D_167101091_D_619337095==1 ~ "Stroke",
                                              D_167101091_D_535003378==1 ~ "None",
                                              TRUE ~ "Skipped this question"))
-  
-dt_cardiov_summary <- mhgroup1COUNT  %>% dplyr::group_by(cardiov) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(cardiov, n, percentage) 
 
-
-gt_mh1<- dt_cardiov_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("MHGROUP1: Diagnosed Cardiovascular Conditions")) %>% 
-  cols_label(cardiov = md("**Answer**"), n= md("**Number of Participants**"),percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(participants,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = cardiov,
-    )
-  ) %>% opt_row_striping()
 
 
 
@@ -1421,31 +1219,6 @@ mhgroup2= data_tib_base %>%  mutate(resp= case_when(D_894259747_D_359025642==1 ~
                                              D_894259747_D_535003378==1 ~ "None",
                                              TRUE ~ "Skipped this question"))
 
-dt_resp_summary <- mhgroup2  %>% dplyr::group_by(resp) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(resp, n, percentage)
-
-
-gt_mh2<- dt_resp_summary %>%  gt::gt(rowname_col = "row_lab") %>%
-  fmt_number(columns = "percentage", decimals = 2) %>%
-  tab_header(title = md("MHGROUP2: Diagnosed Respiratory Conditions")) %>%
-  cols_label(n= md("**Number of Participants**"), resp = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
-  # summary_rows(
-  #   column = c(participants,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = resp,
-    )
-  ) %>% opt_row_striping()
-
 
 
 tmp2<- data_tib_base[, grepl("894259747", colnames(data_tib_base))]
@@ -1520,30 +1293,6 @@ mhgroup3= data_tib_base %>%  mutate(digest= case_when(D_180961306_D_406890409==1
                                              D_180961306_D_535003378==1 ~ "None",
                                              TRUE ~ "Skipped this question"))
 
-dt_digest_summary <- mhgroup3  %>% dplyr::group_by(digest) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(digest, n, percentage) 
-
-
-gt_mh3<- dt_digest_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("MHGROUP3: Diagnosed Digestive System Problems")) %>% 
-  cols_label(n= md("**Number of Participants**"),digest = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(participants,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = digest,
-    )
-  ) %>% opt_row_striping()
 
 
 
@@ -1610,29 +1359,6 @@ mhgroup4= data_tib_base %>%  mutate(thy_d_g= case_when(D_900541533_D_726539692==
                                              D_900541533_D_535003378==1 ~ "None",
                                              TRUE ~ "Skipped this question"))
 
-dt_thy_d_g_summary <- mhgroup4 %>%  dplyr::group_by(thy_d_g) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(thy_d_g, n, percentage) 
-
-gt_mh4<- dt_thy_d_g_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("MHGROUP4: Diagnosed with Any of These Conditions")) %>% 
-  cols_label(n= md("**Number of Participants**"),thy_d_g = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(participants,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = thy_d_g,
-    )
-  ) %>% opt_row_striping()
 
 
 
@@ -1693,40 +1419,8 @@ tab_footnote(
 ## DM
 ```{r DM, warning=FALSE, echo=FALSE, message=FALSE}
 dict <- c(dict, "146477090"="Type 1", "573635975"="Type 2")
+data_tib_base$D_494032093 <- factor(data_tib_base$D_494032093, levels=c(146477090, 573635975, 178420302, "Skipped this Question"))
 one_logic_funct(D_494032093, D_900541533_D_158044532, 1, "Type of Diabetes")
-
-# 
-# diebts= data_tib_base %>% filter(D_900541533_D_158044532==1) %>%   mutate(meds= case_when(D_494032093=="146477090"~"Type 1",
-#                                                D_494032093=="573635975"~"Type 2",
-#                                                D_494032093=="178420302"~"Unknown",
-#                                                TRUE  ~ "Skipped this question"))
-# 
-# 
-# dtdiebts_summary <- diebts %>% group_by(meds) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
-# 
-# 
-# dtdiebts_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-#   fmt_number(columns = "percentage", decimals = 2) %>% 
-#   tab_header(title = md("DM: Type of Diebetes")) %>% 
-#   cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-#   # summary_rows(
-#   #   column = c(n,percentage),
-#   #   fns= list(
-#   #     Sum= ~sum(.)
-#   #   ), decimals=0) %>%
-#   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-#   tab_options(
-#     stub.font.weight = "bold"
-#   ) %>%
-#   tab_style(
-#     style = list(
-#       cell_text(weight = "bold")
-#     ),
-#     locations = cells_body(
-#       columns = meds,
-#     )
-#   ) %>% opt_row_striping()
-
 ```
 
 ## MH GROUP5
@@ -1736,29 +1430,6 @@ mhgroup5= data_tib_base %>%  mutate(kidn= case_when(D_874046190_D_827542780==1 ~
                                              D_874046190_D_535003378==1 ~ "None",
                                              TRUE ~ "Skipped this question"))
 
-dt_kidn_summary <- mhgroup5 %>% dplyr::group_by(kidn) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(kidn, n, percentage) 
-
-gt_mh5<- dt_kidn_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("MHGROUP5: Diagnosed with Kidney Conditions")) %>% 
-  cols_label(n= md("**Number of Participants**"), kidn = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(participants,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = kidn,
-    )
-  ) %>% opt_row_striping()
 
 
 
@@ -1822,32 +1493,6 @@ mhgroup6= data_tib_base %>%  mutate(sysoth= case_when(D_543728565_D_636030086==1
                                              D_543728565_D_134592375==1 ~ "Gout",
                                              D_543728565_D_535003378==1 ~ "None",
                                              TRUE ~ "Skipped this question"))
-
-dt_sysoth_summary <- mhgroup6 %>% dplyr::group_by(sysoth) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(sysoth, n, percentage)
-
-
-gt_mh6<- dt_sysoth_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("MHGROUP6: Diagnosed with Systemic Conditions")) %>% 
-  cols_label(n= md("**Number of Participants**"), sysoth = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(participants,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = sysoth,
-    )
-  ) %>% opt_row_striping()
-
 
 
 
@@ -1918,29 +1563,7 @@ mhgroup7= data_tib_base %>%  mutate(sti_std= case_when(D_874709643_D_164910211==
                                              D_874709643_D_535003378==1 ~ "None",
                                              TRUE ~ "Skipped this question"))
 
-dt_sti_std_summary <- mhgroup7 %>% dplyr::group_by(sti_std) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(sti_std, n, percentage)
 
-gt_mh7<- dt_sti_std_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>%  
-  tab_header(title = md("MHGROUP7: Diagnosed Infections or Diseases")) %>% 
-  cols_label(n= md("**Number of Participants**"), sti_std = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(participants,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = sti_std,
-    )
-  ) %>% opt_row_striping()
 
 
 
@@ -2008,29 +1631,7 @@ mhgroup8= data_tib_base %>%  mutate(urn_repro= case_when(D_725626004_D_509721537
                                              D_725626004_D_535003378==1 ~ "None",
                                              TRUE ~ "Skipped this question"))
 
-dt_urn_repro_summary <- mhgroup8 %>% dplyr::group_by(urn_repro) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(urn_repro, n, percentage)
 
-gt_mh8<- dt_urn_repro_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("MHGROUP8: Diagnosed Urinary and Reproductive Problems")) %>% 
-  cols_label(n= md("**Number of Participants**"), urn_repro = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(participants,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = urn_repro,
-    )
-  ) %>% opt_row_striping()
 
 
 
@@ -2093,71 +1694,13 @@ tab_footnote(
 one_logic_funct(D_852236900, D_725626004_D_854945381, 1, "BREASTDIS4: DCIS Confirmed with Biopsy")
 
 
-# breast_d4= data_tib_base %>% filter(D_725626004_D_854945381==1) %>%  mutate(meds= case_when(D_852236900==353358909 ~ "Yes",
-#                                                D_852236900==104430631 ~ "No",
-#                                                TRUE  ~ "Skipped this question"))
-# 
-# 
-# dtbreast_d4_summary <- breast_d4 %>% group_by(meds) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
-# 
-# 
-# dtbreast_d4_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-#   fmt_number(columns = "percentage", decimals = 2) %>% 
-#   tab_header(title = md("BREASTDIS4: DCIS Confirmed with Biopsy")) %>% 
-#   cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-#   # summary_rows(
-#   #   column = c(n,percentage),
-#   #   fns= list(
-#   #     Sum= ~sum(.)
-#   #   ), decimals=0) %>%
-#   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-#   tab_options(
-#     stub.font.weight = "bold"
-#   ) %>%
-#   tab_style(
-#     style = list(
-#       cell_text(weight = "bold")
-#     ),
-#     locations = cells_body(
-#       columns = meds,
-#     )
-#   ) %>% opt_row_striping()
-
 ```
 ## DEPRESS
 ```{r depress, warning=FALSE, echo=FALSE, message=FALSE}
 
 simple_funct1(D_347860896, "DEPRESS: Diagnosed with Clinical Depression")
 
-# dprss= data_tib_base %>%  mutate(meds= case_when(D_347860896==353358909 ~ "Yes",
-#                                                D_347860896==104430631 ~ "No",
-#                                                TRUE  ~ "Skipped this question"))
-# 
-# 
-# dtdprss_summary <- dprss %>% group_by(meds) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
-# 
-# 
-# dtdprss_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-#   fmt_number(columns = "percentage", decimals = 2) %>% 
-#   tab_header(title = md("DEPRESS: Diagnosed with Clinical Depression")) %>% 
-#   cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-#   # summary_rows(
-#   #   column = c(n,percentage),
-#   #   fns= list(
-#   #     Sum= ~sum(.)
-#   #   ), decimals=0) %>%
-#   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-#   tab_options(
-#     stub.font.weight = "bold"
-#   ) %>%
-#   tab_style(
-#     style = list(
-#       cell_text(weight = "bold")
-#     ),
-#     locations = cells_body(
-#       columns = meds,
-#     )
-#   ) %>% opt_row_striping()
+
 
 ```
 
@@ -2182,29 +1725,7 @@ mhgroup9= data_tib_base %>%  mutate(surgery= case_when(D_624179836_D_797189152==
                                              D_624179836_D_535003378==1 ~ "None",
                                              TRUE ~ "Skipped this question"))
 
-dt_surgery_summary <- mhgroup9 %>% dplyr::group_by(surgery) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(surgery, n, percentage)
 
-gt_mh9<- dt_surgery_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("MHGROUP9: Surgeries Had")) %>% 
-  cols_label(n= md("**Number of Participants**"),surgery = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(participants,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = surgery,
-    )
-  ) %>% opt_row_striping()
 
 
 
@@ -2266,31 +1787,9 @@ dt_mgr9
 ```{r overall, warning=FALSE, echo=FALSE, message=FALSE}
 
 ##Overall
-#dict <- c(dict,"131550264"="Fair","138752522"="Poor","565881164"="Very Good","670680466"="Excellent","719933364"="Good")
+data_tib_base$D_875208305 <- factor(data_tib_base$D_875208305, levels=c(670680466,565881164,719933364,131550264,138752522, "Skipped this Question"))
+simple_funct1(D_875208305, "OVERHEALTH: General Health Rating")
 
-health= data_tib_base   %>%  mutate(status= case_when(D_875208305==131550264 ~ "Fair",
-                                                      D_875208305==138752522 ~ "Poor", 
-                                                      D_875208305==565881164 ~ "Very Good",
-                                                      D_875208305==670680466 ~ "Excellent",
-                                                      D_875208305==719933364 ~ "Good",
-                                                      TRUE ~ "Skipped This Question"))
-
-health$status <- factor(health$status,levels=c("Poor", "Fair", "Good", "Very Good", "Excellent", "Skipped This Question"))
-
-dt_overall_summary <- health %>% dplyr::group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage) 
-
-dt_overall_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("OVERHEALTH: General Health Rating")) %>% 
-  cols_label(n= md("**Number of Participants**"), status = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows( groups=F,column = c(n,percentage), 
-  #              fns= list( Sum= ~sum(.)), 
-  #              decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(stub.font.weight = "bold") %>%
-  tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = status,)) %>% 
-  opt_row_striping()
 
 ```
 
@@ -2338,59 +1837,11 @@ family= data_tib_base  %>%  mutate(status= case_when((D_276353712==353358909 | D
                                       D_718867914_6_6==353358909 | D_718867914_7_7==353358909 | D_718867914_8_8==353358909 | D_718867914_9_9==353358909 |
                                       D_718867914_10_10==353358909) ~ "Yes", 
                                                     TRUE ~ "No"))
-# family$percentage <- round(family$percentage, digits=2)
-# dt_fam_canc_summary <- family %>% group_by(status) %>%   summarize_at(c("freq", "percentage"), sum, na.rm = TRUE)
-# 
-# knitr::kable(dt_fam_canc_summary,col.names=c("Diagnosed","Number of Participants" , "Percentage of Participants"), caption='Primary Relative(s) Diagnosed With Cancer')
-# #,row.names=FALSE, align=c("l","c","c","c"), booktabs = TRUE )
-# 
-# dt_fam_canc_summary %>%  gt::gt() %>%  ## why is this not a proper gt_tbl??
-#   fmt_number(columns = "percentage", decimals = 2) %>%
-#   tab_header(title = md("Primary Relative(s) Diagnosed With Cancer")) %>%
-#   cols_label(status = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
-#     summary_rows(
-#     column = percentage,
-#     fns= list(
-#       Sum= ~sum(.)
-#     ), decimals=0) %>%
-#   tab_options(
-#       stub.font.weight = "bold"
-#     ) %>%
-#   tab_style(
-#     style = list(
-#       cell_text(weight = "bold")
-#     ),
-#     locations = cells_body(
-#       columns = status,
-#     )
-#   ) %>% opt_row_striping()
-
 
 
 dt_fam_canc_summary <- family %>% group_by(status) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(status, n, percentage)
 
-
-dt_fam_canc_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Primary Relative(s) Diagnosed With Cancer")) %>% 
-  cols_label(n= md("**Number of Participants**"), status = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-    stub.font.weight = "bold"
-  ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = status,
-    )
-  ) %>% opt_row_striping()
+gt_total_func(dt_fam_canc_summary, "status", "Primary Relative(s) Diagnosed With Cancer")
 
 ```
 
@@ -2436,27 +1887,8 @@ momcnc= momcnc  %>%  mutate(cancer= case_when(as.numeric(multc)>1 ~ "Multiple Ca
 
 dt_mom_cnc_summary <- momcnc %>%  dplyr::group_by(cancer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(cancer, n, percentage)
 
-dt___mom_cnc_summary <- dt_mom_cnc_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("MOMCANC2 Mom's Diagnosed Cancer Type")) %>% 
-  cols_label(n= md("**Number of Participants**"), cancer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = cancer,
-    )
-  ) %>% opt_row_striping()
+gt_total_func(dt_mom_cnc_summary, "cancer", "MOMCANC2 Mom's Diagnosed Cancer Type")
+
 
 ```
 
@@ -2464,16 +1896,7 @@ dt___mom_cnc_summary <- dt_mom_cnc_summary %>%  gt::gt(rowname_col = "row_lab") 
 
 tmpMOMCANC <- data_tib_base %>%  filter(data_tib_base$D_276353712==353358909)
 tmpMC2<- tmpMOMCANC[, grepl("814510313", colnames(tmpMOMCANC))]
-tmpMC2$D_814510313_D_677702321 <- ifelse(is.na(tmpMC2$D_814510313_D_677702321), 0, 1)
-
-
-
-tmpM2 <- tmpMC2 %>%  select(D_814510313_D_814510313_D_939782495, D_814510313_D_814510313_D_135725957, D_814510313_D_814510313_D_518416174, D_814510313_D_814510313_D_847945207,
-                    D_814510313_D_814510313_D_283025574, D_814510313_D_814510313_D_942970912, D_814510313_D_814510313_D_596122041, D_814510313_D_814510313_D_489400183,
-                    D_814510313_D_814510313_D_863246236, D_814510313_D_814510313_D_607793249, D_814510313_D_814510313_D_532172400, D_814510313_D_814510313_D_754745617,
-                    D_814510313_D_814510313_D_665036297, D_814510313_D_814510313_D_200837530, D_814510313_D_814510313_D_990319383, D_814510313_D_814510313_D_487917585,
-                    D_814510313_D_814510313_D_603181162, D_814510313_D_814510313_D_482225200, D_814510313_D_814510313_D_764891959, D_814510313_D_814510313_D_139822395,
-                    D_814510313_D_814510313_D_723614811, D_814510313_D_814510313_D_807835037, D_814510313_D_814510313_D_178420302)
+tmpM2 <- tmpMC2 %>%  select(-"D_814510313_D_677702321")
 
 momcnc_dx <- NULL
 for (i in 1:23){
@@ -2593,7 +2016,7 @@ dt___dad_cnc_summary <- dt_dad_cnc_summary %>%  gt::gt(rowname_col = "row_lab") 
     locations = cells_body(
       columns = cancer,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 ```
 
@@ -2602,13 +2025,8 @@ dt___dad_cnc_summary <- dt_dad_cnc_summary %>%  gt::gt(rowname_col = "row_lab") 
 
 tmpDADCANC <- data_tib_base %>%  filter(data_tib_base$D_659784914==353358909)
 tmpMC2<- tmpDADCANC[, grepl("173240848", colnames(tmpDADCANC))]
-tmpMC2$D_173240848_D_195093589 <- ifelse(is.na(tmpMC2$D_173240848_D_195093589), 0, 1)
+tmpM2 <- tmpMC2 %>%  select(-"D_173240848_D_195093589", -"D_173240848_D_173240848_D_210004486") #-"D_173240848_D_173240848_D_195093589",  in v2 but has no data
 
-
-tmpM2 <- tmpMC2[, c(21,1,11,19,22,13,
-                    10,20, 14,12, 16, 15,
-                    5, 23,9, 8, 17, 2, 6,
-                    18, 3,7)]
 DADcnc_dx <- NULL
 for (i in 1:22){
   dt <- as.data.frame(tab1(tmpM2[,i])$output.table)
@@ -2665,35 +2083,16 @@ tab_footnote(
 ## EDU
 ```{r Edu, warning=FALSE, echo=FALSE, message=FALSE}
 
-edu= data_tib_base  %>%  mutate(edlevel= case_when(D_367803647_D_367803647==978204320 ~ "Grade School(Grades 1-8)",
-                                                  D_367803647_D_367803647==935502060 ~ "Some High School, No Diploma",
-                                                  D_367803647_D_367803647==404564707 ~ "High School Graduate or GED",
-                                                  D_367803647_D_367803647==432193665 ~ "Some College, No Degree",
-                                                  D_367803647_D_367803647==890756124 ~ "Technical or Trade School After High School",
-                                                  D_367803647_D_367803647==766964355 ~ "Associate's Degree",
-                                                  D_367803647_D_367803647==875342283 ~ "Bachelor's Degree",
-                                                  D_367803647_D_367803647==598242454 ~ "Advanced Degree",
-                                                  D_367803647_D_367803647==807835037 ~ "Other",
-                                                  TRUE ~ "Skipped This Question"))
+data_tib_base$D_367803647_D_367803647 <- factor(data_tib_base$D_367803647_D_367803647, levels=c(978204320,935502060,404564707,432193665,890756124,766964355,875342283,598242454,807835037, "Skipped this Question"))
+simple_funct1(D_367803647_D_367803647, "EDU: Highest Level of School Completed")
 
-edu$edlevel <- factor(edu$edlevel,levels=c("Grade School(Grades 1-8)", "Some High School, No Diploma", "High School Graduate or GED","Some College, No Degree","Technical or Trade School After High School","Associate's Degree","Bachelor's Degree","Advanced Degree", "Other", "Skipped This Question"))
-
-dt_edu_summary <- edu %>% dplyr::group_by(edlevel) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(edlevel, n, percentage)
-
-dt_edu_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("EDU: Highest Level of School Completed")) %>% 
-  cols_label(n= md("**Number of Participants**"), edlevel = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-    # summary_rows( groups=F,column = c(n,percentage), fns= list( Sum= ~sum(.)), decimals=0) %>%
-    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(stub.font.weight = "bold") %>%
-  tab_style(style = list(cell_text(weight = "bold")),
-    locations = cells_body(columns = edlevel,)) %>% opt_row_striping()
 
 ```
 
 ## INCOME
 ```{r income,  warning=FALSE, echo=FALSE}
+data_tib_base$D_759004335 <- factor(data_tib_base$D_759004335, levels=c(374508062,976555124,745561936,209571450,212249150,777814771,922395188,913602274,742032816,178420302,746038746, "Skipped this Question"))
+simple_funct1(D_759004335, "INCOME: Total Family Income")
 
 inc= data_tib_base  %>%  mutate(status= case_when(D_759004335==209571450 ~ "35,000-49,000",
                                                   D_759004335==212249150 ~ "50,000-74,000",
@@ -2722,7 +2121,7 @@ dt_income_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-    locations = cells_body(columns = status,)) %>% opt_row_striping()
+    locations = cells_body(columns = status,)) 
 
 ```
 
@@ -2732,36 +2131,6 @@ dt_income_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 simple_funct1(D_646504105, "ALTADDRESS1: Any Other Mailing Address")
 
-
-# alt_add1= data_tib_base %>%  mutate(meds= case_when(D_646504105==353358909 ~ "Yes",
-#                                                D_646504105==104430631 ~ "No",
-#                                                TRUE  ~ "Skipped this question"))
-# 
-# 
-# dtalt_add1_summary <- alt_add1 %>% group_by(meds) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
-# 
-# 
-# dtalt_add1_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-#   fmt_number(columns = "percentage", decimals = 2) %>% 
-#   tab_header(title = md("ALTADDRESS1: Any Other Mailing Address")) %>% 
-#   cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-#   # summary_rows(
-#   #   column = c(n,percentage),
-#   #   fns= list(
-#   #     Sum= ~sum(.)
-#   #   ), decimals=0) %>%
-#   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-#   tab_options(
-#     stub.font.weight = "bold"
-#   ) %>%
-#   tab_style(
-#     style = list(
-#       cell_text(weight = "bold")
-#     ),
-#     locations = cells_body(
-#       columns = meds,
-#     )
-#   ) %>% opt_row_striping()
 
 ```
 
@@ -2954,21 +2323,38 @@ hist_funct_D <- function(CID,Title, Xlab, Ylab) {
 
 
 #GT table for questions asked to all (no skip logic)
-simple_funct2 <- function(CID, Title){  
+simple_funct2 <- function(CID, Title, List_of_Levels){  
   CID_SYM <- rlang::ensym(CID)
   dt_select <- data_tib_all2 %>%  select(Connect_ID, !!CID_SYM)
-  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
-  
-  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md(Title)) %>% 
-  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%  
+  gt_yn <- data_tib_base  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+
+
+gt_yn <- gt_yn %>%  dplyr::mutate(np= paste0(n, "(", round(percentage, digits=1), "%)"))
+
+gt_yn$answer <- factor(gt_yn$answer,levels=List_of_Levels) #line causing the issues
+
+summary_row_simple1 <- gt_yn %>%
+  summarise(np = paste0(sum(n, na.rm = TRUE), " (100%)"),
+            answer = "Total") %>% select(answer, np)
+
+gt_yn <- gt_yn %>% select(answer, np)
+
+# Bind summary row to dt_simple_funct1_summary
+dt_simple_funct1_summary <- bind_rows(gt_yn, summary_row_simple1)
+
+#Get last row number for bolding the total
+last_row_index <- nrow(dt_simple_funct1_summary)
+
+  dt_simple_funct1_summary %>%  gt::gt(rowname_col = "row_lab")  %>%
+  #fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md(Title)) %>%
+  cols_label(answer = md("**Answer**"), np = md("**N (%)**")) %>%
   # summary_rows(
-  #   columns = c(n,percentage),    
+  #   columns = c(n,percentage),
   #   fns= list(
   #     Sum= ~sum(.)
   #   ), decimals=0) %>%
-    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+    #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
     ) %>%
@@ -2977,19 +2363,20 @@ simple_funct2 <- function(CID, Title){
       cell_text(weight = "bold")
     ),
     locations = cells_body(
-      columns = answer,
+      #rows = 1:(last_row_index-1),
+      columns = answer
     )
-  ) #%>% opt_row_striping()
-}
-
-
-#Error in `dplyr::mutate()`:
-# ! Problem while computing `answer = recode(...)`.
-# Caused by error in `FUN()`:
-# ! 'recode': all recodings should be formula but: "(Whatever is the first entry into the dict)"
-# Run `rlang::last_error()` to see where the error occurred.
-
-
+  ) %>% tab_style(
+    style = list(
+      cell_text(indent = px(20))
+    ),
+    locations = cells_body(
+      rows = seq_len(nrow(dt_simple_funct1_summary)) != nrow(dt_simple_funct1_summary), 
+      columns = vars(answer)
+  ) 
+   )
+ 
+ }
 
 
 #GT table with one filter/skip logic
@@ -2999,15 +2386,34 @@ one_logic_funct <- function(CID, CID_prev, Prev_Answer, Title){
   dt_select <- data_tib_all2 %>%  filter(!!CID_SYM_P == Prev_Answer) %>%  select(Connect_ID, !!CID_SYM) 
   gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
   
-  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
+  gt_yn <- gt_yn %>%  dplyr::mutate(np= paste0(n, "(", round(percentage, digits=1), "%)"))
+
+#gt_yn$answer <- factor(gt_yn$answer,levels=List_of_Levels) #line causing the issues
+
+summary_row_one_logic1 <- gt_yn %>%
+    summarise(np = paste0(sum(n, na.rm = TRUE), " (100%)"),
+              answer = "Total") %>% select(answer, np)
+
+gt_yn <- gt_yn %>% select(answer, np)
+
+# Bind summary row to dt_one_logic_funct1_summary
+dt_one_logic_funct1_summary <- bind_rows(gt_yn, summary_row_one_logic1)
+
+#Get last row number for bolding the total
+last_row_index <- nrow(dt_one_logic_funct1_summary) 
+
+  
+ dt_one_logic_funct1_summary %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md(Title)) %>% 
-  cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+   cols_label(answer = md("**Answer**"), np = md("**N (%)**")) %>%
+  #cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows(
   #   column = c(n,percentage),
   #   fns= list(
   #     Sum= ~sum(.)
   #   ), decimals=0) %>%
+    #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
     ) %>%
@@ -3018,9 +2424,16 @@ one_logic_funct <- function(CID, CID_prev, Prev_Answer, Title){
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) %>% tab_style(
+    style = list(
+        cell_text(indent = px(20))
+    ),
+    locations = cells_body(
+        rows = seq_len(nrow(dt_one_logic_funct1_summary)) != nrow(dt_one_logic_funct1_summary), 
+        columns = vars(answer)
+    ) 
+) 
 }
-
 ``` 
 
 
@@ -3037,29 +2450,8 @@ agep <- hormn %>%  mutate(age= case_when(D_798889867=="200323667"~"In the past y
 
 dt_agep_summary <- agep %>% group_by(age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(age, n, percentage)
 
+gt_total_func(dt_agep_summary, "age", "HORNONCISWOM: Used Hormones to Make Body Look More Feminine")
 
-dt_agep_summary %>%  gt::gt() %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>%
-  fmt_number(columns = "n", decimals = 0) %>%
-  tab_header(title = md("HORNONCISWOM: Used Hormones to Make Body Look More Feminine")) %>% 
-  cols_label(n= md("**Number of Participants**"), age = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = age,
-    )
-  ) %>% opt_row_striping()
 
 ```
 
@@ -3209,7 +2601,6 @@ dict <- list("104430631"="No", "353358909"="Yes", "265550580"="Didn't Drink ", "
 
 
 ##GT TABLE: PRODUCT8C
-dict <- list("104430631"="No", "353358909"="Yes")
 funct_8c <- function(PRODUCT8C_CID, PRODUCT5_CID, Product1_CID, Title){  
   CID_SYM_P1 <- rlang::ensym(Product1_CID)
   CID_SYM_P8C <- rlang::ensym(PRODUCT8C_CID)
@@ -3241,7 +2632,7 @@ funct_8c <- function(PRODUCT8C_CID, PRODUCT5_CID, Product1_CID, Title){
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 }
 
 
@@ -3282,28 +2673,43 @@ funct_9b <- function(PRODUCT1_CID, PRODUCT4_CID, PRODUCT5_CID, PRODUCT8C_CID, PR
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 }
 
 
 #GT table for questions asked to all (no skip logic)
-simple_funct3 <- function(CID, Title){  
+simple_funct3 <- function(CID, Title, List_of_Levels){  
   CID_SYM <- rlang::ensym(CID)
   dt_select <- data_tib_all3 %>%  select(Connect_ID, !!CID_SYM)
-  gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% 
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
 
-    replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
-  
-  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md(Title)) %>% 
-  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+
+gt_yn <- gt_yn %>%  dplyr::mutate(np= paste0(n, "(", round(percentage, digits=1), "%)"))
+
+gt_yn$answer <- factor(gt_yn$answer,levels=List_of_Levels) #line causing the issues
+
+summary_row_simple1 <- gt_yn %>%
+  summarise(np = paste0(sum(n, na.rm = TRUE), " (100%)"),
+            answer = "Total") %>% select(answer, np)
+
+gt_yn <- gt_yn %>% select(answer, np)
+
+# Bind summary row to dt_simple_funct1_summary
+dt_simple_funct1_summary <- bind_rows(gt_yn, summary_row_simple1)
+
+#Get last row number for bolding the total
+last_row_index <- nrow(dt_simple_funct1_summary)
+
+  dt_simple_funct1_summary %>%  gt::gt(rowname_col = "row_lab")  %>%
+  #fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md(Title)) %>%
+  cols_label(answer = md("**Answer**"), np = md("**N (%)**")) %>%
   # summary_rows(
-  #   column = c(n,percentage),
+  #   columns = c(n,percentage),
   #   fns= list(
   #     Sum= ~sum(.)
   #   ), decimals=0) %>%
-    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+    #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
     ) %>%
@@ -3312,29 +2718,57 @@ simple_funct3 <- function(CID, Title){
       cell_text(weight = "bold")
     ),
     locations = cells_body(
-      columns = answer,
+      #rows = 1:(last_row_index-1),
+      columns = answer
     )
-  ) %>% opt_row_striping()
-}
+  ) %>% tab_style(
+    style = list(
+      cell_text(indent = px(20))
+    ),
+    locations = cells_body(
+      rows = seq_len(nrow(dt_simple_funct1_summary)) != nrow(dt_simple_funct1_summary), 
+      columns = vars(answer)
+  ) 
+   )
+ 
+ }
+
 
 #GT table with one filter/skip logic
 one_logic_funct3 <- function(CID, CID_prev, Prev_Answer, Title){  
   CID_SYM <- rlang::ensym(CID)
   CID_SYM_P <- rlang::ensym(CID_prev)
   dt_select <- data_tib_all3 %>%  filter(!!CID_SYM_P == Prev_Answer) %>%  select(Connect_ID, !!CID_SYM) 
-  gt_yn <- dt_select  %>% group_by(!!CID_SYM) %>% summarize(n=n(), percentage=100*n/nrow(.)) %>% ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% 
-    replace_na(list(answer="Skipped this Question")) %>%  select(answer, n, percentage)
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
   
-  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
+  gt_yn <- gt_yn %>%  dplyr::mutate(np= paste0(n, "(", round(percentage, digits=1), "%)"))
+
+#gt_yn$answer <- factor(gt_yn$answer,levels=List_of_Levels) #line causing the issues
+
+summary_row_one_logic1 <- gt_yn %>%
+    summarise(np = paste0(sum(n, na.rm = TRUE), " (100%)"),
+              answer = "Total") %>% select(answer, np)
+
+gt_yn <- gt_yn %>% select(answer, np)
+
+# Bind summary row to dt_one_logic_funct1_summary
+dt_one_logic_funct1_summary <- bind_rows(gt_yn, summary_row_one_logic1)
+
+#Get last row number for bolding the total
+last_row_index <- nrow(dt_one_logic_funct1_summary) 
+
+  
+ dt_one_logic_funct1_summary %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  #fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md(Title)) %>% 
-  cols_label(n= md("**Number of Participants**"), answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+   cols_label(answer = md("**Answer**"), np = md("**N (%)**")) %>%
+  #cols_label(n= md("**Number of Participants**"),  answer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows(
-  #   column = c(n, percentage),
+  #   column = c(n,percentage),
   #   fns= list(
   #     Sum= ~sum(.)
   #   ), decimals=0) %>%
-    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+    #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
     ) %>%
@@ -3345,7 +2779,15 @@ one_logic_funct3 <- function(CID, CID_prev, Prev_Answer, Title){
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) %>% tab_style(
+    style = list(
+        cell_text(indent = px(20))
+    ),
+    locations = cells_body(
+        rows = seq_len(nrow(dt_one_logic_funct1_summary)) != nrow(dt_one_logic_funct1_summary), 
+        columns = vars(answer)
+    ) 
+) 
 }
 
 
@@ -3378,7 +2820,7 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 }
 
 
@@ -3410,7 +2852,7 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 #     locations = cells_body(
 #       columns = answer,
 #     )
-#   ) %>% opt_row_striping()
+#   ) 
 # }
 # two_logic_funct(D_790436165_D_79043616, D_763164658, 486319890, 132232896, "CIG3_never: Smoking on a Regular Basis")
 # 
@@ -3451,7 +2893,7 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 #     locations = cells_body(
 #       columns = answer,
 #     )
-#   ) %>% opt_row_striping()
+#   ) 
 
 ```
 
@@ -3489,7 +2931,7 @@ dt_cig_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = often,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 ```
@@ -3531,7 +2973,7 @@ dt_cigar_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = often,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 ```
@@ -3574,7 +3016,7 @@ dt_e_cig_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = often,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 ```
@@ -3630,7 +3072,7 @@ dt_mj_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = often,
     )
-  ) %>% opt_row_striping()
+  ) 
 ```
 
 
@@ -3638,8 +3080,9 @@ dt_mj_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ```{r alclife25, warning=FALSE, echo=FALSE, message=FALSE}
 
 #ALCOHOL2
+# data_tib_all3$D_429228540 <- factor(data_tib_all3$D_429228540,levels=c(151488193, 805449318, 486319890, 132232896, "Skipped this question"))
+# one_logic_funct3(D_429228540,D_448968121, 353358909, "ALCOHOL2: Alcoholic Beverages in a Lifetime")
 
-#one_logic_funct3(D_429228540,D_448968121, 353358909, "ALCOHOL2: Alcoholic Beverages in a Lifetime")
 dt_ALC2= data_tib_all3  %>% filter(D_448968121==353358909)
 
 ALC2_ans= dt_ALC2 %>%  mutate(answer= case_when(D_429228540=="151488193"~"10 or less",
@@ -3671,7 +3114,7 @@ dtALC2_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 #ALCOHOL5
@@ -3703,14 +3146,16 @@ dtALC5_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 ```
 
 ## BEER1
 ```{r beer1, warning=FALSE, echo=FALSE, message=FALSE}
 
-#simple_funct3(D_726847824, "BEER1: Frequency of Drinking Beer/Hard Cider in the Last Year")
+# data_tib_all3$D_726847824 <- factor(data_tib_all3$D_726847824,levels=c("Less Than once per Month ", "Once a month","2-3 times per Month","1-2 times per week","3-4 times per Week","5-6 times per Week","Every Day", "Skipped this question"))
+# one_logic_funct3(D_726847824,D_447720598_D_549079588, 1, "BEER1: Frequency of Drinking Beer/Hard Cider in the Last Year")
+# #simple_funct3(D_726847824, "BEER1: Frequency of Drinking Beer/Hard Cider in the Last Year")
 
 dt_BEER1= data_tib_all3  %>% filter(D_447720598_D_549079588==1)
 
@@ -3746,7 +3191,7 @@ dtBEER1_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -3755,7 +3200,7 @@ dtBEER1_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ## LIQUOR1
 ```{r liquor1, warning=FALSE, echo=FALSE, message=FALSE}
 
-#simple_funct3(D_411088265, "LIQUOR1: Frequency of Drinking Liquor of Mixed Drinks in the Last Year")
+simple_funct3(D_411088265, "LIQUOR1: Frequency of Drinking Liquor of Mixed Drinks in the Last Year")
 
 
 dt_LIQ1= data_tib_all3  %>% filter(D_447720598_D_896953195==1)
@@ -3792,7 +3237,7 @@ dtLIQ1_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 ```
@@ -3836,7 +3281,7 @@ dtWINE1_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -3881,7 +3326,7 @@ dtOALC1_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 ```
@@ -3939,7 +3384,7 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 
 #ALCLIFE2B
 #alclife2_funct(D_633553324_D_164707243,"ALCLIFE2B: Frequency of Drinking: Ages 18-24")
@@ -3976,7 +3421,7 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 
 
 #ALCLIFE2C
@@ -4011,7 +3456,7 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 
 #ALCLIFE2D
 #alclife2_funct(D_633553324_D_818310825,"ALCLIFE2D: Frequency of Drinking: Ages 30-39")
@@ -4045,7 +3490,7 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 
 
 
@@ -4082,7 +3527,7 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 
 #ALCLIFE2F
 #alclife2_funct(D_633553324_D_175385712,"ALCLIFE2F: Frequency of Drinking: Ages 50-59")
@@ -4116,7 +3561,7 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 
 
 #ALCLIFE2G
@@ -4151,7 +3596,7 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
-            locations = cells_body(columns = oth_age,)) %>% opt_row_striping()
+            locations = cells_body(columns = oth_age,)) 
 
 #ALCLIFE2H-- no one yet
 # alclife2_funct(D_633553324_D_602102163,"ALCLIFE2A: Frequency of Drinking: Ages 70+")
@@ -4237,7 +3682,7 @@ dtWORK2019_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = meds,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 ```
 
@@ -4275,7 +3720,7 @@ dtWORKRES_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = meds,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 ```
@@ -4316,7 +3761,7 @@ dtNUMWORK_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = meds,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 ```
 
@@ -4353,7 +3798,7 @@ dtPREWORK_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = meds,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 ```
 
@@ -4392,7 +3837,7 @@ dtPREWORKRES_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = meds,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 ```
 
@@ -4544,7 +3989,7 @@ dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Address1,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4573,7 +4018,7 @@ dt_home2_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Address1,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4602,7 +4047,7 @@ dt_home3_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Address1,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4630,7 +4075,7 @@ dt_home4_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Address1,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4656,7 +4101,7 @@ dt_home5_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Address1,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4683,7 +4128,7 @@ dt_home6_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Address1,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4709,7 +4154,7 @@ dt_home7_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Address1,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 home8 <- Mod4 %>% filter(D_647612167==353358909 | D_150560299==270752953) %>%  
@@ -4734,7 +4179,7 @@ dt_home8_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Address1,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 home9 <- Mod4 %>% filter(D_532944666==353358909 | D_122054737==270752953) %>%  
@@ -4759,7 +4204,7 @@ dt_home9_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Address1,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 home10 <- Mod4 %>% filter(D_548863580==353358909 | D_948492967==270752953) %>%  
@@ -4784,7 +4229,7 @@ dt_home10_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Address1,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 home11 <- Mod4 %>% filter(D_124320444==353358909 | D_805353966==270752953) %>%  
@@ -4809,7 +4254,7 @@ dt_home11_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = Address1,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -4858,7 +4303,7 @@ ssn_surv_summary_gt <- ssn_surv_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = started,
     )
-  )   #%>% opt_row_striping()
+  )   #
 tab_footnote(
   ssn_surv_summary_gt,
   md("The SSN Survey Completion Flag was created after the SSN Survey had opened. There are additional participants with no flag that have given a SSN. Those will be included in the next table."),
@@ -4898,30 +4343,30 @@ gavePssn %>% dplyr::select(Completion, provided4)  %>% tbl_cross(
   modify_caption("Portion of SSN Given for Submitted SSN Surveys") #%>%
   #as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
 
-gavePssn_summary <- gavePssn  %>% dplyr::group_by(provided4) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(provided4, n, percentage) 
-
-dt_gavePssn_summary <- gavePssn_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Portion of SSN Given for Submitted SSN Surveys")) %>% 
-  cols_label(n= md("**Number of Participants**"), provided4 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(participants,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = provided4,
-    )
-  ) %>% opt_row_striping()
-
+# gavePssn_summary <- gavePssn  %>% dplyr::group_by(provided4) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(provided4, n, percentage) 
+# 
+# dt_gavePssn_summary <- gavePssn_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+#   fmt_number(columns = "percentage", decimals = 2) %>% 
+#   tab_header(title = md("Portion of SSN Given for Submitted SSN Surveys")) %>% 
+#   cols_label(n= md("**Number of Participants**"), provided4 = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+#   # summary_rows(
+#   #   column = c(participants,percentage),
+#   #   fns= list(
+#   #     Sum= ~sum(.)
+#   #   ), decimals=0) %>%
+#   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+#   tab_options(
+#       stub.font.weight = "bold"
+#     ) %>%
+#   tab_style(
+#     style = list(
+#       cell_text(weight = "bold")
+#     ),
+#     locations = cells_body(
+#       columns = provided4,
+#     )
+#   ) 
+# 
 
 
 # 
@@ -4948,7 +4393,7 @@ dt_gavePssn_summary <- gavePssn_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 #     locations = cells_body(
 #       columns = providedall,
 #     )
-#   ) %>% opt_row_striping()
+#   ) 
 
 
 ```
@@ -4988,7 +4433,7 @@ dt_all_ages_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = age,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 ```
 
@@ -5031,7 +4476,7 @@ dt_sibcanc1_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 
@@ -5045,6 +4490,9 @@ sibling= sibling  %>%  mutate(multc1 = ifelse(D_578895128_1_1_D_578895128_1_1_D_
                               multc2 = ifelse(D_578895128_2_2_D_578895128_2_2_D_939782495==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_135725957==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_518416174==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_847945207==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_942970912==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_596122041==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_489400183==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_863246236==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_607793249==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_532172400==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_754745617==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_665036297==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_200837530==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_990319383==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_482225200==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_764891959==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_139822395==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_248374037==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_807835037==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_487917585==1, 1, 0) + ifelse(D_578895128_2_2_D_578895128_2_2_D_295976386==1, 1, 0),
                               multc3 = ifelse(D_578895128_3_3_D_578895128_3_3_D_939782495==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_135725957==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_518416174==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_847945207==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_942970912==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_596122041==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_489400183==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_863246236==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_607793249==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_532172400==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_754745617==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_665036297==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_200837530==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_990319383==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_482225200==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_764891959==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_139822395==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_248374037==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_807835037==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_487917585==1, 1, 0) + ifelse(D_578895128_3_3_D_578895128_3_3_D_295976386==1, 1, 0),
                               multc4 = ifelse(D_578895128_4_4_D_578895128_4_4_D_939782495==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_135725957==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_518416174==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_847945207==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_942970912==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_596122041==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_489400183==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_863246236==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_607793249==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_532172400==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_754745617==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_665036297==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_200837530==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_990319383==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_482225200==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_764891959==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_139822395==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_248374037==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_807835037==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_487917585==1, 1, 0) + ifelse(D_578895128_4_4_D_578895128_4_4_D_295976386==1, 1, 0))
+
+
+
 
 body_sibling= sibling  %>%  mutate(bodyp= case_when((as.numeric(multc1)>1 | as.numeric(multc2)>1 | as.numeric(multc3)>1 | as.numeric(multc4)>1) ~ "Multiple Cancer Types",
                                                     (D_578895128_2_2_D_578895128_2_2_D_939782495==1 | D_578895128_1_1_D_578895128_1_1_D_939782495==1 | D_578895128_3_3_D_578895128_3_3_D_939782495==1 | D_578895128_4_4_D_578895128_4_4_D_939782495==1) ~ "Anal",
@@ -5093,7 +4541,7 @@ sibling_bd_canc <- dt_body_sibling_summary %>%  gt::gt(rowname_col = "row_lab") 
     locations = cells_body(
       columns = bodyp,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 sibling_bd_canc
 
@@ -5146,7 +4594,7 @@ dt_CHILDcanc1_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this n
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 #CHILCANC2
@@ -5211,7 +4659,7 @@ kid_bd_canc <- dt_body_kid_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = bodyp,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 kid_bd_canc
 
@@ -5337,7 +4785,7 @@ dt_long_bus_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = category,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 #gt_dt_long_bus %>%   summary_rows(groups=T, column = c(n,percentage), fns = list(label = md("**ALL**"), id = "totals") ~ sum(.)) 
                                                 
