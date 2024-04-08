@@ -97,3 +97,12 @@ recruitment_qc_metrics:
   gcp_info:
     cloud_scheduler: ccc-recruitment-qc-metrics
     frequency: "30 13 * * 1" # every Monday at 1:30 PM"
+
+notifications_qc_metrics:
+  rmd_file_name: "Notifications QC.Rmd"
+  report_file_name: "Notifications_QC.pdf"
+  box_folders:
+    - "255743123858"
+  gcp_info:
+    cloud_scheduler: ccc-notifications-qc-metrics
+    frequency: "30 13 * * 1" # every Monday at 1:30 PM"

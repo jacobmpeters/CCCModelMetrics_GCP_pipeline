@@ -69,7 +69,7 @@ COPY ["./zip_to_lat_lon_North_America.csv", "./zip_to_lat_lon_North_America.csv"
 COPY ["./Rectruitment Derived Variable QC.Rmd", "./Rectruitment Derived Variable QC.Rmd"]
 COPY ["./Module 1 Custom QC Rule Errors.Rmd", "./Module 1 Custom QC Rule Errors.Rmd"]
 COPY ["./3 Month Quality of Life Survey Summary Statistics.Rmd" , "./3 Month Quality of Life Survey Summary Statistics.Rmd"]
-
+COPY ["./Notifications QC.Rmd", "./Notifications QC.Rmd"]
 
 # Run R code
 ENTRYPOINT ["R", "-e","pr <- plumber::plumb('ccc_module_metrics_api.R'); pr$run(host='0.0.0.0', port=as.numeric(Sys.getenv('PORT')))"]

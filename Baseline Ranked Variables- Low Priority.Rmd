@@ -572,6 +572,7 @@ simple_funct1(D_453252072, "BLDTRANS: Ever have a Blood Transfusion")
 simple_funct1(D_323512813, "PAIN: Felt Physial Pain Most Days of Last 3 Months")
 
 #Scale
+
 data_tib_base$D_338924834 <- factor(data_tib_base$D_338924834, levels=c(988858078,156095877,162668459,278139969, 676824724, 512144428, 125674414, 406650257, 700080862, 616621065, "Skipped this Question"))
 one_logic_funct1(D_338924834, D_323512813, "353358909", "PAIN2: Rank of Pain")
 
@@ -579,6 +580,7 @@ one_logic_funct1(D_338924834, D_323512813, "353358909", "PAIN2: Rank of Pain")
 #Affected Work?
 data_tib_base$D_952682839 <- factor(data_tib_base$D_952682839, levels=c(111520945, 548628123, 597477164, "Skipped this Question"))
 one_logic_funct1(D_952682839, D_323512813, "353358909", "PAIN2: Rank of Pain")
+
 
 ```
 
@@ -970,8 +972,10 @@ dt_wt_carry_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ```{r height, warning=FALSE, echo=FALSE, message=FALSE}
 
 #Female
+
 data_tib_base$D_365851428 <- factor(data_tib_base$D_365851428, levels=c(927925620,552278254,267104669,619337179,601381820,151394571,917379905,746328729,452963767, "Skipped this Question"))
 one_logic_funct1(D_365851428, D_407056417, "536341288" ,"Level of Hair Loss (Female)")
+
 
 
 #Male
@@ -2107,7 +2111,7 @@ simple_funct2 <- function(CID, Title){
   CID_SYM <- rlang::ensym(CID)
   dt_select <- data_tib_all2 %>%  select(Connect_ID, !!CID_SYM)
   gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
-  
+ 
   gt_yn %>%  gt::gt()  %>%  
     fmt_number(columns = "percentage", decimals = 2) %>% 
     tab_header(title = md(Title)) %>% 
@@ -2143,6 +2147,7 @@ one_logic_funct2 <- function(CID, CID_prev, Prev_Answer, Title){
   dt_select <- data_tib_all2 %>%  filter(!!CID_SYM_P == Prev_Answer) %>%  select(Connect_ID, !!CID_SYM) 
   gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
   
+
   gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md(Title)) %>% 
@@ -3590,6 +3595,7 @@ hist_funct_F(D_263114971,"MENSHIS6: Days of menstrual Cycle in the last 12 month
 one_logic_funct2(D_614145455_D_614145455, D_164595895,"650420270", "MENSHIS7: Reason You Haven't Had Period")
 
 
+
 #Age at last period
 hist_funct_F(D_534920374,"MENSHIS8: Age at Last Period", "Age", "Frequency")
 
@@ -3862,9 +3868,11 @@ data_tib_all2$D_281494550_1_1 <- factor(data_tib_all2$D_281494550_1_1, levels=c(
 two_skip_funct2(D_281494550_1_1, "PREG6_1: Infants delivered during first pregnancy", D_391951010_1_1, "628445697", "419220239")
 
 
+
 #Second pregnancy
 data_tib_all2$D_391951010_2_2 <- factor(data_tib_all2$D_391951010_2_2, levels=c(582602017, 105727261, 720288326, "Skipped this Question"))
 two_skip_funct2(D_391951010_2_2, "PREG6_2: Infants delivered during second pregnancy", D_391951010_1_1, "628445697", "419220239")
+
 
 
 #Third Pregnancy
@@ -3874,6 +3882,7 @@ two_skip_funct2(D_391951010_3_3, "PREG6_3: Infants delivered during third pregna
 #Fourth Pregnancy
 data_tib_all2$D_391951010_4_4 <- factor(data_tib_all2$D_391951010_4_4, levels=c(582602017, 105727261, 720288326, "Skipped this Question"))
 two_skip_funct2(D_391951010_2_2, "PREG6_4: Infants delivered during fourth pregnancy", D_391951010_1_1, "628445697", "419220239")
+
 
 
 
@@ -3898,19 +3907,23 @@ three_skip_funct2(D_771528780_4_4, "PREG7_4: Method of delivery during fourth pr
 
 
 
+
 ##Did you/are you breast feeding 
 
 #First Pregnancy 
 three_skip_funct2(D_486574018_1_1, "Preg8_1: Breast fed during first pregnancy", D_391951010_1_1, "628445697", "419220239", "223216393")
 
+
 #Second Pregnancy 
 three_skip_funct2(D_486574018_2_2, "PREG8_2: Breast fed during second pregnancy", D_391951010_1_1, "628445697", "419220239", "223216393")
+
 
 #Third Pregnancy 
 three_skip_funct2(D_486574018_3_3, "PREG8_3: Breast fed during third pregnancy", D_391951010_1_1, "628445697", "419220239", "223216393")
 
 #Fourth Pregnancy 
 three_skip_funct2(D_486574018_4_4, "PREG8_4: Breast fed during fourth pregnancy", D_391951010_1_1, "628445697", "419220239", "223216393")
+
 
 
 
@@ -3932,7 +3945,9 @@ grid.arrange(breastfed1, breastfed2, breastfed3, breastfed4, nrow=2)
 
 
 
+
 #Diagnosed with gestational diabetes during preg 
+
 
 #First Pregnancy 
 four_skip_funct2(D_779052408_1_1, "Preg10_1: Diagnosed with gestational diabetes during first pregnancy", D_391951010_1_1, "628445697", "419220239", "223216393", "858244199")
@@ -3949,6 +3964,7 @@ four_skip_funct2(D_779052408_4_4, "PREG10_4: Diagnosed with gestational diabetes
 
 
 
+
 ##Diagnosed with eclampsia during preg
 #First Pregnancy 
 four_skip_funct2(D_133297530_1_1, "Preg11_1: Diagnosed with eclampsia or pre-eclampsia during first pregnancy", D_391951010_1_1, "628445697", "419220239", "223216393", "858244199")
@@ -3961,6 +3977,7 @@ four_skip_funct2(D_133297530_3_3, "PREG11_3: Diagnosed with eclampsia or pre-ecl
 
 #Fourth Pregnancy 
 four_skip_funct2(D_133297530_4_4, "PREG11_4: Diagnosed with eclampsia or pre-eclampsia during fourth pregnancy", D_391951010_1_1, "628445697", "419220239", "223216393", "858244199")
+
 
 
 
@@ -5002,6 +5019,7 @@ one_logic_funct2(D_392658845_D_699101535, D_613744428, 353358909, "WORKACTA: Wor
 
 
 
+
 data_tib_all2$D_392658845_D_652561589 <- factor(data_tib_all2$D_392658845_D_652561589,levels=c(503218834, 464753847, 729681071, 258023209, 638092100, 628177728, 919739344, 755558825, 949555271, 201002865, "Skipped this Question"))
 one_logic_funct2(D_392658845_D_652561589, D_613744428, 353358909,"WORKACTB: Work over last 12 months: Standing with Walking")
 
@@ -5009,6 +5027,7 @@ one_logic_funct2(D_392658845_D_652561589, D_613744428, 353358909,"WORKACTB: Work
 
 data_tib_all2$D_392658845_D_589522790 <- factor(data_tib_all2$D_392658845_D_589522790,levels=c(503218834, 464753847, 729681071, 258023209, 638092100, 628177728, 919739344, 755558825, 949555271, 201002865, "Skipped this Question"))
 one_logic_funct2(D_392658845_D_589522790, D_613744428, 353358909,"WORKACTC: Work over last 12 months: Walking and Carrying Materials")
+
 
 
 data_tib_all2$D_392658845_D_239572239 <- factor(data_tib_all2$D_392658845_D_239572239,levels=c(503218834, 464753847, 729681071, 258023209, 638092100, 628177728, 919739344, 755558825, 949555271, 201002865, "Skipped this Question"))
@@ -5021,6 +5040,7 @@ one_logic_funct2(D_392658845_D_239572239, D_613744428, 353358909,"WORKACTD: Work
 
 data_tib_all2$D_649352910_D_654385712 <- factor(data_tib_all2$D_649352910_D_654385712,levels=c(503218834, 464753847, 729681071, 258023209, 638092100, 628177728, 919739344, 755558825, 949555271, 201002865, "Skipped this Question"))
 simple_funct2(D_649352910_D_654385712, "SITTINGA: Driving or Sitting in a Car, Bus, or Train")
+
 
 
 
@@ -5589,6 +5609,7 @@ one_logic_funct2(D_267261558,D_204421360_D_383015037,1,"LAWN4B: Time Spent on Ho
 
 data_tib_all2$D_168431681 <- factor(data_tib_all2$D_168431681,levels=c(349122068, 156095877, 162668459, 278139969, 676824724, 512144428,125674414, "Skipped this Question" ))
 one_logic_funct2(D_168431681,D_591723682,"353358909","SLEEPSCHB: Days per Week Sleep Determined by Job or School") 
+
 ``` 
 
 # SLEEP1A, D, F, I, K, L, M 
@@ -5732,6 +5753,7 @@ data_tib_all2$D_910856756 <- factor(data_tib_all2$D_910856756,levels=c(462478011
 simple_funct2(D_910856756, "SLHABIT2: Sleep Quality in the Last Four Weeks")
 
 
+
 ```
 
 # SLHABIT3A-I
@@ -5742,18 +5764,22 @@ data_tib_all2$D_981441822_D_403155173 <- factor(data_tib_all2$D_981441822_D_4031
 simple_funct2(D_981441822_D_403155173, "SLHABIT3A: Chance of Falling Asleep while Sitting and Reading")
 
 
+
 #watch tv
 data_tib_all2$D_981441822_D_576621769 <- factor(data_tib_all2$D_981441822_D_576621769,levels=c(514068832, 774439579, 747099514, 977681388, "Skipped this Question" ))
 simple_funct2(D_981441822_D_576621769, "SLHABIT3B: Chance of Falling Asleep while Watching TV")
+
 
 
 #sitting inactive
 data_tib_all2$D_981441822_D_988508028 <- factor(data_tib_all2$D_981441822_D_988508028,levels=c(514068832, 774439579, 747099514, 977681388, "Skipped this Question" ))
 simple_funct2(D_981441822_D_988508028, "SLHABIT3C: Chance of Falling Asleep while Sitting Inactive")
 
+
 #riding passenger
 data_tib_all2$D_981441822_D_186488870 <- factor(data_tib_all2$D_981441822_D_186488870,levels=c(514068832, 774439579, 747099514, 977681388, "Skipped this Question" ))
 simple_funct2(D_981441822_D_186488870, "SLHABIT3D: Chance of Falling Asleep while Sitting as a Passenger in the Car")
+
 
 
 #lying in the afternoon
@@ -5761,14 +5787,17 @@ data_tib_all2$D_981441822_D_922388461 <- factor(data_tib_all2$D_981441822_D_9223
 simple_funct2(D_981441822_D_922388461, "SLHABIT3E: Chance of Falling Asleep while Lying Resting in the Afternoon")
 
 
+
 #sitting talking
 data_tib_all2$D_981441822_D_760686611 <- factor(data_tib_all2$D_981441822_D_760686611,levels=c(514068832, 774439579, 747099514, 977681388, "Skipped this Question" ))
 simple_funct2(D_981441822_D_760686611, "SLHABIT3F: Chance of Falling Asleep while Sitting and Talking")
 
 
+
 #siting after lunch w/o alc
 data_tib_all2$D_981441822_D_354550061 <- factor(data_tib_all2$D_981441822_D_354550061,levels=c(514068832, 774439579, 747099514, 977681388, "Skipped this Question" ))
 simple_funct2(D_981441822_D_354550061, "SLHABIT3G: Chance of Falling Asleep while Sitting after Lunch w/o Alcohol")
+
 
 #traffic light
 data_tib_all2$D_981441822_D_179705366 <- factor(data_tib_all2$D_981441822_D_179705366,levels=c(514068832, 774439579, 747099514, 977681388, "Skipped this Question" ))
@@ -5801,9 +5830,11 @@ data_tib_all2$D_406137786 <- factor(data_tib_all2$D_406137786,levels=c(624808470
 one_logic_funct2(D_406137786, D_940733450, 353358909, "SNORING2: Describe your Snoring")
 
 
+
 #How often
 data_tib_all2$D_406137786 <- factor(data_tib_all2$D_406137786,levels=c(718687985, 471294296, 198347104, 632512449, 520089841, 178420302, "Skipped this Question" ))
 one_logic_funct2(D_631303960, D_940733450, 353358909, "SNORING3: Frequency of Snoring")
+
 
 
 #Bothers others
@@ -5815,6 +5846,7 @@ one_logic_funct2(D_876846761, D_940733450, 353358909, "SNORING4: Snoring Bothers
 #Stop breathing
 data_tib_all2$D_756521698 <- factor(data_tib_all2$D_756521698,levels=c(648960871, 239152340, 582006876, 645894551, 996315715, 671267928, 647504893, "Skipped this Question"))
 one_logic_funct2(D_756521698, D_940733450, 353358909, "SNORING5: Frequency you Stop Breathing while Sleeping")
+
 
 ```
 

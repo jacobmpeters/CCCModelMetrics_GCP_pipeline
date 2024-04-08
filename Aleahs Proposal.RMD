@@ -178,6 +178,7 @@ table(m1_complete_nodup$version)
 demo <- "SELECT 
 Connect_ID, token,
 d_827220437, state_d_706256705, state_d_934298480, d_142654897_d_177402915, d_142654897_d_196856782, d_142654897_d_206879104, d_142654897_d_241590841, d_142654897_d_285130077, d_142654897_d_326825649, d_142654897_d_461488577, d_142654897_d_462314689, d_142654897_d_520301146, d_142654897_d_549687190, d_142654897_d_607081902, d_142654897_d_639721694, d_142654897_d_642287621, d_142654897_d_684726272, d_142654897_d_791389099, d_142654897_d_819377306, d_142654897_d_829269606, d_142654897_d_942255248, d_142654897_d_967372009, d_335767902, d_914594314, state_d_849518448, state_d_706256705, d_949302066
+
  FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where d_919254129= '353358909' and d_821247024='197316935'"
 demo_table <- bq_project_query(project, demo)
 site_demographics <- bq_table_download(demo_table, bigint = "integer64")
@@ -360,16 +361,18 @@ for (demo in demographics) {
       margin_text = "Total Consented Recruits"
     )
   
+
   
   compare[["table_body"]]$stat_0 <- sapply(strsplit(compare[["table_body"]]$stat_0, " "), "[", 1)
   
   
+
   compare_table <- compare %>%
     modify_header() %>%
     modify_caption(paste("Marketing Strategy Counts by", demo)) %>%
     as_kable_extra(escape = FALSE, addtl_fmt = TRUE) %>% kable_styling(latex_options = "scale_down")
   
-  
+
 chi <- chisq.test(table(proposal_aleah[[demo]], proposal_aleah$marketing))
 footnote <- ifelse(chi$p.value < 0.05,
                    paste0("With a p-value of ", chi$p.value, 
@@ -377,10 +380,12 @@ footnote <- ifelse(chi$p.value < 0.05,
                    paste0("With a p-value over 0.05, we have no evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."))
 compare_table <- add_footnote(compare_table, footnote)
   
+
    
   assign(paste0(demo, "_compare"), compare_table, envir = .GlobalEnv)
   
   
+
   print(compare_table)
 }
 
@@ -394,9 +399,11 @@ compare_table <- add_footnote(compare_table, footnote)
 ```{r site_labeling, warning=FALSE, echo=FALSE, message=FALSE}
 
 
+
 #digital includes:  Connect Web, IHCS Web, Email/Text Invite, Patient Portal, Social Media Post, IHCS Newsletter, Video
 #traditional includes: Mailed Letter, Phone Invite, Dr/Staff, Connect Staff at IHCS, Connect in News, Local News/TV/Radio, Family/Friend, Another Participant, Poster at IHCS, Table at Event, Recorded Message
 # For the those who selected “other”, see if those people selected a traditional and/or digital option. If they did select one of those options, count them in the respective group. If the only option they selected is “other”, then we can drop the from the analysis.
+
 site_demographics= site_demographics %>%  filter(d_949302066 !=231311385) %>% 
                                 mutate(Race= case_when(state_d_849518448==768826601 ~ "White, Non-Hispanic",
                                                        state_d_849518448==181769837 ~ "Other",
@@ -462,6 +469,7 @@ site_demographics$marketing <- factor(site_demographics$marketing,levels=c("Digi
 # 2828 both 
 
 
+
 # Define your demographic variables
 demographics <- c("Age", "Race", "Sex",  "Site")
 
@@ -509,4 +517,5 @@ compare_table <- add_footnote(compare_table, footnote)
 
 
 ```
+
 
