@@ -3,12 +3,21 @@ title: "Aleah's Proposal"
 author: "Kelsey Dowling"
 date: "`r Sys.Date()`"
 header-includes:  
-    \usepackage{placeins}
-    
-output: 
+  \usepackage[labelformat=empty]{caption}
+  \usepackage{placeins}
+  \usepackage{booktabs}
+  \usepackage{pdflscape}
+
+
+output:
   pdf_document:
     extra_dependencies: ["float"]
-    keep_tex: true
+    toc: true
+    keep_tex: yes
+    fig_width: 7
+    fig_height: 5
+    fig_caption: true
+    df_print: paged 
 
 ---
 
@@ -307,11 +316,13 @@ proposal$Age <- factor(proposal$Age,levels=c("30-34","35-39","40-45","46-50","51
 
 ```
 
+
+
 \newpage
 # Module 1 Completed: All demographics defined
 \FloatBarrier
 
-```{r tables, warning=FALSE, echo=FALSE, message=FALSE, results='asis'}
+```{r tables_sepatated, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 #Aleah needs these to be consented participants only with All consented participants from the start of recruitment in June 2021 until March 1st, 2024.
 
@@ -333,7 +344,9 @@ proposal_aleah <- proposal_aleah %>%  mutate(marketing = case_when((d_142654897_
                                                                       d_142654897_d_549687190==353358909 | d_142654897_d_326825649==353358909 | 
                                                                       d_142654897_d_819377306==353358909 | d_142654897_d_829269606==353358909 |
                                                                       d_142654897_d_967372009==353358909)~ "Traditional",
-                                                             TRUE ~ "Skipped")) %>%  filter(marketing!="Skipped")
+                                                                  TRUE ~ "Skipped")) %>%  filter(marketing!="Skipped")
+
+
 
 
 # 11577  digital
@@ -386,12 +399,88 @@ compare_table <- add_footnote(compare_table, footnote)
 
 ```
 
+```{r tables_together, warning=FALSE, echo=FALSE, message=FALSE, results='asis'}
 
-\FloatBarrier
+
+
+#Aleah needs these to be consented participants only with All consented participants from the start of recruitment in June 2021 until March 1st, 2024.
+
+
+#Dates refer to verification date
+proposal_aleah <- proposal %>%  filter( as.Date(d_914594314) < "2024-03-02")
+
+
+#digital includes:  Connect Web, IHCS Web, Email/Text Invite, Patient Portal, Social Media Post, IHCS Newsletter, Video
+#traditional includes: Mailed Letter, Phone Invite, Dr/Staff, Connect Staff at IHCS, Connect in News, Local News/TV/Radio, Family/Friend, Another Participant, Poster at IHCS, Table at Event, Recorded Message
+# For the those who selected “other”, see if those people selected a traditional and/or digital option. If they did select one of those options, count them in the respective group. If the only option they selected is “other”, then we can drop the from the analysis.
+
+digitals <- c("461488577","607081902","241590841","206879104","642287621","285130077","353358909")
+
+traditionals <- c("942255248","639721694","196856782","177402915","791389099","520301146","549687190","326825649","819377306","829269606","967372009")
+
+proposal_aleah$digital <- do.call(pmax,c(proposal_aleah[,grepl(paste(digitals,collapse="|"),colnames(proposal_aleah))],na.rm=TRUE))
+proposal_aleah$traditional <- do.call(pmax,c(proposal_aleah[,grepl(paste(traditionals,collapse="|"),colnames(proposal_aleah))],na.rm=TRUE))
+
+proposal_aleah <- proposal_aleah %>% 
+  mutate(marketing = case_when(digital== 353358909 & traditional==353358909 ~ "Both",
+                               digital== 353358909 & traditional==104430631 ~ "Digital", 
+                               digital== 104430631 & traditional==353358909 ~ "Traditional",
+                               digital== 104430631 & traditional==104430631 ~ "Others"))
+         
+
+
+demographics <- c("Age", "Race", "Sex", "Income", "Education", "Site")
+market <- proposal_aleah %>% select(Connect_ID, contains("142654897"), d_914594314, all_of(demographics), marketing,traditional) 
+addtion_both <- filter(market,marketing=="Both") %>% mutate(traditional = "104430631") # to refine the traditional as digitals here
+market_addition <- bind_rows(market,addtion_both)
+#market_addition <- market_addition %>%  filter(marketing!="Others")
+
+for (demo in demographics) {
+
+  compare <- filter(market_addition, marketing!="Others") %>% 
+    select(!!sym(demo),traditional) %>%
+    tbl_cross(col = traditional,
+              row = !!sym(demo),
+              label = list(traditional~"Marketing Strategies: Digital vs Traditional",
+                           !!sym(demo) ~ demo ),
+              digits=c(0,2),
+              percent = c("col"),
+              missing = "ifany",
+              
+              missing_text = "(Missing)") %>%
+    bold_labels() %>%
+    modify_header(stat_1 ="Digital",stat_2="Traditional") 
+
+
+chi <- chisq.test(table(market_addition[[demo]], market_addition$traditional))
+footnote <- ifelse(chi$p.value < 0.05,
+                   paste0("Note: With a p-value of ", ifelse(chi$p.value < 0.001, "< 0.001", chi$p.value),
+                          ", we have evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."),
+                   paste0("Note: With a p-value over 0.05, we have no evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."))
+
+
+  compare_table <- compare %>%
+    modify_header() %>%
+    modify_caption(paste("Marketing Strategy Counts by", demo)) %>%
+    modify_footnote(all_stat_cols() ~ footnote) %>%
+    as_kable_extra(escape = FALSE, addtl_fmt = TRUE) %>% kable_styling(latex_options = "scale_down")
+  
+print(compare_table)
+
+}
+```
+
+
+
+
+
+\newpage
 \newpage
 # Module 1 not completed: Site defined demographics
+\vspace{-0.5em}
 \FloatBarrier
-```{r site_labeling, warning=FALSE, echo=FALSE, message=FALSE}
+
+```{r site_labeling_separated, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 #digital includes:  Connect Web, IHCS Web, Email/Text Invite, Patient Portal, Social Media Post, IHCS Newsletter, Video
@@ -431,7 +520,7 @@ site_demographics$Age <- factor(site_demographics$Age,levels=c("30-34","35-39","
 \FloatBarrier
 
 
-```{r site_tables, warning=FALSE, echo=FALSE, message=FALSE, results='asis'}
+```{r site_tables_separated, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
 
 
@@ -510,3 +599,76 @@ compare_table <- add_footnote(compare_table, footnote)
 
 ```
 
+
+```{r site_tables, warning=FALSE, echo=FALSE, message=FALSE, results='asis'}
+
+
+
+#Aleah needs these to be consented participants only with All consented participants from the start of recruitment in June 2021 until March 1st, 2024.
+#digital includes:  Connect Web, IHCS Web, Email/Text Invite, Patient Portal, Social Media Post, IHCS Newsletter, Video
+#traditional includes: Mailed Letter, Phone Invite, Dr/Staff, Connect Staff at IHCS, Connect in News, Local News/TV/Radio, Family/Friend, Another Participant, Poster at IHCS, Table at Event, Recorded Message
+# For the those who selected “other”, see if those people selected a traditional and/or digital option. If they did select one of those options, count them in the respective group. If the only option they selected is “other”, then we can drop the from the analysis.
+
+digitals <- c("461488577","607081902","241590841","206879104","642287621","285130077","353358909")
+
+traditionals <- c("942255248","639721694","196856782","177402915","791389099","520301146","549687190","326825649","819377306","829269606","967372009")
+
+
+#Dates refer to verification date
+site_demographics <- site_demographics %>%  filter( as.Date(d_914594314) < "2024-03-02")
+
+
+# Define your demographic variables
+
+
+site_demographics$digital <- do.call(pmax,c(site_demographics[,grepl(paste(digitals,collapse="|"),colnames(site_demographics))],na.rm=TRUE))
+site_demographics$traditional <- do.call(pmax,c(site_demographics[,grepl(paste(traditionals,collapse="|"),colnames(site_demographics))],na.rm=TRUE))
+
+site_demographics <- site_demographics %>% 
+  mutate(marketing = case_when(digital== 353358909 & traditional==353358909 ~ "Both",
+                               digital== 353358909 & traditional==104430631 ~ "Digital", 
+                               digital== 104430631 & traditional==353358909 ~ "Traditional",
+                               digital== 104430631 & traditional==104430631 ~ "Others"))
+         
+
+
+demographics2 <- c("Age", "Race", "Sex",  "Site")
+market <- site_demographics %>% select(Connect_ID, contains("142654897"), d_914594314, all_of(demographics2), marketing,traditional) 
+addtion_both <- filter(market,marketing=="Both") %>% mutate(traditional = "104430631") # to refine the traditional as digitals here
+market_addition <- bind_rows(market,addtion_both)
+#market_addition <- market_addition %>%  filter(marketing!="Others")
+
+for (demo in demographics2) {
+
+  compare <- filter(market_addition, marketing!="Others") %>% 
+    select(!!sym(demo),traditional) %>%
+    tbl_cross(col = traditional,
+              row = !!sym(demo),
+              label = list(traditional~"Marketing Strategies: Digital vs Traditional",
+                           !!sym(demo) ~ demo ),
+              digits=c(0,2),
+              percent = c("col"),
+              missing = "ifany",
+              
+              missing_text = "(Missing)") %>%
+    bold_labels() %>%
+    modify_header(stat_1 ="Digital",stat_2="Traditional") 
+
+
+chi <- chisq.test(table(market_addition[[demo]], market_addition$traditional))
+footnote <- ifelse(chi$p.value < 0.05,
+                   paste0("Note: With a p-value of ", ifelse(chi$p.value < 0.001, "< 0.001", chi$p.value),
+                          ", we have evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."),
+                   paste0("Note: With a p-value over 0.05, we have no evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."))
+
+
+  compare_table <- compare %>%
+    modify_header() %>%
+    modify_caption(paste("Marketing Strategy Counts by", demo)) %>%
+    modify_footnote(all_stat_cols() ~ footnote) %>%
+    as_kable_extra(escape = FALSE, addtl_fmt = TRUE) %>% kable_styling(latex_options = "scale_down")
+  
+print(compare_table)
+
+}
+```
