@@ -28,7 +28,7 @@ Digital marketing recruitment methods include: Connect Web, IHCS Web, Email/Text
 
 Traditional marketing recruitment methods include: Mailed Letter, Phone Invite, Dr/Staff, Connect Staff at IHCS, Connect in News, Local News/TV/Radio, Family/Friend, Another Participant, Poster at IHCS, Table at Event, Recorded Message. 
 
-Other marketing recruitment method includes only 'Other'. Those who did not answer how they heard about the study are excluded.
+Those who did not answer how they heard about the study, as well as those who only selected 'other' recruiting methods, are excluded.
 
 ```{r libraries, include=FALSE}
 
