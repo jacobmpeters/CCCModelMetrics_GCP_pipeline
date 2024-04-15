@@ -48,9 +48,9 @@ if (!is.null(Sys.getenv("USE_TEST_BOX_FOLDER")) &&
 }
 
 if (use_test_box_folder) {
-  boxfolder <- 249228373485 # test box folder
+  boxfolder <- 255743123858 # Active Box Folder
 } else {
-  boxfolder <- 254808757764 # destination of CSV files (not pdf)
+  boxfolder <- 249228373485 # testing only
 }
 
 
