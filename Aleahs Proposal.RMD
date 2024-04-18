@@ -186,8 +186,8 @@ table(m1_complete_nodup$version)
 
 demo <- "SELECT 
 Connect_ID, token,
-d_827220437, state_d_706256705, state_d_934298480, d_142654897_d_177402915, d_142654897_d_196856782, d_142654897_d_206879104, d_142654897_d_241590841, d_142654897_d_285130077, d_142654897_d_326825649, d_142654897_d_461488577, d_142654897_d_462314689, d_142654897_d_520301146, d_142654897_d_549687190, d_142654897_d_607081902, d_142654897_d_639721694, d_142654897_d_642287621, d_142654897_d_684726272, d_142654897_d_791389099, d_142654897_d_819377306, d_142654897_d_829269606, d_142654897_d_942255248, d_142654897_d_967372009, d_335767902, d_914594314, state_d_849518448, state_d_706256705, d_949302066
-
+d_827220437, state_d_706256705, state_d_934298480, d_142654897_d_177402915, d_142654897_d_196856782, d_142654897_d_206879104, d_142654897_d_241590841, d_142654897_d_285130077, d_142654897_d_326825649, d_142654897_d_461488577, d_142654897_d_462314689, d_142654897_d_520301146, d_142654897_d_549687190, d_142654897_d_607081902, d_142654897_d_639721694, d_142654897_d_642287621, d_142654897_d_684726272, d_142654897_d_791389099, d_142654897_d_819377306, d_142654897_d_829269606, d_142654897_d_942255248, d_142654897_d_967372009, d_335767902, d_914594314, state_d_849518448, state_d_706256705, d_949302066,
+d_512820379
  FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where d_919254129= '353358909' and d_821247024='197316935'"
 demo_table <- bq_project_query(project, demo)
 site_demographics <- bq_table_download(demo_table, bigint = "integer64")
@@ -258,22 +258,22 @@ proposal= proposal %>%  mutate(Race= case_when(multi_racial==1 ~ "Multi-Racial",
                                                     D_384191091_D_384191091_D_973565052==1 ~ "Middle Eastern or North African",
                                                     D_384191091_D_384191091_D_586825330==1 ~ "Hawaiian or Pacific Islander",
                                                     D_384191091_D_384191091_D_412790539==1 ~ "White",
-                                                    (D_384191091_D_384191091_D_807835037==1 | !is.na(D_384191091_D_747350323)) ~ "Other",
-                                                    D_384191091_D_384191091_D_746038746==1 ~ "Prefer Not to Answer",
-                                                    TRUE  ~ "Skipped this question "),
+                                                    #D_384191091_D_384191091_D_807835037==1 | !is.na(D_384191091_D_747350323)) ~ "Other",
+                                                    #D_384191091_D_384191091_D_746038746==1 ~ "Prefer Not to Answer",
+                                                    TRUE  ~ "Unknown"),
                                Income= case_when(D_759004335==209571450 ~ "35,000-49,000",
                                                   D_759004335==212249150 ~ "50,000-74,000",
                                                   D_759004335==374508062 ~ "0-9,000",
-                                                  D_759004335==530094502 ~ "Error- Unlisted Response Selected", 
+                                                  #D_759004335==530094502 ~ "Error- Unlisted Response Selected", 
                                                   D_759004335==742032816 ~ "200,000+", 
                                                   D_759004335==745561936 ~ "25,000-34,000",
-                                                  D_759004335==746038746 ~ "Prefer not to Answer",
+                                                  #D_759004335==746038746 ~ "Prefer not to Answer",
                                                   D_759004335==777814771 ~ "75,000-99,000", 
                                                   D_759004335==913602274 ~ "150,000-199,000", 
                                                   D_759004335==922395188 ~ "100,000-149,000",
                                                   D_759004335==976555124 ~ "10,000-24,000",
-                                                  D_759004335==178420302 ~ "Unknown",
-                                                  TRUE ~ "Skipped This Question"),
+                                                  #D_759004335==178420302 ~ "Unknown",
+                                                  TRUE ~ "Prefer Not to Answer or Unknown"),
                                Education= case_when(D_367803647_D_367803647==978204320 ~ "Grade School(Grades 1-8)",
                                                   D_367803647_D_367803647==935502060 ~ "Some High School, No Diploma",
                                                   D_367803647_D_367803647==404564707 ~ "High School Graduate or GED",
@@ -282,12 +282,12 @@ proposal= proposal %>%  mutate(Race= case_when(multi_racial==1 ~ "Multi-Racial",
                                                   D_367803647_D_367803647==766964355 ~ "Associate's Degree",
                                                   D_367803647_D_367803647==875342283 ~ "Bachelor's Degree",
                                                   D_367803647_D_367803647==598242454 ~ "Advanced Degree",
-                                                  D_367803647_D_367803647==807835037 ~ "Other",
-                                                  TRUE ~ "Skipped This Question"),
+                                                  #D_367803647_D_367803647==807835037 ~ "Other",
+                                                  TRUE ~ "Prefer Not to Answer or Unknown"),
                                Sex = case_when(D_407056417 == 536341288 ~ "Female",
                                                D_407056417 == 654207589 ~ "Male",
                                                D_407056417 == 576796184 ~ "Intersex or Other",
-                                               TRUE ~ "Missing"),
+                                               TRUE ~ "Unknown"),
                         Age = case_when(state_d_934298480 == 713781738 ~ "30-34",
                                         state_d_934298480 == 631272782 ~ "35-39",
                                         state_d_934298480 == 124276120 ~ "40-45",
@@ -306,12 +306,15 @@ proposal= proposal %>%  mutate(Race= case_when(multi_racial==1 ~ "Multi-Racial",
                                         d_827220437 == 657167265 ~ "Sanford Health", 
                                         d_827220437 == 809703864 ~ "University of Chicago Medicine",
                                         d_827220437 == 517700004 | d_827220437 == 13 ~ "National Cancer Institute",
-                                        d_827220437 == 181769837 ~ "Other"))
+                                        TRUE ~ "Unknown"),
+                        Recruit = case_when(d_512820379==486306141 ~ "Active",
+                                            TRUE ~ "Passive")) %>%  filter(Sex!="Unknown" & Race!="Unknown")
 
 proposal$Income <- factor(proposal$Income,levels=c("0-9,000","10,000-24,000","25,000-34,000","35,000-49,000","50,000-74,000","75,000-99,000","100,000-149,000","150,000-199,000",
-                                         "200,000+","Prefer not to Answer","Unknown","Error- Unlisted Response Selected","Skipped This Question"))
-proposal$Education <- factor(proposal$Education,levels=c("Grade School(Grades 1-8)", "Some High School, No Diploma", "High School Graduate or GED","Some College, No Degree","Technical or Trade School After High School","Associate's Degree","Bachelor's Degree","Advanced Degree", "Other", "Skipped This Question"))
+                                         "200,000+","Prefer Not to Answer or Unknown"))
+proposal$Education <- factor(proposal$Education,levels=c("Grade School(Grades 1-8)", "Some High School, No Diploma", "High School Graduate or GED","Some College, No Degree","Technical or Trade School After High School","Associate's Degree","Bachelor's Degree","Advanced Degree", "Prefer Not to Answer or Unknown"))
 proposal$Age <- factor(proposal$Age,levels=c("30-34","35-39","40-45","46-50","51-55","56-60","61-65","66-70"))
+proposal$Sex <- factor(proposal$Sex,levels=c("Female","Male","Intersex or Other"))
 
 
 
@@ -323,7 +326,7 @@ proposal$Age <- factor(proposal$Age,levels=c("30-34","35-39","40-45","46-50","51
 # Module 1 Completed: All demographics defined
 \FloatBarrier
 
-```{r tables_sepatated, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r tables_sepatated, warning=FALSE, echo=FALSE, message=FALSE, results='asis'}
 
 #Aleah needs these to be consented participants only with All consented participants from the start of recruitment in June 2021 until March 1st, 2024.
 
@@ -335,7 +338,17 @@ proposal_aleah <- proposal %>%  filter( as.Date(d_914594314) < "2024-03-02")
 #digital includes:  Connect Web, IHCS Web, Email/Text Invite, Patient Portal, Social Media Post, IHCS Newsletter, Video
 #traditional includes: Mailed Letter, Phone Invite, Dr/Staff, Connect Staff at IHCS, Connect in News, Local News/TV/Radio, Family/Friend, Another Participant, Poster at IHCS, Table at Event, Recorded Message
 # For the those who selected “other”, see if those people selected a traditional and/or digital option. If they did select one of those options, count them in the respective group. If the only option they selected is “other”, then we can drop the from the analysis.
-proposal_aleah <- proposal_aleah %>%  mutate(marketing = case_when((d_142654897_d_461488577==353358909 | d_142654897_d_607081902==353358909 |
+proposal_aleah <- proposal_aleah %>%  mutate(marketing = case_when(((d_142654897_d_461488577==353358909 | d_142654897_d_607081902==353358909 |
+                                                                      d_142654897_d_241590841==353358909 | d_142654897_d_206879104==353358909 |
+                                                                      d_142654897_d_642287621==353358909 | d_142654897_d_285130077==353358909|
+                                                                      d_142654897_d_684726272==353358909) &
+                                                                   (d_142654897_d_942255248==353358909 | d_142654897_d_639721694==353358909 |
+                                                                      d_142654897_d_196856782==353358909 | d_142654897_d_177402915==353358909 |
+                                                                      d_142654897_d_791389099==353358909 | d_142654897_d_520301146==353358909|
+                                                                      d_142654897_d_549687190==353358909 | d_142654897_d_326825649==353358909 | 
+                                                                      d_142654897_d_819377306==353358909 | d_142654897_d_829269606==353358909 |
+                                                                      d_142654897_d_967372009==353358909)) ~ "Both",
+                                                                    (d_142654897_d_461488577==353358909 | d_142654897_d_607081902==353358909 |
                                                                       d_142654897_d_241590841==353358909 | d_142654897_d_206879104==353358909 |
                                                                       d_142654897_d_642287621==353358909 | d_142654897_d_285130077==353358909|
                                                                       d_142654897_d_684726272==353358909)~ "Digital",
@@ -354,131 +367,161 @@ proposal_aleah <- proposal_aleah %>%  mutate(marketing = case_when((d_142654897_
 # 12589  traditional
 # 2407 both
 
-proposal_aleah$marketing <- factor(proposal_aleah$marketing,levels=c("Digital","Traditional"))
+proposal_aleah$marketing <- factor(proposal_aleah$marketing,levels=c("Digital","Traditional", "Both"))
 
 # Define your demographic variables
 demographics <- c("Age", "Race", "Sex", "Income", "Education", "Site")
 
+#Don't want both in chi squaured test 
+#proposal_aleah2 <- proposal_aleah %>%  filter(marketing!="Both")
+#proposal_aleah2$marketing <- factor(proposal_aleah2$marketing,levels=c("Digital","Traditional"))
 
 # Loop through each demographic
 for (demo in demographics) {
+
+  #Remove 'both; for chi squared
+proposal_aleah2 <- proposal_aleah %>%  filter(marketing!="Both")
+proposal_aleah2$marketing <- factor(proposal_aleah2$marketing,levels=c("Digital","Traditional"))
+
+### Need one table stratified by recruitment status and chi squared with it  
+  active_data <- proposal_aleah %>%
+    filter(Recruit == "Active")
+  
+  passive_data <- proposal_aleah %>%
+    filter(Recruit == "Passive")
+  
   # Generate cross-tabulation
-  compare <- proposal_aleah %>%
+  compare_active <- active_data %>%
     tbl_cross(
       row = !!sym(demo),
       col = marketing,
-      label = list(marketing ~ "Marketing Strategies", !!sym(demo) ~ demo),
+      label = list(marketing ~ "Recruitment Strategies", !!sym(demo) ~ demo),
       percent = "row",
       digits = c(0, 2),
       missing = "no",
       margin_text = "Total Consented Recruits"
     )
   
+   compare_passive <- passive_data %>%
+    tbl_cross(
+      row = !!sym(demo),
+      col = marketing,
+      label = list(marketing ~ "Recruitment Strategies", !!sym(demo) ~ demo),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total Consented Recruits"
+    )
+   
 
-  
-  compare[["table_body"]]$stat_0 <- sapply(strsplit(compare[["table_body"]]$stat_0, " "), "[", 1)
-  
-  
-
-  compare_table <- compare %>%
-    modify_header() %>%
-    modify_caption(paste("Marketing Strategy Counts by", demo)) %>%
-    as_kable_extra(escape = FALSE, addtl_fmt = TRUE) %>% kable_styling(latex_options = "scale_down")
-  
-
-chi <- chisq.test(table(proposal_aleah[[demo]], proposal_aleah$marketing))
-footnote <- ifelse(chi$p.value < 0.05,
-                   paste0("With a p-value of ", chi$p.value, 
-                          ", we have evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."),
-                   paste0("With a p-value over 0.05, we have no evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."))
-compare_table <- add_footnote(compare_table, footnote)
-  
+compare_combined <- cbind(as.data.frame(compare_active), as.data.frame(compare_passive))
+colnames(compare_combined)[1] <- demo
+colnames(compare_combined)[6] <- demo
+compare_combined <- compare_combined[c(-1),]
+   
+   
+compare_combined_table <- knitr::kable(compare_combined,caption=paste0("Self-reported Recruitment Strategies Among Self-reported ", demo, "\n Stratefied by Recruitment Status"), row.names=FALSE, booktabs = T, linesep = "", format.args = list(big.mark = ","), align = c("l", "c", "c","c", "c", "c", "c", "c", "c", "c")) %>% kable_styling(latex_options = "scale_down")  %>% add_header_above(c(" "=1, "Recruitment Strategies" =3, " " = 2,"Recruitment Strategies" =3, " " = 1 )) %>%  add_header_above(c("Active Participants" = 5, "Passive Participants" = 5))  %>% landscape() 
 
    
-  assign(paste0(demo, "_compare"), compare_table, envir = .GlobalEnv)
-  
-  
+   
 
-  print(compare_table)
+
+    active_data2 <- proposal_aleah2 %>%
+    filter(Recruit == "Active")
+
+  passive_data2 <- proposal_aleah2 %>%
+    filter(Recruit == "Passive")
+
+  chi_active <- chisq.test(table(active_data2[[demo]], active_data2$marketing))
+  chi_passive <- chisq.test(table(passive_data2[[demo]], passive_data2$marketing))
+  
+foot_note <- paste("Note: With a p-value of", 
+                    ifelse(chi_active$p.value < 0.05, (paste0("< 0.05 for active recruits,  we have evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, ".")),(paste0(" over 0.05, we have no evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."))))
+  
+# foot_note2 <- paste("Note: With a p-value of",
+#                     ifelse(chi_passive$p.value < 0.05, (paste0("< 0.05 for passive recruits,  we have evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, ".")),(paste0(" over 0.05, we have no evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."))))
+
+if (!is.na(chi_passive$p.value)) {
+  if (chi_passive$p.value < 0.05) {
+    foot_note2 <- paste("Note: With a p-value of < 0.05 for passive recruits, we have evidence that there is a significance in the difference of digital marketing success and traditional marketing success by", demo, ".")
+  } else if (chi_passive$p.value >= 0.05) {
+    foot_note2 <- paste("Note: With a p-value of over 0.05 for passive recruits, we have no evidence that there is a significance in the difference of digital marketing success and traditional marketing success by", demo, ".")
+  } else {
+    foot_note2 <- paste("Note: With a p-value of NA for passive recruits, a Fischer's exact test may provide better results.")
+  }
+} else {
+  foot_note2 <- "Note: With a p-value of NA for passive recruits, a Fischer's exact test may provide better results."
 }
-
-```
-
-```{r tables_together, warning=FALSE, echo=FALSE, message=FALSE, results='asis'}
-
-
-
-#Aleah needs these to be consented participants only with All consented participants from the start of recruitment in June 2021 until March 1st, 2024.
-
-
-#Dates refer to verification date
-proposal_aleah <- proposal %>%  filter( as.Date(d_914594314) < "2024-03-02")
-
-
-#digital includes:  Connect Web, IHCS Web, Email/Text Invite, Patient Portal, Social Media Post, IHCS Newsletter, Video
-#traditional includes: Mailed Letter, Phone Invite, Dr/Staff, Connect Staff at IHCS, Connect in News, Local News/TV/Radio, Family/Friend, Another Participant, Poster at IHCS, Table at Event, Recorded Message
-# For the those who selected “other”, see if those people selected a traditional and/or digital option. If they did select one of those options, count them in the respective group. If the only option they selected is “other”, then we can drop the from the analysis.
-
-digitals <- c("461488577","607081902","241590841","206879104","642287621","285130077","353358909")
-
-traditionals <- c("942255248","639721694","196856782","177402915","791389099","520301146","549687190","326825649","819377306","829269606","967372009")
-
-proposal_aleah$digital <- do.call(pmax,c(proposal_aleah[,grepl(paste(digitals,collapse="|"),colnames(proposal_aleah))],na.rm=TRUE))
-proposal_aleah$traditional <- do.call(pmax,c(proposal_aleah[,grepl(paste(traditionals,collapse="|"),colnames(proposal_aleah))],na.rm=TRUE))
-
-proposal_aleah <- proposal_aleah %>% 
-  mutate(marketing = case_when(digital== 353358909 & traditional==353358909 ~ "Both",
-                               digital== 353358909 & traditional==104430631 ~ "Digital", 
-                               digital== 104430631 & traditional==353358909 ~ "Traditional",
-                               digital== 104430631 & traditional==104430631 ~ "Others"))
-         
-
-
-demographics <- c("Age", "Race", "Sex", "Income", "Education", "Site")
-market <- proposal_aleah %>% select(Connect_ID, contains("142654897"), d_914594314, all_of(demographics), marketing,traditional) 
-addtion_both <- filter(market,marketing=="Both") %>% mutate(traditional = "104430631") # to refine the traditional as digitals here
-market_addition <- bind_rows(market,addtion_both)
-#market_addition <- market_addition %>%  filter(marketing!="Others")
-
-for (demo in demographics) {
-
-  compare <- filter(market_addition, marketing!="Others") %>% 
-    select(!!sym(demo),traditional) %>%
-    tbl_cross(col = traditional,
-              row = !!sym(demo),
-              label = list(traditional~"Marketing Strategies: Digital vs Traditional",
-                           !!sym(demo) ~ demo ),
-              digits=c(0,2),
-              percent = c("col"),
-              missing = "ifany",
-              
-              missing_text = "(Missing)") %>%
-    bold_labels() %>%
-    modify_header(stat_1 ="Digital",stat_2="Traditional") 
+   
+foot_note3 <-  paste("Those who selected both Recruitment Strategies were removed from the chi-squared analysis.")
+                    
+  
+  compare_combined_table <- add_footnote(compare_combined_table, foot_note, notation = "none")
+    compare_combined_table <- add_footnote(compare_combined_table, foot_note2, notation = "none")
+        compare_combined_table <- add_footnote(compare_combined_table, foot_note3, notation = "none")
+  
+  # Print or save the table as desired
+  print(compare_combined_table)
+  
+  
+  
+  
+  
+ #### Then need one table with all recruit status and chi squared
+  compare_all <- proposal_aleah %>%
+    tbl_cross(
+      row = !!sym(demo),
+      col = marketing,
+      label = list(marketing ~ "Recruitment Strategies", !!sym(demo) ~ demo),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total Consented Recruits"
+    )
+  
+compare_all <- compare_all %>%
+  #bold_labels() %>%
+  #italicize_levels() %>%
+  modify_header() %>%
+  modify_caption(paste0("Self-reported Recruitment Strategies Among Self-reported ", demo)) %>% ## used to be Table 8
+  as_kable_extra() %>% kable_styling(latex_options = "scale_down")
 
 
-chi <- chisq.test(table(market_addition[[demo]], market_addition$traditional))
+chi <- chisq.test(table(proposal_aleah2[[demo]], proposal_aleah2$marketing))
+
 footnote <- ifelse(chi$p.value < 0.05,
-                   paste0("Note: With a p-value of ", ifelse(chi$p.value < 0.001, "< 0.001", chi$p.value),
-                          ", we have evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."),
-                   paste0("Note: With a p-value over 0.05, we have no evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."))
+                   paste0("With a p-value of < 0.05 we have evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."),
+                   paste0("With a p-value over 0.05, we have no evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."))
 
 
-  compare_table <- compare %>%
-    modify_header() %>%
-    modify_caption(paste("Marketing Strategy Counts by", demo)) %>%
-    modify_footnote(all_stat_cols() ~ footnote) %>%
-    as_kable_extra(escape = FALSE, addtl_fmt = TRUE) %>% kable_styling(latex_options = "scale_down")
+compare_all <- add_footnote(compare_all, footnote)
+
+print(compare_all)
+
   
-print(compare_table)
-
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 }
+  
+
+
+
 ```
 
 
 
 
 
+\FloatBarrier
 \newpage
 \newpage
 # Module 1 not completed: Site defined demographics
@@ -495,8 +538,9 @@ print(compare_table)
 
 site_demographics= site_demographics %>%  filter(d_949302066 !=231311385) %>% 
                                 mutate(Race= case_when(state_d_849518448==768826601 ~ "White, Non-Hispanic",
-                                                       state_d_849518448==181769837 ~ "Other",
-                                                       state_d_849518448==178420302 ~ "Unavailable/Unknown"),
+                                                       TRUE ~ "Other/Unknown"),
+                                                       #state_d_849518448==181769837 ~ "Other",
+                                                       #state_d_849518448==178420302 ~ "Unavailable/Unknown"),
                                Sex = case_when(state_d_706256705 == 536341288 ~ "Female",
                                                state_d_706256705 == 654207589 ~ "Male",
                                                state_d_706256705 == 830573274 ~ "Intersex or Other",
@@ -519,7 +563,9 @@ site_demographics= site_demographics %>%  filter(d_949302066 !=231311385) %>%
                                         d_827220437 == 657167265 ~ "Sanford Health", 
                                         d_827220437 == 809703864 ~ "University of Chicago Medicine",
                                         d_827220437 == 517700004 | d_827220437 == 13 ~ "National Cancer Institute",
-                                        d_827220437 == 181769837 ~ "Other"))
+                                        d_827220437 == 181769837 ~ "Other"),
+                        Recruit = case_when(d_512820379==486306141 ~ "Active",
+                                            TRUE ~ "Passive")) %>% filter(Sex!="Unavailable/Unknown")
 
 site_demographics$Age <- factor(site_demographics$Age,levels=c("30-34","35-39","40-45","46-50","51-55","56-60","61-65","66-70"))
 
@@ -527,7 +573,7 @@ site_demographics$Age <- factor(site_demographics$Age,levels=c("30-34","35-39","
 \FloatBarrier
 
 
-```{r site_tables_separated, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+```{r site_tables_separated, warning=FALSE, echo=FALSE, message=FALSE, results='asis'}
 
 
 
@@ -540,18 +586,28 @@ site_demographics <- site_demographics %>%  filter( as.Date(d_914594314) < "2024
 
 #digital includes:  Connect Web, IHCS Web, Email/Text Invite, Patient Portal, Social Media Post, IHCS Newsletter, Video
 #traditional includes: Mailed Letter, Phone Invite, Dr/Staff, Connect Staff at IHCS, Connect in News, Local News/TV/Radio, Family/Friend, Another Participant, Poster at IHCS, Table at Event, Recorded Message
-site_demographics <- site_demographics %>%  mutate(marketing = case_when((d_142654897_d_461488577==353358909 | d_142654897_d_607081902==353358909 |
+site_demographics <- site_demographics %>%  mutate(marketing = case_when(((d_142654897_d_461488577==353358909 | d_142654897_d_607081902==353358909 |
                                                                       d_142654897_d_241590841==353358909 | d_142654897_d_206879104==353358909 |
                                                                       d_142654897_d_642287621==353358909 | d_142654897_d_285130077==353358909|
-                                                                      d_142654897_d_684726272==353358909) ~ "Digital",
+                                                                      d_142654897_d_684726272==353358909) &
                                                                    (d_142654897_d_942255248==353358909 | d_142654897_d_639721694==353358909 |
                                                                       d_142654897_d_196856782==353358909 | d_142654897_d_177402915==353358909 |
                                                                       d_142654897_d_791389099==353358909 | d_142654897_d_520301146==353358909|
                                                                       d_142654897_d_549687190==353358909 | d_142654897_d_326825649==353358909 | 
                                                                       d_142654897_d_819377306==353358909 | d_142654897_d_829269606==353358909 |
-                                                                      d_142654897_d_967372009==353358909) ~ "Traditional",
-                                                             TRUE ~ "Skipped")) %>%  filter(marketing!="Skipped")
-site_demographics$marketing <- factor(site_demographics$marketing,levels=c("Digital","Traditional"))
+                                                                      d_142654897_d_967372009==353358909)) ~ "Both",
+                                                                    (d_142654897_d_461488577==353358909 | d_142654897_d_607081902==353358909 |
+                                                                      d_142654897_d_241590841==353358909 | d_142654897_d_206879104==353358909 |
+                                                                      d_142654897_d_642287621==353358909 | d_142654897_d_285130077==353358909|
+                                                                      d_142654897_d_684726272==353358909)~ "Digital",
+                                                                   (d_142654897_d_942255248==353358909 | d_142654897_d_639721694==353358909 |
+                                                                      d_142654897_d_196856782==353358909 | d_142654897_d_177402915==353358909 |
+                                                                      d_142654897_d_791389099==353358909 | d_142654897_d_520301146==353358909|
+                                                                      d_142654897_d_549687190==353358909 | d_142654897_d_326825649==353358909 | 
+                                                                      d_142654897_d_819377306==353358909 | d_142654897_d_829269606==353358909 |
+                                                                      d_142654897_d_967372009==353358909)~ "Traditional",
+                                                                  TRUE ~ "Skipped")) %>%  filter(marketing!="Skipped")
+site_demographics$marketing <- factor(site_demographics$marketing,levels=c("Digital","Traditional", "Both"))
 
 # 14493 digital
 # 15397 traiditional
@@ -563,44 +619,139 @@ site_demographics$marketing <- factor(site_demographics$marketing,levels=c("Digi
 demographics <- c("Age", "Race", "Sex",  "Site")
 
 
+
 # Loop through each demographic
 for (demo in demographics) {
+  
+  #Remove 'both; for chi squared
+site_demographics2 <- site_demographics %>%  filter(marketing!="Both")
+site_demographics2$marketing <- factor(site_demographics2$marketing,levels=c("Digital","Traditional"))
+  
+  active_data <- site_demographics %>%
+    filter(Recruit == "Active")
+  
+  passive_data <- site_demographics %>%
+    filter(Recruit == "Passive")
+  
   # Generate cross-tabulation
-  compare <- site_demographics %>%
+  compare_active <- active_data %>%
     tbl_cross(
       row = !!sym(demo),
       col = marketing,
-      label = list(marketing ~ "Marketing Strategies", !!sym(demo) ~ demo),
+      label = list(marketing ~ "Recruitment Strategies", !!sym(demo) ~ demo),
+      percent = "row",
+      digits = c(0, 2),
+      missing="no",
+      margin_text = "Total Consented Recruits"
+    )
+  
+   compare_passive <- passive_data %>%
+    tbl_cross(
+      row = !!sym(demo),
+      col = marketing,
+      label = list(marketing ~ "Recruitment Strategies", !!sym(demo) ~ demo),
+      percent = "row",
+      digits = c(0, 2),
+      missing="no",
+      margin_text = "Total Consented Recruits"
+    )
+   
+   compare_combined <- cbind(as.data.frame(compare_active), as.data.frame(compare_passive))
+   #colnames(compare_combined) <- c("Race", "Digital", "Traditional", "Both", "Total Recruits", "Race2", "Digital2", "Traditional2", "Both2", "Total Recruits2")
+   compare_combined <- compare_combined[c(-1),]
+   colnames(compare_combined)[1] <- demo
+   colnames(compare_combined)[6] <- demo
+   
+   
+compare_combined_table <- knitr::kable(compare_combined, caption=paste0("Self-reported Recruitment Strategies Among Site Reported ", demo, "\n Stratefied by Recruitment Status"),  row.names=FALSE, booktabs = T, linesep = "", format.args = list(big.mark = ","), align = c("l", "c", "c","c", "c", "c", "c", "c", "c", "c")) %>% kable_styling(latex_options = "scale_down")  %>% add_header_above(c(" "=1, "Recruitment Strategies" =3, " " = 2,"Recruitment Strategies" =3, " " = 1 )) %>%  add_header_above(c("Active Participants" = 5, "Passive Participants" = 5))  %>% landscape() 
+
+   
+ 
+  active_data2 <- site_demographics2 %>%
+    filter(Recruit == "Active")
+  
+  passive_data2 <- site_demographics2 %>%
+    filter(Recruit == "Passive")
+  
+  chi_active <- chisq.test(table(active_data2[[demo]], active_data2$marketing))
+  chi_passive <- chisq.test(table(passive_data2[[demo]], passive_data2$marketing))
+  
+  foot_note <- paste("Note: With a p-value of", 
+                    ifelse(chi_active$p.value < 0.05, (paste0("< 0.05 for active recruits, we have evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, ".")), (paste0(" over 0.05 for active recruits, we have no evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."))))
+  
+   # foot_note2 <- paste("Note: With a p-value of",
+   #                  ifelse(chi_passive$p.value < 0.05, (paste0("< 0.05 for passive recruits,  we have evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, ".")),
+   #                         ifelse(chi_passive$p.value >= 0.05,
+   #                                (paste0(" over 0.05 for passive recruits, we have no evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, ".")),
+   #                                " NA for passive recruits, a Fischer's exact test may provide better results.")))
+   
+if (!is.na(chi_passive$p.value)) {
+  if (chi_passive$p.value < 0.05) {
+    foot_note2 <- paste("Note: With a p-value of < 0.05 for passive recruits, we have evidence that there is a significance in the difference of digital marketing success and traditional marketing success by", demo, ".")
+  } else if (chi_passive$p.value >= 0.05) {
+    foot_note2 <- paste("Note: With a p-value of over 0.05 for passive recruits, we have no evidence that there is a significance in the difference of digital marketing success and traditional marketing success by", demo, ".")
+  } else {
+    foot_note2 <- paste("Note: With a p-value of NA for passive recruits, a Fischer's exact test may provide better results.")
+  }
+} else {
+  foot_note2 <- "Note: With a p-value of NA for passive recruits, a Fischer's exact test may provide better results."
+}
+   
+      foot_note3 <-  paste("Those who selected both Recruitment Strategies were removed from the chi-squared analysis.")
+                    
+  
+  compare_combined_table <- add_footnote(compare_combined_table, foot_note, notation = "none")
+    compare_combined_table <- add_footnote(compare_combined_table, foot_note2, notation = "none")
+        compare_combined_table <- add_footnote(compare_combined_table, foot_note3, notation = "none")
+  
+  # Print or save the table as desired
+  print(compare_combined_table)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+ #### Then need one table with all recruit status and chi squared
+  compare_all <- site_demographics %>%
+    tbl_cross(
+      row = !!sym(demo),
+      col = marketing,
+      label = list(marketing ~ "Recruitment Strategies", !!sym(demo) ~ demo),
       percent = "row",
       digits = c(0, 2),
       missing = "no",
       margin_text = "Total Consented Recruits"
     )
   
-  # Perform necessary modifications
-  compare[["table_body"]]$stat_0 <- sapply(strsplit(compare[["table_body"]]$stat_0, " "), "[", 1)
-  
-  # Generate table
-  compare_table <- compare %>%
-    modify_header() %>%
-    modify_caption(paste("Marketing Strategy Counts by", demo)) %>%
-    as_kable_extra(escape = FALSE, addtl_fmt = TRUE) %>% kable_styling(latex_options = "scale_down")
-  
-    # Add footnote with ifelse statement
-chi <- chisq.test(table(proposal_aleah[[demo]], proposal_aleah$marketing))
+compare_all <- compare_all %>%
+  #bold_labels() %>%
+  #italicize_levels() %>%
+  modify_header() %>%
+  modify_caption(paste0("Self-reported Recruitment Strategies Among Site Reported ", demo)) %>% ## used to be Table 8
+  as_kable_extra() %>% kable_styling(latex_options = "scale_down")
+
+
+chi <- chisq.test(table(site_demographics2[[demo]], site_demographics2$marketing))
+
 footnote <- ifelse(chi$p.value < 0.05,
-                   paste0("With a p-value of ", chi$p.value, 
-                          ", we have evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."),
+                   paste0("With a p-value of < 0.05 we have evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."),
                    paste0("With a p-value over 0.05, we have no evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."))
-compare_table <- add_footnote(compare_table, footnote)
-  
-   # Save the table with dynamic variable name
-  assign(paste0(demo, "_compare"), compare_table, envir = .GlobalEnv)
-  
-  # Print or save the table as desired
-  print(compare_table)
 
+
+compare_all <- add_footnote(compare_all, footnote)
+
+print(compare_all)
+
+  
 }
+
+
 
 
 
@@ -608,77 +759,4 @@ compare_table <- add_footnote(compare_table, footnote)
 ```
 
 
-
-```{r site_tables, warning=FALSE, echo=FALSE, message=FALSE, results='asis'}
-
-
-
-#Aleah needs these to be consented participants only with All consented participants from the start of recruitment in June 2021 until March 1st, 2024.
-#digital includes:  Connect Web, IHCS Web, Email/Text Invite, Patient Portal, Social Media Post, IHCS Newsletter, Video
-#traditional includes: Mailed Letter, Phone Invite, Dr/Staff, Connect Staff at IHCS, Connect in News, Local News/TV/Radio, Family/Friend, Another Participant, Poster at IHCS, Table at Event, Recorded Message
-# For the those who selected “other”, see if those people selected a traditional and/or digital option. If they did select one of those options, count them in the respective group. If the only option they selected is “other”, then we can drop the from the analysis.
-
-digitals <- c("461488577","607081902","241590841","206879104","642287621","285130077","353358909")
-
-traditionals <- c("942255248","639721694","196856782","177402915","791389099","520301146","549687190","326825649","819377306","829269606","967372009")
-
-
-#Dates refer to verification date
-site_demographics <- site_demographics %>%  filter( as.Date(d_914594314) < "2024-03-02")
-
-
-# Define your demographic variables
-
-
-site_demographics$digital <- do.call(pmax,c(site_demographics[,grepl(paste(digitals,collapse="|"),colnames(site_demographics))],na.rm=TRUE))
-site_demographics$traditional <- do.call(pmax,c(site_demographics[,grepl(paste(traditionals,collapse="|"),colnames(site_demographics))],na.rm=TRUE))
-
-site_demographics <- site_demographics %>% 
-  mutate(marketing = case_when(digital== 353358909 & traditional==353358909 ~ "Both",
-                               digital== 353358909 & traditional==104430631 ~ "Digital", 
-                               digital== 104430631 & traditional==353358909 ~ "Traditional",
-                               digital== 104430631 & traditional==104430631 ~ "Others"))
-         
-
-
-demographics2 <- c("Age", "Race", "Sex",  "Site")
-market <- site_demographics %>% select(Connect_ID, contains("142654897"), d_914594314, all_of(demographics2), marketing,traditional) 
-addtion_both <- filter(market,marketing=="Both") %>% mutate(traditional = "104430631") # to refine the traditional as digitals here
-market_addition <- bind_rows(market,addtion_both)
-#market_addition <- market_addition %>%  filter(marketing!="Others")
-
-for (demo in demographics2) {
-
-  compare <- filter(market_addition, marketing!="Others") %>% 
-    select(!!sym(demo),traditional) %>%
-    tbl_cross(col = traditional,
-              row = !!sym(demo),
-              label = list(traditional~"Marketing Strategies: Digital vs Traditional",
-                           !!sym(demo) ~ demo ),
-              digits=c(0,2),
-              percent = c("col"),
-              missing = "ifany",
-              
-              missing_text = "(Missing)") %>%
-    bold_labels() %>%
-    modify_header(stat_1 ="Digital",stat_2="Traditional") 
-
-
-chi <- chisq.test(table(market_addition[[demo]], market_addition$traditional))
-footnote <- ifelse(chi$p.value < 0.05,
-                   paste0("Note: With a p-value of ", ifelse(chi$p.value < 0.001, "< 0.001", chi$p.value),
-                          ", we have evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."),
-                   paste0("Note: With a p-value over 0.05, we have no evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."))
-
-
-  compare_table <- compare %>%
-    modify_header() %>%
-    modify_caption(paste("Marketing Strategy Counts by", demo)) %>%
-    modify_footnote(all_stat_cols() ~ footnote) %>%
-    as_kable_extra(escape = FALSE, addtl_fmt = TRUE) %>% kable_styling(latex_options = "scale_down")
-  
-print(compare_table)
-
-}
-```
 
