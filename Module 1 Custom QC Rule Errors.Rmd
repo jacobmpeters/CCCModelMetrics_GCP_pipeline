@@ -53,8 +53,9 @@ library(reshape)  ###to work on transition from long to wide or wide to long dat
 library(listr) ###to work on a list of vector, files or..
 library(sqldf) ##sql
 library(lubridate) ###date time
-=======
 library(stringr) ###to work on patterns, characters
+library(kableExtra)
+
 
 
 
@@ -168,7 +169,7 @@ table(m1_complete_nodup$version)
 
 
 
-parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
+parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,d_949302066,d_536735468,d_976570371,d_663265240,
 D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
 D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_827220437, 
 D_949302066 , D_517311251, D_205553981, D_117249500, d_430551721, d_517311251, d_544150384, d_564964481, d_117249500 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
@@ -183,10 +184,25 @@ dim(module1)
 
 
 
-
-
 module1 <-
   module1 %>%  mutate(
+    Site = case_when(
+      d_827220437 == 125001209 ~ "Kaiser Permanente Colorado",
+      d_827220437 == 181769837 ~ "Other",
+      d_827220437 == 300267574 ~ "Kaiser Permanente Hawaii",
+      d_827220437 == 303349821 ~ "Marshfield Clinic Health System",
+      d_827220437 == 327912200 ~ "Kaiser Permanente Georgia",
+      d_827220437 == 452412599 ~ "Kaiser Permanente Northwest",
+      d_827220437 == 517700004 ~ "National Cancer Institute",
+      d_827220437 == 531629870 ~ "HealthPartners",
+      d_827220437 == 548392715 ~ "Henry Ford Health System",
+      d_827220437 == 657167265 ~ "Sanford Health",
+      d_827220437 == 809703864 ~ "University of Chicago Medicine"
+    )
+  )
+
+parts_data <- 
+parts_data %>%  mutate(
     Site = case_when(
       d_827220437 == 125001209 ~ "Kaiser Permanente Colorado",
       d_827220437 == 181769837 ~ "Other",
@@ -211,9 +227,9 @@ module1 <-
 ```{r Mod1NS, echo=FALSE, warning=FALSE, message=FALSE}
 
 
-Mod1NS <- module1 %>%  filter(d_949302066!='231311385' & #mod 1 not done
+Mod1NS <- parts_data %>%  filter(d_949302066!='231311385' & #mod 1 not done
                                  (d_536735468!=972455046 | d_976570371!=972455046 | d_663265240!=972455046 )) %>%  #mod2-4 started or submitted
-      select(Site, Connect_ID, d_949302066, d_536735468 ,d_976570371 , d_663265240 ) %>%  sort_by(Site)
+      select(Site, Connect_ID, d_949302066, d_536735468 ,d_976570371 , d_663265240 ) %>%  group_by(Site)
 
 colnames(Mod1NS) <- c("Site", "Connect ID", "SrvBOH_BaseStatus_v1r0", "SrvMRE_BaseStatus_v1r0", "SrvSAS_BaseStatus_v1r0", "SrvLAW_BaseStatus_v1r0")
 
@@ -233,7 +249,7 @@ if (nrow(Mod1NS) == 0) {
 
 
 cardio_none <- module1 %>%  filter(D_167101091_D_535003378 == 1 & rowSums(select(., starts_with("D_167101091_")) == 1) > 1) %>%
-      select(Site, Connect_ID, starts_with("D_167101091_") ) %>%  sort_by(Site)
+      select(Site, Connect_ID, starts_with("D_167101091_") ) %>%  group_by(Site)
 
 
 #knitr::kable(cardio_none)  %>% kable_styling(latex_options = "scale_down")
@@ -254,7 +270,7 @@ if (nrow(cardio_none) == 0) {
 
 
 digest_none <- module1 %>%  filter(D_180961306_D_535003378 == 1 & rowSums(select(., starts_with("D_180961306_")) == 1) > 1) %>%
-      select(Site, Connect_ID, starts_with("D_180961306_") ) %>%  sort_by(Site)
+      select(Site, Connect_ID, starts_with("D_180961306_") ) %>%  group_by(Site)
 
 
 
@@ -274,7 +290,7 @@ if (nrow(digest_none) == 0) {
 
 
 std_none <- module1 %>%  filter(D_874709643_D_535003378 == 1 & rowSums(select(., starts_with("D_874709643_")) == 1) > 1) %>%
-      select(Site, Connect_ID, starts_with("D_874709643_") ) %>%  sort_by(Site)
+      select(Site, Connect_ID, starts_with("D_874709643_") ) %>%  group_by(Site)
 
 
 
@@ -294,7 +310,7 @@ if (nrow(std_none) == 0) {
 
 
 urin_none <- module1 %>%  filter(D_725626004_D_535003378 == 1 & rowSums(select(., starts_with("D_725626004_")) == 1) > 1) %>%
-      select(Site, Connect_ID, starts_with("D_725626004_") ) %>%  sort_by(Site)
+      select(Site, Connect_ID, starts_with("D_725626004_") ) %>%  group_by(Site)
 
 
 
@@ -314,7 +330,7 @@ if (nrow(urin_none) == 0) {
 
 
 surgery_none <- module1 %>%  filter(D_624179836_D_535003378 == 1 & rowSums(select(., starts_with("D_624179836_")) == 1) > 1) %>%
-      select(Site, Connect_ID, starts_with("D_624179836_") ) %>%  sort_by(Site)
+      select(Site, Connect_ID, starts_with("D_624179836_") ) %>%  group_by(Site)
 
 
 
@@ -334,7 +350,7 @@ if (nrow(surgery_none) == 0) {
 
 
 brst_surg_none <- module1 %>%  filter(D_517307064_D_517307064_D_535003378 == 1 & rowSums(select(., starts_with("D_517307064_D_517307064_")) == 1) > 1) %>%
-      select(Site, Connect_ID, starts_with("D_517307064_D_517307064_") ) %>%  sort_by(Site)
+      select(Site, Connect_ID, starts_with("D_517307064_D_517307064_") ) %>%  group_by(Site)
 
 
 
@@ -354,7 +370,7 @@ module1 <- module1   %>% mutate(mobile_num= gsub("[^0-9]", "", D_285718391_D_286
 
 alt_mobile <- module1 %>%  mutate(mobile= ifelse(nchar(module1$mobile_num)==11 & str_sub(module1$mobile_num,1,1)==1, str_sub(module1$mobile_num,2,11), module1$mobile_num)) 
 alt_mb <- alt_mobile %>% filter(!is.na(alt_mobile$mobile) & nchar(alt_mobile$mobile)!=10) %>% 
-  select(Site, Connect_ID, mobile ) %>%  sort_by(Site)
+  select(Site, Connect_ID, mobile ) %>%  group_by(Site)
 
 
 colnames(alt_mb) <- c("Site", "Connect ID", "SrvBOH_AltContCell_v1r0")
@@ -372,7 +388,7 @@ module1 <- module1   %>% mutate(home_num= gsub("[^0-9]", "", D_285718391_D_31813
 
 alt_home <- module1 %>%  mutate(home= ifelse(nchar(module1$home_num)==11 & str_sub(module1$home_num,1,1)==1, str_sub(module1$home_num,2,11), module1$home_num)) 
 alt_home <- alt_home %>% filter(!is.na(alt_home$home) & nchar(alt_home$home)!=10) %>% 
-  select(Site, Connect_ID, home ) %>%  sort_by(Site)
+  select(Site, Connect_ID, home ) %>%  group_by(Site)
 
 
 colnames(alt_home) <- c("Site", "Connect ID", "SrvBOH_AltContCell_v1r0")
@@ -388,16 +404,16 @@ knitr::kable(alt_home)  %>% kable_styling(latex_options = "HOLD_position")
 
 
 module1 <- module1   %>% mutate(zip_num= gsub("[^0-9]", "", D_857915436_D_379899229))
-zipcode <- module1 %>% filter(!is.na(module1$zip_num) & (nchar(module1$zip_num)!=5 | nchar(module1$zip_num)!=9)) %>% 
-  select(Site, Connect_ID, zip_num) %>%  sort_by(Site)
+zipcode <- module1 %>% filter(!is.na(module1$zip_num) & nchar(module1$zip_num)!=0 & nchar(module1$zip_num)!=5 & nchar(module1$zip_num)!=9) %>% 
+  select(Site, Connect_ID, zip_num) %>%  group_by(Site)
 
 colnames(zipcode) <- c("Site", "Connect ID", "ZIP")
 
 #table(nchar(zipcode$ZIP))
 
-zipcodes <- zipcode %>%  filter(nchar(zipcode$ZIP)!=0 & nchar(zipcode$ZIP)!=5 & nchar(zipcode$ZIP)!=9)
+#zipcodes <- zipcode %>%  filter(nchar(zipcode$ZIP)!=0 & nchar(zipcode$ZIP)!=5 & nchar(zipcode$ZIP)!=9)
 
-knitr::kable(zipcodes)  %>% kable_styling(latex_options = "HOLD_position")
+knitr::kable(zipcode)  %>% kable_styling(latex_options = "HOLD_position")
 
 ```
 

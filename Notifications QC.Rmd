@@ -48,9 +48,9 @@ if (!is.null(Sys.getenv("USE_TEST_BOX_FOLDER")) &&
 }
 
 if (use_test_box_folder) {
-  boxfolder <- 249228373485 # test box folder
+  boxfolder <- 255743123858 # Active Box Folder
 } else {
-  boxfolder <- 254808757764 # destination of CSV files (not pdf)
+  boxfolder <- 249228373485 # testing only
 }
 
 
@@ -79,39 +79,44 @@ currentDate <- Sys.Date()
 
 
 Week_Without_Notification <- "WITH AllPossibleNotifications AS (
-    SELECT DISTINCT 
-        category,
-        attempt
-    FROM 
-        `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP`
-    WHERE 
-        category NOT IN (
-            'Baseline Biospecimen Scheduling Invitation',
-            'Baseline Research Menstrual Cycle Survey Reminder 1',
-            'Baseline Research Menstrual Cycle Survey Reminder 1st contact',
-            'Baseline Research Menstrual Cycle Survey Reminder 2nd contact',
-            'Baseline Research Menstrual Cycle Survey Reminder 3rd contact',
-            'Baseline Research Menstrual Cycle Survey Reminder 4th contact',
-            'HP Baseline Research Biospecimen Scheduling Invitation',
-            'KPHI Support Message',
-            'MF Baseline Biospecimen Scheduling Invitation',
-            'Verified, BL Survey Reminders Backlog Pts 4th contact',
-            'Verified, BL Survey Reminders Backlog Pts 5th contact',
-            'Verified, BL Survey Reminders BacklogPts 6th Contact',
-            'Verified, BL Survey Reminders BacklogPts 7th Contact',
-            'Verified, BL Survey Reminders BacklogPts 8th Contact',
-            'Verified, BL Survey Reminders BacklogPts 9th Contact',
-            'Verified, BL Survey Reminder Backlog Pts',
-            'Verified, BL Survey Reminders Backlog Pts',
-            'Post-verification biospecimen update KPCO',
-            'Post-verification biospecimen update KPGA',
-            'Post-verification biospecimen update KPHI',
-            'Post-verification biospecimen update KPNW',
-            'Verified, BL Survey Reminders New Pts 7th Contact',
-            'Verified, BL Survey Reminders New Pts 8th Contact',
-            'Verified, BL Survey Reminders New Pts 9th Contact'
-        )
-),
+SELECT DISTINCT 
+    category,
+    attempt
+FROM 
+    `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP`
+WHERE 
+    category NOT IN (
+        'Baseline Biospecimen Scheduling Invitation',
+        'Baseline Research Menstrual Cycle Survey Reminder 1',
+        'Baseline Research Menstrual Cycle Survey Reminder 1st contact',
+        'Baseline Research Menstrual Cycle Survey Reminder 2nd contact',
+        'Baseline Research Menstrual Cycle Survey Reminder 3rd contact',
+        'Baseline Research Menstrual Cycle Survey Reminder 4th contact',
+        'HP Baseline Research Biospecimen Scheduling Invitation',
+        'KPHI Support Message',
+        'MF Baseline Biospecimen Scheduling Invitation',
+        'Verified, BL Survey Reminders Backlog Pts 4th contact',
+        'Verified, BL Survey Reminders Backlog Pts 5th contact',
+        'Verified, BL Survey Reminders BacklogPts 6th Contact',
+        'Verified, BL Survey Reminders BacklogPts 7th Contact',
+        'Verified, BL Survey Reminders BacklogPts 8th Contact',
+        'Verified, BL Survey Reminders BacklogPts 9th Contact',
+        'Verified, BL Survey Reminder Backlog Pts',
+        'Verified, BL Survey Reminders Backlog Pts',
+        'Post-verification biospecimen update KPCO',
+        'Post-verification biospecimen update KPGA',
+        'Post-verification biospecimen update KPHI',
+        'Post-verification biospecimen update KPNW',
+        'Verified, BL Survey Reminders New Pts 7th Contact',
+        'Verified, BL Survey Reminders New Pts 8th Contact',
+        'Verified, BL Survey Reminders New Pts 9th Contact'
+    )
+UNION ALL
+SELECT 
+    'Data Destruction Reminders' AS category,
+    attempt
+FROM 
+    UNNEST(['2nd contact', '3rd contact', '4th contact']) AS attempt),
 SentNotifications AS (
     SELECT DISTINCT
         category,
@@ -136,7 +141,9 @@ WHERE
     AND sn.attempt IS NULL
     AND NOT (apn.category = 'Verified, BL Survey Reminders' AND apn.attempt = '2nd contact')
 ORDER BY 
-    apn.category, apn.attempt;
+    apn.category, apn.attempt asc;
+
+
 
 
 
@@ -758,12 +765,217 @@ if (nrow(WD_rem) > 50) {
 
 ```
 
+\FloatBarrier
+## The same participant received multiple (non-KPHI) Baseline Mouthwash Home Collection Kit Reminders on the same day. 
+
+```{r MWHC, echo=FALSE, message=FALSE, warning=FALSE}
+
+##It looks like there's a category "Biospecimen Home Collection Kit Reminder" which is an email reminder and then a category "Baseline Mouthwash Home Collection Kit Reminders" that is a sms reminder. Not sure why those has different names as opposed to being the same name and why both wouldn't be considered a first attempt
+
+
+MWHC <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category='Baseline Mouthwash Home Collection Kit Reminders' and date(notification_time) >= (CURRENT_DATE()-7)
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+MWHC_table <- bq_project_query(project, MWHC)
+MWHC_rem <- bq_table_download(MWHC_table, bigint = "integer64") #currently 4 - all 2
+
+
+if (nrow(MWHC_rem) > 50) {
+  cat("There are", nrow(MWHC_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(MWHC_rem,glue("{local_drive}Multiple_MWHC_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(MWHC_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(MWHC_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+```
+
+```{r MWHC_KPHI, echo=FALSE, message=FALSE, warning=FALSE}
+#\FloatBarrier
+## The same participant received multiple Baseline Mouthwash Home Collection Kit Reminders: KPHI  on the same day. 
+
+MWHC_KPHI <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category='Baseline Mouthwash Home Collection Kit Reminders' and category LIKE 'KPHI' and date(notification_time) >= (CURRENT_DATE()-7)
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+MWHC_KPHI_table <- bq_project_query(project, MWHC_KPHI)
+MWHC_KPHI_rem <- bq_table_download(MWHC_KPHI_table, bigint = "integer64") #currently 4 - all 2
+
+
+if (nrow(MWHC_KPHI_rem) > 50) {
+  cat("There are", nrow(MWHC_KPHI_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(MWHC_KPHI_rem,glue("{local_drive}Multiple_MWHC_KPHI_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(MWHC_KPHI_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(MWHC_KPHI_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+```
+\FloatBarrier
+# The same participant received multiple Baseline Mouthwash Sample Survey Reminders on the same day. 
+
+
+```{r MW_Srvy, echo=FALSE, message=FALSE, warning=FALSE}
+
+MW_Srvy <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category='Baseline Mouthwash Sample Survey Reminders' and date(notification_time) >= (CURRENT_DATE()-7)
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+MW_Srvy_table <- bq_project_query(project, MW_Srvy)
+MW_Srvy_rem <- bq_table_download(MW_Srvy_table, bigint = "integer64") #currently 4 - all 2
+
+
+if (nrow(MW_Srvy_rem) > 50) {
+  cat("There are", nrow(MW_Srvy_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(MW_Srvy_rem,glue("{local_drive}Multiple_MW_Srvy_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(MW_Srvy_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(MW_Srvy_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+```
 
 
 \FloatBarrier
 
 
-# 3. Number of messages per day this past week, compared to the specID daily averages since March 1,2024.
+# 3. Participants receiving attempts out of order, meaning that they received "2nd contact" attempt or higher but not the "1st contact" attempt. Several categories are excluded from this query if the first attempt has a different category name then the remaining contact attempts; backlogs are also excluded.
+
+\FloatBarrier
+
+```{r OOO, echo=FALSE, message=FALSE, warning=FALSE}
+OOO <- "SELECT
+  n.*,
+  p.token,
+  p.Connect_ID
+FROM
+  `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+LEFT JOIN
+  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+ON
+  n.token = p.token
+  where n.token is not null and 
+  n.category NOT LIKE '%Contact%' and n.category NOT LIKE '%contact%' and 
+  n.category!='Baseline Research Biospecimen Survey Reminders' and n.category!= 'Baseline Clinical Blood and Urine Sample Survey Reminders'
+  and n.category!= 'newsletter'"
+
+OOO_table <- bq_project_query(project, OOO)
+OOO_rem <- bq_table_download(OOO_table, bigint = "integer64",n_max = Inf, page_size = 1000) 
+
+
+
+# # Filter the dataframe for rows where attempt is one of "2nd contact" to "6th contact"
+# filtered_df <- OOO_rem %>%
+#   filter(attempt %in% c("2nd contact", "3rd contact", "4th contact", "5th contact", "6th contact"))
+# 
+# # Group by token and category and check if "1st contact" is missing for each group
+# missing_1st_contact <- filtered_df %>%
+#   group_by(token, category) %>%
+#   filter(!("1st contact" %in% attempt))
+# 
+# # Select only token and category columns for the output
+# missing_1st_contact <- missing_1st_contact %>%
+#   select(token, category)
+# 
+# # Remove duplicates if necessary
+# missing_1st_contact <- distinct(missing_1st_contact)
+# 
+# # Display the final output
+# print(missing_1st_contact)
+
+
+# Initialize an empty dataframe to store the results
+result_df <- data.frame(token = character(), category = character(), stringsAsFactors = FALSE)
+
+# Get unique tokens
+unique_tokens <- unique(OOO_rem$token)
+
+# Iterate over each participant
+for (token in unique_tokens) {
+  # Subset data for the current participant
+  participant_data <- OOO_rem[OOO_rem$token == token, ]
+  
+  # Exclude categories that match specified patterns
+participant_data <- participant_data[!grepl("Contact|contact|Backlog|Baseline Research Biospecimen Survey Reminders|Baseline Clinical Blood and Urine Sample Survey Reminders|Baseline Research Menstrual Cycle Survey Reminders|Baseline Mouthwash Home Collection Kit Reminders", participant_data$category), ]
+    
+  # Get unique categories for the participant
+  unique_categories <- unique(participant_data$category)
+  
+  # Iterate over each category for the participant
+  for (category in unique_categories) {
+    # Check if 1st contact is missing but 2nd-6th contacts are present
+    if (!("1st contact" %in% participant_data$attempt[participant_data$category == category]) &
+        any(grepl("2nd contact|3rd contact|4th contact|5th contact|6th contact", participant_data$attempt[participant_data$category == category]))) {
+      # Add the participant and category to the result dataframe
+      result_df <- rbind(result_df, data.frame(token = token, category = category, stringsAsFactors = FALSE))
+    }
+  }
+}
+
+# Remove duplicates if necessary
+OOO_rem_df <- unique(result_df)
+
+# Display the final output
+#print(OOO_rem_df)
+
+
+
+
+if (nrow(OOO_rem_df) > 50) {
+  cat("There are", nrow(OOO_rem_df), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(OOO_rem,glue("{local_drive}Multiple_OOO_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(OOO_rem_df) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(OOO_rem_df) %>% kable_styling(latex_options = "HOLD_position")
+}
+}
+
+```
+
+
+
+
+
+\FloatBarrier
+
+
+# 4. Number of messages per day this past week, compared to the specID daily averages since March 1,2024.
 
 ```{r NumMess, echo=FALSE, message=FALSE, warning=FALSE}
 
