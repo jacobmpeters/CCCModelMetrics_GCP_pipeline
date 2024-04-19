@@ -38,7 +38,7 @@ project <- "nih-nci-dceg-connect-prod-6d04"
 #######################################################################
 
 ### Set Box folders for output CSV files ###########
-use_test_box_folder <- TRUE # Local user sets this (Jake or Kelsey)
+use_test_box_folder <- FALSE # Local user sets this (Jake or Kelsey)
 
 # Over-ride if using plumber api on GCP (USER DOESN'T TOUCH THIS!)
 # Check if the environment variable exists and is not empty
