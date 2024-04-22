@@ -15,6 +15,10 @@ steps:
  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
    entrypoint: gcloud
    args: ['run','deploy','ccc-module-metrics-api', '--image=gcr.io/nih-nci-dceg-connect-prod-6d04/ccc-module-metrics-api:$COMMIT_SHA',  '--cpu=8','--memory=32Gi', '--region=us-central1', '--service-account=qa-qc-prod@nih-nci-dceg-connect-prod-6d04.iam.gserviceaccount.com']
-          
+
+tags:
+  - reporting_pipeline
+  - module_metrics  
+  
 images:
  - 'gcr.io/nih-nci-dceg-connect-prod-6d04/ccc-module-metrics-api:$COMMIT_SHA'
