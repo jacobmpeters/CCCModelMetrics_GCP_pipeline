@@ -703,9 +703,9 @@ if (nrow(PC_UserPf_rem) > 50) {
 
 
 \FloatBarrier
-## The same participant received multiple Verified, BL Survey reminders on the same day. This includes the category 'Verified, BL Survey Reminders New Pts'
-```{r VBLSR, echo=FALSE, message=FALSE, warning=FALSE}
-VBLSR <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+## The same participant received multiple Verified, BL Survey text reminders on the same day. This includes the category 'Verified, BL Survey Reminders New Pts'
+```{r VBLSR_sms, echo=FALSE, message=FALSE, warning=FALSE}
+VBLSR_sms <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
 n.token,
 category,
        DATE(notification_time) as repeat_date, 
@@ -714,21 +714,56 @@ FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
 left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
 on p.token=n.token
 WHERE category LIKE 'Verified, BL Survey Reminders%' and date(notification_time) >= (CURRENT_DATE()-7)
+and notificationType='sms'
 GROUP BY Connect_ID, token, category, DATE(notification_time)
 HAVING COUNT(*) > 1"
 
-VBLSR_table <- bq_project_query(project, VBLSR)
-Ver_BLSurv_rem <- bq_table_download(VBLSR_table, bigint = "integer64")
+VBLSR_sms_table <- bq_project_query(project, VBLSR_sms)
+Ver_BLSurv_rem_sms <- bq_table_download(VBLSR_sms_table, bigint = "integer64")
 
 
-if (nrow(Ver_BLSurv_rem) > 50) {
-  cat("There are", nrow(Ver_BLSurv_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
-  write.csv(Ver_BLSurv_rem,glue("{local_drive}Multiple_Ver_BLSurv_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+if (nrow(Ver_BLSurv_rem_sms) > 50) {
+  cat("There are", nrow(Ver_BLSurv_rem_sms), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(Ver_BLSurv_rem_sms,glue("{local_drive}Multiple_Ver_BLSurv_rem_sms_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
 } else {
-  if(nrow(Ver_BLSurv_rem) == 0) {
+  if(nrow(Ver_BLSurv_rem_sms) == 0) {
   cat("No errors\n")
 } else {
-  knitr::kable(Ver_BLSurv_rem) %>% kable_styling(latex_options = "scale_down")
+  knitr::kable(Ver_BLSurv_rem_sms) %>% kable_styling(latex_options = "scale_down")
+}
+}
+```
+
+
+
+\FloatBarrier
+## The same participant received multiple Verified, BL Survey email reminders on the same day. This includes the category 'Verified, BL Survey Reminders New Pts'
+```{r VBLSR_email, echo=FALSE, message=FALSE, warning=FALSE}
+VBLSR_email <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category LIKE 'Verified, BL Survey Reminders%' and date(notification_time) >= (CURRENT_DATE()-7)
+and notificationType='email'
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+VBLSR_email_table <- bq_project_query(project, VBLSR_email)
+Ver_BLSurv_rem_email <- bq_table_download(VBLSR_email_table, bigint = "integer64")
+
+
+if (nrow(Ver_BLSurv_rem_email) > 50) {
+  cat("There are", nrow(Ver_BLSurv_rem_email), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(Ver_BLSurv_rem_email,glue("{local_drive}Multiple_Ver_BLSurv_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(Ver_BLSurv_rem_email) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(Ver_BLSurv_rem_email) %>% kable_styling(latex_options = "scale_down")
 }
 }
 ```
@@ -802,9 +837,11 @@ if (nrow(MWHC_rem) > 50) {
 
 ```
 
+
+\FloatBarrier
+# The same participant received multiple Baseline Mouthwash Home Collection Kit Reminders: KPHI  on the same day. 
+
 ```{r MWHC_KPHI, echo=FALSE, message=FALSE, warning=FALSE}
-#\FloatBarrier
-## The same participant received multiple Baseline Mouthwash Home Collection Kit Reminders: KPHI  on the same day. 
 
 MWHC_KPHI <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
 n.token,
