@@ -870,6 +870,7 @@ if (nrow(MWHC_KPHI_rem) > 50) {
 }
 }
 
+
 ```
 \FloatBarrier
 # The same participant received multiple Baseline Mouthwash Sample Survey Reminders on the same day. 
