@@ -73,10 +73,16 @@ function(report, testing=FALSE){
     
     # Authenticate with Google Storage and write report file to bucket
     scope <- c("https://www.googleapis.com/auth/cloud-platform")
-    token <- token_fetch(scopes=scope)
-    gcs_auth(token=token)
-    gcs_global_bucket(bucket)
-    gcs_upload(report_fid, name=report_fid) 
+    token <- token_fetch(scopes = scope)
+    gcs_auth(token = token)
+
+    # Loop through CSV and PDF files, write them to GCP Cloud Storage, and print their names
+    filelist <- list.files(pattern = "*.csv$|*.pdf$")
+    uploaded_files <- lapply(filelist, function(x) {
+      gcs_upload(x, bucket = bucket, name = x)
+      print(paste("Uploaded file:", x))
+      x  # Return the file name for further processing if needed
+    })
     
     # Return a string for for API testing purposes
     ret_str <- paste("All done. Check", bucket, "for", report_fid)
