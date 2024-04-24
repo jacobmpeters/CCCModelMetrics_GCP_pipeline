@@ -788,7 +788,7 @@ if (nrow(WD_rem) > 50) {
 ```
 
 \FloatBarrier
-## The same participant received multiple (non-KPHI) Baseline Mouthwash Home Collection Kit SMS Reminders on the same day. 
+## The same participant received multiple (non-KPHI) Baseline Mouthwash Home Collection Kit SMS Reminders on the same day. The first attempt is category name 'Biospecimen Home Collection Kit Reminder' and attempts 2-5 are under category name 'Baseline Mouthwash Home Collection Kit Reminders'.
 
 ```{r MWHC_text, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -827,7 +827,7 @@ if (nrow(MWHC_rem) > 50) {
 
 
 \FloatBarrier
-## The same participant received multiple (non-KPHI) Baseline Mouthwash Home Collection Kit email Reminders on the same day. 
+## The same participant received multiple (non-KPHI) Baseline Mouthwash Home Collection Kit email Reminders on the same day. The first attempt is category name 'Biospecimen Home Collection Kit Reminder' and attempts 2-5 are under category name 'Baseline Mouthwash Home Collection Kit Reminders'.
 
 ```{r MWHC_email, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -867,7 +867,7 @@ if (nrow(MWHC_rem) > 50) {
 
 
 \FloatBarrier
-# The same participant received multiple Baseline Mouthwash Home Collection Kit SMS Reminders: KPHI  on the same day. 
+# The same participant received multiple Baseline Mouthwash Home Collection Kit SMS Reminders: KPHI  on the same day. The first attempt is category name 'Biospecimen Home Collection Kit Reminder' and attempts 2-5 are under category name 'Baseline Mouthwash Home Collection Kit Reminders: KPHI'.
 
 ```{r MWHC_KPHI_text, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -906,7 +906,7 @@ if (nrow(MWHC_KPHI_rem) > 50) {
 
 
 \FloatBarrier
-# The same participant received multiple Baseline Mouthwash Home Collection Kit email Reminders: KPHI  on the same day. 
+# The same participant received multiple Baseline Mouthwash Home Collection Kit email Reminders: KPHI  on the same day.  The first attempt is category name 'Biospecimen Home Collection Kit Reminder' and attempts 2-5 are under category name 'Baseline Mouthwash Home Collection Kit Reminders: KPHI'.
 
 ```{r MWHC_KPHI_email, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -945,7 +945,7 @@ if (nrow(MWHC_KPHI_rem) > 50) {
 
 
 \FloatBarrier
-# The same participant received multiple Baseline Mouthwash Sample Survey email Reminders on the same day. 
+# The same participant received multiple Baseline Mouthwash Sample Survey email Reminders on the same day.  The first attempt is category name 'Biospecimen Home Collection Survey Reminder' and attempts 2-5 are under category name 'Baseline Mouthwash Sample Survey Reminders'.
 
 ```{r MW_Srvy_email, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -982,7 +982,7 @@ if (nrow(MW_Srvy_rem) > 50) {
 
 
 \FloatBarrier
-# The same participant received multiple Baseline Mouthwash Sample Survey SMS Reminders on the same day. 
+# The same participant received multiple Baseline Mouthwash Sample Survey SMS Reminders on the same day. The first attempt is category name 'Biospecimen Home Collection Survey Reminder' and attempts 2-5 are under category name 'Baseline Mouthwash Sample Survey Reminders'.
 
 ```{r MW_Srvy_text, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -1038,7 +1038,8 @@ ON
   where n.token is not null and 
   n.category NOT LIKE '%Contact%' and n.category NOT LIKE '%contact%' and 
   n.category!='Baseline Research Biospecimen Survey Reminders' and n.category!= 'Baseline Clinical Blood and Urine Sample Survey Reminders'
-  and n.category!= 'newsletter' and n.category!='Baseline Mouthwash Sample Survey Reminders'"
+  and n.category!= 'newsletter' and n.category!='Baseline Mouthwash Sample Survey Reminders' and n.category!='Biospecimen Home Collection Kit Reminder'
+and n.category!='Biospecimen Home Collection Survey Reminder'"
 
 OOO_table <- bq_project_query(project, OOO)
 OOO_rem <- bq_table_download(OOO_table, bigint = "integer64",n_max = Inf, page_size = 1000) 
