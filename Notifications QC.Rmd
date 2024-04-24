@@ -690,6 +690,7 @@ if (nrow(PC_UserPf_rem) > 50) {
 
 
 \FloatBarrier
+
 ## The same participant received multiple Verified, BL Survey SMS Reminders on the same day. This includes the category 'Verified, BL Survey Reminders New Pts'
 ```{r VBLSR_sms, echo=FALSE, message=FALSE, warning=FALSE}
 VBLSR_sms <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
@@ -870,6 +871,7 @@ if (nrow(MWHC_rem) > 50) {
 # The same participant received multiple Baseline Mouthwash Home Collection Kit SMS Reminders: KPHI  on the same day. The first attempt is category name 'Biospecimen Home Collection Kit Reminder' and attempts 2-5 are under category name 'Baseline Mouthwash Home Collection Kit Reminders: KPHI'.
 
 ```{r MWHC_KPHI_text, echo=FALSE, message=FALSE, warning=FALSE}
+
 
 
 MWHC_KPHI <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
