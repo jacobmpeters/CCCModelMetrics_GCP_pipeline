@@ -18,6 +18,26 @@ bq_auth()
 2
 
 
+boxfolder <- 255783409227 # Active Box Folder
+
+currentDate <- Sys.Date()##### Making sure personal C drives aren't referenced if this code is being used by others
+
+
+#Change to FALSE if referencing this code
+write_to_local_drive = F #F
+
+#local_drive="C:/Users/dowlingk2/Documents/Module-Missingness-and-Metrics/data/"    
+
+
+### This function below is put before any write.csv functions, and "filename" is updated. It determines wheteher the file will be created locally or not.
+#filename=
+local_drive= ifelse(write_to_local_drive, "C:/Users/dowlingk2/Documents/GitHub/", "")
+
+currentDate <- Sys.Date()
+
+
+#################################################################################################################
+
 
 project_cc = "nih-nci-dceg-connect-prod-6d04"
 datad_query <- "SELECT  Connect_ID, d_827220437, d_831041022, d_883668444, d_130371375_d_266600170_d_731498909, d_130371375_d_266600170_d_648936790, 
@@ -44,7 +64,6 @@ variables <- left_join(datad, spec, by="Connect_ID")
 
 
 
-currentDate <- Sys.Date()
 
 variables <- variables %>%  filter(d_831041022=="353358909")
 
@@ -124,10 +143,11 @@ Data_destruction <- destruction %>% select(Connect_ID, Site, 'Data Destruction R
                                            'Urine Blood Collected', 'Mouthwash Blood Collected', 'Collection ID(s)', 'Eligible for Basline Survey Incentive', 
                                            'Eligible for Follow-up 1 Incentive', 'Eligible for Follow-up 2 Incentive', 
                                            'Eligible for Follow-up 3 Incentive', 'Recieved Basline Survey Incentive', 'Recieved Follow-up 1 Incentive', 
-                                           'Recieved Follow-up 2 Incentive', 'Recieved Follow-up 3 Incentive') 
-#'COVID Survey Flag',
-Data_destruction
+                                           'Recieved Follow-up 2 Incentive', 'Recieved Follow-up 3 Incentive')  #'COVID Survey Flag',
 
-knitr::kable(Data_destruction)
+#Data_destruction
 
-write.csv(Data_destruction,paste("C:/Users/dowlingk2/Documents/GitHub/Data_Destruction_Requests_",currentDate,".csv",sep=""),row.names = F,na="")
+#knitr::kable(Data_destruction)
+
+
+write.csv(Data_destruction,glue("{local_drive}Data_Destruction_Requests_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
