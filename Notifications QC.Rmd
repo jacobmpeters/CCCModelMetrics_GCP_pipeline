@@ -96,7 +96,8 @@ WHERE
         'Post-verification biospecimen update KPNW',
         'Verified, BL Survey Reminders New Pts 7th Contact',
         'Verified, BL Survey Reminders New Pts 8th Contact',
-        'Verified, BL Survey Reminders New Pts 9th Contact'
+        'Verified, BL Survey Reminders New Pts 9th Contact',
+        'newsletter'
     )
 UNION ALL
 SELECT 
@@ -629,9 +630,9 @@ if (nrow(HPBio_rem) > 50) {
 
 
 \FloatBarrier
-## The same participant received multiple newsletter notifications on the same day. 
-```{r news, echo=FALSE, message=FALSE, warning=FALSE}
-news <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+## The same participant received multiple eNewsletter notifications on the same day. 
+```{r enews, echo=FALSE, message=FALSE, warning=FALSE}
+enews <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
 n.token,
 category,
        DATE(notification_time) as repeat_date, 
@@ -639,26 +640,60 @@ category,
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
 left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
 on p.token=n.token
-WHERE category LIKE '%newsletter%' and date(notification_time) >= (CURRENT_DATE()-7)
+WHERE category='eNewsletter' and date(notification_time) >= (CURRENT_DATE()-7)
 GROUP BY Connect_ID, token, category, DATE(notification_time)
 HAVING COUNT(*) > 1"
 
-news_table <- bq_project_query(project, news)
-news_rem <- bq_table_download(news_table, bigint = "integer64") #currently 5 - all 2
+enews_table <- bq_project_query(project, enews)
+enews_rem <- bq_table_download(enews_table, bigint = "integer64") #currently 5 - all 2
 
 
-if (nrow(news_rem) > 50) {
-  cat("There are", nrow(news_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
-  write.csv(news_rem,glue("{local_drive}Multiple_news_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+if (nrow(enews_rem) > 50) {
+  cat("There are", nrow(enews_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(news_rem,glue("{local_drive}Multiple_enews_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
 } else {
-  if(nrow(news_rem) == 0) {
+  if(nrow(enews_rem) == 0) {
   cat("No errors\n")
 } else {
-  knitr::kable(news_rem) %>% kable_styling(latex_options = "scale_down")
+  knitr::kable(enews_rem) %>% kable_styling(latex_options = "scale_down")
 }
 }
 
 ```
+
+
+\FloatBarrier
+## The same participant received multiple aniversary Newsletter notifications on the same day. 
+```{r anews, echo=FALSE, message=FALSE, warning=FALSE}
+anews <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category='anniversaryNewsletter' and date(notification_time) >= (CURRENT_DATE()-7)
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+anews_table <- bq_project_query(project, anews)
+anews_rem <- bq_table_download(anews_table, bigint = "integer64") #currently 5 - all 2
+
+
+if (nrow(anews_rem) > 50) {
+  cat("There are", nrow(anews_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(news_rem,glue("{local_drive}Multiple_anews_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(anews_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(anews_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+```
+
 
 \FloatBarrier
 ## The same participant received multiple post-consent user profile reminders on the same day. 
