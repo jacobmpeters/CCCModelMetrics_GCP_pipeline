@@ -9,7 +9,7 @@ default:
     cloud_run: ccc-module-metrics-api
 
 weekly_module_metrics:
-  rmd_file_name: "CCC Weekly Module Metrics_RMD.Rmd"
+  r_file_name: "CCC Weekly Module Metrics_RMD.Rmd"
   report_file_name: "CCC_Weekly_Module_Metrics.pdf"
   box_folders:
     - "251929835507" # internal
@@ -18,7 +18,7 @@ weekly_module_metrics:
     frequency: "0 11 * * 1" # every Monday at 11 AM"
 
 mod1_stats:
-  rmd_file_name: "Merged Module 1 Summary Statistics.Rmd"
+  r_file_name: "Merged Module 1 Summary Statistics.Rmd"
   report_file_name: "Merged_Module_1_Summary_Statistics.pdf"
   box_folders:
     - "251314285484"
@@ -27,7 +27,7 @@ mod1_stats:
     frequency: "30 11 1 * *" # first of the month at 11:30 AM
 
 mod2_stats:
-  rmd_file_name: "Merged Module 2 Summary Statistics.Rmd"
+  r_file_name: "Merged Module 2 Summary Statistics.Rmd"
   report_file_name: "Merged_Module_2_Summary_Statistics.pdf"
   box_folders:
     - "251314285484"
@@ -36,7 +36,7 @@ mod2_stats:
     frequency: "0 12 1 * *" # first of the month at 12 PM
 
 mod3_stats:
-  rmd_file_name: "Module 3 Summary Statatistics.Rmd"
+  r_file_name: "Module 3 Summary Statatistics.Rmd"
   report_file_name: "Module_3_Summary_Statatistics.pdf"
   box_folders:
     - "251314285484"
@@ -45,7 +45,7 @@ mod3_stats:
     frequency: "30 12 1 * *" # first of the month at 12:30 PM
 
 mod4_stats:
-  rmd_file_name: "Module 4 Missingness Analysis.Rmd"
+  r_file_name: "Module 4 Missingness Analysis.Rmd"
   report_file_name: "Module_4_Missingness_Analysis.pdf"
   box_folders:
     - "251314285484"
@@ -54,7 +54,7 @@ mod4_stats:
     frequency: "0 13 1 * *" # first of the month at 1 PM
 
 baseline_high_priority:
-  rmd_file_name: "Baseline Ranked Variables- High Priority.Rmd"
+  r_file_name: "Baseline Ranked Variables- High Priority.Rmd"
   report_file_name: "Baseline_Ranked_Varialbes_High_Priority.pdf"
   box_folders:
     - "251314285484"
@@ -63,7 +63,7 @@ baseline_high_priority:
     frequency: "30 13 1 * *" # first of the month at 1:30 PM
 
 baseline_low_priority:
-  rmd_file_name: "Baseline Ranked Variables- Low Priority.Rmd"
+  r_file_name: "Baseline Ranked Variables- Low Priority.Rmd"
   report_file_name: "Baseline_Ranked_Variables_Low_Priority.pdf"
   box_folders:
     - "251314285484"
@@ -72,7 +72,7 @@ baseline_low_priority:
     frequency: "30 14 1 * *" # first of the month at 2:30 PM
     
 module1_qc_metrics:
-  rmd_file_name: "Module 1 Custom QC Rule Errors.Rmd"
+  r_file_name: "Module 1 Custom QC Rule Errors.Rmd"
   report_file_name: "Module_1_Custom_QC_Rule_Errors.pdf"
   box_folders:
     - "203464977998" # internal
@@ -81,7 +81,7 @@ module1_qc_metrics:
     frequency: "45 13 * * 1" # every Monday at 1:30 PM"
     
 qol_stats:
-  rmd_file_name: "3 Month Quality of Life Survey Summary Statistics.Rmd"
+  r_file_name: "3 Month Quality of Life Survey Summary Statistics.Rmd"
   report_file_name: "3_Month_Quality_of_Life_Survey_Summary_Statistics.pdf"
   box_folders:
     - "251314285484" # internal
@@ -90,7 +90,7 @@ qol_stats:
     frequency: "00 14 * * 1" # every Monday at 2 PM"
 
 recruitment_qc_metrics:
-  rmd_file_name: "Rectruitment Derived Variable QC.Rmd"
+  r_file_name: "Rectruitment Derived Variable QC.Rmd"
   report_file_name: "Rectruitment_Derived_Variable_QC.pdf"
   box_folders:
     - "194196493018" # internal
@@ -99,10 +99,19 @@ recruitment_qc_metrics:
     frequency: "30 13 * * 1" # every Monday at 1:30 PM"
 
 notifications_qc_metrics:
-  rmd_file_name: "Notifications QC.Rmd"
+  r_file_name: "Notifications QC.Rmd"
   report_file_name: "Notifications_QC.pdf"
   box_folders:
     - "255743123858"
   gcp_info:
     cloud_scheduler: ccc-notifications-qc-metrics
+    frequency: "30 13 * * 1" # every Monday at 1:30 PM"
+    
+data_destruction_qc_metrics:
+  r_file_name: "Data Destruction CSV Output.R"
+  report_file_name: "Data_Destruction_CSV Output.R.pdf"
+  box_folders:
+    - "255783409227"
+  gcp_info:
+    cloud_scheduler: ccc-data-destruction-qc-metrics
     frequency: "30 13 * * 1" # every Monday at 1:30 PM"
