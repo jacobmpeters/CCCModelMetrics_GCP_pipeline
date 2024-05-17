@@ -630,9 +630,9 @@ if (nrow(HPBio_rem) > 50) {
 
 
 \FloatBarrier
-## The same participant received multiple eNewsletter notifications on the same day. 
-```{r enews, echo=FALSE, message=FALSE, warning=FALSE}
-enews <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+## The same participant received multiple eNewsletter email notifications on the same day. 
+```{r enews_email, echo=FALSE, message=FALSE, warning=FALSE}
+enews_email <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
 n.token,
 category,
        DATE(notification_time) as repeat_date, 
@@ -640,22 +640,22 @@ category,
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
 left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
 on p.token=n.token
-WHERE category='eNewsletter' and date(notification_time) >= (CURRENT_DATE()-7)
+WHERE category='eNewsletter' and date(notification_time) >= (CURRENT_DATE()-7) and notificationType='email'
 GROUP BY Connect_ID, token, category, DATE(notification_time)
 HAVING COUNT(*) > 1"
 
-enews_table <- bq_project_query(project, enews)
-enews_rem <- bq_table_download(enews_table, bigint = "integer64") #currently 5 - all 2
+enews_email_table <- bq_project_query(project, enews_email)
+enews_email_rem <- bq_table_download(enews_email_table, bigint = "integer64") #currently 5 - all 2
 
 
-if (nrow(enews_rem) > 50) {
-  cat("There are", nrow(enews_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
-  write.csv(news_rem,glue("{local_drive}Multiple_enews_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+if (nrow(enews_email_rem) > 50) {
+  cat("There are", nrow(enews_email_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(enews_email_rem,glue("{local_drive}Multiple_enews_email_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
 } else {
-  if(nrow(enews_rem) == 0) {
+  if(nrow(enews_email_rem) == 0) {
   cat("No errors\n")
 } else {
-  knitr::kable(enews_rem) %>% kable_styling(latex_options = "scale_down")
+  knitr::kable(enews_email_rem) %>% kable_styling(latex_options = "scale_down")
 }
 }
 
@@ -663,9 +663,9 @@ if (nrow(enews_rem) > 50) {
 
 
 \FloatBarrier
-## The same participant received multiple aniversary Newsletter notifications on the same day. 
-```{r anews, echo=FALSE, message=FALSE, warning=FALSE}
-anews <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+## The same participant received multiple eNewsletter sms notifications on the same day. 
+```{r enews_sms, echo=FALSE, message=FALSE, warning=FALSE}
+enews_sms <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
 n.token,
 category,
        DATE(notification_time) as repeat_date, 
@@ -673,22 +673,87 @@ category,
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
 left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
 on p.token=n.token
-WHERE category='anniversaryNewsletter' and date(notification_time) >= (CURRENT_DATE()-7)
+WHERE category='eNewsletter' and date(notification_time) >= (CURRENT_DATE()-7) and notificationType='sms'
 GROUP BY Connect_ID, token, category, DATE(notification_time)
 HAVING COUNT(*) > 1"
 
-anews_table <- bq_project_query(project, anews)
-anews_rem <- bq_table_download(anews_table, bigint = "integer64") #currently 5 - all 2
+enews_sms_table <- bq_project_query(project, enews_sms)
+enews_sms_rem <- bq_table_download(enews_sms_table, bigint = "integer64") #currently 5 - all 2
 
 
-if (nrow(anews_rem) > 50) {
-  cat("There are", nrow(anews_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
-  write.csv(news_rem,glue("{local_drive}Multiple_anews_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+if (nrow(enews_sms_rem) > 50) {
+  cat("There are", nrow(enews_sms_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(enews_sms_rem,glue("{local_drive}Multiple_enews_sms_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
 } else {
-  if(nrow(anews_rem) == 0) {
+  if(nrow(enews_sms_rem) == 0) {
   cat("No errors\n")
 } else {
-  knitr::kable(anews_rem) %>% kable_styling(latex_options = "scale_down")
+  knitr::kable(enews_sms_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+```
+
+\FloatBarrier
+## The same participant received multiple aniversary Newsletter email notifications on the same day. 
+```{r anews_email, echo=FALSE, message=FALSE, warning=FALSE}
+anews_email <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category='anniversaryNewsletter' and date(notification_time) >= (CURRENT_DATE()-7) and notificationType='email'
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+anews_email_table <- bq_project_query(project, anews_email)
+anews_email_rem <- bq_table_download(anews_email_table, bigint = "integer64") #currently 5 - all 2
+
+
+if (nrow(anews_email_rem) > 50) {
+  cat("There are", nrow(anews_email_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(anews_email_rem,glue("{local_drive}Multiple_anews_email_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(anews_email_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(anews_email_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+```
+
+
+\FloatBarrier
+## The same participant received multiple aniversary Newsletter text notifications on the same day. 
+```{r anews_sms, echo=FALSE, message=FALSE, warning=FALSE}
+anews_sms <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+n.token,
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category='anniversaryNewsletter' and date(notification_time) >= (CURRENT_DATE()-7) and notificationType='sms'
+GROUP BY Connect_ID, token, category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+anews_sms_table <- bq_project_query(project, anews_sms)
+anews_sms_rem <- bq_table_download(anews_sms_table, bigint = "integer64") #currently 5 - all 2
+
+
+if (nrow(anews_sms_rem) > 50) {
+  cat("There are", nrow(anews_sms_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(anews_sms_rem,glue("{local_drive}Multiple_anews_sms_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(anews_sms_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(anews_sms_rem) %>% kable_styling(latex_options = "scale_down")
 }
 }
 
