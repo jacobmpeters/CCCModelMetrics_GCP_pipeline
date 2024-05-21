@@ -11,6 +11,7 @@ library(gtsummary)
 library(tinytex)
 library(vtable)
 library(kableExtra)
+library(glue)
 
 
 
