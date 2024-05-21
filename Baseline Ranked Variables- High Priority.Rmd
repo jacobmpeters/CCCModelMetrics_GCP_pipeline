@@ -268,9 +268,9 @@ boxp_funct <- function(CID,Title, Xlab) {
   CID_SYM <- rlang::ensym(CID)
   merged %>% mutate(!!CID_SYM:=as.numeric(!!CID_SYM)) %>%
     filter(!is.na(!!CID_SYM)) %>%
-    ggplot(aes(x=!!CID_SYM, fill=as.character(D_407056417)))+
+    ggplot(aes(x=!!CID_SYM))+
     xlab(Xlab) + geom_boxplot()+  ggtitle(Title)+
-    scale_fill_discrete(name = "Sex at Birth", labels=c("Female", "Male")) + 
+    scale_fill_discrete(name = "Sex at Birth") + 
     scale_y_continuous(labels = scales::number_format(accuracy = 0.01))
 }
 
@@ -898,7 +898,7 @@ dt_white= dt_white %>%  mutate(multb2 = ifelse(D_797626610_D_797626610_D_6645715
 
 
 which_eth= dt_white %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Multi-Ethnic",
-                                                     D_797626610_D_797626610_D_664571574==1 ~ "Ducth",
+                                                     D_797626610_D_797626610_D_664571574==1 ~ "Dutch",
                                              D_797626610_D_797626610_D_163149180==1 ~ "English",
                                              D_797626610_D_797626610_D_192776753==1 ~ "European",
                                              D_797626610_D_797626610_D_733789220==1 ~ "French",
@@ -2532,7 +2532,7 @@ hist_funct <- function(CID,Title, Xlab, Ylab) {
      xlab(Xlab) + ylab(Ylab) + geom_histogram(binwidth = 0.5)+  ggtitle(Title)+
     geom_histogram(color="black")+ scale_y_continuous(breaks=pretty_breaks()) + 
     #scale_fill_discrete(name = "Sex at Birth", labels=c("Female", "Male"))+
-    geom_vline(aes(xintercept=mean(!!CID_SYM, na.rm=T)), colour="red", linetype="solid")
+    geom_vline(aes(xintercept=mean(!!CID_SYM, na.rm=T)), colour="#2973A5", linetype="solid")
   
 }
 
@@ -2545,7 +2545,7 @@ hist_funct_F <- function(CID,Title, Xlab, Ylab) {
     ggplot(aes(x=!!CID_SYM))+
     xlab(Xlab) + ylab(Ylab) + geom_histogram()+   ggtitle(Title)+
     geom_histogram(color="black")+ scale_y_continuous(breaks=pretty_breaks()) +
-    geom_vline(aes(xintercept=mean(!!CID_SYM, na.rm=T)), colour="red", linetype="solid")
+    geom_vline(aes(xintercept=mean(!!CID_SYM, na.rm=T)), colour="#2973A5", linetype="solid")
   
 }
 
@@ -2555,7 +2555,7 @@ hist_funct_D <- function(CID,Title, Xlab, Ylab) {
      xlab(Xlab) + ylab(Ylab) + geom_histogram(binwidth = 0.5)+  ggtitle(Title)+
     geom_histogram(color="black")+ scale_y_continuous(breaks=pretty_breaks()) +
     #scale_fill_discrete(name = "Sex at Birth", labels=c("Female", "Male"))+
-    geom_vline(aes(xintercept=mean(CID, na.rm=T)), colour="red", linetype="solid")
+    geom_vline(aes(xintercept=mean(CID, na.rm=T)), colour="#2973A5", linetype="solid")
   
 }
 
@@ -2703,7 +2703,7 @@ hist_funct <- function(CID,Title, Xlab, Ylab) {
     xlab(Xlab) + ylab(Ylab) +  ggtitle(Title)+
     geom_histogram(color="black")+ scale_y_continuous(breaks=pretty_breaks()) +
     #scale_fill_discrete(name = "Sex at Birth", labels=c("Female", "Male"))+
-    geom_vline(aes(xintercept=mean(!!CID_SYM, na.rm=T)), colour="red", linetype="solid")
+    geom_vline(aes(xintercept=mean(!!CID_SYM, na.rm=T)), colour="#2973A5", linetype="solid")
   
 }
 

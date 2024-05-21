@@ -2940,8 +2940,8 @@ dt_CURWORKT1_summary[7,2] <- sum(is.na(CURWORKT1$D_635467479_D_635467479_D_24816
 dt_CURWORKT1_summary[7,3] <- (sum(is.na(CURWORKT1$D_635467479_D_635467479_D_248168118))/dim(CURWORKT1)[[1]])*100
 
 dt_CURWORKT1_summary[8,1] <- "Skipped if Commute Inlcudes Another Method" 
-dt_CURWORKT1_summary[8,2] <- sum(is.na(CURWORKT1$D_635467479_D_635467479_D_509121242) & is.na(CURWORKT1$D_635467479_D_635467479_D_902077989))
-dt_CURWORKT1_summary[8,3] <- (sum(is.na(CURWORKT1$D_635467479_D_635467479_D_509121242) & is.na(CURWORKT1$D_635467479_D_635467479_D_902077989))/dim(CURWORKT1)[[1]])*100
+dt_CURWORKT1_summary[8,2] <- sum(is.na(CURWORKT1$D_635467479_D_635467479_D_509121242) & is.na(CURWORKT1$D_635467479_D_902077989))
+dt_CURWORKT1_summary[8,3] <- (sum(is.na(CURWORKT1$D_635467479_D_635467479_D_509121242) & is.na(CURWORKT1$D_635467479_D_902077989))/dim(CURWORKT1)[[1]])*100
 
 
 dt_CURWORKT1_summary %>%  gt::gt() %>%  
@@ -2973,7 +2973,7 @@ CURWORKT2A_H= Mod4 %>%
              is.na(D_440093675_D_242761203) & D_635467479_D_635467479_D_107659596==1 |
              is.na(D_440093675_D_587434250) & D_635467479_D_635467479_D_575883949==1 |
              is.na(D_440093675_D_569993305) & D_635467479_D_635467479_D_248168118==1 |
-             is.na(D_440093675_D_662584384) & D_635467479_D_635467479_D_902077989==1 ) &
+             is.na(D_440093675_D_662584384) & D_635467479_D_902077989==1 ) &
             Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) & 
            (Mod4$D_635467479_D_635467479_D_443596662==1 | Mod4$D_635467479_D_635467479_D_158795242==1 | Mod4$D_635467479_D_635467479_D_892894242==1 |
               Mod4$D_635467479_D_635467479_D_177539753==1 | is.na(Mod4$D_440093675_D_453004768) | is.na(Mod4$D_440093675_D_453004768)))
@@ -3015,7 +3015,7 @@ dt_CURWORKT2A_H_summary[7,2] <- sum(is.na(walk$D_440093675_D_569993305))
 dt_CURWORKT2A_H_summary[7,3] <- (sum(is.na(walk$D_440093675_D_569993305))/dim(walk)[[1]])*100
 
 dt_CURWORKT2A_H_summary[8,1] <- "Skipped Time Spent in Another Method" 
-method <- CURWORKT2A_H %>% filter(D_635467479_D_635467479_D_902077989==1)
+method <- CURWORKT2A_H %>% filter(D_635467479_D_902077989==1)
 dt_CURWORKT2A_H_summary[8,2] <- sum(is.na(method$D_440093675_D_662584384))
 dt_CURWORKT2A_H_summary[8,3] <- (sum(is.na(method$D_440093675_D_662584384))/dim(method)[[1]])*100
 
@@ -3186,8 +3186,8 @@ dt_CURWORKT9_summary[7,2] <- sum(is.na(CURWORKT9$D_404697804_D_404697804_D_13721
 dt_CURWORKT9_summary[7,3] <- (sum(is.na(CURWORKT9$D_404697804_D_404697804_D_137216656))/dim(CURWORKT9)[[1]])*100
 
 dt_CURWORKT9_summary[8,1] <- "Skipped if Commute Inlcudes Another Method" 
-dt_CURWORKT9_summary[8,2] <- sum(is.na(CURWORKT9$D_404697804_D_404697804_D_244488084) & is.na(CURWORKT9$D_404697804_D_404697804_D_631088397))
-dt_CURWORKT9_summary[8,3] <- (sum(is.na(CURWORKT9$D_404697804_D_404697804_D_244488084) & is.na(CURWORKT9$D_404697804_D_404697804_D_631088397))/dim(CURWORKT9)[[1]])*100
+dt_CURWORKT9_summary[8,2] <- sum(is.na(CURWORKT9$D_404697804_D_404697804_D_244488084) & is.na(CURWORKT9$D_404697804_D_631088397))
+dt_CURWORKT9_summary[8,3] <- (sum(is.na(CURWORKT9$D_404697804_D_404697804_D_244488084) & is.na(CURWORKT9$D_404697804_D_631088397))/dim(CURWORKT9)[[1]])*100
 
 
 dt_CURWORKT9_summary %>%  gt::gt() %>%  
@@ -3787,8 +3787,8 @@ dt_PREWORKT1_summary[7,2] <- sum(is.na(PREWORKT1$D_311891586_D_311891586_D_80797
 dt_PREWORKT1_summary[7,3] <- (sum(is.na(PREWORKT1$D_311891586_D_311891586_D_807973203))/dim(PREWORKT1)[[1]])*100
 
 dt_PREWORKT1_summary[8,1] <- "Skipped if Commute Inlcudes Another Method" 
-dt_PREWORKT1_summary[8,2] <- sum(is.na(PREWORKT1$D_311891586_D_311891586_D_766970054) & is.na(PREWORKT1$D_311891586_D_311891586_D_886203785))
-dt_PREWORKT1_summary[8,3] <- (sum(is.na(PREWORKT1$D_311891586_D_311891586_D_766970054) & is.na(PREWORKT1$D_311891586_D_311891586_D_886203785))/dim(PREWORKT1)[[1]])*100
+dt_PREWORKT1_summary[8,2] <- sum(is.na(PREWORKT1$D_311891586_D_311891586_D_766970054) & is.na(PREWORKT1$D_311891586_D_886203785))
+dt_PREWORKT1_summary[8,3] <- (sum(is.na(PREWORKT1$D_311891586_D_311891586_D_766970054) & is.na(PREWORKT1$D_311891586_D_886203785))/dim(PREWORKT1)[[1]])*100
 
 
 dt_PREWORKT1_summary %>%  gt::gt() %>%  
@@ -3988,8 +3988,8 @@ dt_PREWORKT6_summary[7,2] <- sum(is.na(PREWORKT6$D_251048648_D_251048648_D_83020
 dt_PREWORKT6_summary[7,3] <- (sum(is.na(PREWORKT6$D_251048648_D_251048648_D_830201925))/dim(PREWORKT6)[[1]])*100
 
 dt_PREWORKT6_summary[8,1] <- "Skipped if Commute Inlcudes Another Method" 
-dt_PREWORKT6_summary[8,2] <- sum(is.na(PREWORKT6$D_251048648_D_251048648_D_572643998) & is.na(PREWORKT6$D_251048648_D_251048648_D_158678876))
-dt_PREWORKT6_summary[8,3] <- (sum(is.na(PREWORKT6$D_251048648_D_251048648_D_572643998) & is.na(PREWORKT6$D_251048648_D_251048648_D_158678876))/dim(PREWORKT6)[[1]])*100
+dt_PREWORKT6_summary[8,2] <- sum(is.na(PREWORKT6$D_251048648_D_251048648_D_572643998) & is.na(PREWORKT6$D_251048648_D_158678876))
+dt_PREWORKT6_summary[8,3] <- (sum(is.na(PREWORKT6$D_251048648_D_251048648_D_572643998) & is.na(PREWORKT6$D_251048648_D_158678876))/dim(PREWORKT6)[[1]])*100
 
 
 dt_PREWORKT6_summary %>%  gt::gt() %>%  
@@ -4325,26 +4325,26 @@ dt_CURSCHCOM_summary %>%  gt::gt() %>%
 
 
 
-# CURSCHCOM2= STU %>%  filter(STU$D_449752653==353358909) %>% mutate(Address1= case_when(is.na(D_959371875) ~"Skipped CURSCHCOM2"))
-# 
-# dt_CURSCHCOM2_summary <- CURSCHCOM2 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
-# dt_CURSCHCOM2_summary <- dt_CURSCHCOM2_summary[1,]
-# 
-# dt_CURSCHCOM2_summary %>%  gt::gt() %>%  
-#   fmt_number(columns = "percentage", decimals = 2) %>% 
-#   tab_header(title = md("Number of Schools Commuter to per Week")) %>% 
-#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
-#   tab_options(
-#     stub.font.weight = "bold"
-#   ) %>%
-#   tab_style(
-#     style = list(
-#       cell_text(weight = "bold")
-#     ),
-#     locations = cells_body(
-#       columns = Address1,
-#     )
-#   )
+CURSCHCOM2= STU %>%  filter(STU$D_449752653==353358909) %>% mutate(Address1= case_when(is.na(D_959371875) ~"Skipped CURSCHCOM2"))
+
+dt_CURSCHCOM2_summary <- CURSCHCOM2 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
+dt_CURSCHCOM2_summary <- dt_CURSCHCOM2_summary[1,]
+
+dt_CURSCHCOM2_summary %>%  gt::gt() %>%
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  tab_header(title = md("Number of Schools Commuter to per Week")) %>%
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>%
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Address1,
+    )
+  )
 
 
 
@@ -4468,9 +4468,11 @@ dt_CURSCHT1_summary[2,1] <- "Skipped if Commute Inlcudes a Taxi"
 dt_CURSCHT1_summary[2,2] <- sum(is.na(CURSCHT1$D_404863614_D_404863614_D_207263450))
 dt_CURSCHT1_summary[2,3] <- (sum(is.na(CURSCHT1$D_404863614_D_404863614_D_207263450))/dim(CURSCHT1)[[1]])*100
 
+
 dt_CURSCHT1_summary[3,1] <- "Skipped if Commute Inlcudes a Motorcycle" 
-dt_CURSCHT1_summary[3,2] <- sum(is.na(CURSCHT1$D_404863614_D_404863614_D_638833327))
+dt_CURSCHT1_summary[3,2] <- ifelse (exists("CURSCHT1$D_404863614_D_404863614_D_638833327"), sum(is.na(CURSCHT1$D_404863614_D_404863614_D_638833327)), 0)
 dt_CURSCHT1_summary[3,3] <- (sum(is.na(CURSCHT1$D_404863614_D_404863614_D_638833327))/dim(CURSCHT1)[[1]])*100
+
 
 dt_CURSCHT1_summary[4,1] <- "Skipped if Commute Inlcudes a Bus" 
 dt_CURSCHT1_summary[4,2] <- sum(is.na(CURSCHT1$D_404863614_D_404863614_D_736981982))
@@ -4489,8 +4491,8 @@ dt_CURSCHT1_summary[7,2] <- sum(is.na(CURSCHT1$D_404863614_D_404863614_D_6915794
 dt_CURSCHT1_summary[7,3] <- (sum(is.na(CURSCHT1$D_404863614_D_404863614_D_691579493))/dim(CURSCHT1)[[1]])*100
 
 dt_CURSCHT1_summary[8,1] <- "Skipped if Commute Inlcudes Another Method" 
-dt_CURSCHT1_summary[8,2] <- sum(is.na(CURSCHT1$D_404863614_D_404863614_D_211269389) & is.na(CURSCHT1$D_404863614_D_404863614_D_255860829))
-dt_CURSCHT1_summary[8,3] <- (sum(is.na(CURSCHT1$D_404863614_D_404863614_D_211269389) & is.na(CURSCHT1$D_404863614_D_404863614_D_255860829))/dim(CURSCHT1)[[1]])*100
+dt_CURSCHT1_summary[8,2] <- sum(is.na(CURSCHT1$D_404863614_D_404863614_D_211269389) & is.na(CURSCHT1$D_404863614_D_255860829))
+dt_CURSCHT1_summary[8,3] <- (sum(is.na(CURSCHT1$D_404863614_D_404863614_D_211269389) & is.na(CURSCHT1$D_404863614_D_255860829))/dim(CURSCHT1)[[1]])*100
 
 
 dt_CURSCHT1_summary %>%  gt::gt() %>%  
@@ -4525,9 +4527,9 @@ dt_CURSCHT2A_H_summary[2,2] <- sum(is.na(taxi$D_716117817_D_135529881_D_98069507
 dt_CURSCHT2A_H_summary[2,3] <- (sum(is.na(taxi$D_716117817_D_135529881_D_980695076))/dim(taxi)[[1]])*100
 
 dt_CURSCHT2A_H_summary[3,1] <- "Skipped Time Spent in a Motorcycle" 
-motorcycle <- CURSCHT2A_H %>% filter(D_404863614_D_404863614_D_638833327==1)
-dt_CURSCHT2A_H_summary[3,2] <- sum(is.na(motorcycle$D_716117817_D_135529881_D_265423096))
-dt_CURSCHT2A_H_summary[3,3] <- (sum(is.na(motorcycle$D_716117817_D_135529881_D_265423096))/dim(motorcycle)[[1]])*100
+ifelse (exists("D_404863614_D_404863614_D_638833327"), motorcycle <- CURSCHT2A_H %>% filter(D_404863614_D_404863614_D_638833327==1), motorcycle <- CURSCHT2A_H)
+dt_CURSCHT2A_H_summary[3,2] <- ifelse (exists("D_716117817_D_135529881_D_265423096"),  sum(is.na(motorcycle$D_716117817_D_135529881_D_265423096)), 0)
+dt_CURSCHT2A_H_summary[3,3] <- ifelse (exists("D_716117817_D_135529881_D_265423096"), (sum(is.na(motorcycle$D_716117817_D_135529881_D_265423096))/dim(motorcycle)[[1]])*100, 0)
 
 dt_CURSCHT2A_H_summary[4,1] <- "Skipped Time Spent in a Bus" 
 bus <- CURSCHT2A_H %>% filter(D_404863614_D_404863614_D_736981982==1)
@@ -4700,38 +4702,38 @@ dt_CURSCHT8_summary <- dt_CURSCHT8_summary[1,]
 
 
 CURSCHT9= STU %>% filter(STU$D_449752653==353358909 & STU$D_496801729!=353358909) %>% 
-  mutate(Address1= case_when(is.na(D_345355061_D_467242967) ~"Skipped if Commute Inlcudes a Car"))
+  mutate(Address1= case_when(is.na(D_345355061_D_345355061_D_467242967) ~"Skipped if Commute Inlcudes a Car"))
 
 dt_CURSCHT9_summary <- CURSCHT9 %>% dplyr::group_by(Address1) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Address1, n, percentage)
 dt_CURSCHT9_summary <- dt_CURSCHT9_summary[1,]
 
 dt_CURSCHT9_summary[2,1] <- "Skipped if Commute Inlcudes a Taxi" 
-dt_CURSCHT9_summary[2,2] <- sum(is.na(CURSCHT9$D_345355061_D_645051966))
-dt_CURSCHT9_summary[2,3] <- (sum(is.na(CURSCHT9$D_345355061_D_645051966))/dim(CURSCHT9)[[1]])*100
+dt_CURSCHT9_summary[2,2] <- sum(is.na(CURSCHT9$D_345355061_D_345355061_D_645051966))
+dt_CURSCHT9_summary[2,3] <- (sum(is.na(CURSCHT9$D_345355061_D_345355061_D_645051966))/dim(CURSCHT9)[[1]])*100
 
 dt_CURSCHT9_summary[3,1] <- "Skipped if Commute Inlcudes a Motorcycle" 
-dt_CURSCHT9_summary[3,2] <- sum(is.na(CURSCHT9$D_345355061_D_756061540))
-dt_CURSCHT9_summary[3,3] <- (sum(is.na(CURSCHT9$D_345355061_D_756061540))/dim(CURSCHT9)[[1]])*100
+dt_CURSCHT9_summary[3,2] <- sum(is.na(CURSCHT9$D_345355061_D_345355061_D_756061540))
+dt_CURSCHT9_summary[3,3] <- (sum(is.na(CURSCHT9$D_345355061_D_345355061_D_756061540))/dim(CURSCHT9)[[1]])*100
 
 dt_CURSCHT9_summary[4,1] <- "Skipped if Commute Inlcudes a Bus" 
-dt_CURSCHT9_summary[4,2] <- sum(is.na(CURSCHT9$D_345355061_D_198883577))
-dt_CURSCHT9_summary[4,3] <- (sum(is.na(CURSCHT9$D_345355061_D_198883577))/dim(CURSCHT9)[[1]])*100
+dt_CURSCHT9_summary[4,2] <- sum(is.na(CURSCHT9$D_345355061_D_345355061_D_198883577))
+dt_CURSCHT9_summary[4,3] <- (sum(is.na(CURSCHT9$D_345355061_D_345355061_D_198883577))/dim(CURSCHT9)[[1]])*100
 
 dt_CURSCHT9_summary[5,1] <- "Skipped if Commute Inlcudes a Subway" 
-dt_CURSCHT9_summary[5,2] <- sum(is.na(CURSCHT9$D_345355061_D_634680635))
-dt_CURSCHT9_summary[5,3] <- (sum(is.na(CURSCHT9$D_345355061_D_634680635))/dim(CURSCHT9)[[1]])*100
+dt_CURSCHT9_summary[5,2] <- sum(is.na(CURSCHT9$D_345355061_D_345355061_D_634680635))
+dt_CURSCHT9_summary[5,3] <- (sum(is.na(CURSCHT9$D_345355061_D_345355061_D_634680635))/dim(CURSCHT9)[[1]])*100
 
 dt_CURSCHT9_summary[6,1] <- "Skipped if Commute Inlcudes Biking" 
-dt_CURSCHT9_summary[6,2] <- sum(is.na(CURSCHT9$D_345355061_D_790657437))
-dt_CURSCHT9_summary[6,3] <- (sum(is.na(CURSCHT9$D_345355061_D_790657437))/dim(CURSCHT9)[[1]])*100
+dt_CURSCHT9_summary[6,2] <- sum(is.na(CURSCHT9$D_345355061_D_345355061_D_790657437))
+dt_CURSCHT9_summary[6,3] <- (sum(is.na(CURSCHT9$D_345355061_D_345355061_D_790657437))/dim(CURSCHT9)[[1]])*100
 
 dt_CURSCHT9_summary[7,1] <- "Skipped if Commute Inlcudes Walking" 
-dt_CURSCHT9_summary[7,2] <- sum(is.na(CURSCHT9$D_345355061_D_107428524))
-dt_CURSCHT9_summary[7,3] <- (sum(is.na(CURSCHT9$D_345355061_D_107428524))/dim(CURSCHT9)[[1]])*100
+dt_CURSCHT9_summary[7,2] <- sum(is.na(CURSCHT9$D_345355061_D_345355061_D_107428524))
+dt_CURSCHT9_summary[7,3] <- (sum(is.na(CURSCHT9$D_345355061_D_345355061_D_107428524))/dim(CURSCHT9)[[1]])*100
 
 dt_CURSCHT9_summary[8,1] <- "Skipped if Commute Inlcudes Another Method" 
-dt_CURSCHT9_summary[8,2] <- sum(is.na(CURSCHT9$D_345355061_D_804918983) & is.na(CURSCHT9$D_345355061_D_656067463))
-dt_CURSCHT9_summary[8,3] <- (sum(is.na(CURSCHT9$D_345355061_D_804918983) & is.na(CURSCHT9$D_345355061_D_656067463))/dim(CURSCHT9)[[1]])*100
+dt_CURSCHT9_summary[8,2] <- sum(is.na(CURSCHT9$D_345355061_D_345355061_D_804918983) & is.na(CURSCHT9$D_345355061_D_656067463))
+dt_CURSCHT9_summary[8,3] <- (sum(is.na(CURSCHT9$D_345355061_D_345355061_D_804918983) & is.na(CURSCHT9$D_345355061_D_656067463))/dim(CURSCHT9)[[1]])*100
 
 
 dt_CURSCHT9_summary %>%  gt::gt() %>%  
@@ -4756,8 +4758,8 @@ dt_CURSCHT9_summary %>%  gt::gt() %>%
 
 
 # CURSCHT10A= STU %>%  select(D_219317801_D_990162153) %>% filter(STU$D_449752653==353358909 & STU$D_230528407!=353358909 &
-#                                                                   ifelse(STU$D_496801729==104430631, STU$D_345355061_D_467242967==1,
-#                                                                          ifelse(is.na(STU$D_496801729), STU$D_345355061_D_467242967==1,
+#                                                                   ifelse(STU$D_496801729==104430631, STU$D_345355061_D_345355061_D_467242967==1,
+#                                                                          ifelse(is.na(STU$D_496801729), STU$D_345355061_D_345355061_D_467242967==1,
 #                                                                                 ifelse(STU$D_230528407==104430631, STU$D_404863614_D_404863614_D_782113721==1,
 #                                                                                        ifelse(is.na(STU$D_230528407), STU$D_404863614_D_404863614_D_782113721==1, NA))))) 
 # vis_miss(CURSCHT10A) +labs(y= "Participants", title="CURSCHT10A")

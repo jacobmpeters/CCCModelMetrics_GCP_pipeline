@@ -239,7 +239,7 @@ hist_funct <- function(CID,Title, Xlab, Ylab) {
     ggplot(aes(x=!!CID_SYM))+
      xlab(Xlab) + ylab(Ylab) + geom_histogram()+  ggtitle(Title)+
     geom_histogram(color="black")+ scale_y_continuous(breaks=pretty_breaks()) +
-    geom_vline(aes(xintercept=mean(!!CID_SYM, na.rm=T)), colour="red", linetype="solid")
+    geom_vline(aes(xintercept=mean(!!CID_SYM, na.rm=T)), colour="#2973A5", linetype="solid")
   
 }
 
@@ -587,7 +587,7 @@ dt_all_races_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 library(RColorBrewer)
 library(ggrepel)
 display.brewer.all(colorblindFriendly = TRUE) 
-mycolors <- c("#053061","#999999","#F16913","#FD8D3C","#FFD92F","#0072B2","#009E73","grey42","plum3","darkorchid4", "green4")
+mycolors <- c("#FDBE19" ,"#9A9DA3","#CC7D15","#797D83","#DAB384","#8BAAC7","#3C989E","#F8D991","#164C71","#2973A5","#309EBD")
 names(mycolors) <- levels(dt_all_races_summary$race)
 ##this is the best plot I can make
 
@@ -3396,7 +3396,7 @@ module1 %>% mutate(D_207494582=as.numeric(as.character(D_207494582))) %>%
     ggplot(aes(x=D_207494582))+
      xlab("Inches") + ylab("Frequency") + geom_histogram()+  ggtitle("How much shorter than 20s/30s","Height (in)")+
     geom_histogram(color="black")+ scale_y_continuous(breaks=pretty_breaks()) +
-    geom_vline(aes(xintercept=mean(D_207494582, na.rm=T)), colour="red", linetype="solid")
+    geom_vline(aes(xintercept=mean(D_207494582, na.rm=T)), colour="#2973A5", linetype="solid")
 
 
 ```
@@ -6183,7 +6183,7 @@ module1 %>% mutate(D_739294356=as.numeric(as.character(D_739294356))) %>%
     ggplot(aes(x=D_739294356))+
      xlab("Years") + ylab("Frequency") + geom_histogram()+  ggtitle("WORK4: Years at Current Job")+
     geom_histogram(color="black")+ scale_y_continuous(breaks=pretty_breaks()) +
-    geom_vline(aes(xintercept=mean(D_739294356, na.rm=T)), colour="red", linetype="solid")
+    geom_vline(aes(xintercept=mean(D_739294356, na.rm=T)), colour="#2973A5", linetype="solid")
 
 
 #this current position your longest held position?
@@ -6410,7 +6410,7 @@ module1 %>% mutate(D_686172464=as.numeric(as.character(D_686172464))) %>%
     ggplot(aes(x=D_686172464))+
      xlab("Years") + ylab("Frequency") + geom_histogram()+  ggtitle("WORK8: Years at Longest Held Position")+
     geom_histogram(color="black")+ scale_y_continuous(breaks=pretty_breaks()) +
-    geom_vline(aes(xintercept=mean(D_686172464, na.rm=T)), colour="red", linetype="solid")
+    geom_vline(aes(xintercept=mean(D_686172464, na.rm=T)), colour="#2973A5", linetype="solid")
 
 
 #total family income
