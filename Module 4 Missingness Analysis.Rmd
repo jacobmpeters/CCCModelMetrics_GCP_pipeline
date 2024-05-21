@@ -361,7 +361,7 @@ dt_home1skip_summary[7,3] <- (sum(is.na(home1skip$Country))/dim(home1skip)[[1]])
 dt_home1skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Address 1 Components Skipped")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -411,7 +411,7 @@ Followup1__skip[4,3] <- (sum(is.na(Followup1_skip$D_920576363_D_500100435) & is.
 Followup1__skip %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Address 1 Follow-up Skipped")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -451,7 +451,7 @@ dt_home_add3_1[2,3] <- (sum(is.na(home_add3_1$D_804504024_D_543135391))/dim(home
 dt_home_add3_1 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Address 1 Cross-Streets")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -479,7 +479,7 @@ dt_home_addoth <- dt_home_addoth[1,]
 dt_home_addoth %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("HOMEADDOTH")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -507,7 +507,7 @@ dt_home_addsum1 <- dt_home_addsum1[1,]
 dt_home_addsum1 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("HOMEADDSUM1")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -574,7 +574,7 @@ dt_home2skip_summary[7,3] <- (sum(is.na(home2skip$Country))/dim(home2skip)[[1]])
 dt_home2skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Address 2 Components Skipped")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -628,7 +628,7 @@ Followup2__skip[5,3] <- (sum(is.na(Followup2_skip$D_444145120_D_924583345) & is.
 Followup2__skip %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Address 2 Follow-up Skipped")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -666,7 +666,7 @@ dt_home_add3_2[2,3] <- (sum(is.na(home_add3_2$D_398762737_D_474541595))/dim(home
 dt_home_add3_2 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Address 2 Cross-Streets")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -692,7 +692,7 @@ dt_home_addoth2 <- dt_home_addoth2[1,]
 dt_home_addoth2 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("HOMEADDOTH2")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -721,7 +721,7 @@ dt_home_addsum2 <- dt_home_addsum2[1,]
 dt_home_addsum2 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("HOMEADDSUM2")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -788,7 +788,7 @@ dt_home3skip_summary[6,3] <- (sum(is.na(home3skip$Country))/dim(home3skip)[[1]])
 dt_home3skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Address 3 Components Skipped")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -833,7 +833,7 @@ Followup3__skip[5,3] <- (sum(is.na(Followup3_skip$D_752101258_D_723108194) & is.
 Followup3__skip %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Address 3 Follow-up Skipped")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -872,7 +872,7 @@ dt_home_add3_3[2,3] <- (sum(is.na(home_add3_3$D_961572487_D_216954796))/dim(home
 dt_home_add3_3 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Address 3 Cross-Streets")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -898,7 +898,7 @@ dt_home_addoth3 <- dt_home_addoth3[1,]
 dt_home_addoth3 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("HOMEADDOTH3")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -927,7 +927,7 @@ dt_home_addsum3 <- dt_home_addsum3[1,]
 dt_home_addsum3 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("HOMEADDSUM3")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -993,7 +993,7 @@ dt_home4skip_summary[7,3] <- (sum(is.na(home4skip$Country))/dim(home4skip)[[1]])
 dt_home4skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Address 4 Components Skipped")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1034,7 +1034,7 @@ Followup4__skip[4,3] <- (sum(is.na(Followup4_skip$D_879180101_D_734345879) & is.
 Followup4__skip %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Address 4 Follow-up Skipped")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1072,7 +1072,7 @@ dt_home_add3_4[2,3] <- (sum(is.na(home_add3_4$D_746604821_D_555767576))/dim(home
 dt_home_add3_4 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Address 4 Cross-Streets")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1098,7 +1098,7 @@ dt_home_addoth4 <- dt_home_addoth4[1,]
 dt_home_addoth4 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("HOMEADDOTH4")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1127,7 +1127,7 @@ dt_home_addsum4 <- dt_home_addsum4[1,]
 dt_home_addsum4 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("HOMEADDSUM4")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1193,7 +1193,7 @@ dt_home5skip_summary[7,3] <- (sum(is.na(home5skip$Country))/dim(home5skip)[[1]])
 dt_home5skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Address 5 Components Skipped")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1234,7 +1234,7 @@ Followup5__skip[4,3] <- (sum(is.na(Followup5_skip$D_212343294_D_600319581) & is.
 Followup5__skip %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Address 5 Follow-up Skipped")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1273,7 +1273,7 @@ dt_home_add3_5 <- dt_home_add3_5[2,]
 dt_home_add3_5 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Address 5 Cross-Streets")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1299,7 +1299,7 @@ dt_home_addoth6 <- dt_home_addoth6[1,]
 dt_home_addoth6 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("HOMEADDOTH5")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1328,7 +1328,7 @@ dt_home_addsum5 <- dt_home_addsum5[1,]
 dt_home_addsum5 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("HOMEADDSUM5")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1389,7 +1389,7 @@ dt_home6skip_summary[6,3] <- (sum(is.na(home6skip$Country))/dim(home6skip)[[1]])
 dt_home6skip_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Address 6 Components Skipped")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1430,7 +1430,7 @@ Followup6__skip[4,3] <- (sum(is.na(Followup6_skip$D_255474241_D_941168091) & is.
 Followup6__skip %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Address 6 Follow-up Skipped")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1469,7 +1469,7 @@ dt_home_add3_6 <- dt_home_add3_6[2,]
 dt_home_add3_6 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Address 6 Cross-Streets")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1495,7 +1495,7 @@ dt_home_addoth6 <- dt_home_addoth6[1,]
 dt_home_addoth6 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("HOMEADDOTH6")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1524,7 +1524,7 @@ dt_home_addsum6 <- dt_home_addsum6[1,]
 dt_home_addsum6 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("HOMEADDSUM6")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1562,7 +1562,7 @@ dt_home1_inout_summary[2,3] <- (sum(is.na(home1_inout$D_728155643_D_728155643_D_
 dt_home1_inout_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Home 1 Move-In & Move-Out")) %>% 
-  cols_label(n= md("**Number of Participants**"),Answer = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Answer = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1595,7 +1595,7 @@ dt_home2_inout_summary[2,3] <- (sum(is.na(home2_inout$D_380621340_D_380621340_D_
 dt_home2_inout_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Home 2 Move-In & Move-Out")) %>% 
-  cols_label(n= md("**Number of Participants**"),Answer = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Answer = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1627,7 +1627,7 @@ dt_home3_inout_summary[2,3] <- (sum(is.na(home3_inout$D_999694720_D_999694720_D_
 dt_home3_inout_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Home 3 Move-In & Move-Out")) %>% 
-  cols_label(n= md("**Number of Participants**"),Answer = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Answer = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1659,7 +1659,7 @@ dt_home4_inout_summary[2,3] <- (sum(is.na(home4_inout$D_849066624_D_849066624_D_
 dt_home4_inout_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Home 4 Move-In & Move-Out")) %>% 
-  cols_label(n= md("**Number of Participants**"),Answer = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Answer = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1690,7 +1690,7 @@ dt_home5_inout_summary[2,3] <- (sum(is.na(home5_inout$D_425315696_D_425315696_D_
 dt_home5_inout_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Home 5 Move-In & Move-Out")) %>% 
-  cols_label(n= md("**Number of Participants**"),Answer = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Answer = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1721,7 +1721,7 @@ dt_home6_inout_summary[2,3] <- (sum(is.na(home6_inout$D_529608184_D_529608184_D_
 dt_home6_inout_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Home 5 Move-In & Move-Out")) %>% 
-  cols_label(n= md("**Number of Participants**"),Answer = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Answer = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1762,7 +1762,7 @@ dt_home1_water_summary[3,3] <- (sum(is.na(home1_water$D_539909957_D_539909957) &
 dt_home1_water_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Primary Water Sources of Home 1")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1798,7 +1798,7 @@ dt_home2_water_summary[3,3] <- (sum(is.na(home2_water$D_250486386_D_250486386) &
 dt_home2_water_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Primary Water Sources of Home 2")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1835,7 +1835,7 @@ dt_home3_water_summary[3,3] <- (sum(is.na(home3_water$D_726654963_D_726654963) &
 dt_home3_water_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Primary Water Sources of Home 3")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1871,7 +1871,7 @@ dt_home4_water_summary[3,3] <- (sum(is.na(home4_water$D_934184033_D_934184033) &
 dt_home4_water_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Primary Water Sources of Home 4")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1909,7 +1909,7 @@ dt_home5_water_summary[3,3] <- (sum(is.na(home5_water$D_508187475_D_508187475) &
 dt_home5_water_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Primary Water Sources of Home 5")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1945,7 +1945,7 @@ dt_home6_water_summary[3,3] <- (sum(is.na(home6_water$D_933017499_D_933017499) &
 dt_home6_water_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Primary Water Sources of Home 6")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1977,7 +1977,7 @@ dt_sea_home_summary <- dt_sea_home_summary[1,]
 dt_sea_home_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Seasonal or Vacation Home")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2002,7 +2002,7 @@ dt_sea_home_summary <- dt_sea_home_summary[1,]
 dt_sea_home_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Confirm No Seasonal or Vacation Home")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2045,7 +2045,7 @@ dt_seahome_add1_1_summary[5,3] <- (sum(is.na(seahome_add1_1$D_376408004_D_812433
 dt_seahome_add1_1_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Vacation Home 1 Address Components Skipped")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2083,7 +2083,7 @@ FollowupV1__skip <- FollowupV1__skip[c(2,3),] #no one skipped city follow up so 
 FollowupV1__skip %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Vacation Home Address 1 Follow-up Skipped")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2121,7 +2121,7 @@ seahome_add3_1__skip <- seahome_add3_1__skip[2,]
 seahome_add3_1__skip %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Vacation Home Address 1 Cross-Streets Skipped")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2148,7 +2148,7 @@ dt_seaaddoth_summary <- dt_seaaddoth_summary[1,]
 dt_seaaddoth_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Skipped if Other Vacation Homes Stayed At")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2174,7 +2174,7 @@ dt_seaaddsum1_summary <- dt_seaaddsum1_summary[1,]
 dt_seaaddsum1_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Skipped Confirmation of Complete Vacation Homes List")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2213,7 +2213,7 @@ dt_SEASADDYRS_summary[3,3] <- (sum(is.na(SEASADDYRS$D_860269869_D_451310566) & i
 dt_SEASADDYRS_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Years and Months at Vacation Home 1")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2251,7 +2251,7 @@ dt_seahome_water_summary[3,3] <- (sum(is.na(seahome_water$D_598478268_D_59847826
 dt_seahome_water_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Vacation Home 1 Water Sources")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2307,7 +2307,7 @@ dt_childhome_summary[6,3] <- (sum(is.na(childhome$D_632533534_D_733929451))/dim(
 dt_childhome_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Childhood Address Components")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2346,7 +2346,7 @@ FollowupC1__skip[4,3] <- (sum(is.na(FollowupC1_skip$D_632533534_D_733929451) & i
 FollowupC1__skip %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Childhood Home Address Follow-up Skipped")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2383,7 +2383,7 @@ child_add3_1__skip[2,3] <- (sum(is.na(child_add3_1$D_200086909_D_154163153))/dim
 child_add3_1__skip %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Childhood Home Cross-Streets Skipped")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2416,7 +2416,7 @@ dt_childinout_summary[2,3] <- (sum(is.na(childinout$D_632533534_D_802585033) & i
 dt_childinout_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Childhood Home Move-In and Move-Out")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2450,7 +2450,7 @@ dt_childwater_summary[2,3] <- (sum(is.na(childwater$D_665593888_D_665593888) & i
 dt_childwater_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Childhood Home Water Supply")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2501,7 +2501,7 @@ dt_adultwater_summary[6,3] <- (sum(is.na(adultwater$D_831438612_D_831438612_D_43
 dt_adultwater_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Drinking Tap Water")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2549,7 +2549,7 @@ dt_adultwater2_summary[5,3] <- (sum(is.na(drinkoth$D_944517297_D_944517297))/dim
 dt_adultwater2_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Frequency of Drinking Beverages Made with Tap Water")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2598,7 +2598,7 @@ dt_work19_summary <- dt_work19_summary[1,]
 dt_work19_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Number of Showers or Baths per Week")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2628,7 +2628,7 @@ dt_work19_summary <- dt_work19_summary[1,]
 dt_work19_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Worked in 2019")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2654,7 +2654,7 @@ dt_days_work19_summary <- dt_days_work19_summary[1,]
 dt_days_work19_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Days per Week Worked in 2019")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2685,7 +2685,7 @@ dt_days_work19_summary <- dt_days_work19_summary[1,]
 dt_days_work19_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Daily Work Tasks Include Driving")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -2711,7 +2711,7 @@ dt_commute_num_summary <- dt_commute_num_summary[1,]
 dt_commute_num_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Number of Commutes to Different Workplaces per Week")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -2767,7 +2767,7 @@ dt_curwork_summary[8,3] <- (sum(is.na(curwork$D_596318751_D_294634899))/dim(curw
 dt_curwork_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Current Employer (Most Often Commuted to)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -2809,7 +2809,7 @@ dt_curwork2_summary[4,3] <- (sum(is.na(curwork2$D_596318751_D_294634899) & is.na
 dt_curwork2_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Current Employer Address Follow-Up")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -2849,7 +2849,7 @@ dt_CURWORK3_summary <- dt_CURWORK3_summary[2,]
 dt_CURWORK3_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Current Employer Buidling Cross Streets")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -2888,7 +2888,7 @@ dt_CURWORKYR1_MOS_summary[3,3] <- (sum(is.na(CURWORKYR1_MOS$D_138397553))/dim(CU
 dt_CURWORKYR1_MOS_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Commuting to Current Employer")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -2947,7 +2947,7 @@ dt_CURWORKT1_summary[8,3] <- (sum(is.na(CURWORKT1$D_635467479_D_635467479_D_5091
 dt_CURWORKT1_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Commuting Methods to Work (Current Position)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3023,7 +3023,7 @@ dt_CURWORKT2A_H_summary[8,3] <- (sum(is.na(method$D_440093675_D_662584384))/dim(
 dt_CURWORKT2A_H_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Time Spent in Each Commuting Method (Current Position)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3063,7 +3063,7 @@ dt_CURWORKT3_4_5_summary[3,3] <- (sum(is.na(CURWORKT3_4_5$D_333362587))/dim(CURW
 dt_CURWORKT3_4_5_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Time Commuting on Road Types (Current Position)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3088,7 +3088,7 @@ CURWORKT6 <- CURWORKT6[1,]
 CURWORKT6 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Days per Week Commuting to Current Workplace")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3112,7 +3112,7 @@ CURWORKT7 <- CURWORKT7[1,]
 CURWORKT7 %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Same Type of Transportation on Commute Home (Current Position)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3136,7 +3136,7 @@ dt_CURWORKT8_summary <- dt_CURWORKT8_summary[1,]
 dt_CURWORKT8_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Time of Commute Home versus Commute to Work (Current Position)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3193,7 +3193,7 @@ dt_CURWORKT9_summary[8,3] <- (sum(is.na(CURWORKT9$D_404697804_D_404697804_D_2444
 dt_CURWORKT9_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Commuting Methods Home From Work (Current Position)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3225,7 +3225,7 @@ dt_CURWORKT10A_summary <- CURWORKT10A %>% dplyr::group_by(Address1) %>%  dplyr::
 dt_CURWORKT10A_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Time Commuting Home in the Car (Current Position)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3256,7 +3256,7 @@ dt_CURWORKT10B_summary <- CURWORKT10B %>% dplyr::group_by(Address1) %>%  dplyr::
 dt_CURWORKT10B_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Time Commuting Home in a Taxi (Current Position)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3287,7 +3287,7 @@ dt_CURWORKT10C_summary <- CURWORKT10C %>% dplyr::group_by(Address1) %>%  dplyr::
 # dt_CURWORKT10C_summary %>%  gt::gt() %>%  
 #   fmt_number(columns = "percentage", decimals = 2) %>% 
 #   tab_header(title = md("Time Commuting Home in a Motorcycle (Current Position)")) %>% 
-#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
 #   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
 #   tab_options(
 #     stub.font.weight = "bold"
@@ -3318,7 +3318,7 @@ dt_CURWORKT10D_summary <- CURWORKT10D %>% dplyr::group_by(Address1) %>%  dplyr::
 dt_CURWORKT10D_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Time Commuting Home on a Bus (Current Position)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3349,7 +3349,7 @@ dt_CURWORKT10E_summary <- CURWORKT10E %>% dplyr::group_by(Address1) %>%  dplyr::
 dt_CURWORKT10E_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Time Commuting Home on a Subway (Current Position)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3380,7 +3380,7 @@ dt_CURWORKT10F_summary <- CURWORKT10F %>% dplyr::group_by(Address1) %>%  dplyr::
 dt_CURWORKT10F_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Time Commuting Home on a Bike (Current Position)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3411,7 +3411,7 @@ dt_CURWORKT10F_summary <- CURWORKT10F %>% dplyr::group_by(Address1) %>%  dplyr::
 dt_CURWORKT10F_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Time Commuting Home by Walking (Current Position)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3464,7 +3464,7 @@ dt_curworkT11_12_13_summary <- dt_curworkT11_12_13_summary[c(2,3),]
 dt_curworkT11_12_13_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Travel Commute Type (Current Position)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3493,7 +3493,7 @@ dt_CURWORKT14_summary <- dt_CURWORKT14_summary[1,]
 dt_CURWORKT14_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Days per Week Commuting Home (Current Position)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3522,7 +3522,7 @@ dt_PREWORK_summary <- dt_PREWORK_summary[1,]
 dt_PREWORK_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Commute Weekly Over the Past 20 Years")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3548,7 +3548,7 @@ dt_PREWORKRES_summary <- dt_PREWORKRES_summary[1,]
 dt_PREWORKRES_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Daily Work Responsibilities Include Driving (Longest Held Position)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3573,7 +3573,7 @@ dt_PREWORK1A_summary <- dt_PREWORK1A_summary[1,]
 dt_PREWORK1A_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Current Job Also the Longest Held Job")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3627,7 +3627,7 @@ dt_PREWORK1B_summary[7,3] <- (sum(is.na(PREWORK1B$D_992180692_D_867109611))/dim(
 dt_PREWORK1B_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Employer Info of Longest Held Job ")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3672,7 +3672,7 @@ dt_PREWORK2_summary[4,3] <- (sum(is.na(PREWORK2$D_350394531_D_132779701) & is.na
 dt_PREWORK2_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Follow-up Workplace Address of Longest Held Position")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3709,7 +3709,7 @@ dt_PREWORK3_1_summary[2,3] <- (sum(is.na(PREWORK3_1$D_733317111_D_840147245))/di
 dt_PREWORK3_1_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Cross Streets of Longest Held Position Workplace Address")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3739,7 +3739,7 @@ dt_PREWORKYR1_2_summary[2,3] <- (sum(is.na(PREWORKYR1_2$D_822005593))/dim(PREWOR
 dt_PREWORKYR1_2_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("First and Last Year of Commute to Longest Held Position")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3794,7 +3794,7 @@ dt_PREWORKT1_summary[8,3] <- (sum(is.na(PREWORKT1$D_311891586_D_311891586_D_7669
 dt_PREWORKT1_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Commuting Methods to Work (Longest Held Position)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3859,7 +3859,7 @@ dt_PREWORKT2A_H_summary[8,3] <- (sum(is.na(method$D_968388901_D_786244297))/dim(
 dt_PREWORKT2A_H_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Time Spent in Each Commuting Method (Lonest Held Position)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3884,7 +3884,7 @@ dt_PREWORKT3_summary <- dt_PREWORKT3_summary[1,]
 dt_PREWORKT3_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Days per Week Commuting (Longest Held Job)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3909,7 +3909,7 @@ dt_PREWORKT4_summary <- dt_PREWORKT4_summary[1,]
 dt_PREWORKT4_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Same Transportation Commuting to Work as Commuting Home (Longest Held Job)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3936,7 +3936,7 @@ dt_PREWORKT5_summary <- dt_PREWORKT5_summary[1,]
 dt_PREWORKT5_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Commuting Time to Work the Same as Commuting Time Home (Longest Held Job)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3995,7 +3995,7 @@ dt_PREWORKT6_summary[8,3] <- (sum(is.na(PREWORKT6$D_251048648_D_251048648_D_5726
 dt_PREWORKT6_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Commuting Methods Home From Work (Longest Held Position)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -4026,7 +4026,7 @@ dt_PREWORKT6_summary %>%  gt::gt() %>%
 # dt_PREWORKT7A_summary %>%  gt::gt() %>%  
 #   fmt_number(columns = "percentage", decimals = 2) %>% 
 #   tab_header(title = md("Use a Car to Commute Home (Longest Held Job)")) %>% 
-#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
 #   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
 #   tab_options(
 #     stub.font.weight = "bold"
@@ -4058,7 +4058,7 @@ dt_PREWORKT6_summary %>%  gt::gt() %>%
 # dt_PREWORKT7B_summary %>%  gt::gt() %>%  
 #   fmt_number(columns = "percentage", decimals = 2) %>% 
 #   tab_header(title = md("Use a Taxi to Commute Home (Longest Held Job)")) %>% 
-#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
 #   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
 #   tab_options(
 #     stub.font.weight = "bold"
@@ -4089,7 +4089,7 @@ dt_PREWORKT6_summary %>%  gt::gt() %>%
 # dt_PREWORKT7C_summary %>%  gt::gt() %>%  
 #   fmt_number(columns = "percentage", decimals = 2) %>% 
 #   tab_header(title = md("Use a Motorcycle to Commute Home (Longest Held Job)")) %>% 
-#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
 #   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
 #   tab_options(
 #     stub.font.weight = "bold"
@@ -4121,7 +4121,7 @@ dt_PREWORKT6_summary %>%  gt::gt() %>%
 # dt_PREWORKT7D_summary %>%  gt::gt() %>%  
 #   fmt_number(columns = "percentage", decimals = 2) %>% 
 #   tab_header(title = md("Use a Bus to Commute Home (Longest Held Job)")) %>% 
-#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
 #   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
 #   tab_options(
 #     stub.font.weight = "bold"
@@ -4153,7 +4153,7 @@ dt_PREWORKT6_summary %>%  gt::gt() %>%
 # dt_PREWORKT7E_summary %>%  gt::gt() %>%  
 #   fmt_number(columns = "percentage", decimals = 2) %>% 
 #   tab_header(title = md("Use a Subway to Commute Home (Longest Held Job)")) %>% 
-#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
 #   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
 #   tab_options(
 #     stub.font.weight = "bold"
@@ -4185,7 +4185,7 @@ dt_PREWORKT6_summary %>%  gt::gt() %>%
 # dt_PREWORKT7F_summary %>%  gt::gt() %>%  
 #   fmt_number(columns = "percentage", decimals = 2) %>% 
 #   tab_header(title = md("Use a Bike to Commute Home (Longest Held Job)")) %>% 
-#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
 #   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
 #   tab_options(
 #     stub.font.weight = "bold"
@@ -4217,7 +4217,7 @@ dt_PREWORKT6_summary %>%  gt::gt() %>%
 # dt_PREWORKT7G_summary %>%  gt::gt() %>%  
 #   fmt_number(columns = "percentage", decimals = 2) %>% 
 #   tab_header(title = md("Walking to Commute Home (Longest Held Job)")) %>% 
-#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
 #   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
 #   tab_options(
 #     stub.font.weight = "bold"
@@ -4249,7 +4249,7 @@ dt_PREWORKT6_summary %>%  gt::gt() %>%
 # dt_PREWORKT7H_summary %>%  gt::gt() %>%  
 #   fmt_number(columns = "percentage", decimals = 2) %>% 
 #   tab_header(title = md("Use Another Method to Commute Home (Longest Held Job)")) %>% 
-#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
 #   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
 #   tab_options(
 #     stub.font.weight = "bold"
@@ -4277,7 +4277,7 @@ dt_PREWORKT8_summary <- dt_PREWORKT8_summary[1,]
 dt_PREWORKT8_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Days per Week Commuting Home (Longest Held Job)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -4309,7 +4309,7 @@ dt_CURSCHCOM_summary <- dt_CURSCHCOM_summary[1,]
 dt_CURSCHCOM_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Commute to School at Least Once per Week")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   tab_options(
     stub.font.weight = "bold"
   ) %>%
@@ -4333,7 +4333,7 @@ dt_CURSCHCOM2_summary <- dt_CURSCHCOM2_summary[1,]
 dt_CURSCHCOM2_summary %>%  gt::gt() %>%
   fmt_number(columns = "percentage", decimals = 2) %>%
   tab_header(title = md("Number of Schools Commuter to per Week")) %>%
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>%
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>%
   tab_options(
     stub.font.weight = "bold"
   ) %>%
@@ -4371,7 +4371,7 @@ dt_stu_addressFU_summary <- dt_stu_addressFU_summary[c(2:4),]
 dt_stu_addressFU_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("School Address Follow-up")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   tab_options(
     stub.font.weight = "bold"
   ) %>%
@@ -4408,7 +4408,7 @@ dt_CURSCH3_summary[2,3] <- (sum(is.na(CURSCH3$D_443679537_D_952170182))/dim(CURS
 dt_CURSCH3_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("School Address Cross-Streets")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   tab_options(
     stub.font.weight = "bold"
   ) %>%
@@ -4442,7 +4442,7 @@ dt_CURSCHYR1_summary[3,3] <- (sum(is.na(CURSCHYR1$D_659744749))/dim(CURSCHYR1)[[
 dt_CURSCHYR1_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Timeframe Commuting to School")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   tab_options(
     stub.font.weight = "bold"
   ) %>%
@@ -4498,7 +4498,7 @@ dt_CURSCHT1_summary[8,3] <- (sum(is.na(CURSCHT1$D_404863614_D_404863614_D_211269
 dt_CURSCHT1_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Commuting Methods to School")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -4527,7 +4527,7 @@ dt_CURSCHT2A_H_summary[2,2] <- sum(is.na(taxi$D_716117817_D_135529881_D_98069507
 dt_CURSCHT2A_H_summary[2,3] <- (sum(is.na(taxi$D_716117817_D_135529881_D_980695076))/dim(taxi)[[1]])*100
 
 dt_CURSCHT2A_H_summary[3,1] <- "Skipped Time Spent in a Motorcycle" 
-ifelse (exists("D_404863614_D_404863614_D_638833327"), motorcycle <- CURSCHT2A_H %>% filter(D_404863614_D_404863614_D_638833327==1), motorcycle <- CURSCHT2A_H)
+#ifelse (exists("D_404863614_D_404863614_D_638833327"), motorcycle <- CURSCHT2A_H %>% filter(D_404863614_D_404863614_D_638833327==1), motorcycle <- CURSCHT2A_H)
 dt_CURSCHT2A_H_summary[3,2] <- ifelse (exists("D_716117817_D_135529881_D_265423096"),  sum(is.na(motorcycle$D_716117817_D_135529881_D_265423096)), 0)
 dt_CURSCHT2A_H_summary[3,3] <- ifelse (exists("D_716117817_D_135529881_D_265423096"), (sum(is.na(motorcycle$D_716117817_D_135529881_D_265423096))/dim(motorcycle)[[1]])*100, 0)
 
@@ -4560,7 +4560,7 @@ dt_CURSCHT2A_H_summary[8,3] <- (sum(is.na(method$D_716117817_D_135529881_D_15422
 dt_CURSCHT2A_H_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Time Spent in Each Commuting Method (Current Position)")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -4606,7 +4606,7 @@ dt_CURSCHT3_4_5_summary[3,3] <- (sum(is.na(CURSCHT3_4_5$D_559488982))/dim(dt_CUR
 # dt_CURSCHT3_4_5_summary %>%  gt::gt() %>%  
 #   fmt_number(columns = "percentage", decimals = 2) %>% 
 #   tab_header(title = md("Road Type for School Commute")) %>% 
-#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
 #   tab_options(
 #     stub.font.weight = "bold"
 #   ) %>%
@@ -4632,7 +4632,7 @@ dt_CURSCHT6_summary <- dt_CURSCHT6_summary[1,]
 dt_CURSCHT6_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Days per Week Commuting from School")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -4657,7 +4657,7 @@ dt_CURSCHT7_summary <- dt_CURSCHT7_summary[1,]
 dt_CURSCHT7_summary %>%  gt::gt() %>%
   fmt_number(columns = "percentage", decimals = 2) %>%
   tab_header(title = md("Same Transportation Type To and From School")) %>%
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>%
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>%
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -4683,7 +4683,7 @@ dt_CURSCHT8_summary <- dt_CURSCHT8_summary[1,]
 # dt_CURSCHT8_summary %>%  gt::gt() %>%  
 #   fmt_number(columns = "percentage", decimals = 2) %>% 
 #   tab_header(title = md("Commuting Timw To and From School the Same")) %>% 
-#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+#   cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
 #   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
 #   tab_options(
 #     stub.font.weight = "bold"
@@ -4739,7 +4739,7 @@ dt_CURSCHT9_summary[8,3] <- (sum(is.na(CURSCHT9$D_345355061_D_345355061_D_804918
 dt_CURSCHT9_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Commuting Methods to School")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   #grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -4824,7 +4824,7 @@ dt_CURSCHT11_12_13_summary <- dt_CURSCHT11_12_13_summary[c(2,3),]
 dt_CURSCHT11_12_13_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Road Type for School Commute Home")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   tab_options(
     stub.font.weight = "bold"
   ) %>%
@@ -4849,7 +4849,7 @@ dt_CURSCHT14_summary <- dt_CURSCHT14_summary[1,]
 dt_CURSCHT14_summary %>%  gt::gt() %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Days per Week Commuting Home from School")) %>% 
-  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**Number of Participants**"),Address1 = md("**Question**"), percentage = md("**%**")) %>% 
   tab_options(
     stub.font.weight = "bold"
   ) %>%
