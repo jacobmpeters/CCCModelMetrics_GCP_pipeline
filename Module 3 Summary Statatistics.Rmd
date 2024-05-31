@@ -258,7 +258,7 @@ hist_funct <- function(CID,Title, Xlab, Ylab) {
     xlab(Xlab) + ylab(Ylab) +  ggtitle(Title)+
     geom_histogram(color="black")+ scale_y_continuous(breaks=pretty_breaks()) +
     #scale_fill_discrete(name = "Sex at Birth", labels=c("Female", "Male"))+
-    geom_vline(aes(xintercept=mean(!!CID_SYM, na.rm=T)), colour="red", linetype="solid")
+    geom_vline(aes(xintercept=mean(!!CID_SYM, na.rm=T)), colour="#2973A5", linetype="solid")
   
 }
 
@@ -290,7 +290,7 @@ dict <- list("104430631"="No", "353358909"="Yes", "265550580"="Didn't Drink", "9
 #                              "Most Days of the Week","A Few Days per week","One Day per Week","A Few Days per Month", "A Few days per Year","Less Than One Hour", "1-2 Hours",
 #                              "3-5 Hours",  "6-9 Hours",  "10-15 Hours", "15+ Hours", "Everyday, at least 2 hrs","Everday, 0-2 Hours",    
 #                              "One Day per Month",   "0","1", "2", "3", "4", "5","5+",  "6+", "No Skin Color Change", "A Tan Without Sunburn","Mild Sunburn, Eventual Tan", "Sunburn w/o Blisters", "Blistering Sunburn",   "1-9 Times", "10-49 Times", "50-99 Times","100-249", "250+", "Less than 12x per Year", 
-#                              "A few Days per Month", "Once a Week", "A few Days per Week",  "Every Day", "Very Light", "Light", "Medium", "Dark", "Very dark", "No Freckles", "A few", "Some", "A lot", "Recreation", "As Medicine", "Both", "Other", "Prefer Not to Answer", "1-2", "3-4", "5-9", "10+", "Blue",  "Green","Hazel", "Light Brown",  "Dark Brown",  "Blond", "Red", "Reddish Brown", "Medium Brown",  "Black"))
+#                              "A few Days per Month", "Once a Week", "A few Days per Week",  "Every Day", "Very Light", "Light", "Medium", "Dark", "Very dark", "No Freckles", "A few", "Some", "A lot", "Recreation", "As Medicine", "Both", "Other", "Prefer Not to Answer", "1-2", "3-4", "5-9", "10+", "Blue",  "Green","Hazel", "Light Brown",  "Dark Brown",  "Blond", "#2973A5", "Reddish Brown", "Medium Brown",  "Black"))
 # 
 # 
 # # Error in `vec_assign()`:
