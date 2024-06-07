@@ -109,7 +109,7 @@ notifications_qc_metrics:
     
 data_destruction_qc_metrics:
   r_file_name: "Data Destruction CSV Output.R"
-  report_file_name: "Data_Destruction_CSV_Output.R.pdf"
+  report_file_name: "Data_Destruction_CSV_Output.pdf"
   box_folders:
     - "255783409227"
   gcp_info:
