@@ -77,7 +77,6 @@ QOL_rem <- bq_table_download(notif_cc, bigint = 'integer64')
 
 \FloatBarrier
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-
 #QOL_rem$d_827220437 <- factor(QOL_rem$d_827220437, levels=c(472940358,531629870, 548392715,303349821,657167265,809703864,125001209,327912200, 300267574,452412599))
 
 QOL_rem <- QOL_rem %>%  mutate(Site=case_when(d_827220437==472940358 ~"Baylor Scott & White Health",
@@ -93,6 +92,7 @@ QOL_rem <- QOL_rem %>%  mutate(Site=case_when(d_827220437==472940358 ~"Baylor Sc
                                QOL_completion_status=case_when(d_320303124==972455046 ~ "Not Started",
                                                                d_320303124==615768760 ~ "Started",
                                                                d_320303124==231311385 ~ "Submitted"))
+                                                               
 QOL_rem$Site <- factor(QOL_rem$Site, levels=c("Baylor Scott & White Health","HealthPartners", "Henry Ford Health System","Marshfield Clinical Health System","Sanford Health","University of Chicago Medicine",
                                               "Kaiser Permanente Colorado","Kaiser Permanente Georgia", "Kaiser Permanente Hawaii","Kaiser Permanente Northwest"))
 
