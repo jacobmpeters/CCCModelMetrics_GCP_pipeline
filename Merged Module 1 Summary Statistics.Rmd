@@ -1,6 +1,6 @@
 ---
 title: "Merged Module 1 Summary Statistics"
-author: "Kelsey Dowling"
+author: "Kelsey Sanchez"
 date: "`r Sys.Date()`"
 output: pdf_document
 ---

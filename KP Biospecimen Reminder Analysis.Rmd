@@ -60,14 +60,14 @@ bq_auth()
 
 project <- "nih-nci-dceg-connect-prod-6d04"
 KP_reminders <- " SELECT Connect_ID, d_827220437, notif.category, attempt, parts.token, d_914594314,
- least( d_173836415_d_266600170_d_769615780, d_173836415_d_266600170_d_939818935) as first_draw_order, 
+LEAST(COALESCE(d_173836415_d_266600170_d_769615780, d_173836415_d_266600170_d_939818935), COALESCE(d_173836415_d_266600170_d_939818935, d_173836415_d_266600170_d_769615780))   as first_draw_order, 
  d_173836415_d_266600170_d_156605577,
- least(d_173836415_d_266600170_d_982213346, d_173836415_d_266600170_d_139245758) as first_collection,
+ LEAST(COALESCE(d_173836415_d_266600170_d_982213346, d_173836415_d_266600170_d_139245758), COALESCE(d_173836415_d_266600170_d_139245758, d_173836415_d_266600170_d_982213346))  as first_collection,
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` parts
 left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` notif
 on notif.token=parts.token and
 category LIKE 'KP%' and category LIKE '%baseline biospecimen invitations%' 
-where
+where Connect_ID NOT IN ('1766922128', '3613468175', '3698144899', '8417684909' ) and
  (d_827220437='125001209' or d_827220437='327912200' or d_827220437='300267574' or d_827220437='452412599') and 
 d_173836415_d_266600170_d_880794013='353358909' and
 ((d_173836415_d_266600170_d_769615780 >= '2023-04-01T00:00:00Z' and d_173836415_d_266600170_d_769615780 <= '2023-12-01T00:00:00Z')  or 
@@ -135,7 +135,7 @@ KPR <- KPR %>%  mutate(Site=case_when(d_827220437==125001209 ~ "Kaiser Permanent
                                                  d_827220437==452412599 ~ "Kaiser Permanente Northwest"),
                        last_attempt_max= str_sub(attempt,1,1),
                        sample_given = case_when(d_173836415_d_266600170_d_156605577=="353358909" ~ "Blood or Urine Sample Received",
-                                   TRUE  ~ "No Sample Received"),
+                                   d_173836415_d_266600170_d_156605577=="104430631"  ~ "No Sample Received"),
                        completed_before= case_when(last_attempt_max==0 ~ "Completed Before Verification",
                                      last_attempt_max==1 ~ "Completed Between Reminders 1 and 2",
                                      last_attempt_max==2 ~ "Completed Between Reminders 2 and 3",
@@ -202,7 +202,7 @@ CID_KPR <- updated_KPR %>% distinct(Connect_ID, .keep_all = TRUE)
   fmt_number(columns = everything(), decimals = 0) %>%
   grand_summary_rows(columns=c(n),fns = ~sum(.,na.rm = T)) %>% 
 tab_footnote(
-  footnote=("The participants included in this report are active, verified, and have had a baseline blood or urine draw order placed between 4/1/2023 and 12/1/2023."),
+  footnote=("The participants included in this report are verified and have had a baseline blood or urine draw order placed between 4/1/2023 and 12/1/2023."),
   locations = cells_column_labels(columns = n)
 )
 
@@ -246,7 +246,8 @@ comp__time <- updated_KPR %>%
     between(days_difference, 10, 23) ~ "Gave sample after Biospecimen Contact 2, before Biospecimen Contact 3",
     between(days_difference, 24, 38) ~ "Gave sample after Biospecimen Contact 3, before Biospecimen Contact 4",
     between(days_difference, 39, 53) ~ "Gave sample after Biospecimen Contact 4, before Biospecimen Contact 5",
-    days_difference >= 54 ~ "Gave sample after Biospecimen Contact 5"
+    #days_difference >= 54 ~ "Gave sample after Biospecimen Contact 5"
+    TRUE ~ "Gave sample after Biospecimen Contact 5"
   )) 
 
 comp_time <- comp__time %>% 
@@ -287,9 +288,9 @@ colnames(Sent_rows) <- c("All Reminders", "n")
 ## NEED TO MANUALLY EXCLUDE THOSE THAT GOT A NOTIFICATION AFTER COMPLETION
 sent2after <- length(comp__time$Connect_ID[comp__time$days_difference<10 & comp__time$attempt=="2nd contact"])
 sent3after <- length(comp__time$Connect_ID[comp__time$days_difference<24 & comp__time$attempt=="3rd contact"])
-sent4after <- length(comp__time$Connect_ID[comp__time$days_difference<39 & comp__time$attempt=="4th contact"])
+sent4after <- length(comp__time$Connect_ID[comp__time$days_difference<39 & comp__time$attempt=="4th contact"]) 
 sent5after <- length(comp__time$Connect_ID[comp__time$days_difference<54 & comp__time$attempt=="5th contact"])
-  
+#   
 Sent_rows[2,2] <- Sent_rows[2,2]-sent2after
 Sent_rows[3,2] <- Sent_rows[3,2]-sent3after
 Sent_rows[4,2] <- Sent_rows[4,2]-sent4after
@@ -316,6 +317,19 @@ final_notif_emails <- bind_rows(comp_time, Sent_rows, Eligible_rows)
 final_notif_emails <- final_notif_emails[c(7, 1, 2, 12, 8, 3, 13, 9, 4, 14, 10, 5, 15, 11, 6), ]
 
 
+None_List <- c("No sample Given after Biospecimen Contact 5")
+None_Numb <- c(as.numeric(table(updated_KPR$d_173836415_d_266600170_d_156605577[!duplicated(updated_KPR$Connect_ID)])[1]))
+
+
+None_rows <- data.frame(Column1 = None_List, Column2 = None_Numb)
+colnames(None_rows) <- c("All Reminders", "n")
+
+
+
+
+final_notif_emails <- bind_rows(final_notif_emails, None_rows)
+
+
 
 final_notif_emails$'%' <- c(paste(100*round(final_notif_emails[1,2]/length(unique(updated_KPR$Connect_ID)), digits=4), "%"),
                             paste(100*round(final_notif_emails[2,2]/length(unique(updated_KPR$Connect_ID)), digits=3), "%"), 
@@ -331,7 +345,8 @@ final_notif_emails$'%' <- c(paste(100*round(final_notif_emails[1,2]/length(uniqu
                             paste(100*round(final_notif_emails[12,2]/final_notif_emails[11,2], digits=3), "%"),
                             paste(100*round(final_notif_emails[13,2]/final_notif_emails[11,2], digits=3), "%"),
                             paste(100*round(final_notif_emails[14,2]/final_notif_emails[13,2], digits=3), "%"),
-                            paste(100*round(final_notif_emails[15,2]/final_notif_emails[14,2], digits=3), "%"))
+                            paste(100*round(final_notif_emails[15,2]/final_notif_emails[14,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[16,2]/final_notif_emails[14,2], digits=3), "%"))
                             #paste(100*round(final_notif_emails[16,2]/final_notif_emails[14,2], digits=3), "%"),
                             # paste(100*round(final_notif_emails[17,2]/final_notif_emails[16,2], digits=3), "%"),
                             # paste(100*round(final_notif_emails[18,2]/final_notif_emails[17,2], digits=3), "%")) #b12
@@ -347,7 +362,7 @@ final_notif_emails_gt <- as_tibble(final_notif_emails)
 # Create a gt table and use text_transform to apply formatting
 final_notif_emails_gt %>% gt(rowname_col = "row_lab") %>%
   cols_label("All Reminders"= md(" "), n = md("**n**"), "%" = md("**%**")) %>% 
-   tab_header(title = md("Table 2. KP Biospecimen Email Reminders Evaluation")) %>%
+   tab_header(title = md("Table 2. KP Biospecimen Email Reminders Evaluation, All KP Sites")) %>%
   tab_style(
     style = list(
       cell_text(weight = "bold")
@@ -366,7 +381,7 @@ tab_footnote(
 )%>% 
  tab_footnote(
   footnote=("
-'Eligible for reminder' is calculated as those sent the previous reminder minus those who completed the survey after the previous reminder."),
+'Eligible for reminder' is calculated as those sent the previous reminder minus those who completed the specimen donation after the previous reminder."),
   locations = cells_column_labels(columns = "All Reminders")
 ) %>% 
  tab_footnote(
@@ -386,3 +401,701 @@ tab_footnote(
 
 
 
+
+
+
+
+\newpage
+
+```{r KPCO, echo=FALSE, warning=FALSE, message=FALSE}
+
+updated_KPR_CO  <- updated_KPR %>% filter(d_827220437=='125001209')
+
+# First contact: The earliest of either date/time of baseline blood order or baseline urine order.
+# Date/time blood order placed (BioClin_BldOrderPlacdDt_v1r0) (769615780). Date/time urine
+# order placed (BioClin_UrnOrderPlacdDt_v1r0)(939818935). These are nested under Collection
+# Details > Baseline (d_173836415_d_266600170_)
+# • Second contact: 10 days after date first baseline draw order for blood or urine placed
+# • Third contact: 24 days after date first baseline draw order for blood or urine placed
+# • Fourth contact: 39 days after date first baseline draw order for blood or urine placed
+# • Fifth contact: 54 days after date first baseline draw order for blood or urine placed
+
+
+comp__time <- updated_KPR_CO %>%
+  filter(sample_given == "Blood or Urine Sample Received" & !is.na(d_914594314) & !is.na(first_draw_order) & !is.na(first_collection)) %>%
+  mutate(days_difference = round(as.numeric(difftime(first_collection, first_draw_order, units = "days")), digits=0)) %>%
+  mutate(time_frame = case_when(
+    days_difference <= 0 ~ "Gave sample on or before Biospecimen Contact 1",
+    between(days_difference, 1, 9) ~ "Gave sample after Biospecimen Contact 1, before Biospecimen Contact 2",
+    between(days_difference, 10, 23) ~ "Gave sample after Biospecimen Contact 2, before Biospecimen Contact 3",
+    between(days_difference, 24, 38) ~ "Gave sample after Biospecimen Contact 3, before Biospecimen Contact 4",
+    between(days_difference, 39, 53) ~ "Gave sample after Biospecimen Contact 4, before Biospecimen Contact 5",
+    days_difference >= 54 ~ "Gave sample after Biospecimen Contact 5"
+  )) 
+
+comp_time <- comp__time %>% 
+  group_by(time_frame) %>%
+  summarise(n = n_distinct(Connect_ID))
+
+
+
+comp_time$time_frame <- factor(comp_time$time_frame, levels=c("Gave sample on or before Biospecimen Contact 1",
+                                                              "Gave sample after Biospecimen Contact 1, before Biospecimen Contact 2",
+                                                              "Gave sample after Biospecimen Contact 2, before Biospecimen Contact 3", 
+                                                              "Gave sample after Biospecimen Contact 3, before Biospecimen Contact 4",
+                                                              "Gave sample after Biospecimen Contact 4, before Biospecimen Contact 5",
+                                                              "Gave sample after Biospecimen Contact 5"))
+comp_time <- comp_time[c(6,1:5), ]
+colnames(comp_time) <- c("All Reminders", "n")
+
+
+
+
+
+
+KPR_ct <- updated_KPR_CO %>% mutate(cnt_number=case_when(attempt=="1st contact" ~ "Sent contact 1",
+                                                          attempt=="2nd contact" ~ "Sent contact 2",
+                                                          attempt=="3rd contact" ~ "Sent contact 3",
+                                                          attempt=="4th contact" ~ "Sent contact 4",
+                                                          attempt=="5th contact" ~ "Sent contact 5"))
+ attempt_counts <- KPR_ct %>%
+     group_by(Connect_ID, cnt_number) %>%
+     slice_head() %>%  # Keep only the first row for each unique Connect_ID and contacts_number- that way the case_when doesn't eliminate participants with each case
+     group_by(cnt_number) %>%
+     summarise(Count = n_distinct(Connect_ID))
+
+Sent_rows <- data.frame(Column1 = attempt_counts$cnt_number, Column2 = attempt_counts$Count)
+colnames(Sent_rows) <- c("All Reminders", "n")
+
+
+## NEED TO MANUALLY EXCLUDE THOSE THAT GOT A NOTIFICATION AFTER COMPLETION
+sent2after <- length(comp__time$Connect_ID[comp__time$days_difference<10 & comp__time$attempt=="2nd contact"]) 
+sent3after <- length(comp__time$Connect_ID[comp__time$days_difference<24 & comp__time$attempt=="3rd contact"])
+sent4after <- length(comp__time$Connect_ID[comp__time$days_difference<39 & comp__time$attempt=="4th contact"])
+sent5after <- length(comp__time$Connect_ID[comp__time$days_difference<54 & comp__time$attempt=="5th contact"]) 
+Sent_rows[2,2] <- Sent_rows[2,2]-sent2after
+Sent_rows[3,2] <- Sent_rows[3,2]-sent3after
+Sent_rows[4,2] <- Sent_rows[4,2]-sent4after
+Sent_rows[5,2] <- Sent_rows[5,2]-sent5after
+
+
+
+
+
+#Sent previous contact - people who finished
+EligibleList <- c("Eligible for BiospecimenContact 2","Eligible for BiospecimenContact 3", "Eligible for BiospecimenContact 4", "Eligible for BiospecimenContact 5")
+EligibleNumb <- c(length(unique(updated_KPR_CO$Connect_ID)) - (sum(comp_time[1,2]) + sum(comp_time[2,2])), #eligible2= all participants-those who completed before contact 2
+                  Sent_rows[2,2] - sum(comp_time[3,2]) , #eligible for 3= sent contact 2- completed before contact 3
+                  Sent_rows[3,2] - sum(comp_time[4,2]), #eligible for 4= sent contact3-completed before contact 4
+                  Sent_rows[4,2] - sum(comp_time[5,2])) #eligible for 5= sent contact4- completed before contact 5
+
+
+Eligible_rows <- data.frame(Column1 = EligibleList, Column2 = EligibleNumb)
+colnames(Eligible_rows) <- c("All Reminders", "n")
+
+
+
+
+final_notif_emails <- bind_rows(comp_time, Sent_rows, Eligible_rows)
+final_notif_emails <- final_notif_emails[c(7, 1, 2, 12, 8, 3, 13, 9, 4, 14, 10, 5, 15, 11, 6), ]
+
+
+
+None_List <- c("No sample Given after Biospecimen Contact 5")
+None_Numb <- c(as.numeric(table(updated_KPR_CO$d_173836415_d_266600170_d_156605577[!duplicated(updated_KPR_CO$Connect_ID)])[1]))
+
+
+None_rows <- data.frame(Column1 = None_List, Column2 = None_Numb)
+colnames(None_rows) <- c("All Reminders", "n")
+
+
+
+
+final_notif_emails <- bind_rows(final_notif_emails, None_rows)
+
+
+
+final_notif_emails$'%' <- c(paste(100*round(final_notif_emails[1,2]/length(unique(updated_KPR_CO$Connect_ID)), digits=4), "%"),
+                            paste(100*round(final_notif_emails[2,2]/length(unique(updated_KPR_CO$Connect_ID)), digits=3), "%"), 
+                            paste(100*round(final_notif_emails[3,2]/length(unique(updated_KPR_CO$Connect_ID)), digits=3), "%"), 
+                            paste(100*round(final_notif_emails[4,2]/length(unique(updated_KPR_CO$Connect_ID)), digits=3), "%"), 
+                            paste(100*round(final_notif_emails[5,2]/final_notif_emails[4,2], digits=3), "%"), 
+                            paste(100*round(final_notif_emails[6,2]/final_notif_emails[5,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[7,2]/final_notif_emails[5,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[8,2]/final_notif_emails[7,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[9,2]/final_notif_emails[8,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[10,2]/final_notif_emails[8,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[11,2]/final_notif_emails[10,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[12,2]/final_notif_emails[11,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[13,2]/final_notif_emails[11,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[14,2]/final_notif_emails[13,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[15,2]/final_notif_emails[14,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[16,2]/final_notif_emails[14,2], digits=3), "%"))
+
+
+
+
+# Specify the rows to be bolded
+bold_rows <- c(1,4,5,7,8,10,11,13,14)
+
+final_notif_emails_gt <- as_tibble(final_notif_emails)
+
+# Create a gt table and use text_transform to apply formatting
+final_notif_emails_gt %>% gt(rowname_col = "row_lab") %>%
+  cols_label("All Reminders"= md(" "), n = md("**n**"), "%" = md("**%**")) %>% 
+   tab_header(title = md("Table 2.1 KPCO Biospecimen Email Reminders Evaluation")) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "All Reminders",
+      rows = bold_rows
+    )) %>% 
+tab_footnote(
+  footnote=("A completed clinical collection means that any clinical blood or urine sample received."),
+  locations = cells_column_labels(columns = "All Reminders")
+) %>% 
+ tab_footnote(
+  footnote=("Reminders are not sent to participants who refuse blood or urine samples, refuse all future activities, withdraw, are deceased or request suspended contact. This may account for small discrepancies between the number eligible for a reminder and the number sent."),
+  locations = cells_column_labels(columns = "All Reminders")
+)%>% 
+ tab_footnote(
+  footnote=("
+'Eligible for reminder' is calculated as those sent the previous reminder minus those who completed the specimen donation after the previous reminder."),
+  locations = cells_column_labels(columns = "All Reminders")
+) %>% 
+ tab_footnote(
+  footnote=("
+'Sent reminder' does not take into account whether email was successfully delivered or opened. A small percentage of Connect emails are undeliverable and the percent opened is unknown."),
+  locations = cells_column_labels(columns = "All Reminders")
+) %>% 
+ tab_footnote(
+  footnote=("
+' Email reminder schedule: Contact 1 is sent on the earliest of either date/time of baseline blood order or baseline urine order; Contact 2 on day 10 post blood or urine draw order placement; Contact 3 on day 24 post blood or urine draw order placement; Contact 4 on day 39 post blood or urine draw order placement; Contact 5 on day 54 post blood or urine draw order placement."),
+  locations = cells_column_labels(columns = "All Reminders")
+) 
+
+
+  
+```
+\newpage
+```{r KPNW, echo=FALSE, warning=FALSE, message=FALSE}
+
+updated_KPR_NW  <- updated_KPR %>% filter(d_827220437=='452412599')
+
+# First contact: The earliest of either date/time of baseline blood order or baseline urine order.
+# Date/time blood order placed (BioClin_BldOrderPlacdDt_v1r0) (769615780). Date/time urine
+# order placed (BioClin_UrnOrderPlacdDt_v1r0)(939818935). These are nested under Collection
+# Details > Baseline (d_173836415_d_266600170_)
+# • Second contact: 10 days after date first baseline draw order for blood or urine placed
+# • Third contact: 24 days after date first baseline draw order for blood or urine placed
+# • Fourth contact: 39 days after date first baseline draw order for blood or urine placed
+# • Fifth contact: 54 days after date first baseline draw order for blood or urine placed
+
+
+comp__time <- updated_KPR_NW %>%
+  filter(sample_given == "Blood or Urine Sample Received" & !is.na(d_914594314) & !is.na(first_draw_order) & !is.na(first_collection)) %>%
+  mutate(days_difference = round(as.numeric(difftime(first_collection, first_draw_order, units = "days")), digits=0)) %>%
+  mutate(time_frame = case_when(
+    days_difference <= 0 ~ "Gave sample on or before Biospecimen Contact 1",
+    between(days_difference, 1, 9) ~ "Gave sample after Biospecimen Contact 1, before Biospecimen Contact 2",
+    between(days_difference, 10, 23) ~ "Gave sample after Biospecimen Contact 2, before Biospecimen Contact 3",
+    between(days_difference, 24, 38) ~ "Gave sample after Biospecimen Contact 3, before Biospecimen Contact 4",
+    between(days_difference, 39, 53) ~ "Gave sample after Biospecimen Contact 4, before Biospecimen Contact 5",
+    days_difference >= 54 ~ "Gave sample after Biospecimen Contact 5"
+  )) 
+
+comp_time <- comp__time %>% 
+  group_by(time_frame) %>%
+  summarise(n = n_distinct(Connect_ID))
+
+
+
+comp_time$time_frame <- factor(comp_time$time_frame, levels=c("Gave sample on or before Biospecimen Contact 1",
+                                                              "Gave sample after Biospecimen Contact 1, before Biospecimen Contact 2",
+                                                              "Gave sample after Biospecimen Contact 2, before Biospecimen Contact 3", 
+                                                              "Gave sample after Biospecimen Contact 3, before Biospecimen Contact 4",
+                                                              "Gave sample after Biospecimen Contact 4, before Biospecimen Contact 5",
+                                                              "Gave sample after Biospecimen Contact 5"))
+comp_time <- comp_time[c(6,1:5), ]
+colnames(comp_time) <- c("All Reminders", "n")
+
+
+
+
+
+
+KPR_ct <- updated_KPR_NW %>% mutate(cnt_number=case_when(attempt=="1st contact" ~ "Sent contact 1",
+                                                          attempt=="2nd contact" ~ "Sent contact 2",
+                                                          attempt=="3rd contact" ~ "Sent contact 3",
+                                                          attempt=="4th contact" ~ "Sent contact 4",
+                                                          attempt=="5th contact" ~ "Sent contact 5"))
+ attempt_counts <- KPR_ct %>%
+     group_by(Connect_ID, cnt_number) %>%
+     slice_head() %>%  # Keep only the first row for each unique Connect_ID and contacts_number- that way the case_when doesn't eliminate participants with each case
+     group_by(cnt_number) %>%
+     summarise(Count = n_distinct(Connect_ID))
+
+Sent_rows <- data.frame(Column1 = attempt_counts$cnt_number, Column2 = attempt_counts$Count)
+colnames(Sent_rows) <- c("All Reminders", "n")
+
+
+## NEED TO MANUALLY EXCLUDE THOSE THAT GOT A NOTIFICATION AFTER COMPLETION
+sent2after <- length(comp__time$Connect_ID[comp__time$days_difference<10 & comp__time$attempt=="2nd contact"])
+sent3after <- length(comp__time$Connect_ID[comp__time$days_difference<24 & comp__time$attempt=="3rd contact"])
+sent4after <- length(comp__time$Connect_ID[comp__time$days_difference<39 & comp__time$attempt=="4th contact"])
+sent5after <- length(comp__time$Connect_ID[comp__time$days_difference<54 & comp__time$attempt=="5th contact"])
+#   
+Sent_rows[2,2] <- Sent_rows[2,2]-sent2after
+Sent_rows[3,2] <- Sent_rows[3,2]-sent3after
+Sent_rows[4,2] <- Sent_rows[4,2]-sent4after
+Sent_rows[5,2] <- Sent_rows[5,2]-sent5after
+
+
+
+
+#Sent previous contact - people who finished
+EligibleList <- c("Eligible for BiospecimenContact 2","Eligible for BiospecimenContact 3", "Eligible for BiospecimenContact 4", "Eligible for BiospecimenContact 5")
+EligibleNumb <- c(length(unique(updated_KPR_NW$Connect_ID))- (sum(comp_time[1,2]) + sum(comp_time[2,2])), #eligible2= all participants-those who completed before contact 2
+                  Sent_rows[2,2] - sum(comp_time[3,2]) , #eligible for 3= sent contact 2- completed before contact 3
+                  Sent_rows[3,2] - sum(comp_time[4,2]), #eligible for 4= sent contact3-completed before contact 4
+                  Sent_rows[4,2] - sum(comp_time[5,2])) #eligible for 5= sent contact4- completed before contact 5
+
+
+Eligible_rows <- data.frame(Column1 = EligibleList, Column2 = EligibleNumb)
+colnames(Eligible_rows) <- c("All Reminders", "n")
+
+
+
+
+final_notif_emails <- bind_rows(comp_time, Sent_rows, Eligible_rows)
+final_notif_emails <- final_notif_emails[c(7, 1, 2, 12, 8, 3, 13, 9, 4, 14, 10, 5, 15, 11, 6), ]
+
+
+
+None_List <- c("No sample Given after Biospecimen Contact 5")
+None_Numb <- c(as.numeric(table(updated_KPR_NW$d_173836415_d_266600170_d_156605577[!duplicated(updated_KPR_NW$Connect_ID)])[1]) )
+
+
+None_rows <- data.frame(Column1 = None_List, Column2 = None_Numb)
+colnames(None_rows) <- c("All Reminders", "n")
+
+
+
+
+final_notif_emails <- bind_rows(final_notif_emails, None_rows)
+
+
+
+final_notif_emails$'%' <- c(paste(100*round(final_notif_emails[1,2]/length(unique(updated_KPR_NW$Connect_ID)), digits=4), "%"),
+                            paste(100*round(final_notif_emails[2,2]/length(unique(updated_KPR_NW$Connect_ID)), digits=3), "%"), 
+                            paste(100*round(final_notif_emails[3,2]/length(unique(updated_KPR_NW$Connect_ID)), digits=3), "%"), 
+                            paste(100*round(final_notif_emails[4,2]/length(unique(updated_KPR_NW$Connect_ID)), digits=3), "%"), 
+                            paste(100*round(final_notif_emails[5,2]/final_notif_emails[4,2], digits=3), "%"), 
+                            paste(100*round(final_notif_emails[6,2]/final_notif_emails[5,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[7,2]/final_notif_emails[5,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[8,2]/final_notif_emails[7,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[9,2]/final_notif_emails[8,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[10,2]/final_notif_emails[8,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[11,2]/final_notif_emails[10,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[12,2]/final_notif_emails[11,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[13,2]/final_notif_emails[11,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[14,2]/final_notif_emails[13,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[15,2]/final_notif_emails[14,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[16,2]/final_notif_emails[14,2], digits=3), "%"))
+
+
+
+
+# Specify the rows to be bolded
+bold_rows <- c(1,4,5,7,8,10,11,13,14)
+
+final_notif_emails_gt <- as_tibble(final_notif_emails)
+
+# Create a gt table and use text_transform to apply formatting
+final_notif_emails_gt %>% gt(rowname_col = "row_lab") %>%
+  cols_label("All Reminders"= md(" "), n = md("**n**"), "%" = md("**%**")) %>% 
+   tab_header(title = md("Table 2.2 KPNW Biospecimen Email Reminders Evaluation")) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "All Reminders",
+      rows = bold_rows
+    )) %>% 
+tab_footnote(
+  footnote=("A completed clinical collection means that any clinical blood or urine sample received."),
+  locations = cells_column_labels(columns = "All Reminders")
+) %>% 
+ tab_footnote(
+  footnote=("Reminders are not sent to participants who refuse blood or urine samples, refuse all future activities, withdraw, are deceased or request suspended contact. This may account for small discrepancies between the number eligible for a reminder and the number sent."),
+  locations = cells_column_labels(columns = "All Reminders")
+)%>% 
+ tab_footnote(
+  footnote=("
+'Eligible for reminder' is calculated as those sent the previous reminder minus those who completed the specimen donation after the previous reminder."),
+  locations = cells_column_labels(columns = "All Reminders")
+) %>% 
+ tab_footnote(
+  footnote=("
+'Sent reminder' does not take into account whether email was successfully delivered or opened. A small percentage of Connect emails are undeliverable and the percent opened is unknown."),
+  locations = cells_column_labels(columns = "All Reminders")
+) %>% 
+ tab_footnote(
+  footnote=("
+' Email reminder schedule: Contact 1 is sent on the earliest of either date/time of baseline blood order or baseline urine order; Contact 2 on day 10 post blood or urine draw order placement; Contact 3 on day 24 post blood or urine draw order placement; Contact 4 on day 39 post blood or urine draw order placement; Contact 5 on day 54 post blood or urine draw order placement."),
+  locations = cells_column_labels(columns = "All Reminders")
+) 
+
+
+  
+```
+\newpage
+
+```{r KPHI, echo=FALSE, warning=FALSE, message=FALSE}
+
+updated_KPR_HI  <- updated_KPR %>% filter(d_827220437=='300267574')
+
+# First contact: The earliest of either date/time of baseline blood order or baseline urine order.
+# Date/time blood order placed (BioClin_BldOrderPlacdDt_v1r0) (769615780). Date/time urine
+# order placed (BioClin_UrnOrderPlacdDt_v1r0)(939818935). These are nested under Collection
+# Details > Baseline (d_173836415_d_266600170_)
+# • Second contact: 10 days after date first baseline draw order for blood or urine placed
+# • Third contact: 24 days after date first baseline draw order for blood or urine placed
+# • Fourth contact: 39 days after date first baseline draw order for blood or urine placed
+# • Fifth contact: 54 days after date first baseline draw order for blood or urine placed
+
+
+comp__time <- updated_KPR_HI %>%
+  filter(sample_given == "Blood or Urine Sample Received" & !is.na(d_914594314) & !is.na(first_draw_order) & !is.na(first_collection)) %>%
+  mutate(days_difference = round(as.numeric(difftime(first_collection, first_draw_order, units = "days")), digits=0)) %>%
+  mutate(time_frame = case_when(
+    days_difference <= 0 ~ "Gave sample on or before Biospecimen Contact 1",
+    between(days_difference, 1, 9) ~ "Gave sample after Biospecimen Contact 1, before Biospecimen Contact 2",
+    between(days_difference, 10, 23) ~ "Gave sample after Biospecimen Contact 2, before Biospecimen Contact 3",
+    between(days_difference, 24, 38) ~ "Gave sample after Biospecimen Contact 3, before Biospecimen Contact 4",
+    between(days_difference, 39, 53) ~ "Gave sample after Biospecimen Contact 4, before Biospecimen Contact 5",
+    days_difference >= 54 ~ "Gave sample after Biospecimen Contact 5"
+  )) 
+
+comp_time <- comp__time %>% 
+  group_by(time_frame) %>%
+  summarise(n = n_distinct(Connect_ID))
+
+
+
+comp_time$time_frame <- factor(comp_time$time_frame, levels=c("Gave sample on or before Biospecimen Contact 1",
+                                                              "Gave sample after Biospecimen Contact 1, before Biospecimen Contact 2",
+                                                              "Gave sample after Biospecimen Contact 2, before Biospecimen Contact 3", 
+                                                              "Gave sample after Biospecimen Contact 3, before Biospecimen Contact 4",
+                                                              "Gave sample after Biospecimen Contact 4, before Biospecimen Contact 5",
+                                                              "Gave sample after Biospecimen Contact 5"))
+comp_time <- comp_time[c(6,1:5), ]
+colnames(comp_time) <- c("All Reminders", "n")
+
+
+
+
+
+
+KPR_ct <- updated_KPR_HI %>% mutate(cnt_number=case_when(attempt=="1st contact" ~ "Sent contact 1",
+                                                          attempt=="2nd contact" ~ "Sent contact 2",
+                                                          attempt=="3rd contact" ~ "Sent contact 3",
+                                                          attempt=="4th contact" ~ "Sent contact 4",
+                                                          attempt=="5th contact" ~ "Sent contact 5"))
+ attempt_counts <- KPR_ct %>%
+     group_by(Connect_ID, cnt_number) %>%
+     slice_head() %>%  # Keep only the first row for each unique Connect_ID and contacts_number- that way the case_when doesn't eliminate participants with each case
+     group_by(cnt_number) %>%
+     summarise(Count = n_distinct(Connect_ID))
+
+Sent_rows <- data.frame(Column1 = attempt_counts$cnt_number, Column2 = attempt_counts$Count)
+colnames(Sent_rows) <- c("All Reminders", "n")
+
+
+## NEED TO MANUALLY EXCLUDE THOSE THAT GOT A NOTIFICATION AFTER COMPLETION
+sent2after <- length(comp__time$Connect_ID[comp__time$days_difference<10 & comp__time$attempt=="2nd contact"])
+sent3after <- length(comp__time$Connect_ID[comp__time$days_difference<24 & comp__time$attempt=="3rd contact"])
+sent4after <- length(comp__time$Connect_ID[comp__time$days_difference<39 & comp__time$attempt=="4th contact"])
+sent5after <- length(comp__time$Connect_ID[comp__time$days_difference<54 & comp__time$attempt=="5th contact"])
+#   
+Sent_rows[2,2] <- Sent_rows[2,2]-sent2after
+Sent_rows[3,2] <- Sent_rows[3,2]-sent3after
+Sent_rows[4,2] <- Sent_rows[4,2]-sent4after
+Sent_rows[5,2] <- Sent_rows[5,2]-sent5after
+
+
+
+
+#Sent previous contact - people who finished
+EligibleList <- c("Eligible for BiospecimenContact 2","Eligible for BiospecimenContact 3", "Eligible for BiospecimenContact 4", "Eligible for BiospecimenContact 5")
+EligibleNumb <- c(length(unique(updated_KPR_HI$Connect_ID))- (sum(comp_time[1,2]) + sum(comp_time[2,2])), #eligible2= all participants-those who completed before contact 2
+                  Sent_rows[2,2] - sum(comp_time[3,2]) , #eligible for 3= sent contact 2- completed before contact 3
+                  Sent_rows[3,2] - sum(comp_time[4,2]), #eligible for 4= sent contact3-completed before contact 4
+                  Sent_rows[4,2] - sum(comp_time[5,2])) #eligible for 5= sent contact4- completed before contact 5
+
+
+Eligible_rows <- data.frame(Column1 = EligibleList, Column2 = EligibleNumb)
+colnames(Eligible_rows) <- c("All Reminders", "n")
+
+
+
+
+final_notif_emails <- bind_rows(comp_time, Sent_rows, Eligible_rows)
+final_notif_emails <- final_notif_emails[c(7, 1, 2, 12, 8, 3, 13, 9, 4, 14, 10, 5, 15, 11, 6), ]
+
+None_List <- c("No sample Given after Biospecimen Contact 5")
+None_Numb <- c(as.numeric(table(updated_KPR_HI$d_173836415_d_266600170_d_156605577[!duplicated(updated_KPR_HI$Connect_ID)])[1]) )
+
+
+None_rows <- data.frame(Column1 = None_List, Column2 = None_Numb)
+colnames(None_rows) <- c("All Reminders", "n")
+
+
+
+
+final_notif_emails <- bind_rows(final_notif_emails, None_rows)
+
+
+
+final_notif_emails$'%' <- c(paste(100*round(final_notif_emails[1,2]/length(unique(updated_KPR_HI$Connect_ID)), digits=4), "%"),
+                            paste(100*round(final_notif_emails[2,2]/length(unique(updated_KPR_HI$Connect_ID)), digits=3), "%"), 
+                            paste(100*round(final_notif_emails[3,2]/length(unique(updated_KPR_HI$Connect_ID)), digits=3), "%"), 
+                            paste(100*round(final_notif_emails[4,2]/length(unique(updated_KPR_HI$Connect_ID)), digits=3), "%"), 
+                            paste(100*round(final_notif_emails[5,2]/final_notif_emails[4,2], digits=3), "%"), 
+                            paste(100*round(final_notif_emails[6,2]/final_notif_emails[5,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[7,2]/final_notif_emails[5,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[8,2]/final_notif_emails[7,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[9,2]/final_notif_emails[8,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[10,2]/final_notif_emails[8,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[11,2]/final_notif_emails[10,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[12,2]/final_notif_emails[11,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[13,2]/final_notif_emails[11,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[14,2]/final_notif_emails[13,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[15,2]/final_notif_emails[14,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[16,2]/final_notif_emails[14,2], digits=3), "%"))
+                            # paste(100*round(final_notif_emails[17,2]/final_notif_emails[16,2], digits=3), "%"),
+                            # paste(100*round(final_notif_emails[18,2]/final_notif_emails[17,2], digits=3), "%")) #b12
+
+
+
+
+# Specify the rows to be bolded
+bold_rows <- c(1,4,5,7,8,10,11,13,14)
+
+final_notif_emails_gt <- as_tibble(final_notif_emails)
+
+# Create a gt table and use text_transform to apply formatting
+final_notif_emails_gt %>% gt(rowname_col = "row_lab") %>%
+  cols_label("All Reminders"= md(" "), n = md("**n**"), "%" = md("**%**")) %>% 
+   tab_header(title = md("Table 2.3 KPHI Biospecimen Email Reminders Evaluation")) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "All Reminders",
+      rows = bold_rows
+    )) %>% 
+tab_footnote(
+  footnote=("A completed clinical collection means that any clinical blood or urine sample received."),
+  locations = cells_column_labels(columns = "All Reminders")
+) %>% 
+ tab_footnote(
+  footnote=("Reminders are not sent to participants who refuse blood or urine samples, refuse all future activities, withdraw, are deceased or request suspended contact. This may account for small discrepancies between the number eligible for a reminder and the number sent."),
+  locations = cells_column_labels(columns = "All Reminders")
+)%>% 
+ tab_footnote(
+  footnote=("
+'Eligible for reminder' is calculated as those sent the previous reminder minus those who completed the specimen donation after the previous reminder."),
+  locations = cells_column_labels(columns = "All Reminders")
+) %>% 
+ tab_footnote(
+  footnote=("
+'Sent reminder' does not take into account whether email was successfully delivered or opened. A small percentage of Connect emails are undeliverable and the percent opened is unknown."),
+  locations = cells_column_labels(columns = "All Reminders")
+) %>% 
+ tab_footnote(
+  footnote=("
+' Email reminder schedule: Contact 1 is sent on the earliest of either date/time of baseline blood order or baseline urine order; Contact 2 on day 10 post blood or urine draw order placement; Contact 3 on day 24 post blood or urine draw order placement; Contact 4 on day 39 post blood or urine draw order placement; Contact 5 on day 54 post blood or urine draw order placement."),
+  locations = cells_column_labels(columns = "All Reminders")
+) 
+
+
+  
+```
+
+\newpage
+```{r KPGA, echo=FALSE, warning=FALSE, message=FALSE}
+
+updated_KPR_GA  <- updated_KPR %>% filter(d_827220437=='327912200')
+
+# First contact: The earliest of either date/time of baseline blood order or baseline urine order.
+# Date/time blood order placed (BioClin_BldOrderPlacdDt_v1r0) (769615780). Date/time urine
+# order placed (BioClin_UrnOrderPlacdDt_v1r0)(939818935). These are nested under Collection
+# Details > Baseline (d_173836415_d_266600170_)
+# • Second contact: 10 days after date first baseline draw order for blood or urine placed
+# • Third contact: 24 days after date first baseline draw order for blood or urine placed
+# • Fourth contact: 39 days after date first baseline draw order for blood or urine placed
+# • Fifth contact: 54 days after date first baseline draw order for blood or urine placed
+
+
+comp__time <- updated_KPR_GA %>%
+  filter(sample_given == "Blood or Urine Sample Received" & !is.na(d_914594314) & !is.na(first_draw_order) & !is.na(first_collection)) %>%
+  mutate(days_difference = round(as.numeric(difftime(first_collection, first_draw_order, units = "days")), digits=0)) %>%
+  mutate(time_frame = case_when(
+    days_difference <= 0 ~ "Gave sample on or before Biospecimen Contact 1",
+    between(days_difference, 1, 9) ~ "Gave sample after Biospecimen Contact 1, before Biospecimen Contact 2",
+    between(days_difference, 10, 23) ~ "Gave sample after Biospecimen Contact 2, before Biospecimen Contact 3",
+    between(days_difference, 24, 38) ~ "Gave sample after Biospecimen Contact 3, before Biospecimen Contact 4",
+    between(days_difference, 39, 53) ~ "Gave sample after Biospecimen Contact 4, before Biospecimen Contact 5",
+    days_difference >= 54 ~ "Gave sample after Biospecimen Contact 5"
+  )) 
+
+comp_time <- comp__time %>% 
+  group_by(time_frame) %>%
+  summarise(n = n_distinct(Connect_ID))
+
+
+
+comp_time$time_frame <- factor(comp_time$time_frame, levels=c("Gave sample on or before Biospecimen Contact 1",
+                                                              "Gave sample after Biospecimen Contact 1, before Biospecimen Contact 2",
+                                                              "Gave sample after Biospecimen Contact 2, before Biospecimen Contact 3", 
+                                                              "Gave sample after Biospecimen Contact 3, before Biospecimen Contact 4",
+                                                              "Gave sample after Biospecimen Contact 4, before Biospecimen Contact 5",
+                                                              "Gave sample after Biospecimen Contact 5"))
+comp_time <- comp_time[c(6,1:5), ]
+colnames(comp_time) <- c("All Reminders", "n")
+
+
+
+
+
+
+KPR_ct <- updated_KPR_GA %>% mutate(cnt_number=case_when(attempt=="1st contact" ~ "Sent contact 1",
+                                                          attempt=="2nd contact" ~ "Sent contact 2",
+                                                          attempt=="3rd contact" ~ "Sent contact 3",
+                                                          attempt=="4th contact" ~ "Sent contact 4",
+                                                          attempt=="5th contact" ~ "Sent contact 5"))
+ attempt_counts <- KPR_ct %>%
+     group_by(Connect_ID, cnt_number) %>%
+     slice_head() %>%  # Keep only the first row for each unique Connect_ID and contacts_number- that way the case_when doesn't eliminate participants with each case
+     group_by(cnt_number) %>%
+     summarise(Count = n_distinct(Connect_ID))
+
+Sent_rows <- data.frame(Column1 = attempt_counts$cnt_number, Column2 = attempt_counts$Count)
+colnames(Sent_rows) <- c("All Reminders", "n")
+
+
+## NEED TO MANUALLY EXCLUDE THOSE THAT GOT A NOTIFICATION AFTER COMPLETION
+sent2after <- length(comp__time$Connect_ID[comp__time$days_difference<10 & comp__time$attempt=="2nd contact"])
+sent3after <- length(comp__time$Connect_ID[comp__time$days_difference<24 & comp__time$attempt=="3rd contact"])
+sent4after <- length(comp__time$Connect_ID[comp__time$days_difference<39 & comp__time$attempt=="4th contact"])
+sent5after <- length(comp__time$Connect_ID[comp__time$days_difference<54 & comp__time$attempt=="5th contact"])
+#   
+Sent_rows[2,2] <- Sent_rows[2,2]-sent2after
+Sent_rows[3,2] <- Sent_rows[3,2]-sent3after
+Sent_rows[4,2] <- Sent_rows[4,2]-sent4after
+Sent_rows[5,2] <- Sent_rows[5,2]-sent5after
+
+
+
+
+#Sent previous contact - people who finished
+EligibleList <- c("Eligible for BiospecimenContact 2","Eligible for BiospecimenContact 3", "Eligible for BiospecimenContact 4", "Eligible for BiospecimenContact 5")
+EligibleNumb <- c(length(unique(updated_KPR_GA$Connect_ID))-  sum(comp_time[2,2]), #eligible2= all participants-those who completed before contact 2
+                  Sent_rows[2,2] - sum(comp_time[3,2]) , #eligible for 3= sent contact 2- completed before contact 3
+                  Sent_rows[3,2] - sum(comp_time[4,2]), #eligible for 4= sent contact3-completed before contact 4
+                  Sent_rows[4,2] - sum(comp_time[5,2])) #eligible for 5= sent contact4- completed before contact 5
+
+
+Eligible_rows <- data.frame(Column1 = EligibleList, Column2 = EligibleNumb)
+colnames(Eligible_rows) <- c("All Reminders", "n")
+
+
+#didn't have anyone before contact 1, have to remove
+
+final_notif_emails <- bind_rows(comp_time, Sent_rows, Eligible_rows)
+final_notif_emails <- final_notif_emails[c(7, 2, 12, 8, 3, 13, 9, 4, 14, 10, 5, 15, 11, 6), ]
+
+
+None_List <- c("No sample Given after Biospecimen Contact 5")
+None_Numb <- c(as.numeric(table(updated_KPR_GA$d_173836415_d_266600170_d_156605577[!duplicated(updated_KPR_GA$Connect_ID)])[1]))
+
+
+None_rows <- data.frame(Column1 = None_List, Column2 = None_Numb)
+colnames(None_rows) <- c("All Reminders", "n")
+
+
+
+
+final_notif_emails <- bind_rows(final_notif_emails, None_rows)
+
+
+final_notif_emails$'%' <- c(paste(100*round(final_notif_emails[1,2]/length(unique(updated_KPR_GA$Connect_ID)), digits=4), "%"), 
+                            paste(100*round(final_notif_emails[2,2]/length(unique(updated_KPR_GA$Connect_ID)), digits=3), "%"), 
+                            paste(100*round(final_notif_emails[3,2]/length(unique(updated_KPR_GA$Connect_ID)), digits=3), "%"), 
+                            paste(100*round(final_notif_emails[4,2]/final_notif_emails[3,2], digits=3), "%"), 
+                            paste(100*round(final_notif_emails[5,2]/final_notif_emails[4,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[6,2]/final_notif_emails[4,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[7,2]/final_notif_emails[6,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[8,2]/final_notif_emails[7,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[9,2]/final_notif_emails[7,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[10,2]/final_notif_emails[9,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[11,2]/final_notif_emails[10,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[12,2]/final_notif_emails[10,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[13,2]/final_notif_emails[12,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[14,2]/final_notif_emails[13,2], digits=3), "%"),
+                            paste(100*round(final_notif_emails[15,2]/final_notif_emails[13,2], digits=3), "%"))
+                            # paste(100*round(final_notif_emails[17,2]/final_notif_emails[16,2], digits=3), "%"),
+                            # paste(100*round(final_notif_emails[18,2]/final_notif_emails[17,2], digits=3), "%")) #b12
+
+
+
+
+# Specify the rows to be bolded
+bold_rows <- c(1,3,4,6,7,9,10,12,13)
+
+final_notif_emails_gt <- as_tibble(final_notif_emails)
+
+# Create a gt table and use text_transform to apply formatting
+final_notif_emails_gt %>% gt(rowname_col = "row_lab") %>%
+  cols_label("All Reminders"= md(" "), n = md("**n**"), "%" = md("**%**")) %>% 
+   tab_header(title = md("Table 2.4 KPGA Biospecimen Email Reminders Evaluation")) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "All Reminders",
+      rows = bold_rows
+    )) %>% 
+tab_footnote(
+  footnote=("A completed clinical collection means that any clinical blood or urine sample received."),
+  locations = cells_column_labels(columns = "All Reminders")
+) %>% 
+ tab_footnote(
+  footnote=("Reminders are not sent to participants who refuse blood or urine samples, refuse all future activities, withdraw, are deceased or request suspended contact. This may account for small discrepancies between the number eligible for a reminder and the number sent."),
+  locations = cells_column_labels(columns = "All Reminders")
+)%>% 
+ tab_footnote(
+  footnote=("
+'Eligible for reminder' is calculated as those sent the previous reminder minus those who completed the specimen donation after the previous reminder."),
+  locations = cells_column_labels(columns = "All Reminders")
+) %>% 
+ tab_footnote(
+  footnote=("
+'Sent reminder' does not take into account whether email was successfully delivered or opened. A small percentage of Connect emails are undeliverable and the percent opened is unknown."),
+  locations = cells_column_labels(columns = "All Reminders")
+) %>% 
+ tab_footnote(
+  footnote=("
+' Email reminder schedule: Contact 1 is sent on the earliest of either date/time of baseline blood order or baseline urine order; Contact 2 on day 10 post blood or urine draw order placement; Contact 3 on day 24 post blood or urine draw order placement; Contact 4 on day 39 post blood or urine draw order placement; Contact 5 on day 54 post blood or urine draw order placement."),
+  locations = cells_column_labels(columns = "All Reminders")
+) 
+
+
+  
+```

@@ -3,17 +3,21 @@
 title: "Weekly CCC Metrics for Sections BOH, LAW, MRE, and SAS"
 author: "Kelsey Sanchez"
 date: 'Data Extracted and Report Ran: `r Sys.Date()`'
+header-includes: 
+  \usepackage[labelformat=empty]{caption} 
+  \usepackage{placeins} 
+  \usepackage{booktabs}
+  \usepackage{pdflscape}
+  
 output:
   pdf_document:
-    extra_dependencies: float
+    extra_dependencies: ["float"]
     toc: no
     keep_tex: yes
     fig_width: 7
     fig_height: 5
     fig_caption: yes
     df_print: paged
-header-includes: \usepackage[labelformat=empty]{caption} \usepackage{placeins} \usepackage{booktabs}
-  \usepackage{pdflscape}
 ---
 
 
@@ -55,24 +59,6 @@ bq_auth()
 
 ```
 
-
-```{r, echo=FALSE}
-
-# cat("In order of how the sections appear on MyConnect, the Initial Survey Sections are: \n 
-# BOH= Background and Overall Health (Module 1)  \n
-# LAW= Where you Live and Work (Module 4)\n
-# MRE= Medications, Reproductive Health, Exercise, and Sleep (Module 2)\n
-# SAS= Smoking, Alcohol, and Sun Exposure (Module 3)")
-
-# Example vector with # symbol
-#my_vector <- c("In order of how the sections appear on MyConnect, the Initial Survey Sections are:", "BOH= Background and Overall Health (Module 1)", "LAW= Where you Live and Work (Module 4)","MRE= Medications, Reproductive Health, Exercise, and Sleep (Module 2)" , "SAS= Smoking, Alcohol, and Sun Exposure (Module 3)")
-
-# Printing vector without "#" symbol
-#cat(my_vector, sep = "\n", "\n", comment = "")
-
-#paste(my_vector, collapse = '\n') %>% cat()
-
-```
 
 In order of how the sections appear on MyConnect, the Initial Survey Sections are:  
 
@@ -226,7 +212,9 @@ tab1(modules1$process, decimal=2,sort.group = "decreasing", cum.percent = TRUE)$
 completion <- modules1[, c(1,10)]
 all_data <- left_join(data_tib, completion, by="Connect_ID")
 
-all_data <- all_data %>%  mutate(Site = case_when(d_827220437==125001209 ~ "KP Colorado",
+
+all_data <- all_data %>%  mutate(Site = case_when(d_827220437==472940358 ~ "Baylor Scott & White Health",
+                                                  d_827220437==125001209 ~ "KP Colorado",
                                                   d_827220437==327912200 ~ "KP Georgia",
                                                   d_827220437==300267574 ~ "KP Hawaii",
                                                   d_827220437==452412599 ~ "KP Northwest",
@@ -237,12 +225,13 @@ all_data <- all_data %>%  mutate(Site = case_when(d_827220437==125001209 ~ "KP C
                                                   d_827220437==809703864 ~ "UChicago"),
                                  BSL_compl = case_when(d_100767870==353358909 ~ "All Baseline Modules Completed",
                                                        TRUE ~ "One or More Baseline Modules Not Completed"))
+all_data$Site <- factor(all_data$Site, levels=c("Baylor Scott & White Health","HealthPartners", "Henry Ford","Marshfield","Sanford","UChicago","KP Colorado","KP Georgia", "KP Hawaii","KP Northwest"))
 
 ```
 
  \newpage
 
-```{r newTable1, echo=FALSE, warning=FALSE, message=FALSE}
+```{r newTable1, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
 
 comp_by_site <- all_data  %>% select(Site, BSL_compl) %>% 
@@ -256,9 +245,12 @@ comp_by_site <- all_data  %>% select(Site, BSL_compl) %>%
 
 comp_by_site_totals <- as.data.frame(comp_by_site)
 comp_by_site_totals <- comp_by_site_totals[-1, ]
-comp_by_site_totals <- comp_by_site_totals[c(9,5, 2:4,6:8, 1,10), ]
 
-knitr::kable(comp_by_site_totals , caption='Table 1.Completion of Initial Surveys by Site', row.names=FALSE,align=c("l","c","c","c"), booktabs = TRUE) %>%  add_indent(c(1:9))  %>% kable_styling(latex_options = "scale_down")
+total_rows <- nrow(comp_by_site_totals)
+knitr::kable(comp_by_site_totals , caption='Table 1.Completion of Initial Surveys by Site', row.names=FALSE,align=c("l","c","c","c"),
+             #col.names=c("", "All Baseline Modules Completed", "One or More Baseline \n Modules Not Completed", "Total"), escape=F,
+             booktabs = TRUE) %>%  add_indent(seq(1, total_rows - 1))  %>% kable_styling(latex_options = "scale_down") # %>%  column_spec(3:4, width = "4cm")
+#
 
 ```
 

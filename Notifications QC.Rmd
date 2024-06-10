@@ -1,6 +1,6 @@
 ---
 title: "Notifications QC"
-author: "Kelsey Dowling"
+author: "Kelsey Sanchez"
 date: "Report reflects notifications data from: `r format(Sys.Date() - 8, '%B %d , %Y')` to `r format(Sys.Date() - 1, '%B %d , %Y')`"
 header-includes:  
     \usepackage{placeins}

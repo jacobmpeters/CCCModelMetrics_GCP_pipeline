@@ -1,6 +1,6 @@
 ---
 title: "Aleah's Proposal"
-author: "Kelsey Dowling"
+author: "Kelsey Sanchez"
 date: "`r Sys.Date()`"
 header-includes:  
   \usepackage[labelformat=empty]{caption}
@@ -367,6 +367,9 @@ proposal_aleah <- proposal_aleah %>%  mutate(marketing = case_when(((d_142654897
 # 12589  traditional
 # 2407 both
 
+
+
+
 proposal_aleah$marketing <- factor(proposal_aleah$marketing,levels=c("Digital","Traditional", "Both"))
 
 # Define your demographic variables
@@ -518,6 +521,76 @@ print(compare_all)
 ```
 
 
+```{r}
+
+
+methods <- c("d_142654897_d_461488577","d_142654897_d_607081902","d_142654897_d_241590841","d_142654897_d_206879104","d_142654897_d_642287621 ","d_142654897_d_285130077",
+              "d_142654897_d_684726272","d_142654897_d_942255248", "d_142654897_d_639721694","d_142654897_d_196856782", "d_142654897_d_177402915","d_142654897_d_791389099", 
+             "d_142654897_d_520301146","d_142654897_d_549687190", "d_142654897_d_326825649", "d_142654897_d_819377306", "d_142654897_d_829269606","d_142654897_d_967372009")
+# Remove leading or trailing spaces from method names
+methods <- trimws(methods)
+
+# Define the list of demographics
+demographics <- c("Age", "Race", "Sex", "Income", "Education", "Site")
+
+# Initialize an empty list to store results
+all_results <- list()
+
+
+
+# Iterate over each demographic
+for (demo in demographics) {
+  # Initialize an empty list to store results for the current demographic
+  result_list <- list()
+  
+  # Iterate over each method
+  for (method in methods) {
+    # Subset the data to include only rows where the current method is 353358909
+    subset_data <- subset(proposal_aleah, get(method) == 353358909)
+    
+    # Use table() to get counts of each demographic category
+    counts <- table(subset_data[[demo]])
+    
+    # Store the result in the list
+    result_list[[method]] <- counts
+  }
+  
+  # Combine all results for the current demographic into a single data frame
+  final_result <- as.data.frame(do.call(cbind, result_list))
+    colnames(final_result) <- methods
+  
+  # Add demographic category as a column
+  final_result[[demo]] <- row.names(final_result)
+  
+  # Reorder the columns
+  final_result <- final_result[, c(demo, methods)]
+  
+  # Rename the columns to match DD
+   colnames(final_result) <- c(demo, "Email/Text Invite","Patient Portal Invite","IHCS Web","Connect Web","Social Media Post", "Video", "IHCS Newsletter","Mailed Letter", "Phone Invite", "Dr/Staff", "Connect Staff at IHCS", "Connect in News",  "Local News/TV/Radio","Family/Friend", "Another Participant", "Poster at IHCS", "Table at Event","Recorded Message")
+  
+   # Add a row for total counts and percentage
+  total_counts <- colSums(final_result[, 2:ncol(final_result)])
+  total_percentage <- round((total_counts / nrow(proposal_aleah)) * 100, 1)
+  total_row <- c("Total", paste(total_counts, " (", total_percentage, "%)", sep = ""))
+  final_result <- rbind(final_result, total_row)
+  
+   # Save the result as a CSV file
+  file_name <- paste0(demo, "_counts.csv")
+  write.csv(final_result, file = file_name, row.names = FALSE)
+  
+  # Store the result for the current demographic in the overall list
+  all_results[[demo]] <- final_result
+}
+
+# Print the results for all demographics
+for (demo in demographics) {
+  print(all_results[[demo]])
+}
+
+
+
+
+```
 
 
 
@@ -760,3 +833,70 @@ print(compare_all)
 
 
 
+```{r}
+
+
+methods <- c("d_142654897_d_461488577","d_142654897_d_607081902","d_142654897_d_241590841","d_142654897_d_206879104","d_142654897_d_642287621 ","d_142654897_d_285130077",
+              "d_142654897_d_684726272","d_142654897_d_942255248", "d_142654897_d_639721694","d_142654897_d_196856782", "d_142654897_d_177402915","d_142654897_d_791389099", 
+             "d_142654897_d_520301146","d_142654897_d_549687190", "d_142654897_d_326825649", "d_142654897_d_819377306", "d_142654897_d_829269606","d_142654897_d_967372009")
+# Remove leading or trailing spaces from method names
+methods <- trimws(methods)
+
+# Define the list of demographics
+demographics <- c("Age", "Race", "Sex",  "Site")
+
+# Initialize an empty list to store results
+all_results <- list()
+
+# Iterate over each demographic
+for (demo in demographics) {
+  # Initialize an empty list to store results for the current demographic
+  result_list <- list()
+  
+  # Iterate over each method
+  for (method in methods) {
+    # Subset the data to include only rows where the current method is 353358909
+    subset_data <- subset(site_demographics, get(method) == 353358909)
+    
+    # Use table() to get counts of each demographic category
+    counts <- table(subset_data[[demo]])
+    
+    # Store the result in the list
+    result_list[[method]] <- counts
+  }
+  
+  # Combine all results for the current demographic into a single data frame
+  final_result <- as.data.frame(do.call(cbind, result_list))
+    colnames(final_result) <- methods
+  
+  # Add demographic category as a column
+  final_result[[demo]] <- row.names(final_result)
+  
+  # Reorder the columns
+  final_result <- final_result[, c(demo, methods)]
+  
+  # Rename the columns to match DD
+   colnames(final_result) <- c(demo, "Email/Text Invite","Patient Portal Invite","IHCS Web","Connect Web","Social Media Post", "Video", "IHCS Newsletter","Mailed Letter", "Phone Invite", "Dr/Staff", "Connect Staff at IHCS", "Connect in News",  "Local News/TV/Radio","Family/Friend", "Another Participant", "Poster at IHCS", "Table at Event","Recorded Message")
+  
+        # Add a row for total counts and percentage
+  total_counts <- colSums(final_result[, 2:ncol(final_result)])
+  total_percentage <- round((total_counts / nrow(site_demographics)) * 100, 1)
+  total_row <- c("Total", paste(total_counts, " (", total_percentage, "%)", sep = ""))
+  final_result <- rbind(final_result, total_row)
+  
+   # Save the result as a CSV file
+  file_name <- paste0("Site_", demo, "_counts.csv")
+  write.csv(final_result, file = file_name, row.names = FALSE)
+  
+  
+  # Store the result for the current demographic in the overall list
+  all_results[[demo]] <- final_result
+}
+
+# Print the results for all demographics
+for (demo in demographics) {
+  print(all_results[[demo]])
+}
+
+
+```
