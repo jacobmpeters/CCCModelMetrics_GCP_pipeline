@@ -78,7 +78,7 @@ module1_qc_metrics:
     - "203464977998" # internal
   gcp_info:
     cloud_scheduler: ccc-module1-qc-metrics
-    frequency: "45 13 * * 1" # every Monday at 1:30 PM"
+    frequency: "45 13 * * 1" # every Monday 
     
 qol_stats:
   r_file_name: "3 Month Quality of Life Survey Summary Statistics.Rmd"
@@ -87,7 +87,7 @@ qol_stats:
     - "251314285484" # internal
   gcp_info:
     cloud_scheduler: ccc-qol-statistics
-    frequency: "00 14 * * 1" # every Monday at 2 PM"
+    frequency: "00 14 * * 1" 
 
 recruitment_qc_metrics:
   r_file_name: "Rectruitment Derived Variable QC.Rmd"
@@ -109,9 +109,18 @@ notifications_qc_metrics:
     
 data_destruction_qc_metrics:
   r_file_name: "Data Destruction CSV Output.R"
-  report_file_name: "Data_Destruction_CSV Output.R.pdf"
+  report_file_name: "Data_Destruction_CSV_Output.pdf"
   box_folders:
     - "255783409227"
   gcp_info:
     cloud_scheduler: ccc-data-destruction-qc-metrics
-    frequency: "30 13 * * 1" # every Monday at 1:30 PM"
+    frequency: "30 13 * * 1" 
+    
+promis_notification_metrics:
+  r_file_name: "PROMIS Completion vs Notifications.Rmd"
+  report_file_name: "PROMIS_Completion_vs_Notifications.pdf"
+  box_folders:
+    - "262287498430"
+  gcp_info:
+    cloud_scheduler: ccc-promis-notification-metrics
+    frequency: "45 13 * * 1" 
