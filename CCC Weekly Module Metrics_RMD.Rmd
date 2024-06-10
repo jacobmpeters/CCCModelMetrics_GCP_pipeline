@@ -274,7 +274,8 @@ all_srvy_comp_totals <- as.data.frame(all_srvy_comp)
 all_srvy_comp_totals <- all_srvy_comp_totals[-1, ]
 all_srvy_comp_totals <- all_srvy_comp_totals[c(9,5, 2:4,6:8, 1,10), ]
 
-overall_surveys <- knitr::kable(all_srvy_comp_totals ,col.names=c("Sections Submitted", "Active Verified","Passive Verified", "Total Verified"), caption='Table 2. Initial Survey Submission Among Verified Participants \n Stratified by Active and Passive Recruits', row.names=FALSE,align=c("l","c","c","c"), booktabs = TRUE) %>%  add_indent(c(1:9))  %>% kable_styling(latex_options = "scale_down")
+total_rows2 <- nrow(all_srvy_comp_totals)
+overall_surveys <- knitr::kable(all_srvy_comp_totals ,col.names=c("Sections Submitted", "Active Verified","Passive Verified", "Total Verified"), caption='Table 2. Initial Survey Submission Among Verified Participants \n Stratified by Active and Passive Recruits', row.names=FALSE,align=c("l","c","c","c"), booktabs = TRUE) %>%  add_indent(seq(1, total_rows2 - 1))  %>% kable_styling(latex_options = "scale_down")
 
 add_footnote(overall_surveys, "Note: All sections were in MyConnect on July 5,2022. There were 766 verified participants beore that date.", notation = "none")
 
@@ -666,7 +667,8 @@ Module1_in_minutes_summary <- bind_rows(Module1_in_minutes_summary, summary_row)
 table6.1_sum <- Module1_in_minutes_summary %>% mutate(np = paste0(n, " (", round(percentage, digits=2), "%)"),
                                                       cumulative_percentage = paste0(round(cumulative_percentage, digits=2), "%")) %>% select(time_frame, np, cumulative_percentage)
 
-knitr::kable(table6.1_sum, caption='Table 6.1 BOH Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c","c"),digits=1, booktabs = TRUE) %>%  add_indent(c(1:9))  %>% kable_styling(latex_options = "hold_position")
+total_rows3 <- nrow(all_srvy_comp_totals)
+knitr::kable(table6.1_sum, caption='Table 6.1 BOH Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c","c"),digits=1, booktabs = TRUE) %>%  add_indent(seq(1, total_rows3 - 1))  %>% kable_styling(latex_options = "hold_position")
 
 
 
@@ -695,7 +697,8 @@ Module2_in_minutes_summary <- bind_rows(Module2_in_minutes_summary, summary_row)
 table6.2_sum <- Module2_in_minutes_summary %>% mutate(np = paste0(n, " (", round(percentage, digits=2), "%)"),
                                                       cumulative_percentage = paste0(round(cumulative_percentage, digits=2), "%")) %>% select(time_frame, np, cumulative_percentage)
 
-knitr::kable(table6.2_sum, caption='Table 6.2 MRE Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(c(1:9))  %>% kable_styling(latex_options = "hold_position")
+total_rows4 <- nrow(all_srvy_comp_totals)
+knitr::kable(table6.2_sum, caption='Table 6.2 MRE Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(seq(1, total_rows4 - 1))  %>% kable_styling(latex_options = "hold_position")
 
 
 
@@ -725,7 +728,8 @@ Module3_in_minutes_summary <- bind_rows(Module3_in_minutes_summary, summary_row)
 table6.3_sum <- Module3_in_minutes_summary %>% mutate(np = paste0(n, " (", round(percentage, digits=2), "%)"),
                                                       cumulative_percentage = paste0(round(cumulative_percentage, digits=2), "%")) %>% select(time_frame, np, cumulative_percentage)
 
-knitr::kable(table6.3_sum, caption='Table 6.3 SAS Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(c(1:9)) %>% kable_styling(latex_options = "hold_position")
+total_rows5 <- nrow(all_srvy_comp_totals)
+knitr::kable(table6.3_sum, caption='Table 6.3 SAS Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(seq(1, total_rows5 - 1)) %>% kable_styling(latex_options = "hold_position")
 
 
 
@@ -755,7 +759,8 @@ Module4_in_minutes_summary <- bind_rows(Module4_in_minutes_summary, summary_row)
 table6.4_sum <- Module4_in_minutes_summary %>% mutate(np = paste0(n, " (", round(percentage, digits=2), "%)"),
                                                       cumulative_percentage = paste0(round(cumulative_percentage, digits=2), "%")) %>% select(time_frame, np, cumulative_percentage)
 
-knitr::kable(table6.4_sum, caption='Table 6.4 LAW Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(c(1:9)) %>% kable_styling(latex_options = "hold_position")
+total_rows7 <- nrow(all_srvy_comp_totals)
+knitr::kable(table6.4_sum, caption='Table 6.4 LAW Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(seq(1, total_rows7 - 1)) %>% kable_styling(latex_options = "hold_position")
 
 
 ```
