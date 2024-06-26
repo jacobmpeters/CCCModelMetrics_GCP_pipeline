@@ -97,7 +97,8 @@ WHERE
         'Verified, BL Survey Reminders New Pts 7th Contact',
         'Verified, BL Survey Reminders New Pts 8th Contact',
         'Verified, BL Survey Reminders New Pts 9th Contact',
-        'newsletter'
+        'newsletter',
+        'HP PI Change'
     )
 UNION ALL
 SELECT 

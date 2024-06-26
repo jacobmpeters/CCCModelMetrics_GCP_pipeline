@@ -859,11 +859,11 @@ grid.arrange(cglifeE, cglifeF, nrow=2)
 
 
 #CIGLIFEG
-hist_funct(D_434034366, "CIGLIFEG: Cigarette Smoked per Day at Ages 60-69", "Cigarettes", "Frequency")
+cglifeG=hist_funct(D_434034366, "CIGLIFEG: Cigarette Smoked per Day at Ages 60-69", "Cigarettes", "Frequency")
 
 #CIGLIFEH
-#hist_funct(D_842088582, "CIGLIFEH: Cigarette Smoked per Day at Ages 70+", "Cigarettes", "Frequency") #no one yet
-#grid.arrange(cglifeA, cglifeB, nrow=2)
+hist_funct(D_842088582, "CIGLIFEH: Cigarette Smoked per Day at Ages 70+", "Cigarettes", "Frequency") #no one yet
+cglifeH=grid.arrange(cglifeG, cglifeH, nrow=2)
 
 ```
 
@@ -1242,7 +1242,7 @@ dtCIGAR10_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   ) %>% opt_row_striping()
 
 #CIGARLIFEA
-#hist_funct(D_254689566, "CIGARLIFEA: Cigars Smoked per Day at Ages 0-17", "Cigars", "Frequency") #no one yet
+hist_funct(D_254689566, "CIGARLIFEA: Cigars Smoked per Day at Ages 0-17", "Cigars", "Frequency") #no one yet
 
 #CIGARLIFEB
 cigrlfB=hist_funct(D_951151270, "CIGARLIFEB: Cigars Smoked per Day at Ages 18-24", "Cigars", "Frequency") 
@@ -1705,27 +1705,27 @@ funct_9b(D_981755099, D_472007171, D_787047261, D_585702271, D_720305356, "HOOKA
 
 
 #HOOKAHLIFEA
-#simple_funct3(D_445712879,"HOOKAHLIFEA: Time Hookah Smoked per Day at Ages 0-17") #no one yet 
+simple_funct3(D_445712879,"HOOKAHLIFEA: Time Hookah Smoked per Day at Ages 0-17") #no one yet 
 
 
 #HOOKAHLIFEB
-#simple_funct3(D_620425840,"HOOKAHLIFEB: Time Hookah Smoked per Day at Ages 18-24")#no one yet
+simple_funct3(D_620425840,"HOOKAHLIFEB: Time Hookah Smoked per Day at Ages 18-24")#no one yet
 
 
 #HOOKAHLIFEC
-#simple_funct3(D_798627028,"HOOKAHLIFEC: Time Hookah Smoked per Day at Ages 25-29") #no one yet
+simple_funct3(D_798627028,"HOOKAHLIFEC: Time Hookah Smoked per Day at Ages 25-29") #no one yet
 
 
 #HOOKAHLIFED
-#simple_funct3(D_584608368,"HOOKAHLIFED: Time Hookah Smoked per Day at Ages 30-39") #no one yet
+simple_funct3(D_584608368,"HOOKAHLIFED: Time Hookah Smoked per Day at Ages 30-39") #no one yet
 
 
 #HOOKAHLIFEE
-#simple_funct3(D_921623945,"HOOKAHLIFEE: Time Hookah Smoked per Day at Ages 40-49") #no one yet
+simple_funct3(D_921623945,"HOOKAHLIFEE: Time Hookah Smoked per Day at Ages 40-49") #no one yet
 
 
 #HOOKAHLIFEF
-#simple_funct3(D_370253256,"HOOKAHLIFEF: Time Hookah Smoked per Day at Ages 50-59") #no one yet
+simple_funct3(D_370253256,"HOOKAHLIFEF: Time Hookah Smoked per Day at Ages 50-59") #no one yet
 
 
 #HOOKAHLIFEG
