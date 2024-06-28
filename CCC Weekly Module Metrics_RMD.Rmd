@@ -3,17 +3,21 @@
 title: "Weekly CCC Metrics for Sections BOH, LAW, MRE, and SAS"
 author: "Kelsey Sanchez"
 date: 'Data Extracted and Report Ran: `r Sys.Date()`'
+header-includes: 
+  \usepackage[labelformat=empty]{caption} 
+  \usepackage{placeins} 
+  \usepackage{booktabs}
+  \usepackage{pdflscape}
+  
 output:
   pdf_document:
-    extra_dependencies: float
+    extra_dependencies: ["float"]
     toc: no
     keep_tex: yes
     fig_width: 7
     fig_height: 5
     fig_caption: yes
     df_print: paged
-header-includes: \usepackage[labelformat=empty]{caption} \usepackage{placeins} \usepackage{booktabs}
-  \usepackage{pdflscape}
 ---
 
 
@@ -56,24 +60,6 @@ bq_auth()
 ```
 
 
-```{r, echo=FALSE}
-
-# cat("In order of how the sections appear on MyConnect, the Initial Survey Sections are: \n 
-# BOH= Background and Overall Health (Module 1)  \n
-# LAW= Where you Live and Work (Module 4)\n
-# MRE= Medications, Reproductive Health, Exercise, and Sleep (Module 2)\n
-# SAS= Smoking, Alcohol, and Sun Exposure (Module 3)")
-
-# Example vector with # symbol
-#my_vector <- c("In order of how the sections appear on MyConnect, the Initial Survey Sections are:", "BOH= Background and Overall Health (Module 1)", "LAW= Where you Live and Work (Module 4)","MRE= Medications, Reproductive Health, Exercise, and Sleep (Module 2)" , "SAS= Smoking, Alcohol, and Sun Exposure (Module 3)")
-
-# Printing vector without "#" symbol
-#cat(my_vector, sep = "\n", "\n", comment = "")
-
-#paste(my_vector, collapse = '\n') %>% cat()
-
-```
-
 In order of how the sections appear on MyConnect, the Initial Survey Sections are:  
 
 BOH= Background and Overall Health (Module 1)  
@@ -85,82 +71,10 @@ MRE= Medications, Reproductive Health, Exercise, and Sleep (Module 2)
 SAS= Smoking, Alcohol, and Sun Exposure (Module 3)
 
 
-```{r querystatus, include=FALSE}
 
-# ##Make sure SQL queries are properly running
-# 
-# 
-# check_sch_query_status <- 
-#   function(project, table_name){
-# 
-#     ## Set default project for BQ CLI
-#     #set_proj_cmd <- paste0("bq ls -j --project_id ", project, " > /dev/null")
-#     #system(set_proj_cmd)
-#     
-#     # Get list of scheduled queries from bq
-#     bq_request <- 'bq ls --transfer_config --transfer_location="us" --filter="dataSourceIds:scheduled_query"'
-#     response   <- system(bq_request, intern=TRUE)
-#     # Remove second line "----" of table and remove white space from each row
-#     response   <- lapply(response[-2], function(x) scan(text = x, what = ""))
-#     header     <- simplify2array(response[1]) # Array of column names
-#     
-#     # Bind rows of data into one array
-#     for (i in length(header)){
-#       x <- c() # Initialize array with first non-header line of data
-#       # Loop through remaining data
-#       for (line in response[2:length(response)]){
-#         x <- rbind(x, line)
-#       }
-#     }
-#     
-#     # Format as dataframe
-#     df <- data.frame(x, row.names = NULL)
-#     colnames(df) <- header
-#     
-#     # Return sch. query status as "SUCCEEDED", "PENDING", "RUNNING" or "FAILED".
-#     df$state[df$displayName==table_name] 
-#   }
-# 
-# 
-# table_name <- "FlatConnect.participants_JP"
-# project    <- "nih-nci-dceg-connect-prod-6d04"
-# 
-# # Check status of scheduled query
-# query_status <- check_sch_query_status(project, table_name)
-# switch(query_status,
-#  "FAILED"    = stop(paste0("The sch. query for ", table_name, " failed. Reach out to Jake.")),
-#   "PENDING"   = stop(paste0("The query for ", table_name, " is scheduled and waiting to be run.")),
-#   "RUNNING"   = stop(paste0("The sch. query for ", table_name, " is still running. Wait until complete.")),
-#   "SUCCEEDED" = print(paste0("The most recent scheduled query for ", table_name, " succeeded. The table is up-to-date."))
-# )
-# 
-# 
-# table_name <- "FlatConnect.bioSurvey_v1_JP"
-# project    <- "nih-nci-dceg-connect-prod-6d04"
-# 
-# # Check status of scheduled query
-# query_status <- check_sch_query_status(project, table_name)
-# switch(query_status,
-#  "FAILED"    = stop(paste0("The sch. query for ", table_name, " failed. Reach out to Jake.")),
-#   "PENDING"   = stop(paste0("The query for ", table_name, " is scheduled and waiting to be run.")),
-#   "RUNNING"   = stop(paste0("The sch. query for ", table_name, " is still running. Wait until complete.")),
-#   "SUCCEEDED" = print(paste0("The most recent scheduled query for ", table_name, " succeeded. The table is up-to-date."))
-# )
-
-
-```
 
 
 ```{r BQPull, include=FALSE}
-## CCC WEEKLY METRICS REPORT 
-
-
-
-### To run the code, note questions 1,5,6,7, and 8 apply to all modules and questions 2-4 apply individually to each module. Run #1 first, then #2-4 for reach module, then #6-8
-
-
-
-##Load Data from BQ
 
 project_cc = "nih-nci-dceg-connect-prod-6d04"
 queryreccc <- "SELECT  Connect_ID, d_512820379, d_821247024, d_914594314, d_832139544, d_949302066 , d_205553981, d_536735468 , d_976570371, d_663265240, d_265193023, d_222161762,d_770257102, d_264644252, d_265193023, d_541836531, d_386488297, d_452942800, d_517311251 , d_822499427, d_126331570, d_914639140, d_311580100, d_827220437, d_100767870, d_831041022 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IS NOT NULL  and (d_512820379='486306141' OR d_512820379='854703046') " 
@@ -226,7 +140,9 @@ tab1(modules1$process, decimal=2,sort.group = "decreasing", cum.percent = TRUE)$
 completion <- modules1[, c(1,10)]
 all_data <- left_join(data_tib, completion, by="Connect_ID")
 
-all_data <- all_data %>%  mutate(Site = case_when(d_827220437==125001209 ~ "KP Colorado",
+
+all_data <- all_data %>%  mutate(Site = case_when(d_827220437==472940358 ~ "Baylor Scott & White Health",
+                                                  d_827220437==125001209 ~ "KP Colorado",
                                                   d_827220437==327912200 ~ "KP Georgia",
                                                   d_827220437==300267574 ~ "KP Hawaii",
                                                   d_827220437==452412599 ~ "KP Northwest",
@@ -237,12 +153,13 @@ all_data <- all_data %>%  mutate(Site = case_when(d_827220437==125001209 ~ "KP C
                                                   d_827220437==809703864 ~ "UChicago"),
                                  BSL_compl = case_when(d_100767870==353358909 ~ "All Baseline Modules Completed",
                                                        TRUE ~ "One or More Baseline Modules Not Completed"))
+all_data$Site <- factor(all_data$Site, levels=c("Baylor Scott & White Health","HealthPartners", "Henry Ford","Marshfield","Sanford","UChicago","KP Colorado","KP Georgia", "KP Hawaii","KP Northwest"))
 
 ```
 
  \newpage
 
-```{r newTable1, echo=FALSE, warning=FALSE, message=FALSE}
+```{r newTable1, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
 
 comp_by_site <- all_data  %>% select(Site, BSL_compl) %>% 
@@ -256,9 +173,12 @@ comp_by_site <- all_data  %>% select(Site, BSL_compl) %>%
 
 comp_by_site_totals <- as.data.frame(comp_by_site)
 comp_by_site_totals <- comp_by_site_totals[-1, ]
-comp_by_site_totals <- comp_by_site_totals[c(9,5, 2:4,6:8, 1,10), ]
 
-knitr::kable(comp_by_site_totals , caption='Table 1.Completion of Initial Surveys by Site', row.names=FALSE,align=c("l","c","c","c"), booktabs = TRUE) %>%  add_indent(c(1:9))  %>% kable_styling(latex_options = "scale_down")
+total_rows <- nrow(comp_by_site_totals)
+knitr::kable(comp_by_site_totals , caption='Table 1.Completion of Initial Surveys by Site', row.names=FALSE,align=c("l","c","c","c"),
+             #col.names=c("", "All Baseline Modules Completed", "One or More Baseline \n Modules Not Completed", "Total"), escape=F,
+             booktabs = TRUE) %>%  add_indent(seq(1, total_rows - 1))  %>% kable_styling(latex_options = "scale_down") # %>%  column_spec(3:4, width = "4cm")
+#
 
 ```
 
@@ -282,7 +202,8 @@ all_srvy_comp_totals <- as.data.frame(all_srvy_comp)
 all_srvy_comp_totals <- all_srvy_comp_totals[-1, ]
 all_srvy_comp_totals <- all_srvy_comp_totals[c(9,5, 2:4,6:8, 1,10), ]
 
-overall_surveys <- knitr::kable(all_srvy_comp_totals ,col.names=c("Sections Submitted", "Active Verified","Passive Verified", "Total Verified"), caption='Table 2. Initial Survey Submission Among Verified Participants \n Stratified by Active and Passive Recruits', row.names=FALSE,align=c("l","c","c","c"), booktabs = TRUE) %>%  add_indent(c(1:9))  %>% kable_styling(latex_options = "scale_down")
+total_rows2 <- nrow(all_srvy_comp_totals)
+overall_surveys <- knitr::kable(all_srvy_comp_totals ,col.names=c("Sections Submitted", "Active Verified","Passive Verified", "Total Verified"), caption='Table 2. Initial Survey Submission Among Verified Participants \n Stratified by Active and Passive Recruits', row.names=FALSE,align=c("l","c","c","c"), booktabs = TRUE) %>%  add_indent(seq(1, total_rows2 - 1))  %>% kable_styling(latex_options = "scale_down")
 
 add_footnote(overall_surveys, "Note: All sections were in MyConnect on July 5,2022. There were 766 verified participants beore that date.", notation = "none")
 
@@ -674,7 +595,8 @@ Module1_in_minutes_summary <- bind_rows(Module1_in_minutes_summary, summary_row)
 table6.1_sum <- Module1_in_minutes_summary %>% mutate(np = paste0(n, " (", round(percentage, digits=2), "%)"),
                                                       cumulative_percentage = paste0(round(cumulative_percentage, digits=2), "%")) %>% select(time_frame, np, cumulative_percentage)
 
-knitr::kable(table6.1_sum, caption='Table 6.1 BOH Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c","c"),digits=1, booktabs = TRUE) %>%  add_indent(c(1:9))  %>% kable_styling(latex_options = "hold_position")
+total_rows3 <- nrow(all_srvy_comp_totals)
+knitr::kable(table6.1_sum, caption='Table 6.1 BOH Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c","c"),digits=1, booktabs = TRUE) %>%  add_indent(seq(1, total_rows3 - 1))  %>% kable_styling(latex_options = "hold_position")
 
 
 
@@ -703,7 +625,8 @@ Module2_in_minutes_summary <- bind_rows(Module2_in_minutes_summary, summary_row)
 table6.2_sum <- Module2_in_minutes_summary %>% mutate(np = paste0(n, " (", round(percentage, digits=2), "%)"),
                                                       cumulative_percentage = paste0(round(cumulative_percentage, digits=2), "%")) %>% select(time_frame, np, cumulative_percentage)
 
-knitr::kable(table6.2_sum, caption='Table 6.2 MRE Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(c(1:9))  %>% kable_styling(latex_options = "hold_position")
+total_rows4 <- nrow(all_srvy_comp_totals)
+knitr::kable(table6.2_sum, caption='Table 6.2 MRE Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(seq(1, total_rows4 - 1))  %>% kable_styling(latex_options = "hold_position")
 
 
 
@@ -733,7 +656,8 @@ Module3_in_minutes_summary <- bind_rows(Module3_in_minutes_summary, summary_row)
 table6.3_sum <- Module3_in_minutes_summary %>% mutate(np = paste0(n, " (", round(percentage, digits=2), "%)"),
                                                       cumulative_percentage = paste0(round(cumulative_percentage, digits=2), "%")) %>% select(time_frame, np, cumulative_percentage)
 
-knitr::kable(table6.3_sum, caption='Table 6.3 SAS Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(c(1:9)) %>% kable_styling(latex_options = "hold_position")
+total_rows5 <- nrow(all_srvy_comp_totals)
+knitr::kable(table6.3_sum, caption='Table 6.3 SAS Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(seq(1, total_rows5 - 1)) %>% kable_styling(latex_options = "hold_position")
 
 
 
@@ -763,7 +687,8 @@ Module4_in_minutes_summary <- bind_rows(Module4_in_minutes_summary, summary_row)
 table6.4_sum <- Module4_in_minutes_summary %>% mutate(np = paste0(n, " (", round(percentage, digits=2), "%)"),
                                                       cumulative_percentage = paste0(round(cumulative_percentage, digits=2), "%")) %>% select(time_frame, np, cumulative_percentage)
 
-knitr::kable(table6.4_sum, caption='Table 6.4 LAW Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(c(1:9)) %>% kable_styling(latex_options = "hold_position")
+total_rows7 <- nrow(all_srvy_comp_totals)
+knitr::kable(table6.4_sum, caption='Table 6.4 LAW Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(seq(1, total_rows7 - 1)) %>% kable_styling(latex_options = "hold_position")
 
 
 ```

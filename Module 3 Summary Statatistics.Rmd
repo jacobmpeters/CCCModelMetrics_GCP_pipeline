@@ -1,6 +1,6 @@
 ---
 title: "Module 3 Summary Statatistics"
-author: "Kelsey Dowling"
+author: "Kelsey Sanchez"
 date: "`r Sys.Date()`"
 output:
   pdf_document: default
@@ -859,11 +859,11 @@ grid.arrange(cglifeE, cglifeF, nrow=2)
 
 
 #CIGLIFEG
-hist_funct(D_434034366, "CIGLIFEG: Cigarette Smoked per Day at Ages 60-69", "Cigarettes", "Frequency")
+cglifeG=hist_funct(D_434034366, "CIGLIFEG: Cigarette Smoked per Day at Ages 60-69", "Cigarettes", "Frequency")
 
 #CIGLIFEH
-#hist_funct(D_842088582, "CIGLIFEH: Cigarette Smoked per Day at Ages 70+", "Cigarettes", "Frequency") #no one yet
-#grid.arrange(cglifeA, cglifeB, nrow=2)
+hist_funct(D_842088582, "CIGLIFEH: Cigarette Smoked per Day at Ages 70+", "Cigarettes", "Frequency") #no one yet
+cglifeH=grid.arrange(cglifeG, cglifeH, nrow=2)
 
 ```
 
@@ -978,12 +978,13 @@ mhgroup9= data_tib_all3 %>%  filter(D_624111331==132232896 & !is.na(D_550244580_
                                       as.numeric(data_tib_all3$D_550244580_D_517801904)<40  & 
                                       (is.na(data_tib_all3$D_360277949) | !(as.numeric(data_tib_all3$D_360277949)<30))) %>% 
   mutate(surgery= case_when(D_442002787==428999623 ~ "15 minutes or less",
-                                             D_442002787==248303092 ~ "16 to 30 minutes",
-                                             D_442002787==998679771 ~ "31 to 59 minutes",
-                                             D_442002787==638092100 ~ "1 hour",
-                                             D_442002787==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-mhgroup9$surgery <- factor(mhgroup9$surgery,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                            D_442002787 == 248303092 ~ "16 to 30 minutes",
+                            D_442002787 == 998679771 ~ "31 to 59 minutes",
+                            D_442002787 == 638092100 ~ "1 hour",
+                            D_442002787 == 127455035 ~ "2 hours or more",
+                            D_442002787 == 402752509 ~ "Didn’t use during this time",
+                            TRUE ~ "Skipped this question"))
+mhgroup9$surgery <- factor(mhgroup9$surgery,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_surgery_summary <- mhgroup9 %>% dplyr::group_by(surgery) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(surgery, n, percentage)
 
@@ -1012,12 +1013,13 @@ mhgroup9= data_tib_all3 %>%  filter(D_624111331==132232896 & !is.na(D_550244580_
                                       (is.na(data_tib_all3$D_360277949) | !(as.numeric(data_tib_all3$D_360277949)<40)) & 
                                       as.numeric(data_tib_all3$AGEGRID)>39) %>% 
   mutate(surgery= case_when(D_208578552==428999623 ~ "15 minutes or less",
-                                             D_208578552==248303092 ~ "16 to 30 minutes",
-                                             D_208578552==998679771 ~ "31 to 59 minutes",
-                                             D_208578552==638092100 ~ "1 hour",
-                                             D_208578552==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-mhgroup9$surgery <- factor(mhgroup9$surgery,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                            D_208578552 == 248303092 ~ "16 to 30 minutes",
+                            D_208578552 == 998679771 ~ "31 to 59 minutes",
+                            D_208578552 == 638092100 ~ "1 hour",
+                            D_208578552 == 127455035 ~ "2 hours or more",
+                            D_208578552 == 402752509 ~ "Didn’t use during this time",
+                            TRUE ~ "Skipped this question"))
+mhgroup9$surgery <- factor(mhgroup9$surgery,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_surgery_summary <- mhgroup9 %>% dplyr::group_by(surgery) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(surgery, n, percentage)
 
@@ -1045,12 +1047,13 @@ mhgroup9= data_tib_all3 %>%  filter(D_624111331==132232896 & !is.na(D_550244580_
                                       (is.na(data_tib_all3$D_360277949) | !(as.numeric(data_tib_all3$D_360277949)<50)) &
                                       as.numeric(data_tib_all3$AGEGRID)>49) %>% 
   mutate(surgery= case_when(D_480155628==428999623 ~ "15 minutes or less",
-                                             D_480155628==248303092 ~ "16 to 30 minutes",
-                                             D_480155628==998679771 ~ "31 to 59 minutes",
-                                             D_480155628==638092100 ~ "1 hour",
-                                             D_480155628==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-mhgroup9$surgery <- factor(mhgroup9$surgery,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                            D_480155628 == 248303092 ~ "16 to 30 minutes",
+                            D_480155628 == 998679771 ~ "31 to 59 minutes",
+                            D_480155628 == 638092100 ~ "1 hour",
+                            D_480155628 == 127455035 ~ "2 hours or more",
+                            D_480155628 == 402752509 ~ "Didn’t use during this time",
+                            TRUE ~ "Skipped this question"))
+mhgroup9$surgery <- factor(mhgroup9$surgery,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_surgery_summary <- mhgroup9 %>% dplyr::group_by(surgery) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(surgery, n, percentage)
 
@@ -1080,12 +1083,13 @@ mhgroup9= data_tib_all3 %>%  filter(D_624111331==132232896 & !is.na(D_550244580_
                                       (is.na(data_tib_all3$D_360277949) | !(as.numeric(data_tib_all3$D_360277949)<60)) &
                                       as.numeric(data_tib_all3$AGEGRID)>59) %>% 
   mutate(surgery= case_when(D_640944113==428999623 ~ "15 minutes or less",
-                                             D_640944113==248303092 ~ "16 to 30 minutes",
-                                             D_640944113==998679771 ~ "31 to 59 minutes",
-                                             D_640944113==638092100 ~ "1 hour",
-                                             D_640944113==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-mhgroup9$surgery <- factor(mhgroup9$surgery,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                            D_640944113 == 248303092 ~ "16 to 30 minutes",
+                            D_640944113 == 998679771 ~ "31 to 59 minutes",
+                            D_640944113 == 638092100 ~ "1 hour",
+                            D_640944113 == 127455035 ~ "2 hours or more",
+                            D_640944113 == 402752509 ~ "Didn’t use during this time",
+                            TRUE ~ "Skipped this question"))
+mhgroup9$surgery <- factor(mhgroup9$surgery,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_surgery_summary <- mhgroup9 %>% dplyr::group_by(surgery) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(surgery, n, percentage)
 
@@ -1238,7 +1242,7 @@ dtCIGAR10_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   ) %>% opt_row_striping()
 
 #CIGARLIFEA
-#hist_funct(D_254689566, "CIGARLIFEA: Cigars Smoked per Day at Ages 0-17", "Cigars", "Frequency") #no one yet
+hist_funct(D_254689566, "CIGARLIFEA: Cigars Smoked per Day at Ages 0-17", "Cigars", "Frequency") #no one yet
 
 #CIGARLIFEB
 cigrlfB=hist_funct(D_951151270, "CIGARLIFEB: Cigars Smoked per Day at Ages 18-24", "Cigars", "Frequency") 
@@ -1369,9 +1373,10 @@ lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_
                              D_495592561==248303092 ~ "16 to 30 minutes",
                              D_495592561==998679771 ~ "31 to 59 minutes",
                              D_495592561==638092100 ~ "1 hour",
-                             D_495592561==127455035 ~ "2 hours or more",
+                             D_495592561==127455035 ~ "2 hours or more", 
+                             D_495592561==402752509 ~ "Didn’t use during this time",
                                              TRUE ~ "Skipped this question"))
-lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
@@ -1399,12 +1404,13 @@ lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_
                                       as.numeric(data_tib_all3$D_257300783_D_424527685)<25 & 
                                       (is.na(data_tib_all3$D_671380198) | !(as.numeric(data_tib_all3$D_671380198)<18))) %>% 
   mutate(timespan= case_when(D_705282587==428999623 ~ "15 minutes or less",
-                                             D_705282587==248303092 ~ "16 to 30 minutes",
-                                             D_705282587==998679771 ~ "31 to 59 minutes",
-                                             D_705282587==638092100 ~ "1 hour",
-                                             D_705282587==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                             D_705282587 == 248303092 ~ "16 to 30 minutes",
+                             D_705282587 == 998679771 ~ "31 to 59 minutes",
+                             D_705282587 == 638092100 ~ "1 hour",
+                             D_705282587 == 127455035 ~ "2 hours or more",
+                             D_705282587 == 402752509 ~ "Didn’t use during this time",
+                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
@@ -1434,12 +1440,13 @@ lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_
                                       as.numeric(data_tib_all3$D_257300783_D_424527685)<30 & 
                                       (is.na(data_tib_all3$D_671380198) | !(as.numeric(data_tib_all3$D_671380198)<25))) %>% 
   mutate(timespan= case_when(D_133396976==428999623 ~ "15 minutes or less",
-                                             D_133396976==248303092 ~ "16 to 30 minutes",
-                                             D_133396976==998679771 ~ "31 to 59 minutes",
-                                             D_133396976==638092100 ~ "1 hour",
-                                             D_133396976==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                             D_133396976 == 248303092 ~ "16 to 30 minutes",
+                             D_133396976 == 998679771 ~ "31 to 59 minutes",
+                             D_133396976 == 638092100 ~ "1 hour",
+                             D_133396976 == 127455035 ~ "2 hours or more",
+                             D_133396976 == 402752509 ~ "Didn’t use during this time",
+                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
@@ -1467,12 +1474,13 @@ lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_
                                       as.numeric(data_tib_all3$D_257300783_D_424527685)<40 & 
                                       (is.na(data_tib_all3$D_671380198) | !(as.numeric(data_tib_all3$D_671380198)<30))) %>% 
   mutate(timespan= case_when(D_628770824==428999623 ~ "15 minutes or less",
-                                             D_628770824==248303092 ~ "16 to 30 minutes",
-                                             D_628770824==998679771 ~ "31 to 59 minutes",
-                                             D_628770824==638092100 ~ "1 hour",
-                                             D_628770824==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                             D_628770824 == 248303092 ~ "16 to 30 minutes",
+                             D_628770824 == 998679771 ~ "31 to 59 minutes",
+                             D_628770824 == 638092100 ~ "1 hour",
+                             D_628770824 == 127455035 ~ "2 hours or more",
+                             D_628770824 == 402752509 ~ "Didn’t use during this time",
+                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
@@ -1500,12 +1508,13 @@ lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_
                                       as.numeric(data_tib_all3$D_257300783_D_424527685)<50 & 
                                       (is.na(data_tib_all3$D_671380198) | !(as.numeric(data_tib_all3$D_671380198)<40))) %>% 
   mutate(timespan= case_when(D_558707243==428999623 ~ "15 minutes or less",
-                                             D_558707243==248303092 ~ "16 to 30 minutes",
-                                             D_558707243==998679771 ~ "31 to 59 minutes",
-                                             D_558707243==638092100 ~ "1 hour",
-                                             D_558707243==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                             D_558707243 == 248303092 ~ "16 to 30 minutes",
+                             D_558707243 == 998679771 ~ "31 to 59 minutes",
+                             D_558707243 == 638092100 ~ "1 hour",
+                             D_558707243 == 127455035 ~ "2 hours or more",
+                             D_558707243 == 402752509 ~ "Didn’t use during this time",
+                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
@@ -1535,12 +1544,13 @@ lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_
                                       (is.na(data_tib_all3$D_671380198) | !(as.numeric(data_tib_all3$D_671380198)<50)) &
                                       as.numeric(data_tib_all3$AGEGRID)>49) %>% 
   mutate(timespan= case_when(D_929034795==428999623 ~ "15 minutes or less",
-                                             D_929034795==248303092 ~ "16 to 30 minutes",
-                                             D_929034795==998679771 ~ "31 to 59 minutes",
-                                             D_929034795==638092100 ~ "1 hour",
-                                             D_929034795==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                             D_929034795 == 248303092 ~ "16 to 30 minutes",
+                             D_929034795 == 998679771 ~ "31 to 59 minutes",
+                             D_929034795 == 638092100 ~ "1 hour",
+                             D_929034795 == 127455035 ~ "2 hours or more",
+                             D_929034795 == 402752509 ~ "Didn’t use during this time",
+                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
@@ -1569,12 +1579,13 @@ lifetime= data_tib_all3 %>%  filter(D_306320432==132232896 & !is.na(D_257300783_
                                       (is.na(data_tib_all3$D_671380198) | !(as.numeric(data_tib_all3$D_671380198)<60)) & 
                                       as.numeric(data_tib_all3$AGEGRID)>59) %>% 
   mutate(timespan= case_when(D_995220236==428999623 ~ "15 minutes or less",
-                                             D_995220236==248303092 ~ "16 to 30 minutes",
-                                             D_995220236==998679771 ~ "31 to 59 minutes",
-                                             D_995220236==638092100 ~ "1 hour",
-                                             D_995220236==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                             D_995220236 == 248303092 ~ "16 to 30 minutes",
+                             D_995220236 == 998679771 ~ "31 to 59 minutes",
+                             D_995220236 == 638092100 ~ "1 hour",
+                             D_995220236 == 127455035 ~ "2 hours or more",
+                             D_995220236 == 402752509 ~ "Didn’t use during this time",
+                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
@@ -1694,27 +1705,27 @@ funct_9b(D_981755099, D_472007171, D_787047261, D_585702271, D_720305356, "HOOKA
 
 
 #HOOKAHLIFEA
-#simple_funct3(D_445712879,"HOOKAHLIFEA: Time Hookah Smoked per Day at Ages 0-17") #no one yet 
+simple_funct3(D_445712879,"HOOKAHLIFEA: Time Hookah Smoked per Day at Ages 0-17") #no one yet 
 
 
 #HOOKAHLIFEB
-#simple_funct3(D_620425840,"HOOKAHLIFEB: Time Hookah Smoked per Day at Ages 18-24")#no one yet
+simple_funct3(D_620425840,"HOOKAHLIFEB: Time Hookah Smoked per Day at Ages 18-24")#no one yet
 
 
 #HOOKAHLIFEC
-#simple_funct3(D_798627028,"HOOKAHLIFEC: Time Hookah Smoked per Day at Ages 25-29") #no one yet
+simple_funct3(D_798627028,"HOOKAHLIFEC: Time Hookah Smoked per Day at Ages 25-29") #no one yet
 
 
 #HOOKAHLIFED
-#simple_funct3(D_584608368,"HOOKAHLIFED: Time Hookah Smoked per Day at Ages 30-39") #no one yet
+simple_funct3(D_584608368,"HOOKAHLIFED: Time Hookah Smoked per Day at Ages 30-39") #no one yet
 
 
 #HOOKAHLIFEE
-#simple_funct3(D_921623945,"HOOKAHLIFEE: Time Hookah Smoked per Day at Ages 40-49") #no one yet
+simple_funct3(D_921623945,"HOOKAHLIFEE: Time Hookah Smoked per Day at Ages 40-49") #no one yet
 
 
 #HOOKAHLIFEF
-#simple_funct3(D_370253256,"HOOKAHLIFEF: Time Hookah Smoked per Day at Ages 50-59") #no one yet
+simple_funct3(D_370253256,"HOOKAHLIFEF: Time Hookah Smoked per Day at Ages 50-59") #no one yet
 
 
 #HOOKAHLIFEG
@@ -2100,12 +2111,13 @@ lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_
                                       as.numeric(data_tib_all3$D_116080663_D_889949861)<17  & 
                                       (is.na(data_tib_all3$D_863664828) | !(as.numeric(data_tib_all3$D_863664828)<17))) %>% 
   mutate(timespan= case_when(D_258291510==428999623 ~ "15 minutes or less",
-                                             D_258291510==248303092 ~ "16 to 30 minutes",
-                                             D_258291510==998679771 ~ "31 to 59 minutes",
-                                             D_258291510==638092100 ~ "1 hour",
-                                             D_258291510==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                             D_258291510 == 248303092 ~ "16 to 30 minutes",
+                             D_258291510 == 998679771 ~ "31 to 59 minutes",
+                             D_258291510 == 638092100 ~ "1 hour",
+                             D_258291510 == 127455035 ~ "2 hours or more",
+                             D_258291510 == 402752509 ~ "Didn’t use during this time",
+                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
@@ -2133,12 +2145,13 @@ lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_
                                       as.numeric(data_tib_all3$D_116080663_D_889949861)<24  & 
                                       (is.na(data_tib_all3$D_863664828) | !(as.numeric(data_tib_all3$D_863664828)<18))) %>% 
   mutate(timespan= case_when(D_175995366==428999623 ~ "15 minutes or less",
-                                             D_175995366==248303092 ~ "16 to 30 minutes",
-                                             D_175995366==998679771 ~ "31 to 59 minutes",
-                                             D_175995366==638092100 ~ "1 hour",
-                                             D_175995366==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                             D_175995366 == 248303092 ~ "16 to 30 minutes",
+                             D_175995366 == 998679771 ~ "31 to 59 minutes",
+                             D_175995366 == 638092100 ~ "1 hour",
+                             D_175995366 == 127455035 ~ "2 hours or more",
+                             D_175995366 == 402752509 ~ "Didn’t use during this time",
+                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
@@ -2167,12 +2180,13 @@ lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_
                                       as.numeric(data_tib_all3$D_116080663_D_889949861)<30  & 
                                       (is.na(data_tib_all3$D_863664828) | !(as.numeric(data_tib_all3$D_863664828)<25))) %>% 
   mutate(timespan= case_when(D_643099118==428999623 ~ "15 minutes or less",
-                                             D_643099118==248303092 ~ "16 to 30 minutes",
-                                             D_643099118==998679771 ~ "31 to 59 minutes",
-                                             D_643099118==638092100 ~ "1 hour",
-                                             D_643099118==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                             D_643099118 == 248303092 ~ "16 to 30 minutes",
+                             D_643099118 == 998679771 ~ "31 to 59 minutes",
+                             D_643099118 == 638092100 ~ "1 hour",
+                             D_643099118 == 127455035 ~ "2 hours or more",
+                             D_643099118 == 402752509 ~ "Didn’t use during this time",
+                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
@@ -2200,12 +2214,13 @@ lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_
                                       as.numeric(data_tib_all3$D_116080663_D_889949861)<40  & 
                                       (is.na(data_tib_all3$D_863664828) | !(as.numeric(data_tib_all3$D_863664828)<30))) %>% 
   mutate(timespan= case_when(D_864290328==428999623 ~ "15 minutes or less",
-                                             D_864290328==248303092 ~ "16 to 30 minutes",
-                                             D_864290328==998679771 ~ "31 to 59 minutes",
-                                             D_864290328==638092100 ~ "1 hour",
-                                             D_864290328==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                             D_864290328 == 248303092 ~ "16 to 30 minutes",
+                             D_864290328 == 998679771 ~ "31 to 59 minutes",
+                             D_864290328 == 638092100 ~ "1 hour",
+                             D_864290328 == 127455035 ~ "2 hours or more",
+                             D_864290328 == 402752509 ~ "Didn’t use during this time",
+                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
@@ -2235,12 +2250,13 @@ lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_
                                       (is.na(data_tib_all3$D_863664828) | !(as.numeric(data_tib_all3$D_863664828)<40)) &
                                       as.numeric(data_tib_all3$AGEGRID)>39) %>% 
   mutate(timespan= case_when(D_386950237==428999623 ~ "15 minutes or less",
-                                             D_386950237==248303092 ~ "16 to 30 minutes",
-                                             D_386950237==998679771 ~ "31 to 59 minutes",
-                                             D_386950237==638092100 ~ "1 hour",
-                                             D_386950237==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                             D_386950237 == 248303092 ~ "16 to 30 minutes",
+                             D_386950237 == 998679771 ~ "31 to 59 minutes",
+                             D_386950237 == 638092100 ~ "1 hour",
+                             D_386950237 == 127455035 ~ "2 hours or more",
+                             D_386950237 == 402752509 ~ "Didn’t use during this time",
+                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
@@ -2268,12 +2284,13 @@ lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_
                                       (is.na(data_tib_all3$D_863664828) | !(as.numeric(data_tib_all3$D_863664828)<50)) & 
                                       as.numeric(data_tib_all3$AGEGRID)>49) %>% 
   mutate(timespan= case_when(D_480217113==428999623 ~ "15 minutes or less",
-                                             D_480217113==248303092 ~ "16 to 30 minutes",
-                                             D_480217113==998679771 ~ "31 to 59 minutes",
-                                             D_480217113==638092100 ~ "1 hour",
-                                             D_480217113==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                             D_480217113 == 248303092 ~ "16 to 30 minutes",
+                             D_480217113 == 998679771 ~ "31 to 59 minutes",
+                             D_480217113 == 638092100 ~ "1 hour",
+                             D_480217113 == 127455035 ~ "2 hours or more",
+                             D_480217113 == 402752509 ~ "Didn’t use during this time",
+                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
@@ -2302,12 +2319,13 @@ lifetime= data_tib_all3 %>%  filter(D_319397722==132232896 & !is.na(D_116080663_
                                       (is.na(data_tib_all3$D_863664828) | !(as.numeric(data_tib_all3$D_863664828)<60)) &
                                       as.numeric(data_tib_all3$AGEGRID)>59 ) %>%
   mutate(timespan= case_when(D_645361463==428999623 ~ "15 minutes or less",
-                                             D_645361463==248303092 ~ "16 to 30 minutes",
-                                             D_645361463==998679771 ~ "31 to 59 minutes",
-                                             D_645361463==638092100 ~ "1 hour",
-                                             D_645361463==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                             D_645361463 == 248303092 ~ "16 to 30 minutes",
+                             D_645361463 == 998679771 ~ "31 to 59 minutes",
+                             D_645361463 == 638092100 ~ "1 hour",
+                             D_645361463 == 127455035 ~ "2 hours or more",
+                             D_645361463 == 402752509 ~ "Didn’t use during this time",
+                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
@@ -2560,8 +2578,8 @@ one_logic_funct3(D_562595294,D_177252178,353358909,"ELMAR9C: Total Time Marijuan
 #ELMAR10
 funct_10_11(D_268240612_D_268240612, D_325229459, D_177252178, D_521073718, D_142164107, "SMMAR10: Why Do You Smoke Marijuana")
 
-cat("Other Reason for Vaping Marijuana")
-table(module3$D_268240612_D_531654334) #other text 
+#cat("Other Reason for Vaping Marijuana")
+#table(module3$D_268240612_D_531654334) #other text 
 
 
 #ELMARLIFEA
@@ -2582,12 +2600,13 @@ lifetime= data_tib_all3 %>%  filter(D_325229459==132232896 & !is.na(D_942945860_
                                       as.numeric(data_tib_all3$D_942945860_D_742716427)<40  & 
                                       (is.na(data_tib_all3$D_445187084) | !(as.numeric(data_tib_all3$D_445187084)<30))) %>% 
   mutate(timespan= case_when(D_878281875==428999623 ~ "15 minutes or less",
-                                             D_878281875==248303092 ~ "16 to 30 minutes",
-                                             D_878281875==998679771 ~ "31 to 59 minutes",
-                                             D_878281875==638092100 ~ "1 hour",
-                                             D_878281875==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                             D_878281875 == 248303092 ~ "16 to 30 minutes",
+                             D_878281875 == 998679771 ~ "31 to 59 minutes",
+                             D_878281875 == 638092100 ~ "1 hour",
+                             D_878281875 == 127455035 ~ "2 hours or more",
+                             D_878281875 == 402752509 ~ "Didn’t use during this time",
+                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
@@ -2616,12 +2635,13 @@ lifetime= data_tib_all3 %>%  filter(D_325229459==132232896 & !is.na(D_942945860_
                                       (is.na(data_tib_all3$D_445187084) | !(as.numeric(data_tib_all3$D_445187084)<40)) & 
                                       as.numeric(data_tib_all3$AGEGRID)>39) %>% 
   mutate(timespan= case_when(D_989594002==428999623 ~ "15 minutes or less",
-                                             D_989594002==248303092 ~ "16 to 30 minutes",
-                                             D_989594002==998679771 ~ "31 to 59 minutes",
-                                             D_989594002==638092100 ~ "1 hour",
-                                             D_989594002==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                             D_989594002 == 248303092 ~ "16 to 30 minutes",
+                             D_989594002 == 998679771 ~ "31 to 59 minutes",
+                             D_989594002 == 638092100 ~ "1 hour",
+                             D_989594002 == 127455035 ~ "2 hours or more",
+                             D_989594002 == 402752509 ~ "Didn’t use during this time",
+                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
@@ -2651,12 +2671,13 @@ lifetime= data_tib_all3 %>%  filter(D_325229459==132232896 & !is.na(D_942945860_
                                       (is.na(data_tib_all3$D_445187084) | !(as.numeric(data_tib_all3$D_445187084)<50)) & 
                                       as.numeric(data_tib_all3$AGEGRID)>49) %>% 
   mutate(timespan= case_when(D_596004621==428999623 ~ "15 minutes or less",
-                                             D_596004621==248303092 ~ "16 to 30 minutes",
-                                             D_596004621==998679771 ~ "31 to 59 minutes",
-                                             D_596004621==638092100 ~ "1 hour",
-                                             D_596004621==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                             D_596004621 == 248303092 ~ "16 to 30 minutes",
+                             D_596004621 == 998679771 ~ "31 to 59 minutes",
+                             D_596004621 == 638092100 ~ "1 hour",
+                             D_596004621 == 127455035 ~ "2 hours or more",
+                             D_596004621 == 402752509 ~ "Didn’t use during this time",
+                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
@@ -2686,12 +2707,13 @@ lifetime= data_tib_all3 %>%  filter(D_325229459==132232896 & !is.na(D_942945860_
                                       (is.na(data_tib_all3$D_445187084) | !(as.numeric(data_tib_all3$D_445187084)<60)) & 
                                       as.numeric(data_tib_all3$AGEGRID)>59) %>% 
   mutate(timespan= case_when(D_459096272==428999623 ~ "15 minutes or less",
-                                             D_459096272==248303092 ~ "16 to 30 minutes",
-                                             D_459096272==998679771 ~ "31 to 59 minutes",
-                                             D_459096272==638092100 ~ "1 hour",
-                                             D_459096272==127455035 ~ "2 hours or more",
-                                             TRUE ~ "Skipped this question"))
-lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more", "Skipped this question"))
+                             D_459096272 == 248303092 ~ "16 to 30 minutes",
+                             D_459096272 == 998679771 ~ "31 to 59 minutes",
+                             D_459096272 == 638092100 ~ "1 hour",
+                             D_459096272 == 127455035 ~ "2 hours or more",
+                             D_459096272 == 402752509 ~ "Didn’t use during this time",
+                             TRUE ~ "Skipped this question"))
+lifetime$timespan <- factor(lifetime$timespan,levels=c("15 minutes or less", "16 to 30 minutes", "31 to 59 minutes", "1 hour", "2 hours or more","Didn’t use during this time", "Skipped this question"))
 
 dt_timespan_summary <- lifetime %>% dplyr::group_by(timespan) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(timespan, n, percentage)
 
@@ -2846,9 +2868,9 @@ hist_funct(D_517100968_D_810608313, "EAMAR9C: Servings of Marijuana in Food/Drin
 #EAMAR10 
 funct_10_11(D_810324917_D_810324917, D_101170268, D_891996278, D_742544044, D_259481608, "EAMAR10: Why Do You Consume Marijuana in Food/Drinks")
 
-cat("Other Reason for Consuming Marijuana")
-EAMAR10_other= module3$D_810324917_D_479400169[!is.na(module3$D_810324917_D_479400169)]
-list(EAMAR10_other) #other
+# cat("Other Reason for Consuming Marijuana")
+# EAMAR10_other= module3$D_810324917_D_479400169[!is.na(module3$D_810324917_D_479400169)]
+# list(EAMAR10_other) #other
 
 
 #EAMARLIFEA
@@ -3010,8 +3032,8 @@ hist_funct(D_585819411_D_810608313, "THMAR9C: Servings of THC Dabbing per Day Wh
 #THMAR10-- no answers yet?
 funct_10_11(D_265469878_D_265469878, D_355689185, D_937550939, D_420155119, D_536166591, "THMAR10: Why Do You Use THC Concentrates via Dabbing")
 
-cat("Other Reason for Dabbing Marijuana")
-table(module3$D_265469878_D_781650542) #OTH
+# cat("Other Reason for Dabbing Marijuana")
+# table(module3$D_265469878_D_781650542) #OTH
 
 
 #THMARLIFEA

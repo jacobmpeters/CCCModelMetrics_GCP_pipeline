@@ -1,9 +1,14 @@
 ---
-title: "Nico request: Risk prediction models using baseline survey data"
+title: "Risk prediction models using baseline survey data"
 subtitle: "Univariate distributions of key variables"
-author: "Kelsey Dowling"
+author: "Kelsey Sanchez"
 date: "`r Sys.Date()`"
-output: pdf_document
+header-includes:  
+  \usepackage[labelformat=empty]{caption}
+  \usepackage{placeins}
+output:
+  pdf_document:
+    extra_dependencies: ["float"]
 ---
 
 ```{r libraries, include=FALSE}
@@ -31,6 +36,8 @@ library(tidyverse) ###for data management
 library(dplyr) ###data management
 library(lubridate) ###date time
 library(stringr) ###to work on patterns, charaters
+library(knitr)
+library(kableExtra)
 options(tinytex.verbose = TRUE)
 
 bq_auth()
@@ -218,7 +225,7 @@ simple_funct1 <- function(CID, Title){
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 }
 
 
@@ -249,7 +256,7 @@ one_logic_funct <- function(CID, CID_prev, Prev_Answer, Title){
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 }
 
 
@@ -291,7 +298,7 @@ sib_logic_funct <- function(CID, Sib_Num, Title){
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 }
 
 
@@ -322,7 +329,7 @@ child_logic_funct <- function(CID, Child_Num, Title){
     locations = cells_body(
       columns = answer,
     )
-  ) %>% opt_row_striping()
+  ) 
 }
 
 
@@ -351,13 +358,17 @@ data_tib_m3 <- as_tibble(data_all3)
 ## Age at Enrollment
 ```{r age, warning=FALSE,echo=FALSE}
 
-which_age= data_tib_m1 %>%  mutate(age= case_when(state_d_934298480==124276120 ~ "Age 40-45",
+which_age= data_tib_m1 %>%  mutate(age= case_when(state_d_934298480==713781738 ~ "Age 30-34",
+                                                  state_d_934298480==631272782 ~ "Age 35-39",
+                                                  state_d_934298480==124276120 ~ "Age 40-45",
                                              state_d_934298480==450985724 ~ "Age 46-50",
                                              state_d_934298480==363147933 ~ "Age 51-55",
                                              state_d_934298480==636706443 ~ "Age 56-60",
                                              state_d_934298480==771230670 ~ "Age 61-65",
-                                             !is.na(D_150344905) ~ "Answered with Corrected Age in Mod1",
+                                             state_d_934298480==722846087 ~ "Age 66-70",
+                                            # !is.na(D_150344905) ~ "Answered with Corrected Age in Mod1",
                                              TRUE  ~ "Skipped this question"))
+which_age$age <- factor(which_age$age,levels=c("Age 30-34", "Age 35-39", "Age 40-45", "Age 46-50","Age 51-55","Age 56-60", "Age 61-65", "Age 66-70", "Skipped this question"))
 
 dt_all_ages_summary <- which_age  %>% dplyr::group_by(age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(age, n, percentage)  
 
@@ -382,7 +393,7 @@ dt_all_ages_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = age,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 ```
 
@@ -408,16 +419,18 @@ bmi_box= data_tib_m1 %>%  filter(!is.na(BMI)) %>%  ggplot(aes(x=BMI))+
 which_age= data_tib_m1 %>%  mutate(BMI_range= case_when(BMI<18.5 ~ "Underweight",
                                              BMI<25 ~ "Healthy Weight",
                                              BMI<30 ~ "Overweight",
-                                             BMI>=30 ~ "Severely Overweight",
+                                             BMI<35 ~ "Obesity Class I",
+                                             BMI<40 ~ "Obesity Class II",
+                                             BMI>=40 ~ "Obesity Class III",
                                              TRUE  ~ "Skipped this question"))
-which_age$BMI_range <- factor(which_age$BMI_range,levels=c("Underweight", "Healthy Weight", "Overweight", "Severely Overweight", "Skipped this question"))
+which_age$BMI_range <- factor(which_age$BMI_range,levels=c("Underweight", "Healthy Weight", "Overweight", "Obesity Class I","Obesity Class II","Obesity Class III", "Skipped this question"))
 
 dt_all_ages_summary <- which_age  %>% dplyr::group_by(BMI_range) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(BMI_range, n, percentage)  
 
 
-dt_all_ages_summary_gt <- dt_all_ages_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+dt_all_ages_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("BMI")) %>% 
+  tab_header(title = md("BMI of Participants Who Completed BOH")) %>% 
   cols_label(n= md("**Number of Participants**"), BMI_range = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows(
   #   column = c(participants,percentage),
@@ -435,14 +448,24 @@ dt_all_ages_summary_gt <- dt_all_ages_summary %>%  gt::gt(rowname_col = "row_lab
     locations = cells_body(
       columns = BMI_range,
     ) 
-  ) %>% opt_row_striping() 
-
-tab_footnote(
-  dt_all_ages_summary_gt,
-  md("Skipped this question means either height or weight was skipped. \n BMI calculation of 703*(weight in lbs/ height in inches sqaured). \n BMI ranges as follows: Underweight as under 18.5, Healthy weight as 18.5-24.9, Overweight as 25-29.9, Severely overweight as 30 or over. "),
+  )  %>% 
+  tab_footnote(
+    footnote = md("Skipped this question means either height or weight was skipped. \n BMI calculation of 703*(weight in lbs/ height in inches sqaured)."),
+  locations = cells_column_labels(columns = BMI_range),
+  placement = c("left")
+)%>%
+  tab_footnote(
+    footnote = md("BMI ranges as follows: Underweight as under 18.5, Healthy weight as 18.5-24.9, Overweight as 25-29.9, Obesity Class I as 30-34.9, Obesity Class II as 35-39.9, Severely overweight as 40 or over."),
   locations = cells_column_labels(columns = BMI_range),
   placement = c("left")
 )
+
+# tab_footnote(
+#   dt_all_ages_summary_gt,
+#   md("Skipped this question means either height or weight was skipped. \n BMI calculation of 703*(weight in lbs/ height in inches sqaured). \n BMI ranges as follows: Underweight as under 18.5, Healthy weight as 18.5-24.9, Overweight as 25-29.9, Severely overweight as 30 or over. "),
+#   locations = cells_column_labels(columns = BMI_range),
+#   placement = c("left")
+# )
 
 # 
 # 
@@ -459,10 +482,31 @@ tab_footnote(
 ```
 
 
+\newpage
+
+## Frequency of Smoking
+
+Currently a (Product) Smoker responded with the following: 
+
+(1) 'Yes' to 'Have you ever used any of these tobacco products, even once?' 
+
+(2)  Either ‘50-99’ or ‘100+’ to 'How many (products) have you smoked in your entire life? 
+
+(3) ‘In the past month’ to 'When was the last time you smoked (products)?'
 
 
+    
+    
+Formerly a (Product) Smoker responded with the following: 
 
-## Frequency of Cigarette Smoking
+(1) 'Yes' to 'Have you ever used any of these tobacco products, even once?', 
+
+(2) Either ‘50-99’ or ‘100+’ to 'How many (products) have you smoked in your entire life?', 
+
+(3) Either ‘More than a month ago, but in the past year’ or ‘More than 1 year ago’ to 'When was the last time you smoked (products)?'
+
+
+### Cigarettes
 
 ```{r cigerette, echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -477,7 +521,7 @@ dt_cig_frequency_summary <- cig_frequency %>% group_by(often) %>%  dplyr::summar
 
 dt_cig_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Frequency of Cigarette Smoking")) %>% 
+  tab_header(title = md("Frequency of Cigarette Smoking of Participants Who Completed SAS")) %>% 
   cols_label(n= md("**Number of Participants**"), often = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows(
   #   column = c(n,percentage),
@@ -495,14 +539,30 @@ dt_cig_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = often,
     )
-  ) %>% opt_row_striping()
+  )  
+#   tab_footnote(
+#     footnote = md("Currently a Cigarette Smoker repsonded with the following: 
+#     'Yes' to 'Have you ever used any of these tobacco products, even once?', 
+#     either ‘50-99’ or ‘100+’ to 'How many cigarettes have you smoked in your entire life?',
+#     and ‘in the past month’ to 'When was the last time you smoked cigarettes?' "),
+#   locations = cells_column_labels(columns = often),
+#   placement = c("left")
+# )%>%
+#   tab_footnote(
+#     footnote = md("Formerly a Cigarette Smoker repsonded with the following: 
+#     'Yes' to 'Have you ever used any of these tobacco products, even once?', 
+#     either ‘50-99’ or ‘100+’ to 'How many cigarettes have you smoked in your entire life?',
+#     and either ‘More than a month ago, but in the past year’ or ‘More than 1 year ago’ to 'When was the last time you smoked cigarettes?' "),
+#   locations = cells_column_labels(columns = often),
+#   placement = c("left")
+# )
 
 
 ```
 
 
 
-## Frequency of Cigar Smoking
+### Cigar 
 
 ```{r cigar, echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -519,7 +579,7 @@ dt_cigar_frequency_summary <- cigar_frequency %>% group_by(often) %>%  dplyr::su
 
 dt_cigar_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Frequency of Cigar Smoking")) %>% 
+  tab_header(title = md("Frequency of Cigar Smoking of Participants Who Completed SAS")) %>% 
   cols_label(n= md("**Number of Participants**"), often = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows(
   #   column = c(n,percentage),
@@ -537,15 +597,15 @@ dt_cigar_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = often,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 ```
 
 
+\newpage
 
-
-## Frequency of E-cig Smoking
+### E-cigarette 
 
 ```{r ecig, echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -562,7 +622,7 @@ dt_e_cig_frequency_summary <- e_cig_frequency %>% group_by(often) %>%  dplyr::su
 
 dt_e_cig_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Frequency of Electronic Cigarette Smoking")) %>% 
+  tab_header(title = md("Frequency of Electronic Cigarette Smoking of Participants Who Completed SAS")) %>% 
   cols_label(n= md("**Number of Participants**"), often = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows(
   #   column = c(n,percentage),
@@ -580,13 +640,13 @@ dt_e_cig_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = often,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 
 ```
 
 
-
+\newpage
 
 ## Primary Relative Diagnosed with Cancer
 ### Parents
@@ -628,7 +688,7 @@ family= data_tib_m1  %>%  mutate(status= case_when((D_276353712==353358909 | D_6
 #     locations = cells_body(
 #       columns = status,
 #     )
-#   ) %>% opt_row_striping()
+#   ) 
 
 
 
@@ -637,7 +697,7 @@ dt_fam_canc_summary <- family %>% group_by(status) %>%  dplyr::summarize(n=n(), 
 
 dt_fam_canc_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Primary Relative(s) Diagnosed With Cancer")) %>% 
+  tab_header(title = md("Primary Relative(s) Diagnosed With Cancer of Participants Who Completed BOH")) %>% 
   cols_label(n= md("**Number of Participants**"), status = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows(
   #   column = c(n,percentage),
@@ -655,7 +715,7 @@ dt_fam_canc_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 ```
 
@@ -697,7 +757,7 @@ family= data_tib_m1  %>%  mutate(status= case_when((D_607773106_1_1==353358909 |
 #     locations = cells_body(
 #       columns = status,
 #     )
-#   ) %>% opt_row_striping()
+#   ) 
 
 
 
@@ -706,7 +766,7 @@ dt_fam_canc_summary <- family %>% group_by(status) %>%  dplyr::summarize(n=n(), 
 
 dt_fam_canc_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Primary Relative(s) Diagnosed With Cancer")) %>% 
+  tab_header(title = md("Primary Relative(s) Diagnosed With Cancer of Participants Who Completed BOH ")) %>% 
   cols_label(n= md("**Number of Participants**"), status = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows(
   #   column = c(n,percentage),
@@ -724,7 +784,7 @@ dt_fam_canc_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 ```
 
@@ -774,7 +834,7 @@ family= data_tib_m1  %>%  mutate(status= case_when((D_718867914_1_1==353358909 |
 #     locations = cells_body(
 #       columns = status,
 #     )
-#   ) %>% opt_row_striping()
+#   ) 
 
 
 
@@ -783,7 +843,7 @@ dt_fam_canc_summary <- family %>% group_by(status) %>%  dplyr::summarize(n=n(), 
 
 dt_fam_canc_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Primary Relative(s) Diagnosed With Cancer")) %>% 
+  tab_header(title = md("Primary Relative(s) Diagnosed With Cancer  of Participants Who Completed BOH")) %>% 
   cols_label(n= md("**Number of Participants**"), status = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows(
   #   column = c(n,percentage),
@@ -801,11 +861,11 @@ dt_fam_canc_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = status,
     )
-  ) %>% opt_row_striping()
+  ) 
 
 ```
 
-
+\newpage
 
 ## RACE
 ```{r Race, warning=FALSE, echo=FALSE, message=FALSE}
@@ -877,7 +937,7 @@ dt_all_races_summary <- which_race  %>% dplyr::group_by(race) %>% dplyr::summari
 
 dt_all_races_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Race/Ethnicity of Participants Who Completed BOH Section of First Survey")) %>% 
+  tab_header(title = md("Race/Ethnicity of Participants Who Completed BOH")) %>% 
   cols_label(n= md("**Number of Participants**"), race = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows( groups=F,
   #   column = c(n,percentage),
@@ -900,9 +960,72 @@ dt_all_races_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 ```
 
 
+\FloatBarrier
+```{r RaceByAge, warning=FALSE, echo=FALSE, message=FALSE}
+race_age= which_race %>%  mutate(age= case_when(state_d_934298480==713781738 ~ "Age 30-34",
+                                                  state_d_934298480==631272782 ~ "Age 35-39",
+                                                  state_d_934298480==124276120 ~ "Age 40-45",
+                                             state_d_934298480==450985724 ~ "Age 46-50",
+                                             state_d_934298480==363147933 ~ "Age 51-55",
+                                             state_d_934298480==636706443 ~ "Age 56-60",
+                                             state_d_934298480==771230670 ~ "Age 61-65",
+                                             state_d_934298480==722846087 ~ "Age 66-70",
+                                            # !is.na(D_150344905) ~ "Answered with Corrected Age in Mod1",
+                                             TRUE  ~ "Skipped this question"))
+race_age$age <- factor(race_age$age,levels=c("Age 30-34", "Age 35-39", "Age 40-45", "Age 46-50","Age 51-55","Age 56-60", "Age 61-65", "Age 66-70", "Skipped this question"))
+
+race_age_tbl <- race_age %>% 
+tbl_cross(
+    row = race,
+    col = age,
+    digits=c(0,1),
+    percent = "row",
+    label=list(race="Race",
+               age = "Age"),
+    missing="ifany",
+    margin_text="Total Participants") 
+
+# status_elg_df <- as.data.frame(race_age_tbl)
+# status_elg_df <- status_elg_df[c(-1),]
+
+race_age_tbl %>%
+  #bold_labels() %>%
+  #italicize_levels() %>%
+  modify_header(stat_0 = "Total") %>%
+  modify_caption("Distrubiution of Race/Ethnicity by Age Groups of Participants Who Completed BOH") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE) %>%  kable_styling(latex_options = "scale_down")
+
+
+
+
+age_race_tbl <- race_age %>% 
+tbl_cross(
+    row = race, 
+    col = age,
+    digits=c(0,1),
+    percent = "col",
+    label=list(race="Race",
+               age = "Age"),
+    missing="ifany",
+    margin_text="Total Participants") 
+
+# status_elg_df <- as.data.frame(status_elg)
+# status_elg_df <- status_elg_df[c(-1),]
+
+age_race_tbl %>%
+  #bold_labels() %>%
+  #italicize_levels() %>%
+  modify_header(stat_0 = "Total") %>%
+  modify_caption("Distrubiution of Race/Ethnicity by Age Groups of Participants Who Completed BOH") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE) %>%  kable_styling(latex_options = "scale_down")
+
+
+```
+
+
 
 ## RACEETH2-8 (Ethnicity)
-```{r Ethnicity, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Ethnicity1, warning=FALSE, echo=FALSE, message=FALSE}
 
 
 #American Indian/Native American
@@ -927,7 +1050,7 @@ gtm3_print <- gt::gt(dt_am_ind_ethn_summary)
 
 dt_ethnic1 <- dt_am_ind_ethn_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>%
-  tab_header(title = md("Ethnicity of American Indian/Native American Participants")) %>%
+  tab_header(title = md("Ethnicity of American Indian/Native American Participants  of Participants Who Completed BOH")) %>%
   cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
   # summary_rows( groups=F,
   #   column = c(n,percentage),
@@ -945,7 +1068,7 @@ dt_ethnic1 <- dt_am_ind_ethn_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping()
+  ) 
 tab_footnote(
   dt_ethnic1,
   md("The denomination of this table is all participants who selected this race/ethnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities. \n Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
@@ -953,8 +1076,10 @@ tab_footnote(
   placement = c("left")
 )
 
+```
 
-
+\newpage
+```{r Ethnicity2_3, warning=FALSE, echo=FALSE, message=FALSE}
 #Asian/Asian American
 dt_asian= data_tib_m1 %>% filter(data_tib_m1$D_384191091_D_384191091_D_636411467==1)  
 
@@ -981,7 +1106,7 @@ dt_asian_summary <- which_eth %>% group_by(ethnicity) %>%  dplyr::summarize(n=n(
 
 dt_ethnic2 <- dt_asian_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Ethnicity of Asian and Asian American Participants")) %>% 
+  tab_header(title = md("Ethnicity of Asian and Asian American Participants  of Participants Who Completed BOH")) %>% 
   cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows( groups=F,
   #   column = c(n,percentage),
@@ -999,7 +1124,7 @@ dt_ethnic2 <- dt_asian_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping()
+  ) 
 tab_footnote(
   dt_ethnic2,
   md("The denomination of this table is all participants who selected this race/ethnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities. \n Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
@@ -1038,7 +1163,7 @@ which_eth= dt_black %>%  mutate(ethnicity= case_when(as.numeric(multb2)>1 ~ "Mul
 dt_black_summary <- which_eth %>% group_by(ethnicity) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(ethnicity, n, percentage)
 dt_ethnic3 <- dt_black_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Ethnicity of Black/African/African American Participants")) %>% 
+  tab_header(title = md("Ethnicity of Black/African/African American Participants  of Participants Who Completed BOH")) %>% 
   cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows( groups=F,
   #   column = c(n,percentage),
@@ -1056,7 +1181,7 @@ dt_ethnic3 <- dt_black_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping()
+  ) 
 tab_footnote(
   dt_ethnic3,
   md("The denomination of this table is all participants who selected this race/ethnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities. \n Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
@@ -1064,8 +1189,10 @@ tab_footnote(
   placement = c("left")
 )
 
+```
+\newpage
 
-
+```{r Ethnicity4_5, warning=FALSE, echo=FALSE, message=FALSE}
 #Hispanic/Latino/Spanish
 dt_hisp= data_tib_m1  %>% filter(data_tib_m1$D_384191091_D_384191091_D_706998638==1) 
 
@@ -1092,7 +1219,7 @@ dt_hisp_summary <- which_eth %>% group_by(ethnicity) %>%  dplyr::summarize(n=n()
 
 dt_ethnic4 <- dt_hisp_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Ethnicity of Hispanic/Latino/Spanish Participants")) %>% 
+  tab_header(title = md("Ethnicity of Hispanic/Latino/Spanish Participants of Those Who Completed BOH")) %>% 
   cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows( groups=F,
   #   column = c(n,percentage),
@@ -1110,7 +1237,7 @@ dt_ethnic4 <- dt_hisp_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping()
+  ) 
 tab_footnote(
   dt_ethnic4,
   md("The denomination of this table is all participants who selected this race/ethnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities. \n Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
@@ -1147,7 +1274,7 @@ dt_mideast_summary <- which_eth %>% group_by(ethnicity) %>%   dplyr::summarize(n
 
 dt_ethnic5 <- dt_mideast_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Ethnicity of Middle Eastern or North African Participants")) %>% 
+  tab_header(title = md("Ethnicity of Middle Eastern or North African Participants of Those Who Completed BOH")) %>% 
   cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows( groups=F,
   #   column = c(n,percentage),
@@ -1165,16 +1292,17 @@ dt_ethnic5 <- dt_mideast_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping()
+  ) 
 tab_footnote(
   dt_ethnic5,
   md("The denomination of this table is all participants who selected this race/ethnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities. \n Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
   locations = cells_column_labels(columns = n),
   placement = c("left")
 )
+```
+\newpage
 
-
-
+```{r Ethnicity6_7, warning=FALSE, echo=FALSE, message=FALSE}
 #Hawaiian/ Pacific Islander
 dt_hawi= data_tib_m1 %>%  filter(data_tib_m1$D_384191091_D_384191091_D_586825330==1)  
 
@@ -1200,7 +1328,7 @@ dt_hawi_summary <- which_eth %>% group_by(ethnicity) %>% dplyr::summarize(n=n(),
 
 dt_ethnic6 <- dt_hawi_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Ethnicity of Hawaiian or Pacific Islander Participants")) %>% 
+  tab_header(title = md("Ethnicity of Hawaiian or Pacific Islander Participants of Those Who Completed BOH")) %>% 
   cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows( groups=F,
   #   column = c(n,percentage),
@@ -1218,7 +1346,7 @@ dt_ethnic6 <- dt_hawi_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping()
+  ) 
 tab_footnote(
   dt_ethnic6,
   md("The denomination of this table is all participants who selected this race/ethnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities.\n Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
@@ -1256,7 +1384,7 @@ gtm3_print <- gt::gt(dt_white_summary)
 
 dt_ethnic7 <- dt_white_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% 
-  tab_header(title = md("Ethnicity of White Participants")) %>% 
+  tab_header(title = md("Ethnicity of White Participants of Those Who Completed BOH")) %>% 
   cols_label(n= md("**Number of Participants**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
   # summary_rows( groups=F,
   #   column = c(n,percentage),
@@ -1274,7 +1402,7 @@ dt_ethnic7 <- dt_white_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = ethnicity,
     )
-  ) %>% opt_row_striping()
+  ) 
 tab_footnote(
   dt_ethnic7,
   md("The denomination of this table is all participants who selected this race/ethnicity only, as well as multi-racial participants that selected this race/ethnicity as well as other race/ethnicities. \n Multi-ethnic in this table is defined as participants that selected multiple ethnicity responses."),
@@ -1286,13 +1414,530 @@ tab_footnote(
 ```
 
 
-
+\newpage
 ## SEX
 ```{r SGM, warning=FALSE,echo=FALSE}
-simple_funct1(D_407056417, "Sex at birth")
+simple_funct1(D_407056417, "Sex at birth of Participants Who Completed BOH")
 ```
 
 
 
+## Comorbitity 
+```{r, include=FALSE}
+
+#somehow answers that don't exist are in the flattened table. Removing
+data_tib_m1 <- data_tib_m1 %>%  select(-D_894259747_D_445446905, -D_900541533_D_599063442, -D_874046190_D_870244556, 
+                                       -D_543728565_D_251231642, -D_180961306_D_473901019,-D_874709643_D_572909251,
+                                       -D_725626004_D_522161060, -D_624179836_D_668434958)
+
+```
+
+### Cardiovascular Disease
+```{r MHGroup1, warning=FALSE, echo=FALSE, message=FALSE}
 
 
+skipped_count <- data_tib_m1 %>%
+  rowwise() %>%
+  mutate(SkippedAll = all(is.na(c_across(starts_with("D_167101091_D_"))))) %>%
+  ungroup() %>%
+  filter(SkippedAll) %>%
+  summarise(Answer = "Skipped this question", n = n())
+
+cardiov_long <- data_tib_m1 %>%
+  pivot_longer(cols = starts_with("D_167101091_D_"), names_to = "AnswerCode", values_to = "Selected") %>%
+  filter(Selected == 1) %>%
+  mutate(Answer = case_when(
+    AnswerCode == "D_167101091_D_698944820" ~ "B-12 Deficiency",
+    AnswerCode == "D_167101091_D_838744325" ~ "Coronary Artery",
+    AnswerCode == "D_167101091_D_769790179" ~ "Congestive Heart Failure",
+    AnswerCode == "D_167101091_D_699553344" ~ "High Cholesterol",
+    AnswerCode == "D_167101091_D_700811160" ~ "Heart Attack",
+    AnswerCode == "D_167101091_D_336505365" ~ "Abnormal Heart Rhythm",
+    AnswerCode == "D_167101091_D_132548932" ~ "Chest Pain",
+    AnswerCode == "D_167101091_D_747787163" ~ "Heart Valve Problems",
+    AnswerCode == "D_167101091_D_693851465" ~ "High Blood Pressure",
+    AnswerCode == "D_167101091_D_512012656" ~ "Blood Clots",
+    AnswerCode == "D_167101091_D_619337095" ~ "Stroke",
+    AnswerCode == "D_167101091_D_535003378" ~ "None",
+    #is.na(AnswerCode) ~ "Skipped this question"
+  )) %>%
+  count(Answer)
+
+final_count <- bind_rows(cardiov_long, skipped_count)
+
+dt_cardiov_summary <- final_count %>%  mutate(percentage = paste0(round(100*n/nrow(data_tib_m1), digits=2), "%"))
+
+gt_mh1<- dt_cardiov_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("MHGROUP1: Diagnosed Cardiovascular Conditions of Participants Who Completed BOH")) %>% 
+  cols_label(Answer = md("**Answer**"), n= md("**Number of Participants**"),percentage = md("**Percentage of Participants**")) %>% 
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Answer,
+    )
+  ) 
+tab_footnote(
+  gt_mh1,
+  md("As this is a select all question, participants may select multiple responses."),
+  locations = cells_column_labels(columns = percentage),
+  placement = c("left")
+)
+
+
+```
+
+
+
+### Respiratory Problems 
+```{r MHGroup2, warning=FALSE, echo=FALSE, message=FALSE}
+
+skipped_count <- data_tib_m1 %>%
+  rowwise() %>%
+  mutate(SkippedAll = all(is.na(c_across(starts_with("D_894259747_D_"))))) %>%
+  ungroup() %>%
+  filter(SkippedAll) %>%
+  summarise(Answer = "Skipped this question", n = n())
+
+respir_long <- data_tib_m1 %>%
+  pivot_longer(cols = starts_with("D_894259747_D_"), names_to = "AnswerCode", values_to = "Selected") %>%
+  filter(Selected == 1) %>%
+  mutate(Answer = case_when(
+    AnswerCode == "D_894259747_D_359025642" ~ "Chronic Lung Disease",
+    AnswerCode == "D_894259747_D_407340134" ~ "Asthma",
+    AnswerCode == "D_894259747_D_427219143" ~ "Hay Fever",
+    AnswerCode == "D_894259747_D_535003378" ~ "None"
+    #TRUE ~ "Skipped this question"
+  )) %>%
+  count(Answer)
+
+final_count <- bind_rows(respir_long, skipped_count)
+
+final_count <- final_count %>%
+  mutate(Answer = ifelse(is.na(Answer), "Skipped this question", Answer))
+
+dt_respir_summary <- final_count %>%  mutate(percentage = paste0(round(100*n/nrow(data_tib_m1), digits=2), "%"))
+
+gt_mh2<- dt_respir_summary %>%  gt::gt(rowname_col = "row_lab") %>%   
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("MHGROUP2: Diagnosed Respiratory Conditions  of Participants Who Completed BOH")) %>% 
+  cols_label(Answer = md("**Answer**"), n= md("**Number of Participants**"),percentage = md("**Percentage of Participants**")) %>% 
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Answer,
+    )
+  ) 
+tab_footnote(
+  gt_mh2,
+  md("As this is a select all question, participants may select multiple responses."),
+  locations = cells_column_labels(columns = percentage),
+  placement = c("left")
+)
+
+```
+
+
+### Digestive System Problems 
+```{r MHGroup3, warning=FALSE, echo=FALSE, message=FALSE}
+
+skipped_count <- data_tib_m1 %>%
+  rowwise() %>%
+  mutate(SkippedAll = all(is.na(c_across(starts_with("D_180961306_D_"))))) %>%
+  ungroup() %>%
+  filter(SkippedAll) %>%
+  summarise(Answer = "Skipped this question", n = n())
+
+digest_long <- data_tib_m1 %>%
+  pivot_longer(cols = starts_with("D_180961306_D_"), names_to = "AnswerCode", values_to = "Selected") %>%
+  filter(Selected == 1) %>%
+  mutate(Answer = case_when(
+    AnswerCode == "D_180961306_D_406890409" ~ "Esophageal Acid Reflex",
+    AnswerCode == "D_180961306_D_704544306" ~ "Barrett's Esophagus",
+    AnswerCode == "D_180961306_D_691766591" ~ "Irritable Bowel Syndrome",
+    AnswerCode == "D_180961306_D_308645635" ~ "Inflammatory Bowel Disease",
+    AnswerCode == "D_180961306_D_731115613" ~ "Diverticulitis or Diverticulosis",
+    AnswerCode == "D_180961306_D_567284980" ~ "Ulcerative Colitis",
+    AnswerCode == "D_180961306_D_986548173" ~ "Crohn's Disease",
+    AnswerCode == "D_180961306_D_285995100" ~ "Celiac Disease",
+    AnswerCode == "D_180961306_D_545628561" ~ "Gallstones",
+    AnswerCode == "D_180961306_D_709786039" ~ "Liver Cirrhosis",
+    AnswerCode == "D_180961306_D_984479578" ~ "Pancreatitis",
+    AnswerCode == "D_180961306_D_535003378" ~ "None",
+    TRUE ~ "Skipped this question"
+  )) %>%
+  count(Answer)
+
+final_count <- bind_rows(digest_long, skipped_count)
+
+dt_digest_summary <- final_count %>%  mutate(percentage = paste0(round(100*n/nrow(data_tib_m1), digits=2), "%"))
+
+gt_mh3<- dt_digest_summary %>%  gt::gt(rowname_col = "row_lab") %>%   
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("MHGROUP3: Diagnosed Digestive System Problems  of Participants Who Completed BOH")) %>% 
+  cols_label(Answer = md("**Answer**"), n= md("**Number of Participants**"),percentage = md("**Percentage of Participants**")) %>% 
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Answer,
+    )
+  ) 
+tab_footnote(
+  gt_mh3,
+  md("As this is a select all question, participants may select multiple responses."),
+  locations = cells_column_labels(columns = percentage),
+  placement = c("left")
+)
+
+
+```
+
+
+### Thyroid, Dibetes, and Grave's Disease 
+```{r MHGroup4, warning=FALSE, echo=FALSE, message=FALSE}
+
+skipped_count <- data_tib_m1 %>%
+  rowwise() %>%
+  mutate(SkippedAll = all(is.na(c_across(starts_with("D_900541533_D_"))))) %>%
+  ungroup() %>%
+  filter(SkippedAll) %>%
+  summarise(Answer = "Skipped this question", n = n())
+
+thy_db_gv_long <- data_tib_m1 %>%
+  pivot_longer(cols = starts_with("D_900541533_D_"), names_to = "AnswerCode", values_to = "Selected") %>%
+  filter(Selected == 1) %>%
+  mutate(Answer = case_when(
+    AnswerCode == "D_900541533_D_726539692" ~ "Thyroid Disorder",
+    AnswerCode == "D_900541533_D_158044532" ~ "Diabetes",
+    AnswerCode == "D_900541533_D_943054522" ~ "Graves' Disease",
+    AnswerCode == "D_900541533_D_535003378" ~ "None",
+    #TRUE ~ "Skipped this question"
+  )) %>%
+  count(Answer)
+
+final_count <- bind_rows(thy_db_gv_long, skipped_count)
+
+dt_thy_db_gv_summary <- final_count %>%  mutate(percentage = paste0(round(100*n/nrow(data_tib_m1), digits=2), "%"))
+
+gt_mh4<- dt_thy_db_gv_summary %>%  gt::gt(rowname_col = "row_lab") %>%   
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("MHGROUP4: Diagnosed with Any of These Conditions  of Participants Who Completed BOH")) %>% 
+  cols_label(Answer = md("**Answer**"), n= md("**Number of Participants**"),percentage = md("**Percentage of Participants**")) %>% 
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Answer,
+    )
+  ) 
+tab_footnote(
+  gt_mh4,
+  md("As this is a select all question, participants may select multiple responses."),
+  locations = cells_column_labels(columns = percentage),
+  placement = c("left")
+)
+
+
+
+```
+
+
+
+### Kidney 
+```{r MHGroup5, warning=FALSE, echo=FALSE, message=FALSE}
+skipped_count <- data_tib_m1 %>%
+  rowwise() %>%
+  mutate(SkippedAll = all(is.na(c_across(starts_with("D_874046190_D_"))))) %>%
+  ungroup() %>%
+  filter(SkippedAll) %>%
+  summarise(Answer = "Skipped this question", n = n())
+
+kidney_long <- data_tib_m1 %>%
+  pivot_longer(cols = starts_with("D_874046190_D_"), names_to = "AnswerCode", values_to = "Selected") %>%
+  filter(Selected == 1) %>%
+  mutate(Answer = case_when(
+    AnswerCode == "D_874046190_D_827542780" ~ "Kidney Stones",
+    AnswerCode == "D_874046190_D_167238688" ~ "Chronic Kindey Disease",
+    AnswerCode == "D_874046190_D_535003378" ~ "None",
+    TRUE ~ "Skipped this question"
+  )) %>%
+  count(Answer)
+
+final_count <- bind_rows(kidney_long, skipped_count)
+
+dt_kidney_summary <- final_count %>%  mutate(percentage = paste0(round(100*n/nrow(data_tib_m1), digits=2), "%"))
+
+gt_mh5<- dt_kidney_summary %>%  gt::gt(rowname_col = "row_lab") %>%   
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("MHGROUP5: Diagnosed with Kidney Conditions of Participants Who Completed BOH")) %>% 
+  cols_label(Answer = md("**Answer**"), n= md("**Number of Participants**"),percentage = md("**Percentage of Participants**")) %>% 
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Answer,
+    )
+  ) 
+tab_footnote(
+  gt_mh5,
+  md("As this is a select all question, participants may select multiple responses."),
+  locations = cells_column_labels(columns = percentage),
+  placement = c("left")
+)
+
+```
+
+
+### Systemic and Other Problems
+```{r MHGroup6, warning=FALSE, echo=FALSE, message=FALSE}
+skipped_count <- data_tib_m1 %>%
+  rowwise() %>%
+  mutate(SkippedAll = all(is.na(c_across(starts_with("D_543728565_D_"))))) %>%
+  ungroup() %>%
+  filter(SkippedAll) %>%
+  summarise(Answer = "Skipped this question", n = n())
+
+systemic_long <- data_tib_m1 %>%
+  pivot_longer(cols = starts_with("D_543728565_D_"), names_to = "AnswerCode", values_to = "Selected") %>%
+  filter(Selected == 1) %>%
+  mutate(Answer = case_when(
+    AnswerCode == "D_543728565_D_636030086" ~ "Rheumatoid Arthritis",
+    AnswerCode == "D_543728565_D_239687183" ~ "Lupus",
+    AnswerCode == "D_543728565_D_134592375" ~ "Gout",
+    AnswerCode == "D_543728565_D_535003378" ~ "None",
+    TRUE ~ "Skipped this question"
+  )) %>%
+  count(Answer)
+
+final_count <- bind_rows(systemic_long, skipped_count)
+
+dt_systemic_summary <- final_count %>%  mutate(percentage = paste0(round(100*n/nrow(data_tib_m1), digits=2), "%"))
+
+gt_mh6<- dt_systemic_summary %>%  gt::gt(rowname_col = "row_lab") %>%   
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("MHGROUP6: Diagnosed with Systemic Conditions of Participants Who Completed BOH")) %>% 
+  cols_label(Answer = md("**Answer**"), n= md("**Number of Participants**"),percentage = md("**Percentage of Participants**")) %>% 
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Answer,
+    )
+  ) 
+tab_footnote(
+  gt_mh6,
+  md("As this is a select all question, participants may select multiple responses."),
+  locations = cells_column_labels(columns = percentage),
+  placement = c("left")
+)
+
+```
+
+
+### Sexually Transmitted Diseases and Infections
+```{r MHGroup7, warning=FALSE, echo=FALSE, message=FALSE}
+skipped_count <- data_tib_m1 %>%
+  rowwise() %>%
+  mutate(SkippedAll = all(is.na(c_across(starts_with("D_874709643_D_"))))) %>%
+  ungroup() %>%
+  filter(SkippedAll) %>%
+  summarise(Answer = "Skipped this question", n = n())
+
+STDI_long <- data_tib_m1 %>%
+  pivot_longer(cols = starts_with("D_874709643_D_"), names_to = "AnswerCode", values_to = "Selected") %>%
+  filter(Selected == 1) %>%
+  mutate(Answer = case_when(
+    AnswerCode == "D_874709643_D_164910211" ~ "Mono",
+    AnswerCode == "D_874709643_D_796616844" ~ "Shingles",
+    AnswerCode == "D_874709643_D_436689514" ~ "Chronic Hepatitus B or C",
+    AnswerCode == "D_874709643_D_296357383" ~ "Gonorrhea",
+    AnswerCode == "D_874709643_D_901077233" ~ "Chlamydia",
+    AnswerCode == "D_874709643_D_136956596" ~ "Trich",
+    AnswerCode == "D_874709643_D_455776698" ~ "Syphilis",
+    AnswerCode == "D_874709643_D_155874194" ~ "Genital Warts",
+    AnswerCode == "D_874709643_D_880962432" ~ "HPV",
+    AnswerCode == "D_874709643_D_691450854" ~ "HIV/AIDS",
+    AnswerCode == "D_874709643_D_535003378" ~ "None", 
+    #TRUE ~ "Skipped this question"
+  )) %>%
+  count(Answer)
+
+final_count <- bind_rows(STDI_long, skipped_count)
+
+final_count <- final_count %>%
+  mutate(Answer = ifelse(is.na(Answer), "Skipped this question", Answer))
+
+dt_STDI_summary <- final_count %>%  mutate(percentage = paste0(round(100*n/nrow(data_tib_m1), digits=2), "%"))
+
+gt_mh7<- dt_STDI_summary %>%  gt::gt(rowname_col = "row_lab") %>%   
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("MHGROUP7: Diagnosed Infections or Diseases of Participants Who Completed BOH")) %>% 
+  cols_label(Answer = md("**Answer**"), n= md("**Number of Participants**"),percentage = md("**Percentage of Participants**")) %>% 
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Answer,
+    )
+  ) 
+tab_footnote(
+  gt_mh7,
+  md("As this is a select all question, participants may select multiple responses."),
+  locations = cells_column_labels(columns = percentage),
+  placement = c("left")
+)
+
+
+```
+
+
+### Urinary and Reproductive System Problems 
+```{r MHGroup8, warning=FALSE, echo=FALSE, message=FALSE}
+
+skipped_count <- data_tib_m1 %>%
+  rowwise() %>%
+  mutate(SkippedAll = all(is.na(c_across(starts_with("D_725626004_D_"))))) %>%
+  ungroup() %>%
+  filter(SkippedAll) %>%
+  summarise(Answer = "Skipped this question", n = n())
+
+STDI_long <- data_tib_m1 %>%
+  pivot_longer(cols = starts_with("D_725626004_D_"), names_to = "AnswerCode", values_to = "Selected") %>%
+  filter(Selected == 1) %>%
+  mutate(Answer = case_when(
+    AnswerCode == "D_725626004_D_509721537" ~ "Uterine Fibroids",
+    AnswerCode == "D_725626004_D_863286658" ~ "Endometriosis",
+    AnswerCode == "D_725626004_D_386524148" ~ "Polycystic Ovary System",
+    AnswerCode == "D_725626004_D_937208760" ~ "Enlarged Prostate",
+    AnswerCode == "D_725626004_D_746542057" ~ "Fibrocystic Breast or Benign Breast isease",
+    AnswerCode == "D_725626004_D_854945381" ~ "Ductal Carcinoma in situ",
+    AnswerCode == "D_725626004_D_535003378" ~ "None", 
+  )) %>%
+  count(Answer)
+
+final_count <- bind_rows(STDI_long, skipped_count)
+
+final_count <- final_count %>%
+  mutate(Answer = ifelse(is.na(Answer), "Skipped this question", Answer))
+
+dt_STDI_summary <- final_count %>%  mutate(percentage = paste0(round(100*n/nrow(data_tib_m1), digits=2), "%"))
+
+gt_mh8<- dt_STDI_summary %>%  gt::gt(rowname_col = "row_lab") %>%   
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("MHGROUP8: Diagnosed Urinary and Reproductive Problems of Participants \n Who Completed BOH")) %>% 
+  cols_label(Answer = md("**Answer**"), n= md("**Number of Participants**"),percentage = md("**Percentage of Participants**")) %>% 
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Answer,
+    )
+  ) 
+tab_footnote(
+  gt_mh8,
+  md("As this is a select all question, participants may select multiple responses."),
+  locations = cells_column_labels(columns = percentage),
+  placement = c("left"))
+
+
+
+```
+
+
+### Surgery 
+```{r MHGroup9, warning=FALSE, echo=FALSE, message=FALSE}
+
+skipped_count <- data_tib_m1 %>%
+  rowwise() %>%
+  mutate(SkippedAll = all(is.na(c_across(starts_with("D_624179836_D_"))))) %>%
+  ungroup() %>%
+  filter(SkippedAll) %>%
+  summarise(Answer = "Skipped this question", n = n())
+
+STDI_long <- data_tib_m1 %>%
+  pivot_longer(cols = starts_with("D_624179836_D_"), names_to = "AnswerCode", values_to = "Selected") %>%
+  filter(Selected == 1) %>%
+  mutate(Answer = case_when(
+    AnswerCode == "D_624179836_D_797189152" ~ "Tonsillectomy",
+    AnswerCode == "D_624179836_D_633546100" ~ "Cholecystectomy",
+    AnswerCode == "D_624179836_D_866002271" ~ "Appendectomy",
+    AnswerCode == "D_624179836_D_118789503" ~ "Liposuction",
+    AnswerCode == "D_624179836_D_715563991" ~ "Gastric Bypass",
+    AnswerCode == "D_624179836_D_533491176" ~ "Breast Surgery",
+    AnswerCode == "D_624179836_D_220755749" ~ "Hysterectomy",
+    AnswerCode == "D_624179836_D_465318416" ~ "Tubal Ligation",
+    AnswerCode == "D_624179836_D_630100221" ~ "Oophorectomy",
+    AnswerCode == "D_624179836_D_692881833" ~ "Salpingectomy",
+    AnswerCode == "D_624179836_D_654450030" ~ "Vasectomy",
+    AnswerCode == "D_624179836_D_532603425" ~ "Orchiectomy or Orchidectomy",
+    AnswerCode == "D_624179836_D_733236542" ~ "Prostatectomy",
+    AnswerCode == "D_624179836_D_961987554" ~ "Penectomy",
+    AnswerCode == "D_624179836_D_535003378" ~ "None", 
+  )) %>%
+  count(Answer)
+
+final_count <- bind_rows(STDI_long, skipped_count)
+
+final_count <- final_count %>%
+  mutate(Answer = ifelse(is.na(Answer), "Skipped this question", Answer))
+
+dt_STDI_summary <- final_count %>%  mutate(percentage = paste0(round(100*n/nrow(data_tib_m1), digits=2), "%"))
+
+gt_mh9<- dt_STDI_summary %>%  gt::gt(rowname_col = "row_lab") %>%   
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("MHGROUP9: Surgeries Had of Participants Who Completed BOH")) %>% 
+  cols_label(Answer = md("**Answer**"), n= md("**Number of Participants**"),percentage = md("**Percentage of Participants**")) %>% 
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Answer,
+    )
+  ) 
+tab_footnote(
+  gt_mh9,
+  md("As this is a select all question, participants may select multiple responses."),
+  locations = cells_column_labels(columns = percentage),
+  placement = c("left"))
+
+
+```
