@@ -862,7 +862,7 @@ grid.arrange(cglifeE, cglifeF, nrow=2)
 cglifeG=hist_funct(D_434034366, "CIGLIFEG: Cigarette Smoked per Day at Ages 60-69", "Cigarettes", "Frequency")
 
 #CIGLIFEH
-hist_funct(D_842088582, "CIGLIFEH: Cigarette Smoked per Day at Ages 70+", "Cigarettes", "Frequency") #no one yet
+cglifeH=hist_funct(D_842088582, "CIGLIFEH: Cigarette Smoked per Day at Ages 70+", "Cigarettes", "Frequency") #no one yet
 cglifeH=grid.arrange(cglifeG, cglifeH, nrow=2)
 
 ```
