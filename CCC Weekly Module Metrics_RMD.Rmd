@@ -141,7 +141,7 @@ completion <- modules1[, c(1,10)]
 all_data <- left_join(data_tib, completion, by="Connect_ID")
 
 
-all_data <- all_data %>%  mutate(Site = case_when(d_827220437==472940358 ~ "Baylor Scott & White Health",
+all_data <- all_data %>%  mutate(Site = case_when(d_827220437==472940358 ~ "Baylor Scott and White Health",
                                                   d_827220437==125001209 ~ "KP Colorado",
                                                   d_827220437==327912200 ~ "KP Georgia",
                                                   d_827220437==300267574 ~ "KP Hawaii",
@@ -153,7 +153,7 @@ all_data <- all_data %>%  mutate(Site = case_when(d_827220437==472940358 ~ "Bayl
                                                   d_827220437==809703864 ~ "UChicago"),
                                  BSL_compl = case_when(d_100767870==353358909 ~ "All Baseline Modules Completed",
                                                        TRUE ~ "One or More Baseline Modules Not Completed"))
-all_data$Site <- factor(all_data$Site, levels=c("Baylor Scott & White Health","HealthPartners", "Henry Ford","Marshfield","Sanford","UChicago","KP Colorado","KP Georgia", "KP Hawaii","KP Northwest"))
+all_data$Site <- factor(all_data$Site, levels=c("Baylor Scott and White Health","HealthPartners", "Henry Ford","Marshfield","Sanford","UChicago","KP Colorado","KP Georgia", "KP Hawaii","KP Northwest"))
 
 ```
 
