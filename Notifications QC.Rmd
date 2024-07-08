@@ -282,7 +282,7 @@ if (nrow(Rs_BioSrvy_invite) > 50) {
 
 
 \FloatBarrier
-## The same participant received multiple Baseline Clinical Biospecimen Survey reminders on the same day. The first attempt is category name 'Baseline Clinical Biospecimen Survey' and attempts 2-5 are under category name 'Baseline Clinical Blood and Urine Sample Survey Reminders'. Note, first contact attempt is sent at the time of the sample donation and the 2nd contact attempt is sent at 8pm that same day; for that reason we expect up to 2 contacts a day per participant. This table will identify any count higher than 2 per day.
+## The same participant received multiple Baseline Clinical Biospecimen Survey reminders on the same day. 'Baseline Clinical Biospecimen Survey' is the old label for the first attempt and we no longer have that. It's been updated to 'Baseline Clinical Blood and Urine Sample Survey Reminders' match the category name of the scheduled notifications 2nd-5th. Note, first contact attempt is sent at the time of the sample donation and the 2nd contact attempt is sent at 8pm that same day; for that reason we expect up to 2 contacts a day per participant. This table will identify any count higher than 2 per day.
 ```{r ClBio, echo=FALSE, message=FALSE, warning=FALSE}
 ClBio <- "SELECT DISTINCT p.Connect_ID, 
                 n.token,
@@ -292,7 +292,9 @@ ClBio <- "SELECT DISTINCT p.Connect_ID,
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
 LEFT JOIN `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
 ON p.token = n.token
-WHERE (category LIKE '%Baseline Clinical Biospecimen Survey%' OR category LIKE '%Baseline Clinical Blood and Urine Sample Survey Reminders%')
+WHERE (category LIKE '%Baseline Clinical Biospecimen Survey%' OR 
+       category LIKE '%Baseline Clinical Blood and Urine Sample Survey Reminders%' OR
+       category ='Baseline Clinical Blood and Urine Sample Survey Reminders')
 AND DATE(notification_time) >= (CURRENT_DATE() - 7)
 #AND notificationType = 'email'
 GROUP BY Connect_ID, token, repeat_date
@@ -894,7 +896,7 @@ if (nrow(WD_rem) > 50) {
 ```
 
 \FloatBarrier
-## The same participant received multiple (non-KPHI) Baseline Mouthwash Home Collection Kit SMS Reminders on the same day. The first attempt is category name 'Biospecimen Home Collection Kit Reminder' and attempts 2-5 are under category name 'Baseline Mouthwash Home Collection Kit Reminders'.
+## The same participant received multiple (non-KPHI) Baseline Mouthwash Home Collection Kit SMS Reminders on the same day. The first attempt is category name 'Biospecimen Home Collection Kit Reminders' and attempts 2-5 are under category name 'Baseline Mouthwash Home Collection Kit Reminders'.
 
 ```{r MWHC_text, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -909,7 +911,9 @@ MWHC <- "SELECT DISTINCT p.Connect_ID,
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
 LEFT JOIN `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
 ON p.token = n.token
-WHERE (category='Baseline Mouthwash Home Collection Kit Reminders' OR category='Biospecimen Home Collection Kit Reminder' )
+WHERE (category='Baseline Mouthwash Home Collection Kit Reminders' OR 
+       category='Biospecimen Home Collection Kit Reminders' OR
+       category='Biospecimen Home Collection Kit Reminders')
 AND DATE(notification_time) >= (CURRENT_DATE() - 7)
 AND notificationType = 'sms' and p.d_827220437!='300267574'
 GROUP BY Connect_ID, token, repeat_date
@@ -934,7 +938,7 @@ if (nrow(MWHC_rem) > 50) {
 
 
 \FloatBarrier
-## The same participant received multiple (non-KPHI) Baseline Mouthwash Home Collection Kit email Reminders on the same day. The first attempt is category name 'Biospecimen Home Collection Kit Reminder' and attempts 2-5 are under category name 'Baseline Mouthwash Home Collection Kit Reminders'.
+## The same participant received multiple (non-KPHI) Baseline Mouthwash Home Collection Kit email Reminders on the same day. The first attempt is category name 'Biospecimen Home Collection Kit Reminders' and attempts 2-5 are under category name 'Baseline Mouthwash Home Collection Kit Reminders'.
 \FloatBarrier
 ```{r MWHC_email, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -949,7 +953,7 @@ MWHC <- "SELECT DISTINCT p.Connect_ID,
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
 LEFT JOIN `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
 ON p.token = n.token
-WHERE (category='Baseline Mouthwash Home Collection Kit Reminders' OR category='Biospecimen Home Collection Kit Reminder')
+WHERE (category='Baseline Mouthwash Home Collection Kit Reminders' OR category='Biospecimen Home Collection Kit Reminders')
 AND DATE(notification_time) >= (CURRENT_DATE() - 7)
 AND notificationType = 'email' and p.d_827220437!='300267574'
 GROUP BY Connect_ID, token, repeat_date
@@ -975,7 +979,7 @@ if (nrow(MWHC_rem) > 50) {
 
 
 \FloatBarrier
-# The same participant received multiple Baseline Mouthwash Home Collection Kit SMS Reminders: KPHI  on the same day. The first attempt is category name 'Biospecimen Home Collection Kit Reminder' and attempts 2-5 are under category name 'Baseline Mouthwash Home Collection Kit Reminders: KPHI'.
+# The same participant received multiple Baseline Mouthwash Home Collection Kit SMS Reminders: KPHI  on the same day. The first attempt is category name 'Biospecimen Home Collection Kit Reminders' and attempts 2-5 are under category name 'Baseline Mouthwash Home Collection Kit Reminders: KPHI'.
 
 ```{r MWHC_KPHI_text, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -988,7 +992,7 @@ MWHC_KPHI <- "SELECT DISTINCT p.Connect_ID,
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
 LEFT JOIN `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
 ON p.token = n.token
-WHERE (category='Baseline Mouthwash Home Collection Kit Reminders: KPHI' OR category='Biospecimen Home Collection Kit Reminder') 
+WHERE (category='Baseline Mouthwash Home Collection Kit Reminders: KPHI' OR category='Biospecimen Home Collection Kit Reminders') 
 AND DATE(notification_time) >= (CURRENT_DATE() - 7)
 AND notificationType = 'sms' and p.d_827220437='300267574'
 GROUP BY Connect_ID, token, repeat_date
@@ -1016,7 +1020,7 @@ if (nrow(MWHC_KPHI_rem) > 50) {
 
 
 \FloatBarrier
-# The same participant received multiple Baseline Mouthwash Home Collection Kit email Reminders: KPHI  on the same day.  The first attempt is category name 'Biospecimen Home Collection Kit Reminder' and attempts 2-5 are under category name 'Baseline Mouthwash Home Collection Kit Reminders: KPHI'.
+# The same participant received multiple Baseline Mouthwash Home Collection Kit email Reminders: KPHI  on the same day.  The first attempt is category name 'Biospecimen Home Collection Kit Reminders' and attempts 2-5 are under category name 'Baseline Mouthwash Home Collection Kit Reminders: KPHI'.
 
 ```{r MWHC_KPHI_email, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -1029,7 +1033,7 @@ MWHC_KPHI <- "SELECT DISTINCT p.Connect_ID,
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
 LEFT JOIN `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
 ON p.token = n.token
-WHERE (category='Baseline Mouthwash Home Collection Kit Reminders: KPHI' OR category='Biospecimen Home Collection Kit Reminder') 
+WHERE (category='Baseline Mouthwash Home Collection Kit Reminders: KPHI' OR category='Biospecimen Home Collection Kit Reminders') 
 AND DATE(notification_time) >= (CURRENT_DATE() - 7)
 AND notificationType = 'email' and p.d_827220437='300267574'
 GROUP BY Connect_ID, token, repeat_date
@@ -1133,6 +1137,44 @@ if (nrow(MW_Srvy_rem) > 50) {
 
 
 \FloatBarrier
+# The same participant received multiple Mouthwash Home Collection Acknowledgement email Reminders on the same day. Note, 'Biospecimen Home Collection Acknowledgement' is the old label for the category and we no longer have that.
+
+```{r MW_Acknowlegde_email, echo=FALSE, message=FALSE, warning=FALSE}
+
+MW_Srvy <- "SELECT DISTINCT p.Connect_ID, 
+                n.token,
+                MIN(category) AS category,
+                DATE(notification_time) AS repeat_date, 
+                COUNT(*) AS num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+LEFT JOIN `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+ON p.token = n.token
+WHERE (category = 'Baseline Mouthwash Sample Survey Reminders'
+       OR category = 'Biospecimen Home Collection Survey Reminder')
+AND DATE(notification_time) >= (CURRENT_DATE() - 7)
+AND notificationType = 'sms'
+GROUP BY Connect_ID, token, repeat_date
+HAVING COUNT(*) > 1"
+
+MW_Srvy_table <- bq_project_query(project, MW_Srvy)
+MW_Srvy_rem <- bq_table_download(MW_Srvy_table, bigint = "integer64") #currently 4 - all 2
+
+
+if (nrow(MW_Srvy_rem) > 50) {
+  cat("There are", nrow(MW_Srvy_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(MW_Srvy_rem,glue("{local_drive}Multiple_MW_Srvy_text_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(MW_Srvy_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(MW_Srvy_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+```
+
+
+\FloatBarrier
 
 
 # 3. Participants receiving attempts out of order, meaning that they received "2nd contact" attempt or higher but not the "1st contact" attempt. Several categories are excluded from this query if the first attempt has a different category name then the remaining contact attempts; backlogs are also excluded.
@@ -1153,8 +1195,9 @@ ON
   where n.token is not null and 
   n.category NOT LIKE '%Contact%' and n.category NOT LIKE '%contact%' and 
   n.category!='Baseline Research Biospecimen Survey Reminders' and n.category!= 'Baseline Clinical Blood and Urine Sample Survey Reminders'
-  and n.category!= 'newsletter' and n.category!='Baseline Mouthwash Sample Survey Reminders' and n.category!='Biospecimen Home Collection Kit Reminder'
+  and n.category!= 'newsletter' 
 and n.category!='Biospecimen Home Collection Survey Reminder'"
+##and n.category!='Baseline Mouthwash Sample Survey Reminders' and n.category!='Biospecimen Home Collection Kit Reminder' # we now have these in BQ
 
 OOO_table <- bq_project_query(project, OOO)
 OOO_rem <- bq_table_download(OOO_table, bigint = "integer64",n_max = Inf, page_size = 1000) 
@@ -1244,7 +1287,7 @@ if (nrow(OOO_rem_df) > 50) {
 
 
 overage <- "WITH daily_counts AS (
-    SELECT
+    SELECT notificationType,
         category,
         attempt,
         notificationSpecificationsID,
@@ -1255,7 +1298,7 @@ overage <- "WITH daily_counts AS (
     WHERE
         DATE(notification_time) > '2024-02-29'
         AND notificationSpecificationsID IS NOT NULL
-    GROUP BY
+    GROUP BY notificationType,
         category,
         attempt,
         notificationSpecificationsID,
@@ -1263,18 +1306,20 @@ overage <- "WITH daily_counts AS (
 ),
 
 average_daily AS (
-    SELECT
+    SELECT notificationType,
         category,
         attempt,
+        notificationSpecificationsID,
         AVG(daily_count) AS average_daily_notifications
     FROM
         daily_counts
-    GROUP BY
+    GROUP BY notificationType,
         category,
-        attempt
+        attempt,
+        notificationSpecificationsID
 )
 
-SELECT
+SELECT dc.notificationType,
     dc.category,
     dc.attempt,
     dc.notificationSpecificationsID,
@@ -1286,13 +1331,16 @@ FROM
 JOIN
     average_daily ad
 ON
-    dc.category = ad.category
+    dc.notificationType = ad.notificationType
+    AND dc.category = ad.category
     AND dc.attempt = ad.attempt
+    AND dc.notificationSpecificationsID = ad.notificationSpecificationsID
 WHERE
-    #dc.daily_count > ad.average_daily_notifications and
-    dc.notification_date >= (CURRENT_DATE()-7)
-ORDER BY dc.category,
+    dc.notification_date >= (CURRENT_DATE() - 7)
+ORDER BY dc.notificationType,
+    dc.category,
     dc.attempt;
+
 "
 
 
@@ -1330,26 +1378,6 @@ if (nrow(overage_rem) > 50) {
   knitr::kable(overage_rem) %>% kable_styling(latex_options = "scale_down")
 }
 }
-
-
-#post-consent user profile reminders between 1-4
-#Withdrawal Reminders between between 1-2
-#Verified, BL Survey Reminders New Pts between 18-51
-#Verified, BL Survey Reminders (1st contact) about 80
-#UC Baseline Biospecimen Scheduling Invitation about 9
-#All KP baseline biospecimen invitations between 5-22
-#HP Baseline Biospecimen Invitation about 12
-#HIPAA revocation reminders 1
-#HF Baseline Biospecimen Scheduling Invitation about 10
-#Data Destruction Reminders betwen 1-2
-#Cannot Be Verified Notification 1-2
-#Biospecimen Survey Reminder about 30
-#Baseline Research Menstrual Cycle Survey Reminders 2-4
-#Baseline Research Biospecimen Survey Reminders 2-6
-#Baseline Clinical Menstrual Cycle Survey Reminders 7-8
-#Baseline Clinical Blood and Urine Sample Survey Reminders 6-18
-#Baseline Clinical Biospecimen Survey Reminder 31
-#3mo QOL Survey Reminders 41-91
 
 
 
