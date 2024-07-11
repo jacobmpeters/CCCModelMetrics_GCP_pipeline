@@ -1200,7 +1200,7 @@ and n.category!='Biospecimen Home Collection Survey Reminder'"
 ##and n.category!='Baseline Mouthwash Sample Survey Reminders' and n.category!='Biospecimen Home Collection Kit Reminder' # we now have these in BQ
 
 OOO_table <- bq_project_query(project, OOO)
-OOO_rem <- bq_table_download(OOO_table, bigint = "integer64",n_max = Inf, page_size = 1000) 
+OOO_rem <- bq_table_download(OOO_table, bigint = "integer64",n_max = Inf, page_size = 500) 
 
 
 
