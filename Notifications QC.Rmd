@@ -184,22 +184,22 @@ GROUP BY Connect_ID, token, category, DATE(notification_time)
 HAVING COUNT(*) > 1"
 
 QOL_table <- bq_project_query(project, QOL)
-QOL3_invite <- bq_table_download(QOL_table, bigint = "integer64") 
+QOL_Em_invite <- bq_table_download(QOL_table, bigint = "integer64") 
 
-# if (nrow(QOL3_invite) == 0) {
+# if (nrow(QOL_Em_invite) == 0) {
 #   cat("No errors\n")
 # } else {
-#   knitr::kable(QOL3_invite) %>% kable_styling(latex_options = "scale_down")
+#   knitr::kable(QOL_Em_invite) %>% kable_styling(latex_options = "scale_down")
 # }
 
-if (nrow(QOL3_invite) > 50) {
-  cat("There are", nrow(QOL3_invite), "errors. This table has been made a csv and posted to Box, link in the report intro.")
-  write.csv(QOL3_invite,glue("{local_drive}Multiple_QOL_Email_Notifications_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+if (nrow(QOL_Em_invite) > 50) {
+  cat("There are", nrow(QOL_Em_invite), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(QOL_Em_invite,glue("{local_drive}Multiple_QOL_Email_Notifications_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
 } else {
-  if(nrow(QOL3_invite) == 0) {
+  if(nrow(QOL_Em_invite) == 0) {
   cat("No errors\n")
 } else {
-  knitr::kable(QOL3_invite) %>% kable_styling(latex_options = "scale_down")
+  knitr::kable(QOL_Em_invite) %>% kable_styling(latex_options = "scale_down")
 }
 }
 
@@ -224,14 +224,17 @@ WHERE category LIKE '%3mo QOL Survey Reminders%' and date(notification_time) >= 
 GROUP BY Connect_ID, token, category, DATE(notification_time)
 HAVING COUNT(*) > 1"
 
-if (nrow(QOL3_invite) > 50) {
-  cat("There are", nrow(QOL3_invite), "errors. This table has been made a csv and posted to Box, link in the report intro.")
-  write.csv(QOL3_invite,glue("{local_drive}Multiple_QOL_SMS_Notifications_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+QOL_table <- bq_project_query(project, QOL)
+QOLSMS_invite <- bq_table_download(QOL_table, bigint = "integer64")
+
+if (nrow(QOLSMS_invite) > 50) {
+  cat("There are", nrow(QOLSMS_invite), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(QOLSMS_invite,glue("{local_drive}Multiple_QOL_SMS_Notifications_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
 } else {
-  if(nrow(QOL3_invite) == 0) {
+  if(nrow(QOLSMS_invite) == 0) {
   cat("No errors\n")
 } else {
-  knitr::kable(QOL3_invite) %>% kable_styling(latex_options = "scale_down")
+  knitr::kable(QOLSMS_invite) %>% kable_styling(latex_options = "scale_down")
 }
 }
 
@@ -1200,7 +1203,7 @@ and n.category!='Biospecimen Home Collection Survey Reminder'"
 ##and n.category!='Baseline Mouthwash Sample Survey Reminders' and n.category!='Biospecimen Home Collection Kit Reminder' # we now have these in BQ
 
 OOO_table <- bq_project_query(project, OOO)
-OOO_rem <- bq_table_download(OOO_table, bigint = "integer64",n_max = Inf, page_size = 1000) 
+OOO_rem <- bq_table_download(OOO_table, bigint = "integer64",n_max = Inf, page_size = 500) 
 
 
 
