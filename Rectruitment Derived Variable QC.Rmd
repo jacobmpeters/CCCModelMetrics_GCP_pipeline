@@ -115,7 +115,7 @@ base_vars <-
 
 
 
-### If all BL Modules are completed and the participant has a baseline research collection where the tube is collected and the reason tube wasn't collected wasn't refusal, then SMPaym_TmPaymEligBL_v1r0 must be populated.
+## 1. If all BL Modules are completed and the participant has a baseline research collection where the tube is collected and the reason tube wasn't collected wasn't refusal, then SMPaym_TmPaymEligBL_v1r0 must be populated.
 
 ```{r Incentive_Rule2, echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -138,12 +138,18 @@ incentive2 <- incentive2  %>% select(Site, Connect_ID, d_130371375_d_266600170_d
 
 
 colnames(incentive2) <- c("Site", "Connect ID", "SMPaym_PaymEligBL", "SMPaym_NORCPaymEligBL", "SMPaym_TmPaymEligBL")
-knitr::kable(incentive2)  %>% kable_styling(latex_options = "scale_down")
+
+if (nrow(incentive2) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(incentive2) %>%
+    kable_styling(latex_options = "scale_down")
+}
 ```
 
 \FloatBarrier
 
-### If either the BUM Survey or the BU Survey was completed with SrvBlU_MENST60_v2r0 answered yes, then SrvMC_MenstSrvElig_v1r0 must be yes. 
+## 2. If either the BUM Survey or the BU Survey was completed with SrvBlU_MENST60_v2r0 answered yes, then SrvMC_MenstSrvElig_v1r0 must be yes. 
 
 ```{r Menstrual_Eligibility, echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -197,8 +203,63 @@ mens_elg <- mens_elg %>%  filter(!(Connect_ID %in% can_no_longer_contact))
 colnames(mens_elg) <- c("Site", "Connect ID", "SrvMC_MenstSrvElig_v1r0")
 #knitr::kable(mens_elg) 
 
-knitr::kable(mens_elg)  %>% kable_styling(latex_options = "scale_down")
 
+if (nrow(mens_elg) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(mens_elg) %>%
+    kable_styling(latex_options = "scale_down")
+}
+
+```
+
+
+
+\FloatBarrier
+
+## 3. If SrvMC_MenstSrvElig_v1r0, then SrvMC_BaseComplete_v1r0 cannot be 'Started' or 'Submitted'. Note, this excludes those who started the survey prior to December 10th, 2022 as the eligibility has since been corrected. 
+
+```{r Menstrual_NOT_Eligible, echo=FALSE, warning=FALSE, message=FALSE}
+
+
+MC_ccc_NE <- "SELECT CASE
+  WHEN d_827220437 = 125001209  THEN 'Kaiser Permanente Colorado'
+  WHEN  d_827220437 = 181769837  THEN 'Other'
+  WHEN d_827220437 = 300267574  THEN 'Kaiser Permanente Hawaii'
+  WHEN d_827220437 = 303349821  THEN 'Marshfield Clinic Health System'
+  WHEN   d_827220437 = 327912200  THEN 'Kaiser Permanente Georgia'
+  WHEN d_827220437 = 452412599  THEN 'Kaiser Permanente Northwest'
+  WHEN d_827220437 = 517700004  THEN 'National Cancer Institute'
+  WHEN d_827220437 = 531629870  THEN 'HealthPartners'
+  WHEN d_827220437 = 548392715  THEN 'Henry Ford Health System'
+  WHEN d_827220437 = 657167265  THEN 'Sanford Health'
+  WHEN d_827220437 = 809703864  THEN 'University of Chicago Medicine'
+END AS Site,
+
+Connect_ID, 
+CASE 
+    WHEN d_289750687 is null THEN 'No'
+    WHEN d_289750687 = 353358909 THEN 'Yes'
+  END AS Derived_Eligibility_Flag, 
+CASE 
+    WHEN d_459098666 = 231311385 THEN 'Completed'
+    WHEN d_459098666 = 615768760 THEN 'Started'
+  END AS Completion_Status,
+d_844088537 as Time_Survey_Started  
+ FROM `nih-nci-dceg-connect-prod-6d04.Connect.participants` 
+where d_289750687 is null and (d_459098666=231311385 or d_459098666=615768760)
+and date(d_844088537) >= '2023-01-01'
+order by d_844088537 desc"
+
+MC_ccc_NE_table <- bq_project_query(project, MC_ccc_NE)
+MC_not_elg <- bq_table_download(MC_ccc_NE_table, bigint = "integer64")
+
+if (nrow(MC_not_elg) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(MC_not_elg) %>%
+    kable_styling(latex_options = "scale_down")
+}
 
 ```
 
@@ -207,17 +268,23 @@ knitr::kable(mens_elg)  %>% kable_styling(latex_options = "scale_down")
 
 
 
-
 \FloatBarrier
 
-###  If HDPaym_PaymChosenBL_v2r0 = "cash" and SMPaym_PaymEligBL_v1r0=yes, then HDPaym_CaseNumberBL_v1r0 should not be populated. Or conversely, if SMPaym_PaymEligBL_v1r0=yes"and HDPaym_CaseNumberBL_v1r0 is populated, then HDPaym_PaymChosenBL_v2r0 should not be "cash".
+##  4. If HDPaym_PaymChosenBL_v2r0 = "cash" and SMPaym_PaymEligBL_v1r0=yes, then HDPaym_CaseNumberBL_v1r0 should not be populated. Or conversely, if SMPaym_PaymEligBL_v1r0=yes"and HDPaym_CaseNumberBL_v1r0 is populated, then HDPaym_PaymChosenBL_v2r0 should not be "cash".
 ```{r Cash_NO_NORC, echo=FALSE, warning=FALSE, message=FALSE}
 
 cash_NORC <- base_vars %>%  filter(d_130371375_d_266600170_d_731498909==353358909 & d_130371375_d_266600170_d_945795905=="cash" & !is.na(d_130371375_d_266600170_d_320023644)) %>% 
   select(Site, Connect_ID, d_130371375_d_266600170_d_945795905, d_130371375_d_266600170_d_320023644) %>%  sort_by(Site)
 
 colnames(cash_NORC) <- c("Site", "Connect ID", "HDPaym_PaymChosenBL", "HDPaym_CaseNumberBL")
-knitr::kable(cash_NORC)  %>% kable_styling(latex_options = "scale_down")
+
+
+if (nrow(cash_NORC) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(cash_NORC) %>%
+    kable_styling(latex_options = "scale_down")
+}
 
 ```
 
@@ -226,7 +293,7 @@ knitr::kable(cash_NORC)  %>% kable_styling(latex_options = "scale_down")
 
 \FloatBarrier
 
-### RcrtUP_DOB must equal the concatenation of RcrtUP_YOB, RcrtUP_MOB, and RcrtUP_BD. This excludes those with a null concatenated DOB as it was implements after Module 1 was in production.
+## 5. RcrtUP_DOB must equal the concatenation of RcrtUP_YOB, RcrtUP_MOB, and RcrtUP_BD. This excludes those with a null concatenated DOB as it was implements after Module 1 was in production.
 ```{r Bday, echo=FALSE, warning=FALSE, message=FALSE}
 
 
@@ -253,14 +320,20 @@ bday <- partsbq %>%  filter(!is.na(d_371067537) &
     select(Site, Connect_ID, d_371067537, d_544150384, d_564964481, d_795827569) %>%  sort_by(Site)
 
 colnames(bday) <- c("Site", "Connect ID", "RcrtUP_DOB", "RcrtUP_YOB", "RcrtUP_MOB", "RcrtUP_BD")
-knitr::kable(bday)  %>% kable_styling(latex_options = "scale_down")
+
+if (nrow(bday) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(bday) %>%
+    kable_styling(latex_options = "scale_down")
+}
 
 ```
 
 
 
 \FloatBarrier
-### If HdRef_Basesrv_v1r0 = "no" AND HdRef_Baseblood_v1r0 = "no" AND HdRef_Baseurine_v1r0 and HdRef_Basesaliva_v1r0 = "no" AND HdRef_Allsrv_v1r0 = "no" AND HdRef_Allsample_v1r0 = "no" AND HdRef_BlSpecSrv_v1r0 = "no" AND HdWd_WdConsent_v1r0 = "no" AND HdWd_Activepart_v1r0 = "no" AND HdWd_HIPAArevoked_v1r0 = "no" AND HdWd_Destroydata_v1r0 = "no" AND HdWd_Deceased_v1r0 = "no", then SMMet_PartStatus_v1r0= "No Refusal"
+## 6. If HdRef_Basesrv_v1r0 = "no" AND HdRef_Baseblood_v1r0 = "no" AND HdRef_Baseurine_v1r0 and HdRef_Basesaliva_v1r0 = "no" AND HdRef_Allsrv_v1r0 = "no" AND HdRef_Allsample_v1r0 = "no" AND HdRef_BlSpecSrv_v1r0 = "no" AND HdWd_WdConsent_v1r0 = "no" AND HdWd_Activepart_v1r0 = "no" AND HdWd_HIPAArevoked_v1r0 = "no" AND HdWd_Destroydata_v1r0 = "no" AND HdWd_Deceased_v1r0 = "no", then SMMet_PartStatus_v1r0= "No Refusal"
 ```{r SMMet_PartStatus0, echo=FALSE, warning=FALSE, message=FALSE}
 
 smmet0 <- partsbq %>%  filter(d_685002411_d_994064239==104430631 & d_685002411_d_194410742==104430631 & d_685002411_d_949501163==104430631 & d_685002411_d_277479354==104430631 & d_685002411_d_867203506==104430631 & d_685002411_d_352996056==104430631 & d_685002411_d_217367618==104430631 & d_747006172==104430631 & d_906417725==104430631 & d_773707518==104430631 & d_831041022==104430631 & d_987563196==104430631 & 
@@ -268,7 +341,13 @@ smmet0 <- partsbq %>%  filter(d_685002411_d_994064239==104430631 & d_685002411_d
     select(Site, Connect_ID, d_912301837) %>%  sort_by(Site)
 
 colnames(smmet0) <- c("Site", "Connect ID", "SMMet_PartStatus_v1r0")
-knitr::kable(smmet0)  %>% kable_styling(latex_options = "scale_down")
+
+if (nrow(smmet0) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(smmet0) %>%
+    kable_styling(latex_options = "scale_down")
+}
 
 ```
 
@@ -288,55 +367,77 @@ knitr::kable(smmet0)  %>% kable_styling(latex_options = "scale_down")
 
 
 \FloatBarrier
-### If HdWd_Activepart_v1r0 = yes" AND HdWd_HIPAArevoked_v1r0 = "no" And HdWd_WdConsent_v1r0 = "no" AND HdWd_Deceased_v1r0 = "no" AND HdWd_Destroydata_v1r0 = "no", then SMMet_PartStatus_v1r0= "Refused All Future Activities"
+## 7. If HdWd_Activepart_v1r0 = yes" AND HdWd_HIPAArevoked_v1r0 = "no" And HdWd_WdConsent_v1r0 = "no" AND HdWd_Deceased_v1r0 = "no" AND HdWd_Destroydata_v1r0 = "no", then SMMet_PartStatus_v1r0= "Refused All Future Activities"
 ```{r SMMet_PartStatus2, echo=FALSE, warning=FALSE, message=FALSE}
 
 smmet2 <- partsbq %>%  filter( d_906417725==353358909 & d_773707518==104430631 & d_747006172==104430631 & d_831041022==104430631 & d_987563196==104430631 & d_912301837!=458508122) %>% 
     select(Site, Connect_ID, d_912301837) %>%  sort_by(Site)
 
 colnames(smmet2) <- c("Site", "Connect ID", "SMMet_PartStatus_v1r0")
-knitr::kable(smmet2)  %>% kable_styling(latex_options = "scale_down")
+
+if (nrow(smmet2) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(smmet2) %>%
+    kable_styling(latex_options = "scale_down")
+}
 
 ```
 
 
 \FloatBarrier
-### If HdWd_HIPAArevoked_v1r0 = yes" And HdWd_WdConsent_v1r0 = "no" And HdWd_Deceased_v1r0 = "no" AND HdWd_Destroydata_v1r0 = "no", then SMMet_PartStatus_v1r0= "Revoked HIPAA Only"
+## 8. If HdWd_HIPAArevoked_v1r0 = yes" And HdWd_WdConsent_v1r0 = "no" And HdWd_Deceased_v1r0 = "no" AND HdWd_Destroydata_v1r0 = "no", then SMMet_PartStatus_v1r0= "Revoked HIPAA Only"
 ```{r SMMet_PartStatus3, echo=FALSE, warning=FALSE, message=FALSE}
 
 smmet3 <- partsbq %>%  filter(d_773707518==353358909 & d_747006172==104430631 & d_831041022==104430631 & d_987563196==104430631 & d_912301837!=872012139) %>% 
     select(Site, Connect_ID, d_912301837) %>%  sort_by(Site)
 
 colnames(smmet3) <- c("Site", "Connect ID", "SMMet_PartStatus_v1r0")
-knitr::kable(smmet3)  %>% kable_styling(latex_options = "scale_down")
+
+if (nrow(smmet3) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(smmet3) %>%
+    kable_styling(latex_options = "scale_down")
+}
 
 ```
 
 
 \FloatBarrier
-### If HdWd_HIPAArevoked_v1r0 = yes" AND HdWd_WdConsent_v1r0 = "yes" AND HdWd_Deceased_v1r0 = "no" AND HdWd_Destroydata_v1r0 = "no", then SMMet_PartStatus_v1r0= "Withdrew Consent"
+## 9. If HdWd_HIPAArevoked_v1r0 = yes" AND HdWd_WdConsent_v1r0 = "yes" AND HdWd_Deceased_v1r0 = "no" AND HdWd_Destroydata_v1r0 = "no", then SMMet_PartStatus_v1r0= "Withdrew Consent"
 ```{r SMMet_PartStatus4, echo=FALSE, warning=FALSE, message=FALSE}
 
 smmet4 <- partsbq %>%  filter(d_773707518==353358909 &  d_747006172==353358909 & d_831041022==104430631 & d_987563196==104430631 & d_912301837!=854021266) %>% 
     select(Site, Connect_ID, d_912301837) %>%  sort_by(Site)
 
 colnames(smmet4) <- c("Site", "Connect ID", "SMMet_PartStatus_v1r0")
-knitr::kable(smmet4)  %>% kable_styling(latex_options = "scale_down")
 
+if (nrow(smmet4) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(smmet4) %>%
+    kable_styling(latex_options = "scale_down")
+}
 ```
 
 
 
 \FloatBarrier
-### If RcrtSI_OptOutTm_v1r0 is a valid date, then RcrtSI_OptOut_v1r0 must be "yes"
+## 10. If RcrtSI_OptOutTm_v1r0 is a valid date, then RcrtSI_OptOut_v1r0 must be "yes"
 ```{r OptOut, echo=FALSE, warning=FALSE, message=FALSE}
 
 opt_out <- partsbq %>%  filter(!is.na(state_d_697256759) & state_d_158291096==104430631) %>% 
       select(Site, Connect_ID, state_d_158291096) %>%  sort_by(Site)
 
 colnames(opt_out) <- c("Site", "Connect ID", "RcrtSI_OptOut_v1r0")
-knitr::kable(opt_out)  %>% kable_styling(latex_options = "scale_down")
 
+if (nrow(opt_out) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(opt_out) %>%
+    kable_styling(latex_options = "scale_down")
+}
 
 ```
 
