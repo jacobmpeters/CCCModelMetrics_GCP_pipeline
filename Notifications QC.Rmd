@@ -1135,32 +1135,31 @@ if (nrow(MW_Srvy_rem) > 50) {
 
 ```{r MW_Acknowlegde_email, echo=FALSE, message=FALSE, warning=FALSE}
 
-MW_Srvy <- "SELECT DISTINCT p.Connect_ID, 
+MW_Collection <- "SELECT DISTINCT p.Connect_ID, 
                 MIN(category) AS category,
                 DATE(notification_time) AS repeat_date, 
                 COUNT(*) AS num_same_day_attempts
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
 LEFT JOIN `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
 ON p.token = n.token
-WHERE (category = 'Baseline Mouthwash Sample Survey Reminders'
-       OR category = 'Biospecimen Home Collection Survey Reminder')
+WHERE (category = 'Mouthwash Home Collection Acknowledgement')
 AND DATE(notification_time) >= (CURRENT_DATE() - 7)
-AND notificationType = 'sms'
+AND notificationType = 'email'
 GROUP BY Connect_ID,repeat_date
 HAVING COUNT(*) > 1"
 
-MW_Srvy_table <- bq_project_query(project, MW_Srvy)
-MW_Srvy_rem <- bq_table_download(MW_Srvy_table, bigint = "integer64") #currently 4 - all 2
+MW_Collection_table <- bq_project_query(project, MW_Collection)
+MW_Collection_rem <- bq_table_download(MW_Collection_table, bigint = "integer64") #currently 4 - all 2
 
 
-if (nrow(MW_Srvy_rem) > 50) {
-  cat("There are", nrow(MW_Srvy_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
-  write.csv(MW_Srvy_rem,glue("{local_drive}Multiple_MW_Srvy_text_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+if (nrow(MW_Collection_rem) > 50) {
+  cat("There are", nrow(MW_Collection_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(MW_Collection_rem,glue("{local_drive}Multiple_MW_Collection_text_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
 } else {
-  if(nrow(MW_Srvy_rem) == 0) {
+  if(nrow(MW_Collection_rem) == 0) {
   cat("No errors\n")
 } else {
-  knitr::kable(MW_Srvy_rem) %>% kable_styling(latex_options = "scale_down")
+  knitr::kable(MW_Collection_rem) %>% kable_styling(latex_options = "scale_down")
 }
 }
 
