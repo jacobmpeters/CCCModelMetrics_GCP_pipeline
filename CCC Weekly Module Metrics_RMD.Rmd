@@ -161,7 +161,11 @@ all_data$Site <- factor(all_data$Site, levels=c("Baylor Scott and White Health",
 
 
 comp_by_site <- all_data  %>% select(Site, BSL_compl) %>% 
+<<<<<<< HEAD
+  tbl_cross(col =BSL_compl,
+=======
   tbl_cross(  column = BSL_compl,
+>>>>>>> 718375b1338f02e1eba767030475e3ededbbc685
                   row = Site, 
                    percent = "row",
                    digits= c(0,1),
@@ -192,9 +196,13 @@ knitr::kable(comp_by_site_totals ,
 #Make the automated table
 
 all_srvy_comp <- all_data  %>% select(process, Recruit_Type) %>% 
+<<<<<<< HEAD
+  tbl_cross(  col =Recruit_Type,
+=======
   tbl_cross(  column = Recruit_Type,
+>>>>>>> 718375b1338f02e1eba767030475e3ededbbc685
                   row = process, 
-                   percent = "col",
+                   percent = "column",
                    digits= c(0,1),
                    label= c(process~ "Sections Submitted", Recruit_Type ~ " "),
                    missing="ifany",
@@ -235,7 +243,11 @@ calculate_counts <- function(df, column_name, row_label) {
 }
 
 
+<<<<<<< HEAD
+section_comp <- data.frame(matrix(ncol =5, nrow = 4))
+=======
 section_comp <- data.frame(matrix(ncol = 5, nrow = 4))
+>>>>>>> 718375b1338f02e1eba767030475e3ededbbc685
 
 
 section_comp[1, ] <- calculate_counts(all_data, "d_949302066", "BOH")
@@ -723,9 +735,13 @@ mens_surv <- menstrual %>%  mutate(menst=case_when(d_459098666==231311385~"Submi
                                                    d_253883960=='231311385' ~ "Among Clinical Collections")) %>% 
       tbl_cross(
     row = menst,
+<<<<<<< HEAD
+    col =setting,
+=======
     column = setting,
+>>>>>>> 718375b1338f02e1eba767030475e3ededbbc685
     digits=c(0,1),
-    percent = "col",
+    percent = "column",
     label=list(menst="Submission Status",
                 setting = " "),
     missing="ifany",
@@ -770,7 +786,11 @@ ssn_surv = ssn_surv %>% mutate(started=case_when(d_126331570==615768760 ~ "Start
  
 ssn_surv %>% tbl_cross(
     row = started,
+<<<<<<< HEAD
+    col =provided4,
+=======
     column = provided4,
+>>>>>>> 718375b1338f02e1eba767030475e3ededbbc685
     digits=c(0,1),
     percent = "row",
     label=list(started="Submission Status",
@@ -788,5 +808,330 @@ ssn_surv %>% tbl_cross(
 
 ```
 
+
+
+
+
+```{r Pref_Lang_Time_All, echo=FALSE, warning = FALSE, include=TRUE}
+
+all_data %>% tbl_cross(
+    col =Site,
+    row = Pref_lang,
+    digits=c(0,1),
+    percent = "row",
+    label=list(Pref_lang="Preferred Language",
+                Site = "Site"),
+    missing="ifany",
+    margin_text="Total") %>% 
+  modify_header(stat_0 = "Total") %>%
+  modify_caption("Table 11. Preferred Language by Site") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE) %>%  
+  kable_styling(latex_options = "scale_down")
+
+```
+
+
+
+
+
+```{r Survey_Flag_Setup, echo=FALSE, warning = FALSE, include=FALSE}
+
+
+# Define queries
+queries <- list(
+  m1_lang_c = "SELECT m1.Connect_ID, m1.d_784119588, d_255077064
+                FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` m1
+                left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
+                on m1.Connect_ID=pts.Connect_ID
+                WHERE m1.Connect_ID IS NOT NULL and d_949302066='231311385'",
+  m2_lang_c = "SELECT m2.Connect_ID, m2.d_784119588, d_255077064 
+                FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module2_v2_JP` m2
+                left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
+                on m2.Connect_ID=pts.Connect_ID
+                WHERE m2.Connect_ID IS NOT NULL and d_976570371='231311385'",
+  m3_lang_c = "SELECT m3.Connect_ID, m3.d_784119588, d_255077064 
+                FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module3_v1_JP` m3
+                left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
+                on m3.Connect_ID=pts.Connect_ID
+                WHERE m3.Connect_ID IS NOT NULL and d_976570371='231311385'",
+  m4_lang_c = "SELECT m4.Connect_ID, m4.d_784119588, d_255077064 
+                FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module4_v1_JP` m4
+                left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
+                on m4.Connect_ID=pts.Connect_ID
+                WHERE m4.Connect_ID IS NOT NULL and pts.d_663265240='231311385'",
+  BUM_lang_c = "SELECT bum.Connect_ID, bum.d_784119588, d_255077064 
+                FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.bioSurvey_v1_JP` bum
+                left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
+                on bum.Connect_ID=pts.Connect_ID
+                WHERE bum.Connect_ID IS NOT NULL and d_265193023='231311385'",
+  BU_lang_c = "SELECT bu.Connect_ID, bu.d_784119588, d_255077064
+                FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.clinicalBioSurvey_v1_JP` bu 
+                left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
+                on bu.Connect_ID=pts.Connect_ID
+                WHERE bu.Connect_ID IS NOT NULL and d_253883960='231311385'",
+  CV_lang_c = "SELECT cv.Connect_ID, cv.d_784119588, d_255077064 
+                FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.covid19Survey_v1_JP` cv
+                left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
+                on cv.Connect_ID=pts.Connect_ID
+                WHERE cv.Connect_ID IS NOT NULL and d_220186468='231311385'",
+  Mens_lang_c = "SELECT mns.Connect_ID, mns.d_784119588, d_255077064 
+                FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.menstrualSurvey_v1_JP` mns
+                left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
+                on mns.Connect_ID=pts.Connect_ID
+                WHERE mns.Connect_ID IS NOT NULL and d_459098666='231311385'",
+  MW_lang_c = "SELECT mw.Connect_ID, mw.d_784119588, d_255077064 
+                FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.mouthwash_v1_JP` mw
+                left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
+                on mw.Connect_ID=pts.Connect_ID
+                WHERE mw.Connect_ID IS NOT NULL and d_547363263='231311385'",
+  QOL_lang_c = "SELECT qol.Connect_ID, qol.d_784119588, d_255077064
+                FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.promis_v1_JP` qol
+                left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
+                on qol.Connect_ID=pts.Connect_ID
+                WHERE qol.Connect_ID IS NOT NULL and d_320303124='231311385'"
+  #parts_lang_c = "SELECT Connect_ID, d_784119588 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE Connect_ID IS NOT NULL and d_126331570='231311385'"
+)
+
+# Initialize an empty list to store results
+results_list <- list()
+
+# Loop through queries and download data
+for (name in names(queries)) {
+  query <- queries[[name]]
+  query_result <- bq_project_query(project_cc, query)
+  data <- bq_table_download(query_result, bigint = "integer64")
+  results_list[[name]] <- data
+}
+
+# Access the data frames from the list
+m1_lang <- results_list$m1_lang_c
+m2_lang <- results_list$m2_lang_c
+m3_lang <- results_list$m3_lang_c
+m4_lang <- results_list$m4_lang_c
+BUM_lang <- results_list$BUM_lang_c
+BU_lang <- results_list$BU_lang_c
+CV_lang <- results_list$CV_lang_c
+Mens_lang <- results_list$Mens_lang_c
+MW_lang <- results_list$MW_lang_c
+QOL_lang <- results_list$QOL_lang_c
+#parts_lang <- results_list$parts_lang_c
+
+
+
+```
+
+                          
+\FloatBarrier
+```{r Svy_Lang_Compare, echo=FALSE, warning = FALSE, include=TRUE}
+# Define the list of survey data frames and acronyms
+survey_dfs <- list(m1_lang, m2_lang, m3_lang, m4_lang, BUM_lang, BU_lang, CV_lang, Mens_lang, MW_lang, QOL_lang)
+survey_acronyms <- c("BOH", "MRE", "SAS", "LAW", "BUM", "BU", "COVID", "MENS", "MW", "QOL")
+
+# Function to create the table with given data frame and acronym
+create_table <- function(current_df, current_acronym) {
+  if (nrow(current_df) == 0) {
+    return(data.frame(Survey = current_acronym, English = 0, Spanish = 0, Total = 0))
+  }
+  
+  all_svry_flags <- current_df %>%
+    mutate(Survey = case_when(!is.na(Connect_ID) ~ current_acronym,
+                              TRUE ~ "NA"),
+           Flag = case_when(d_784119588 == 773342525 ~ "Spanish",
+                            TRUE ~ "English")) %>%
+    tbl_cross(
+      col =Flag,
+      row = Survey,
+      digits = c(0, 1),
+      percent = "row",
+      label = list(Flag = "Survey Flag",
+                   Site = "Survey"),
+      missing = "ifany",
+      margin_text = "Total") %>%
+    modify_header(stat_0 = "Total")
+  
+  df_all_svry_flags <- as.data.frame(all_svry_flags)
+  colnames(df_all_svry_flags)[1] <- "Survey"
+  df_all_svry_flags <- df_all_svry_flags[2,]
+  
+  # Ensure the data frame has consistent columns by adding missing ones with zeros
+  expected_columns <- c("Survey", "English", "Spanish", "Total")
+  missing_columns <- setdiff(expected_columns, names(df_all_svry_flags))
+  
+  if (length(missing_columns) > 0) {
+    for (col in missing_columns) {
+      df_all_svry_flags[[col]] <- 0
+    }
+  }
+  
+  # Reorder columns to match expected order
+  df_all_svry_flags <- df_all_svry_flags[expected_columns]
+  
+  return(df_all_svry_flags)
+}
+
+# Initialize empty lists to store the results for each condition
+all_flags_list_overall <- list()
+all_flags_list_condition1 <- list()
+all_flags_list_condition2 <- list()
+
+# Loop through each survey data frame and acronym
+for (i in seq_along(survey_dfs)) {
+  # Get the current data frame and acronym
+  current_df <- survey_dfs[[i]]
+  current_acronym <- survey_acronyms[i]
+  
+  # Overall table
+  df_overall <- create_table(current_df, current_acronym)
+  all_flags_list_overall[[current_acronym]] <- df_overall
+  
+  # Table where current_df$d_255077064 == 773342525
+  current_df_cond1 <- current_df %>% filter(d_255077064 == 773342525)
+  df_condition1 <- create_table(current_df_cond1, current_acronym)
+  all_flags_list_condition1[[current_acronym]] <- df_condition1
+  
+  # Table where current_df$d_255077064 == 163149180 | is.na(current_df$d_255077064)
+  current_df_cond2 <- current_df %>% filter(d_255077064 == 163149180 | is.na(d_255077064))
+  df_condition2 <- create_table(current_df_cond2, current_acronym)
+  all_flags_list_condition2[[current_acronym]] <- df_condition2
+}
+
+# Combine all results into single data frames
+final_df_overall <- do.call(rbind, all_flags_list_overall)
+final_df_condition1 <- do.call(rbind, all_flags_list_condition1)
+final_df_condition2 <- do.call(rbind, all_flags_list_condition2)
+
+# View the final combined data frames
+
+
+knitr::kable(final_df_overall,
+               caption = paste0("Table 12. Survey Completion by Survey Language \n Among All Participants"),
+               row.names = FALSE, align = c("l","c","c","c"), digits = 2, booktabs = TRUE) %>% 
+  add_indent(1:10) %>%  
+  kable_styling(latex_options = "HOLD_position")
+
+knitr::kable(final_df_condition1,
+               caption = paste0("Table 12.a. Survey Completion by Survey Language \n Among Participants with Preferred language of Spanish"),
+               row.names = FALSE, align = c("l","c","c","c"), digits = 2, booktabs = TRUE) %>% 
+  add_indent(1:10) %>%  
+  kable_styling(latex_options = "HOLD_position")
+
+knitr::kable(final_df_condition2,
+               caption = paste0("Table 12.b. Survey Completion by Survey Language \n Among Participants with Preferred language of English"),
+               row.names = FALSE, align = c("l","c","c","c"), digits = 2, booktabs = TRUE) %>% 
+  add_indent(1:10) %>%  
+  kable_styling(latex_options = "HOLD_position")
+
+
+```
+
+
+\FloatBarrier
+```{r Svy_Lang_Diff, echo=FALSE, warning = FALSE, include=TRUE}
+
+
+
+# Define the list of survey data frames
+survey_dfs <- list(m1_lang, m2_lang, m3_lang, m4_lang, BUM_lang, BU_lang, CV_lang, Mens_lang, MW_lang, QOL_lang)
+
+# Initialize a data frame to store the counts for each scenario
+scenario_counts <- data.frame(
+  Scenario = c(
+    "Flag == Spanish & Pref_lang == Spanish",
+    "Flag == Spanish & Pref_lang != Spanish",
+    "Flag != Spanish & Pref_lang == Spanish",
+    "Flag == English & Pref_lang == English",
+    "Flag == English & Pref_lang != English",
+    "Flag != English & Pref_lang == English"
+  ),
+  Count = 0
+)
+
+# Loop through each survey data frame
+for (current_df in survey_dfs) {
+  # Apply the necessary mutations
+  current_df <- current_df %>%
+    mutate(
+      Flag = case_when(d_784119588 == 773342525 ~ "Spanish", TRUE ~ "English"),
+      Pref_lang = case_when(d_255077064 == 773342525 ~ "Spanish", TRUE ~ "English")
+    )
+  
+  # Calculate counts for each scenario and add to the total counts
+  scenario_counts$Count[1] <- scenario_counts$Count[1] + nrow(current_df %>% filter(Flag == "Spanish" & Pref_lang == "Spanish"))
+  scenario_counts$Count[2] <- scenario_counts$Count[2] + nrow(current_df %>% filter(Flag == "Spanish" & Pref_lang != "Spanish"))
+  scenario_counts$Count[3] <- scenario_counts$Count[3] + nrow(current_df %>% filter(Flag != "Spanish" & Pref_lang == "Spanish"))
+  scenario_counts$Count[4] <- scenario_counts$Count[4] + nrow(current_df %>% filter(Flag == "English" & Pref_lang == "English"))
+  scenario_counts$Count[5] <- scenario_counts$Count[5] + nrow(current_df %>% filter(Flag == "English" & Pref_lang != "English"))
+  scenario_counts$Count[6] <- scenario_counts$Count[6] + nrow(current_df %>% filter(Flag != "English" & Pref_lang == "English"))
+}
+
+
+ knitr::kable(scenario_counts,
+               caption = "Table 13. Consistency of Language Choice in Survey Completion",
+               row.names = FALSE, align = c("l","c","c","c","c","c","c","c"), digits = 2, booktabs = TRUE) %>%
+    kable_styling(latex_options = "HOLD_position")
+
+```
+
+
+
+
+\FloatBarrier
+```{r Pref_Lang_Time, echo=FALSE, warning = FALSE, include=TRUE}
+
+summarize_variable <- function(data, variable) {
+  data %>%
+    summarize(
+      N = n(),
+      Min = min(!!variable, na.rm = TRUE),
+      Q1 = quantile(!!variable, 0.25, na.rm = TRUE),
+      Median = median(!!variable, na.rm = TRUE),
+      Mean = mean(!!variable, na.rm = TRUE),
+      SD = sd(!!variable, na.rm = TRUE),
+      Q3 = quantile(!!variable, 0.75, na.rm = TRUE),
+      Perc.90 = quantile(!!variable, 0.90, na.rm = TRUE),
+      Max = max(!!variable, na.rm = TRUE)
+    )
+}
+
+
+generate_table <- function(data, language, table_id) {
+  filtered_data <- data %>% filter(Pref_lang == language)
+  variables <- c("m1_comp_mins", "m2_comp_mins", "m3_comp_mins", "m4_comp_mins")
+  
+  Table7 <- bind_rows(
+    lapply(variables, function(var) summarize_variable(filtered_data, sym(var)))
+  )
+  
+  # Add the section labels
+  Table7$Section <- c("BOH", "MRE", "SAS", "LAW")
+  
+  # Format the table and replace NA values with "-"
+  Table7 <- Table7 %>%
+    mutate(across(everything(), ~ ifelse(is.na(.), "-", .)))
+  
+  
+  knitr::kable(Table7[, c(10, 1:9)],
+               caption = paste0("Table 14.", table_id, ". Time (in minutes) from Start to Submit of Initial Survey Modules for ", language),
+               row.names = FALSE, align = c("l","c","c","c","c","c","c","c"), digits = 2, booktabs = TRUE) %>%
+    kable_styling(latex_options = "HOLD_position")
+}
+
+
+languages <- unique(all_data$Pref_lang)
+table_ids <- c("a", "b")
+
+
+table_list <- list()
+
+for (i in seq_along(languages)) {
+  table_list[[i]] <- generate_table(all_data, languages[i], table_ids[i])
+}
+
+
+table_list[[1]] 
+#table_list[[2]] 
+
+
+```
 
 
