@@ -161,7 +161,11 @@ all_data$Site <- factor(all_data$Site, levels=c("Baylor Scott and White Health",
 
 
 comp_by_site <- all_data  %>% select(Site, BSL_compl) %>% 
+<<<<<<< HEAD
   tbl_cross(col =BSL_compl,
+=======
+  tbl_cross(  column = BSL_compl,
+>>>>>>> 718375b1338f02e1eba767030475e3ededbbc685
                   row = Site, 
                    percent = "row",
                    digits= c(0,1),
@@ -192,7 +196,11 @@ knitr::kable(comp_by_site_totals ,
 #Make the automated table
 
 all_srvy_comp <- all_data  %>% select(process, Recruit_Type) %>% 
+<<<<<<< HEAD
   tbl_cross(  col =Recruit_Type,
+=======
+  tbl_cross(  column = Recruit_Type,
+>>>>>>> 718375b1338f02e1eba767030475e3ededbbc685
                   row = process, 
                    percent = "column",
                    digits= c(0,1),
@@ -235,7 +243,11 @@ calculate_counts <- function(df, column_name, row_label) {
 }
 
 
+<<<<<<< HEAD
 section_comp <- data.frame(matrix(ncol =5, nrow = 4))
+=======
+section_comp <- data.frame(matrix(ncol = 5, nrow = 4))
+>>>>>>> 718375b1338f02e1eba767030475e3ededbbc685
 
 
 section_comp[1, ] <- calculate_counts(all_data, "d_949302066", "BOH")
@@ -723,7 +735,11 @@ mens_surv <- menstrual %>%  mutate(menst=case_when(d_459098666==231311385~"Submi
                                                    d_253883960=='231311385' ~ "Among Clinical Collections")) %>% 
       tbl_cross(
     row = menst,
+<<<<<<< HEAD
     col =setting,
+=======
+    column = setting,
+>>>>>>> 718375b1338f02e1eba767030475e3ededbbc685
     digits=c(0,1),
     percent = "column",
     label=list(menst="Submission Status",
@@ -770,7 +786,11 @@ ssn_surv = ssn_surv %>% mutate(started=case_when(d_126331570==615768760 ~ "Start
  
 ssn_surv %>% tbl_cross(
     row = started,
+<<<<<<< HEAD
     col =provided4,
+=======
+    column = provided4,
+>>>>>>> 718375b1338f02e1eba767030475e3ededbbc685
     digits=c(0,1),
     percent = "row",
     label=list(started="Submission Status",
