@@ -30,34 +30,14 @@ output:
 
 
 library(bigrquery)
-library(foreach)
+library(lubridate)
+library(dplyr)
 library(stringr)
-#library(plyr)
-library(expss) ###to add labels
-library(epiDisplay) ##recommended applied here crosstable, tab1
-library(gmodels) ##recommended
-library(magrittr)
-library(arsenal)
-library(gtsummary)
-library(rio)
-
-
-library(stringr)
-library(ggplot2)
-library(gridExtra)
-library(scales)
 library(gt)
-#install(tinytex)
-library(tinytex)
-library(data.table) ###to write or read and data management 
-library(tidyverse) ###for data management
-library(dplyr) ###data management
-library(reshape)  ###to work on transition from long to wide or wide to long data
-library(listr) ###to work on a list of vector, files or..
-library(sqldf) ##sql
-library(lubridate) ###date time
-library(stringr) ###to work on patterns, characters
+library(expss)
+library(knitr)
 library(kableExtra)
+library(glue)
 
 options(tinytex.verbose = TRUE)
 
