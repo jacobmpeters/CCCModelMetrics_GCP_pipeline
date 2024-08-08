@@ -75,9 +75,14 @@ SAS= Smoking, Alcohol, and Sun Exposure (Module 3)
 
 
 ```{r BQPull, include=FALSE}
+knitr::opts_chunk$set(comment = NA)
 
 project_cc = "nih-nci-dceg-connect-prod-6d04"
-queryreccc <- "SELECT  Connect_ID, d_512820379, d_821247024, d_914594314, d_832139544, d_949302066 , d_205553981, d_536735468 , d_976570371, d_663265240, d_265193023, d_222161762,d_770257102, d_264644252, d_265193023, d_541836531, d_386488297, d_452942800, d_517311251 , d_822499427, d_126331570, d_914639140, d_311580100, d_827220437, d_100767870, d_831041022 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IS NOT NULL  and (d_512820379='486306141' OR d_512820379='854703046') " 
+queryreccc <- "SELECT  Connect_ID, d_512820379, d_821247024, d_914594314, d_832139544, d_949302066 , d_205553981, 
+d_536735468 , d_976570371, d_663265240, d_265193023, d_222161762,d_770257102, d_264644252, d_265193023, d_541836531, 
+d_386488297, d_452942800, d_517311251 , d_822499427, d_126331570, d_914639140, d_311580100, d_827220437, d_100767870, 
+d_831041022, d_255077064
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IS NOT NULL  and (d_512820379='486306141' OR d_512820379='854703046') " 
 
 #and d_831041022='104430631'-- not needed, according to 3/12/24 decisions we'll be keeping participant journeys in overall counts
 
@@ -85,15 +90,8 @@ rec_table_cc <- bq_project_query(project_cc, queryreccc)
 data_c <- bq_table_download(rec_table_cc, bigint = "integer64")
 
 
-data_ccc <- data_c %>%  filter(d_821247024==197316935) #need this separate filter to look at participants unable to be verified
-
-
-
-data_ccc <- data_ccc %>% mutate(Recruit_Type= case_when(d_512820379==486306141 ~ "Active",
-                                                  d_512820379==854703046 ~ "Passive"))
-
-
-knitr::opts_chunk$set(comment = NA)
+#need this separate filter to look at participants unable to be verified
+data_ccc <- data_c %>%  filter(d_821247024==197316935) 
 
 
 data_tib= as_tibble(data_ccc) 
@@ -111,12 +109,7 @@ for(i in 1:length(mods)){
   modules$none <- count1+modules$none
 }
 
-#table(modules$modules)
 
-#table(modules$none)
-
-#table(modules$modules,modules$d_949302066)
-#CrossTable(modules$d_949302066, modules$modules,digits=4, prop.t=FALSE, prop.r=TRUE, prop.c=TRUE,prop.chisq=FALSE)
 
 length(modules[which(modules$modules==3 & modules$d_663265240==231311385 & modules$d_536735468==231311385),])
 
@@ -129,10 +122,7 @@ modules1 <- modules %>% mutate(process = case_when(as.character(modules) =='0' ~
                                                    as.character(modules) =='3' & d_949302066 == '231311385' & d_976570371 == '231311385' & d_663265240 == '231311385'~ "BOH, SAS, and LAW Sections" , 
                                                    as.character(modules) =='3' & d_949302066 == '231311385' & d_536735468 == '231311385' & d_663265240 == '231311385' ~ "BOH, MRE, and LAW Sections",   
                                                    as.character(modules) =='4' ~ "All")) 
-#style$descr <- factor(style$descr,levels=c("None", "BOH Section only", "BOH and MRE Sections", "BOH and SAS Sections", "BOH and LAW Sections", "BOH, MRE, and SAS Sections", "BOH, SAS, and LAW Sections", "BOH, MRE, and LAW Sections", "All"))
 
-
-#table(modules1$process)
 tab1(modules1$process, decimal=2,sort.group = "decreasing", cum.percent = TRUE)$output.table
 
 
@@ -152,7 +142,15 @@ all_data <- all_data %>%  mutate(Site = case_when(d_827220437==472940358 ~ "Bayl
                                                   d_827220437==657167265 ~ "Sanford",
                                                   d_827220437==809703864 ~ "UChicago"),
                                  BSL_compl = case_when(d_100767870==353358909 ~ "All Baseline Modules Completed",
-                                                       TRUE ~ "One or More Baseline Modules Not Completed"))
+                                                       TRUE ~ "One or More Baseline Modules Not Completed"),
+                                 Pref_lang=case_when(d_255077064 == 773342525 ~ "Spanish",
+                                                     TRUE ~ "English"),
+                                 Recruit_Type= case_when(d_512820379==486306141 ~ "Active",
+                                                  d_512820379==854703046 ~ "Passive"),
+                                 m1_comp_mins = as.numeric(difftime(as.POSIXct(ymd_hms(d_517311251)), as.POSIXct(ymd_hms(d_205553981)), units="hours"))*60,
+                                 m2_comp_mins = as.numeric(difftime(as.POSIXct(ymd_hms(d_832139544)), as.POSIXct(ymd_hms(d_541836531)), units="hours"))*60,
+                                 m3_comp_mins = as.numeric(difftime(as.POSIXct(ymd_hms(d_770257102)), as.POSIXct(ymd_hms(d_386488297)), units="hours"))*60,
+                                 m4_comp_mins = as.numeric(difftime(as.POSIXct(ymd_hms(d_264644252)), as.POSIXct(ymd_hms(d_452942800)), units="hours"))*60)
 all_data$Site <- factor(all_data$Site, levels=c("Baylor Scott and White Health","HealthPartners", "Henry Ford","Marshfield","Sanford","UChicago","KP Colorado","KP Georgia", "KP Hawaii","KP Northwest"))
 
 ```
@@ -175,10 +173,14 @@ comp_by_site_totals <- as.data.frame(comp_by_site)
 comp_by_site_totals <- comp_by_site_totals[-1, ]
 
 total_rows <- nrow(comp_by_site_totals)
-knitr::kable(comp_by_site_totals , caption='Table 1.Completion of Initial Surveys by Site', row.names=FALSE,align=c("l","c","c","c"),
-             #col.names=c("", "All Baseline Modules Completed", "One or More Baseline \n Modules Not Completed", "Total"), escape=F,
-             booktabs = TRUE) %>%  add_indent(seq(1, total_rows - 1))  %>% kable_styling(latex_options = "scale_down") # %>%  column_spec(3:4, width = "4cm")
-#
+knitr::kable(comp_by_site_totals , 
+             caption='Table 1.Completion of Initial Surveys by Site', 
+             row.names=FALSE,align=c("l","c","c","c"),
+             col.names=c("", "All Completed", "One or More Not Completed", "Total"), escape=F,
+             booktabs = TRUE) %>%  
+  add_indent(seq(1, total_rows - 1))  %>% 
+  kable_styling(latex_options = "scale_down") # %>%  column_spec(3:4, width = "4cm")
+
 
 ```
 
@@ -202,8 +204,16 @@ all_srvy_comp_totals <- as.data.frame(all_srvy_comp)
 all_srvy_comp_totals <- all_srvy_comp_totals[-1, ]
 all_srvy_comp_totals <- all_srvy_comp_totals[c(9,5, 2:4,6:8, 1,10), ]
 
-total_rows2 <- nrow(all_srvy_comp_totals)
-overall_surveys <- knitr::kable(all_srvy_comp_totals ,col.names=c("Sections Submitted", "Active Verified","Passive Verified", "Total Verified"), caption='Table 2. Initial Survey Submission Among Verified Participants \n Stratified by Active and Passive Recruits', row.names=FALSE,align=c("l","c","c","c"), booktabs = TRUE) %>%  add_indent(seq(1, total_rows2 - 1))  %>% kable_styling(latex_options = "scale_down")
+
+
+
+
+overall_surveys <- knitr::kable(all_srvy_comp_totals ,
+                                col.names=c("Sections Submitted", "Active Verified","Passive Verified", "Total Verified"), 
+                                caption='Table 2. Initial Survey Submission Among Verified Participants \n Stratified by Active and Passive Recruits', 
+                                row.names=FALSE,align=c("l","c","c","c"), booktabs = TRUE) %>%  
+  add_indent(seq(1, nrow(all_srvy_comp_totals) - 1))  %>%
+  kable_styling(latex_options = "scale_down")
 
 add_footnote(overall_surveys, "Note: All sections were in MyConnect on July 5,2022. There were 766 verified participants beore that date.", notation = "none")
 
@@ -212,33 +222,36 @@ add_footnote(overall_surveys, "Note: All sections were in MyConnect on July 5,20
 
 ```{r Table3, echo=FALSE, warning=FALSE, message=FALSE}
 
-testing2df <- data.frame(Sections=character(),
-                 'Not Started'=integer(),
-                 Started=integer(),
-                 Submitted=integer(),
-                 Total=integer())
-
-#testing2df[1, ] <- c("Section", "Not Started", "Started", "Submitted")
-testing2df[1, ] <- c("BOH", paste0(sum(all_data$d_949302066==972455046), " (", round(100*sum(all_data$d_949302066==972455046)/dim(all_data)[[1]], digits = 1), "%)"),
-                     paste0(sum(all_data$d_949302066==615768760), " (", round(100*sum(all_data$d_949302066==615768760)/dim(all_data)[[1]], digits = 1), "%)"),
-                     paste0(sum(all_data$d_949302066==231311385), " (", round(100*sum(all_data$d_949302066==231311385)/dim(all_data)[[1]], digits = 1), "%)"), 
-                     paste(dim(all_data)[[1]], "(100%)"))
-testing2df[2, ] <- c("MRE", paste0(sum(all_data$d_536735468==972455046), " (", round(100*sum(all_data$d_536735468==972455046)/dim(all_data)[[1]], digits = 1), "%)"),
-                     paste0(sum(all_data$d_536735468==615768760), " (", round(100*sum(all_data$d_536735468==615768760)/dim(all_data)[[1]], digits = 1), "%)"),
-                     paste0(sum(all_data$d_536735468==231311385), " (", round(100*sum(all_data$d_536735468==231311385)/dim(all_data)[[1]], digits = 1), "%)"), 
-                     paste(dim(all_data)[[1]], "(100%)"))
-testing2df[3, ] <- c("SAS", paste0(sum(all_data$d_976570371==972455046), " (", round(100*sum(all_data$d_976570371==972455046)/dim(all_data)[[1]], digits = 1), "%)"),
-                     paste0(sum(all_data$d_976570371==615768760), " (", round(100*sum(all_data$d_976570371==615768760)/dim(all_data)[[1]], digits = 1), "%)"),
-                     paste0(sum(all_data$d_976570371==231311385), " (", round(100*sum(all_data$d_976570371==231311385)/dim(all_data)[[1]], digits = 1), "%)"), 
-                     paste(dim(all_data)[[1]], "(100%)"))
-testing2df[4, ] <- c("LAW", paste0(sum(all_data$d_663265240==972455046), " (", round(100*sum(all_data$d_663265240==972455046)/dim(all_data)[[1]], digits = 1), "%)"),
-                     paste0(sum(all_data$d_663265240==615768760), " (", round(100*sum(all_data$d_663265240==615768760)/dim(all_data)[[1]], digits = 1), "%)"),
-                     paste0(sum(all_data$d_663265240==231311385), " (", round(100*sum(all_data$d_663265240==231311385)/dim(all_data)[[1]], digits = 1), "%)"), 
-                     paste(dim(all_data)[[1]], "(100%)"))
+calculate_counts <- function(df, column_name, row_label) {
+  total_rows <- dim(df)[[1]]
+  value_counts <- sapply(c(972455046, 615768760, 231311385), function(value) {
+    count <- sum(df[[column_name]] == value)
+    formatted_count <- formatC(count, format = "f", big.mark = ",", digits = 0)
+    percentage <- round(100 * count / total_rows, 1)
+    paste0(formatted_count, " (", percentage, "%)")
+  })
+  total_label <- paste(formatC(total_rows, format = "f", big.mark = ",", digits = 0), "(100%)")
+  c(row_label, value_counts, total_label)
+}
 
 
+section_comp <- data.frame(matrix(ncol = 5, nrow = 4))
 
-knitr::kable(testing2df, caption='Table 3: Initial Survey Section Submission Status Among Verified Participants', col.names=c("Section", "Not Started", "Started", "Submitted", "Total Verified Participants"), row.names=FALSE, align=c("l","c","c","c","c"),digits=1, booktabs = TRUE)%>% kable_styling(latex_options = "hold_position")
+
+section_comp[1, ] <- calculate_counts(all_data, "d_949302066", "BOH")
+section_comp[2, ] <- calculate_counts(all_data, "d_536735468", "MRE")
+section_comp[3, ] <- calculate_counts(all_data, "d_976570371", "SAS")
+section_comp[4, ] <- calculate_counts(all_data, "d_663265240", "LAW")
+
+
+colnames(section_comp) <- c("Section", "Not Started", "Started", "Submitted", "Total Verified Participants")
+
+
+knitr::kable(section_comp, 
+             caption='Table 3: Initial Survey Section Submission Status Among Verified Participants', 
+             col.names=c("Section", "Not Started", "Started", "Submitted", "Total Verified Participants"), 
+             row.names=FALSE, align=c("l","c","c","c","c"), booktabs = TRUE) %>% 
+  kable_styling(latex_options = "hold_position")
 
 
 ```
@@ -254,10 +267,6 @@ knitr::kable(testing2df, caption='Table 3: Initial Survey Section Submission Sta
 
 ```{r Table4.1, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, results='asis'}
 
-format_with_decimal <- function(x, digits = 1) {
-  formatted_number <- sprintf("%0.1f", x)
-  return(formatted_number)
-}
 
 all_data <- all_data %>% group_by(Connect_ID) %>% mutate(last_mod_ts = max(d_832139544, d_770257102, d_264644252)) %>% ungroup()
 
@@ -308,95 +317,68 @@ Table4a2 = all_data %>% filter(d_949302066==231311385) %>%
 Table4a1 <- Table4a #need to keep Table4a's first column name consistent to bind it later in the code
 names(Table4a1)[1] <- "Recruit Type"
 
-knitr::kable(Table4a1,caption='Table 4.1 Time (in hours) from Verification to BOH Submission \n Stratified by Active and Passive Recruits', row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") 
 
 
-knitr::kable(Table4a2,caption='Table 4.2 Time (in hours) from Verification to BOH Submission for All Participants',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") 
+
+
+knitr::kable(Table4a1,format.args = list(big.mark = ","),
+             caption='Table 4.1 Time (in hours) from Verification to BOH Submission \n Stratified by Active and Passive Recruits', 
+             row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% 
+  kable_styling(latex_options = "scale_down") 
+
+
+knitr::kable(Table4a2,format.args = list(big.mark = ","),
+             caption='Table 4.2 Time (in hours) from Verification to BOH Submission for All Participants',
+             row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% 
+  kable_styling(latex_options = "scale_down") 
 ```
 
 
 ```{r Table5, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
 
 
-Table4b = all_data %>%  filter(d_536735468==231311385) %>% 
-  dplyr::summarize('N'=n(),
-                   Min = min(ver_M2, na.rm = TRUE),
-                   Q1 = quantile(ver_M2, 0.25, na.rm = TRUE),
-                   Median = median(ver_M2, na.rm = TRUE),
-                   Mean = mean(ver_M2, na.rm = TRUE), 
-                   SD= sd(ver_M2, na.rm = TRUE),
-                   Q3 = quantile(ver_M2, 0.75, na.rm = TRUE),
-                   'Perc.85' = quantile(ver_M2, 0.85, na.rm = TRUE),
-                   'Perc.90' = quantile(ver_M2, 0.90, na.rm = TRUE),
-                   'Perc.95' = quantile(ver_M2, 0.95, na.rm = TRUE),
-                   Max = max(ver_M2, na.rm = TRUE)) 
-  
+
+
+summarize_data <- function(data, filter_column, filter_value, target_column) {
+  data %>% 
+    filter(!!sym(filter_column) == filter_value) %>% 
+    summarize('N' = n(),
+              Min = min(!!sym(target_column), na.rm = TRUE),
+              Q1 = quantile(!!sym(target_column), 0.25, na.rm = TRUE),
+              Median = median(!!sym(target_column), na.rm = TRUE),
+              Mean = mean(!!sym(target_column), na.rm = TRUE), 
+              SD = sd(!!sym(target_column), na.rm = TRUE),
+              Q3 = quantile(!!sym(target_column), 0.75, na.rm = TRUE),
+              'Perc.85' = quantile(!!sym(target_column), 0.85, na.rm = TRUE),
+              'Perc.90' = quantile(!!sym(target_column), 0.90, na.rm = TRUE),
+              'Perc.95' = quantile(!!sym(target_column), 0.95, na.rm = TRUE),
+              Max = max(!!sym(target_column), na.rm = TRUE))
+}
+
+
+Table4b <- summarize_data(all_data, "d_536735468", 231311385, "ver_M2")
+Table4c <- summarize_data(all_data, "d_976570371", 231311385, "ver_M3")
+Table4d <- summarize_data(all_data, "d_663265240", 231311385, "ver_M4")
+Table4e <- summarize_data(all_data, "d_100767870", 353358909, "ver_last")
 
 
 
-Table4c = all_data %>%  filter(d_976570371==231311385) %>% 
-  dplyr::summarize('N'=n(),
-                   Min = min(ver_M3, na.rm = TRUE),
-                   Q1 = quantile(ver_M3, 0.25, na.rm = TRUE),
-                   Median = median(ver_M3, na.rm = TRUE),
-                   Mean = mean(ver_M3, na.rm = TRUE), 
-                   SD= sd(ver_M3, na.rm = TRUE),
-                   Q3 = quantile(ver_M3, 0.75, na.rm = TRUE),
-                   'Perc.85' = quantile(ver_M3, 0.85, na.rm = TRUE),
-                   'Perc.90' = quantile(ver_M3, 0.90, na.rm = TRUE),
-                   'Perc.95' = quantile(ver_M3, 0.95, na.rm = TRUE),
-                   Max = max(ver_M3, na.rm = TRUE)) 
-  
-
-
-
-
-
-Table4d = all_data %>%   filter(d_663265240==231311385) %>%
-  dplyr::summarize('N'=n(),
-                   Min = min(ver_M4, na.rm = TRUE),
-                   Q1 = quantile(ver_M4, 0.25, na.rm = TRUE),
-                   Median = median(ver_M4, na.rm = TRUE),
-                   Mean = mean(ver_M4, na.rm = TRUE), 
-                   SD= sd(ver_M4, na.rm = TRUE),
-                   Q3 = quantile(ver_M4, 0.75, na.rm = TRUE),
-                   'Perc.85' = quantile(ver_M4, 0.85, na.rm = TRUE),
-                   'Perc.90' = quantile(ver_M4, 0.90, na.rm = TRUE),
-                   'Perc.95' = quantile(ver_M4, 0.95, na.rm = TRUE),
-                   Max = max(ver_M4, na.rm = TRUE))
-  
-
-
-
-Table4e = all_data %>%   filter(d_100767870==353358909) %>%
-  dplyr::summarize('N'=n(),
-                   Min = min(ver_last, na.rm = TRUE),
-                   Q1 = quantile(ver_last, 0.25, na.rm = TRUE),
-                   Median = median(ver_last, na.rm = TRUE),
-                   Mean = mean(ver_last, na.rm = TRUE), 
-                   SD= sd(ver_last, na.rm = TRUE),
-                   Q3 = quantile(ver_last, 0.75, na.rm = TRUE),
-                   'Perc.85' = quantile(ver_last, 0.85, na.rm = TRUE),
-                   'Perc.90' = quantile(ver_last, 0.90, na.rm = TRUE),
-                   'Perc.95' = quantile(ver_last, 0.95, na.rm = TRUE),
-                   Max = max(ver_last, na.rm = TRUE))
-
-
+### Table4a2 in previous chunk
 tb5boh <- as.data.frame(Table4a2)
-
 table4 <- rbind(tb5boh, Table4b, Table4c, Table4d, Table4e)
 
+
+
 table4<- table4[, c(1:7, 9, 11)]
-
 table4[,10] <- c("BOH", "MRE", "SAS", "LAW", "All")
-
 table4<- table4[, c(10,1:9)]
+colnames(table4)[1] <- "Section"
 
-current_colnames <- colnames(table4)
-current_colnames[1] <- "Section"
-colnames(table4) <- current_colnames
 
-knitr::kable(table4,caption='Table 5. Time (in hours) from Verification to Initial Survey Module Submission',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "scale_down") 
+knitr::kable(table4,format.args = list(big.mark = ","),
+             caption='Table 5. Time (in hours) from Verification to Initial Survey Module Submission',
+             row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% 
+  kable_styling(latex_options = "scale_down") 
 
 ```
 
@@ -556,218 +538,122 @@ timetrend2d
 \newpage
 
 
-```{r Submission_Minutes, echo=FALSE, warning = FALSE}
 
-all_data <- all_data %>% mutate(comp_tm_M1 = as.numeric(difftime(as.POSIXct(ymd_hms(d_517311251)), as.POSIXct(ymd_hms(d_205553981)), units="hours")),
-                                comp_tm_M2 = as.numeric(difftime(as.POSIXct(ymd_hms(d_832139544)), as.POSIXct(ymd_hms(d_541836531)), units="hours")),
-                                comp_tm_M3 = as.numeric(difftime(as.POSIXct(ymd_hms(d_770257102)), as.POSIXct(ymd_hms(d_386488297)), units="hours")),
-                                comp_tm_M4 = as.numeric(difftime(as.POSIXct(ymd_hms(d_264644252)), as.POSIXct(ymd_hms(d_452942800)), units="hours")))
-
-all_data <- all_data %>%  
-  mutate(m1_comp_mins=(comp_tm_M1*60),
-         m2_comp_mins=(comp_tm_M2*60),
-         m3_comp_mins=(comp_tm_M3*60),
-         m4_comp_mins=(comp_tm_M4*60))
+```{r Submission_Minutes,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
 
-Module1_in_minutes <- all_data %>% filter(d_949302066==231311385) %>%
-                                   mutate(time_frame=case_when(m1_comp_mins<5 ~ "Under 5 minutes",
-                                                               m1_comp_mins<10 ~ "5 to 10 minutes",
-                                                               m1_comp_mins<15 ~ "10 to 15 minutes",
-                                                               m1_comp_mins<20 ~ "15 to 20 minutes",
-                                                               m1_comp_mins<30 ~ "20 to 30 minutes",
-                                                               m1_comp_mins<45 ~ "30 to 45 minutes",
-                                                               m1_comp_mins<60 ~ "45 to 60 minutes",
-                                                               m1_comp_mins>=60 ~ "60 minutes+",
-                                                               is.na(d_517311251) | is.na(d_205553981) ~ "Missing Time Stamp(s)"))
-Module1_in_minutes$time_frame <- factor(Module1_in_minutes$time_frame,levels=c("Under 5 minutes","5 to 10 minutes","10 to 15 minutes","15 to 20 minutes","20 to 30 minutes","30 to 45 minutes","45 to 60 minutes","60 minutes+", "Missing Time Stamp(s)"))
+
+process_module <- function(data, start_time, end_time, completion_flag, completion_status, module_name) {
   
-Module1_in_minutes_summary <- Module1_in_minutes %>% dplyr::group_by(time_frame) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  
-  mutate(cumulative_percentage = cumsum(percentage)) %>% dplyr::select(time_frame, n, percentage, cumulative_percentage) 
-
-summary_row <- Module1_in_minutes_summary %>% 
-  summarize(n = sum(n), percentage = 100, cumulative_percentage = 100,
-            time_frame = "Total") 
-
-Module1_in_minutes_summary <- bind_rows(Module1_in_minutes_summary, summary_row)
-
-
-table6.1_sum <- Module1_in_minutes_summary %>% mutate(np = paste0(n, " (", round(percentage, digits=2), "%)"),
-                                                      cumulative_percentage = paste0(round(cumulative_percentage, digits=2), "%")) %>% select(time_frame, np, cumulative_percentage)
-
-total_rows3 <- nrow(all_srvy_comp_totals)
-knitr::kable(table6.1_sum, caption='Table 6.1 BOH Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c","c"),digits=1, booktabs = TRUE) %>%  add_indent(seq(1, total_rows3 - 1))  %>% kable_styling(latex_options = "hold_position")
-
-
-
-Module2_in_minutes <- all_data %>% filter(d_536735468==231311385) %>% 
-                                   mutate(time_frame=case_when(m2_comp_mins<5 ~ "Under 5 minutes",
-                                                               m2_comp_mins<10 ~ "5 to 10 minutes",
-                                                               m2_comp_mins<15 ~ "10 to 15 minutes",
-                                                               m2_comp_mins<20 ~ "15 to 20 minutes",
-                                                               m2_comp_mins<30 ~ "20 to 30 minutes",
-                                                               m2_comp_mins<45 ~ "30 to 45 minutes",
-                                                               m2_comp_mins<60 ~ "45 to 60 minutes",
-                                                               m2_comp_mins>=60 ~ "60 minutes+",
-                                                               is.na(d_832139544) | is.na(d_541836531) ~ "Missing Time Stamp(s)"))
-
-Module2_in_minutes$time_frame <- factor(Module2_in_minutes$time_frame,levels=c("Under 5 minutes","5 to 10 minutes","10 to 15 minutes","15 to 20 minutes","20 to 30 minutes","30 to 45 minutes","45 to 60 minutes","60 minutes+", "Missing Time Stamp(s)"))
-Module2_in_minutes_summary <- Module2_in_minutes %>% dplyr::group_by(time_frame) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  
-  mutate(cumulative_percentage = cumsum(percentage)) %>% dplyr::select(time_frame, n, percentage, cumulative_percentage) 
-
-summary_row <- Module2_in_minutes_summary %>% 
-  summarize(n = sum(n), percentage = 100, cumulative_percentage = 100,
-            time_frame = "Total") 
-
-Module2_in_minutes_summary <- bind_rows(Module2_in_minutes_summary, summary_row)
-
-
-table6.2_sum <- Module2_in_minutes_summary %>% mutate(np = paste0(n, " (", round(percentage, digits=2), "%)"),
-                                                      cumulative_percentage = paste0(round(cumulative_percentage, digits=2), "%")) %>% select(time_frame, np, cumulative_percentage)
-
-total_rows4 <- nrow(all_srvy_comp_totals)
-knitr::kable(table6.2_sum, caption='Table 6.2 MRE Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(seq(1, total_rows4 - 1))  %>% kable_styling(latex_options = "hold_position")
-
-
-
-
-Module3_in_minutes <- all_data %>%  filter(d_976570371==231311385) %>%
-                                   mutate(time_frame=case_when(m3_comp_mins<5 ~ "Under 5 minutes",
-                                                               m3_comp_mins<10 ~ "5 to 10 minutes",
-                                                               m3_comp_mins<15 ~ "10 to 15 minutes",
-                                                               m3_comp_mins<20 ~ "15 to 20 minutes",
-                                                               m3_comp_mins<30 ~ "20 to 30 minutes",
-                                                               m3_comp_mins<45 ~ "30 to 45 minutes",
-                                                               m3_comp_mins<60 ~ "45 to 60 minutes",
-                                                               m3_comp_mins>=60 ~ "60 minutes+",
-                                                               is.na(d_770257102) | is.na(d_386488297) ~ "Missing Time Stamp(s)"))
-
-Module3_in_minutes$time_frame <- factor(Module3_in_minutes$time_frame,levels=c("Under 5 minutes","5 to 10 minutes","10 to 15 minutes","15 to 20 minutes","20 to 30 minutes","30 to 45 minutes","45 to 60 minutes","60 minutes+", "Missing Time Stamp(s)"))
-
-Module3_in_minutes_summary <- Module3_in_minutes %>% dplyr::group_by(time_frame) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  
-  mutate(cumulative_percentage = cumsum(percentage)) %>% dplyr::select(time_frame, n, percentage, cumulative_percentage) 
-
-summary_row <- Module3_in_minutes_summary %>% 
-  summarize(n = sum(n), percentage = 100, cumulative_percentage = 100,
-            time_frame = "Total") 
-
-Module3_in_minutes_summary <- bind_rows(Module3_in_minutes_summary, summary_row)
-
-table6.3_sum <- Module3_in_minutes_summary %>% mutate(np = paste0(n, " (", round(percentage, digits=2), "%)"),
-                                                      cumulative_percentage = paste0(round(cumulative_percentage, digits=2), "%")) %>% select(time_frame, np, cumulative_percentage)
-
-total_rows5 <- nrow(all_srvy_comp_totals)
-knitr::kable(table6.3_sum, caption='Table 6.3 SAS Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(seq(1, total_rows5 - 1)) %>% kable_styling(latex_options = "hold_position")
+  
+  data <- data %>%
+    filter(!!sym(completion_flag) == completion_status)
+  
+  
+  comp_tm <- as.numeric(difftime(as.POSIXct(ymd_hms(data[[start_time]])), 
+                                 as.POSIXct(ymd_hms(data[[end_time]])), 
+                                 units = "hours"))
+  
+  
+  data <- data %>%
+    mutate(comp_mins = comp_tm * 60,
+           time_frame = case_when(
+             comp_mins < 5 ~ "Under 5 minutes",
+             comp_mins < 10 ~ "5 to 10 minutes",
+             comp_mins < 15 ~ "10 to 15 minutes",
+             comp_mins < 20 ~ "15 to 20 minutes",
+             comp_mins < 30 ~ "20 to 30 minutes",
+             comp_mins < 45 ~ "30 to 45 minutes",
+             comp_mins < 60 ~ "45 to 60 minutes",
+             comp_mins >= 60 ~ "60 minutes+",
+             is.na(data[[start_time]]) | is.na(data[[end_time]]) ~ "Missing Time Stamp(s)"
+           ))
+  
+  data$time_frame <- factor(data$time_frame, levels = c(
+    "Under 5 minutes", "5 to 10 minutes", "10 to 15 minutes",
+    "15 to 20 minutes", "20 to 30 minutes", "30 to 45 minutes",
+    "45 to 60 minutes", "60 minutes+", "Missing Time Stamp(s)"
+  ))
+  
+  summary_data <- data %>%
+    group_by(time_frame) %>%
+    summarize(n = n(), percentage = 100 * n / nrow(data)) %>%
+    ungroup() %>%
+    mutate(cumulative_percentage = cumsum(percentage)) %>%
+    select(time_frame, n, percentage, cumulative_percentage)
+  
+  summary_row <- summary_data %>%
+    summarize(n = sum(n), percentage = 100, 
+              cumulative_percentage = 100,
+              time_frame = "Total")
+  
+  summary_data <- bind_rows(summary_data, summary_row)
+  
+  table_summary <- summary_data %>%
+    mutate(np = paste0(n, " (", round(percentage, digits = 2), "%)"),
+           cumulative_percentage = paste0(round(cumulative_percentage, digits = 2), "%")) %>%
+    select(time_frame, np, cumulative_percentage)
+  
+  knitr::kable(table_summary, 
+               caption = paste0('Table ', module_name, ' Section Initial Survey Submission Time \n from Start to Submit for Verified Participants'), 
+               col.names = c("Submission Time", "Total Participants", "Cumulative Percentage"), 
+               row.names = FALSE, align = c("l", "c"), digits = 1, booktabs = TRUE) %>%  
+    add_indent(seq(1, nrow(table_summary) - 1)) %>% 
+    kable_styling(latex_options = "hold_position")
+}
 
 
+table6.1_sum <- process_module(all_data, "d_517311251", "d_205553981", "d_949302066", 231311385, "6.1 BOH")
+table6.2_sum <- process_module(all_data, "d_832139544", "d_541836531", "d_536735468", 231311385, "6.2 MRE")
+table6.3_sum <- process_module(all_data, "d_770257102", "d_386488297", "d_976570371", 231311385, "6.3 SAS")
+table6.4_sum <- process_module(all_data, "d_264644252", "d_452942800", "d_663265240", 231311385, "6.4 LAW")
 
-Module4_in_minutes <- all_data %>%  filter(d_663265240==231311385) %>%
-                                   mutate(time_frame=case_when(m4_comp_mins<5 ~ "Under 5 minutes",
-                                                               m4_comp_mins<10 ~ "5 to 10 minutes",
-                                                               m4_comp_mins<15 ~ "10 to 15 minutes",
-                                                               m4_comp_mins<20 ~ "15 to 20 minutes",
-                                                               m4_comp_mins<30 ~ "20 to 30 minutes",
-                                                               m4_comp_mins<45 ~ "30 to 45 minutes",
-                                                               m4_comp_mins<60 ~ "45 to 60 minutes",
-                                                               m4_comp_mins>=60 ~ "60 minutes+",
-                                                               is.na(d_264644252) | is.na(d_452942800) ~ "Missing Time Stamp(s)"))
-
-
-Module4_in_minutes$time_frame <- factor(Module4_in_minutes$time_frame,levels=c("Under 5 minutes","5 to 10 minutes","10 to 15 minutes","15 to 20 minutes","20 to 30 minutes","30 to 45 minutes","45 to 60 minutes","60 minutes+", "Missing Time Stamp(s)"))
-
-Module4_in_minutes_summary <- Module4_in_minutes %>% dplyr::group_by(time_frame) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  
-  mutate(cumulative_percentage = cumsum(percentage)) %>% dplyr::select(time_frame, n, percentage, cumulative_percentage) 
-
-summary_row <- Module4_in_minutes_summary %>% 
-  summarize(n = sum(n), percentage = 100, cumulative_percentage = 100,
-            time_frame = "Total") 
-
-Module4_in_minutes_summary <- bind_rows(Module4_in_minutes_summary, summary_row)
-
-table6.4_sum <- Module4_in_minutes_summary %>% mutate(np = paste0(n, " (", round(percentage, digits=2), "%)"),
-                                                      cumulative_percentage = paste0(round(cumulative_percentage, digits=2), "%")) %>% select(time_frame, np, cumulative_percentage)
-
-total_rows7 <- nrow(all_srvy_comp_totals)
-knitr::kable(table6.4_sum, caption='Table 6.4 LAW Section Initial Survey Submission Time \n from Start to Submit for Verified Participants', col.names=c("Submission Time", "Total Participants", "Cumulative Percentage"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(seq(1, total_rows7 - 1)) %>% kable_styling(latex_options = "hold_position")
+table6.1_sum
+table6.2_sum
+table6.3_sum
+table6.4_sum
 
 
 ```
-
 
 \FloatBarrier
 
 ```{r Table7,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
 
-
-Table7a = all_data %>% 
-  dplyr::summarize('N'=n(),
-                   Min = min(m1_comp_mins, na.rm = TRUE),
-                   Q1 = quantile(m1_comp_mins, 0.25, na.rm = TRUE),
-                   Median = median(m1_comp_mins, na.rm = TRUE),
-                   Mean = mean(m1_comp_mins, na.rm = TRUE), 
-                   SD= sd(m1_comp_mins, na.rm = TRUE),
-                   Q3 = quantile(m1_comp_mins, 0.75, na.rm = TRUE),
-                   'Perc.85' = quantile(m1_comp_mins, 0.85, na.rm = TRUE),
-                   'Perc.90' = quantile(m1_comp_mins, 0.90, na.rm = TRUE),
-                   'Perc.95' = quantile(m1_comp_mins, 0.95, na.rm = TRUE),
-                   Max = max(m1_comp_mins, na.rm = TRUE)) 
-
-Table7b = all_data %>%  
-  dplyr::summarize('N'=n(),
-                   Min = min(m2_comp_mins, na.rm = TRUE),
-                   Q1 = quantile(m2_comp_mins, 0.25, na.rm = TRUE),
-                   Median = median(m2_comp_mins, na.rm = TRUE),
-                   Mean = mean(m2_comp_mins, na.rm = TRUE), 
-                   SD= sd(m2_comp_mins, na.rm = TRUE),
-                   Q3 = quantile(m2_comp_mins, 0.75, na.rm = TRUE),
-                   'Perc.85' = quantile(m2_comp_mins, 0.85, na.rm = TRUE),
-                   'Perc.90' = quantile(m2_comp_mins, 0.90, na.rm = TRUE),
-                   'Perc.95' = quantile(m2_comp_mins, 0.95, na.rm = TRUE),
-                   Max = max(m2_comp_mins, na.rm = TRUE)) 
-
-Table7c = all_data %>% 
-  dplyr::summarize('N'=n(),
-                   Min = min(m3_comp_mins, na.rm = TRUE),
-                   Q1 = quantile(m3_comp_mins, 0.25, na.rm = TRUE),
-                   Median = median(m3_comp_mins, na.rm = TRUE),
-                   Mean = mean(m3_comp_mins, na.rm = TRUE), 
-                   SD= sd(m3_comp_mins, na.rm = TRUE),
-                   Q3 = quantile(m3_comp_mins, 0.75, na.rm = TRUE),
-                   'Perc.85' = quantile(m3_comp_mins, 0.85, na.rm = TRUE),
-                   'Perc.90' = quantile(m3_comp_mins, 0.90, na.rm = TRUE),
-                   'Perc.95' = quantile(m3_comp_mins, 0.95, na.rm = TRUE),
-                   Max = max(m3_comp_mins, na.rm = TRUE)) 
-  
-Table7d = all_data %>% 
-  dplyr::summarize('N'=n(),
-                   Min = min(m4_comp_mins, na.rm = TRUE),
-                   Q1 = quantile(m4_comp_mins, 0.25, na.rm = TRUE),
-                   Median = median(m4_comp_mins, na.rm = TRUE),
-                   Mean = mean(m4_comp_mins, na.rm = TRUE), 
-                   SD= sd(m4_comp_mins, na.rm = TRUE),
-                   Q3 = quantile(m4_comp_mins, 0.75, na.rm = TRUE),
-                   'Perc.85' = quantile(m4_comp_mins, 0.85, na.rm = TRUE),
-                   'Perc.90' = quantile(m4_comp_mins, 0.90, na.rm = TRUE),
-                   'Perc.95' = quantile(m4_comp_mins, 0.95, na.rm = TRUE),
-                   Max = max(m4_comp_mins, na.rm = TRUE))
+summarize_variable <- function(data, variable) {
+  data %>%
+    summarize(
+      N = n(),
+      Min = min(!!variable, na.rm = TRUE),
+      Q1 = quantile(!!variable, 0.25, na.rm = TRUE),
+      Median = median(!!variable, na.rm = TRUE),
+      Mean = mean(!!variable, na.rm = TRUE),
+      SD = sd(!!variable, na.rm = TRUE),
+      Q3 = quantile(!!variable, 0.75, na.rm = TRUE),
+      #Perc.85 = quantile(!!variable, 0.85, na.rm = TRUE),
+      Perc.90 = quantile(!!variable, 0.90, na.rm = TRUE),
+      #Perc.95 = quantile(!!variable, 0.95, na.rm = TRUE),
+      Max = max(!!variable, na.rm = TRUE)
+    )
+}
 
 
+variables <- c("m1_comp_mins", "m2_comp_mins", "m3_comp_mins", "m4_comp_mins")
+
+# Summarize each variable and bind rows
+Table7 <- bind_rows(
+  lapply(variables, function(var) summarize_variable(all_data, sym(var)))
+)
 
 
-Table7 <- rbind(Table7a, Table7b, Table7c, Table7d)
+# Add the section labels
+Table7$Section <- c("BOH", "MRE", "SAS", "LAW")
 
-Table7<- Table7[, c(1:7, 9, 11)]
 
-Table7[,10] <- c("BOH", "MRE", "SAS", "LAW")
-
-Table7<- Table7[, c(10,1:9)]
-
-current_colnames <- colnames(Table7)
-current_colnames[1] <- "Section"
-colnames(Table7) <- current_colnames
-
-knitr::kable(Table7,caption='Table 7. Time (in minutes) from Start to Submit of Initial Survey Modules',row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% kable_styling(latex_options = "HOLD_position") 
-
+knitr::kable(Table7[, c(10,1:9)], format.args = list(big.mark = ","),
+             caption='Table 7. Time (in minutes) from Start to Submit of Initial Survey Modules',
+             row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% 
+  kable_styling(latex_options = "HOLD_position") 
 
 ```
 
@@ -792,10 +678,14 @@ Numb5_table <- Numb5 %>% mutate(np = paste0(n, " (", round(percentage, digits=2)
 
 Numb5_table[dim(Numb5_table)[[1]]+1 , ] <- list("Total", paste(sum(Numb5$n), " (100%)"))
 
-knitr::kable(Numb5_table, caption='Table 8. Inital Survey Submission Status among Active Recruits who Could Not be Verified', col.names=c("Sections Submitted", "Active recruits"), row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  add_indent(c(1:2)) %>% kable_styling(latex_options = "hold_position")
 
+knitr::kable(Numb5_table, 
+             caption='Table 8. Inital Survey Submission Status among Active Recruits who Could Not be Verified', 
+             col.names=c("Sections Submitted", "Active recruits"), 
+             row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  
+  add_indent(c(1:2)) %>% 
+  kable_styling(latex_options = "hold_position")
 
-## do this with other wide tables!! kable_styling(latex_options = "hold_position")
 
 ```
 
