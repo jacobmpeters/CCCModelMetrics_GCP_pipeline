@@ -652,9 +652,9 @@ if (nrow(UCBio_rem) > 50) {
 
 
 \FloatBarrier
-## The same participant received multiple KP baseline biospecimen invitations on the same day. 
-```{r KPBio, echo=FALSE, message=FALSE, warning=FALSE}
-KPBio <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+## The same participant received multiple KP baseline biospecimen email invitations on the same day. 
+```{r KPBio_Email, echo=FALSE, message=FALSE, warning=FALSE}
+KPBio_Email <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
 category,
        DATE(notification_time) as repeat_date, 
        COUNT(*) as num_same_day_attempts
@@ -662,26 +662,60 @@ FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
 left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
 on p.token=n.token
 WHERE category LIKE '%baseline biospecimen invitations%' and date(notification_time) >= (CURRENT_DATE()-7)
-#AND notificationType = 'email'
+AND notificationType = 'email'
 GROUP BY Connect_ID,category, DATE(notification_time)
 HAVING COUNT(*) > 1"
 
-KPBio_table <- bq_project_query(project, KPBio)
-KPBio_rem <- bq_table_download(KPBio_table, bigint = "integer64") #currently 483, max 5
+KPBio_Email_table <- bq_project_query(project, KPBio_Email)
+KPBio_Email_rem <- bq_table_download(KPBio_Email_table, bigint = "integer64") #currently 483, max 5
 
 
-if (nrow(KPBio_rem) > 50) {
-  cat("There are", nrow(KPBio_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
-  write.csv(KPBio_rem,glue("{local_drive}Multiple_KPBio_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+if (nrow(KPBio_Email_rem) > 50) {
+  cat("There are", nrow(KPBio_Email_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(KPBio_Email_rem,glue("{local_drive}Multiple_KPBio_Email_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
 } else {
-  if(nrow(KPBio_rem) == 0) {
+  if(nrow(KPBio_Email_rem) == 0) {
   cat("No errors\n")
 } else {
-  knitr::kable(KPBio_rem) %>% kable_styling(latex_options = "scale_down")
+  knitr::kable(KPBio_Email_rem) %>% kable_styling(latex_options = "scale_down")
 }
 }
 
 ```
+
+
+\FloatBarrier
+## The same participant received multiple KP baseline biospecimen SMS invitations on the same day. 
+```{r KPBio_SMS, echo=FALSE, message=FALSE, warning=FALSE}
+KPBio_SMS <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category LIKE '%baseline biospecimen invitations%' and date(notification_time) >= (CURRENT_DATE()-7)
+AND notificationType = 'sms'
+GROUP BY Connect_ID,category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+KPBio_SMS_table <- bq_project_query(project, KPBio_SMS)
+KPBio_SMS_rem <- bq_table_download(KPBio_SMS_table, bigint = "integer64") #currently 483, max 5
+
+
+if (nrow(KPBio_SMS_rem) > 50) {
+  cat("There are", nrow(KPBio_SMS_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(KPBio_SMS_rem,glue("{local_drive}Multiple_KPBio_SMS_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(KPBio_SMS_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(KPBio_SMS_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+```
+
 
 
 \FloatBarrier
@@ -1267,12 +1301,6 @@ OOO_rem <- OOO_rem %>%
   group_by(token, category) %>%
   filter(any(attempt_num != lag(attempt_num, default = 0) + 1))
 
-
-if (nrow(OOO_rem) > 0) {
-  print(OOO_rem)
-} else {
-  cat("No out-of-order attempts found.")
-}
 
 
 if (nrow(OOO_rem) > 50) {
