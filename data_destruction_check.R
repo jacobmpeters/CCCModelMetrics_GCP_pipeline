@@ -1,7 +1,8 @@
 #R Sansale
 #last updated: 7/3/24
 #task: https://github.com/episphere/connect/issues/1045
-#organization: query/task 1 lines 6-121
+#organization:
+#task 1: lines 6-121
 #task 2: lines 154-end
 
 #data destruction request #1
@@ -37,8 +38,8 @@ participants_data <- bq_table_download(query_job, bigint = "integer64")
 
 
 # Load the variable names from the CSV file
-data_destruction_variables <- read.csv("/Users/sansalerj/Desktop/adhoc_requests/data_destruction/data_destruction_variables.csv")
-variable_names <- data_destruction_variables$variable.name
+stub_variables <- read.csv("./stub_variables.csv")
+variable_names <- stub_variables$variable.name
 
 # Convert variable names containing periods to all uppercase and then replace periods with underscores
 variable_names <- sapply(variable_names, function(x) {
@@ -54,7 +55,7 @@ all_variable_names <- colnames(participants_data)
 other_variable_names <- setdiff(all_variable_names, variable_names)
 
 # Initialize an empty dataframe to store counts for specified variables
-counts_df <- data.frame(
+stub_df <- data.frame(
   Variable = character(),
   Non_Null_Count = integer(),
   Null_Count = integer(),
@@ -69,7 +70,7 @@ for (variable in variable_names) {
     non_null_count <- sum(!is.na(participants_data[[variable]]))
     null_count <- sum(is.na(participants_data[[variable]]))
     
-    counts_df <- rbind(counts_df, data.frame(
+    stub_df <- rbind(stub_df, data.frame(
       Variable = variable,
       Non_Null_Count = non_null_count,
       Null_Count = null_count,
@@ -79,13 +80,13 @@ for (variable in variable_names) {
 }
 
 # Print the dataframe with counts for specified variables
-print(counts_df)
+print(stub_df)
 
 
 
 
 # Initialize an empty dataframe to store counts for other variables
-other_counts_df <- data.frame(
+nonstub_df <- data.frame(
   Variable = character(),
   Non_Null_Count = integer(),
   Null_Count = integer(),
@@ -97,7 +98,7 @@ for (variable in other_variable_names) {
   non_null_count <- sum(!is.na(participants_data[[variable]]))
   null_count <- sum(is.na(participants_data[[variable]]))
   
-  other_counts_df <- rbind(other_counts_df, data.frame(
+  nonstub_df <- rbind(nonstub_df, data.frame(
     Variable = variable,
     Non_Null_Count = non_null_count,
     Null_Count = null_count,
@@ -106,19 +107,19 @@ for (variable in other_variable_names) {
 }
 
 # Print the dataframe with counts for other variables
-print(other_counts_df)
+print(nonstub_df)
 
 
 # Create a new workbook
 wb2 <- createWorkbook()
 
 #table 1 variables
-addWorksheet(wb2, "query1_table1_counts")
-writeData(wb2, "query1_table1_counts", counts_df)
+addWorksheet(wb2, "query1_table1_stub_counts")
+writeData(wb2, "query1_table1_stub_counts", stub_df)
 
 #complement of table 1 variables
-addWorksheet(wb2, "query1_table1_other_variables")
-writeData(wb2, "query1_table1_other_variables", other_counts_df)
+addWorksheet(wb2, "query1_table1_nonstub_counts")
+writeData(wb2, "query1_table1_nonstub_counts", nonstub_df)
 
 
 
