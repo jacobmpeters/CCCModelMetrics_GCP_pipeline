@@ -1,6 +1,5 @@
-
 ---
-title: "Weekly CCC Metrics for Sections BOH, LAW, MRE, and SAS"
+title: "CCC Weekly Module Metrics"
 author: "Kelsey Sanchez"
 date: 'Data Extracted and Report Ran: `r Sys.Date()`'
 header-includes: 
@@ -11,6 +10,7 @@ header-includes:
   
 output:
   pdf_document:
+    latex_engine: xelatex
     extra_dependencies: ["float"]
     toc: no
     keep_tex: yes
@@ -77,16 +77,16 @@ SAS= Smoking, Alcohol, and Sun Exposure (Module 3)
 ```{r BQPull, include=FALSE}
 knitr::opts_chunk$set(comment = NA)
 
-project_cc = "nih-nci-dceg-connect-prod-6d04"
+project = "nih-nci-dceg-connect-prod-6d04"
 queryreccc <- "SELECT  Connect_ID, d_512820379, d_821247024, d_914594314, d_832139544, d_949302066 , d_205553981, 
 d_536735468 , d_976570371, d_663265240, d_265193023, d_222161762,d_770257102, d_264644252, d_265193023, d_541836531, 
 d_386488297, d_452942800, d_517311251 , d_822499427, d_126331570, d_914639140, d_311580100, d_827220437, d_100767870, 
-d_831041022, d_255077064
+d_831041022, d_255077064, d_320303124, d_684635302, d_843688458, d_870643066, d_878865966, d_167958071, token
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IS NOT NULL  and (d_512820379='486306141' OR d_512820379='854703046') " 
 
 #and d_831041022='104430631'-- not needed, according to 3/12/24 decisions we'll be keeping participant journeys in overall counts
 
-rec_table_cc <- bq_project_query(project_cc, queryreccc)
+rec_table_cc <- bq_project_query(project, queryreccc)
 data_c <- bq_table_download(rec_table_cc, bigint = "integer64")
 
 
@@ -147,6 +147,16 @@ all_data <- all_data %>%  mutate(Site = case_when(d_827220437==472940358 ~ "Bayl
                                                      TRUE ~ "English"),
                                  Recruit_Type= case_when(d_512820379==486306141 ~ "Active",
                                                   d_512820379==854703046 ~ "Passive"),
+                                 qolcomplt = ifelse(d_320303124 == 231311385 ,"Submitted",
+                                                    ifelse(d_320303124 == 615768760, "Started",
+                                                           ifelse(as.numeric(difftime(Sys.Date(), as.POSIXct(ymd_hms(d_914594314)),
+                                                                                      units="days")) < 90, "Not Eligible",
+                                                                  ifelse(d_320303124 == 972455046, "Not Started", "Error")))),
+                                 completion = case_when(d_100767870=="353358909" & 
+                                                          (d_878865966=="353358909" | d_684635302=="353358909" | d_167958071=="353358909") ~ "Completed both survey and sample(s)",
+                                                        d_100767870=="353358909" ~ "Completed all baseline survey modules 1-4, no baseline samples",
+                                                        (d_878865966=="353358909" | d_684635302=="353358909" | d_167958071=="353358909") ~ "Completed any baseline sample, did not complete baseline survey",
+                                                        TRUE ~ "Completed neither survey or sample(s)"),
                                  m1_comp_mins = as.numeric(difftime(as.POSIXct(ymd_hms(d_517311251)), as.POSIXct(ymd_hms(d_205553981)), units="hours"))*60,
                                  m2_comp_mins = as.numeric(difftime(as.POSIXct(ymd_hms(d_832139544)), as.POSIXct(ymd_hms(d_541836531)), units="hours"))*60,
                                  m3_comp_mins = as.numeric(difftime(as.POSIXct(ymd_hms(d_770257102)), as.POSIXct(ymd_hms(d_386488297)), units="hours"))*60,
@@ -174,12 +184,12 @@ comp_by_site_totals <- comp_by_site_totals[-1, ]
 
 total_rows <- nrow(comp_by_site_totals)
 knitr::kable(comp_by_site_totals , 
-             caption='Table 1.Completion of Initial Surveys by Site', 
+             caption='Table 1. Completion of Initial Surveys by Site', 
              row.names=FALSE,align=c("l","c","c","c"),
-             col.names=c("", "All Completed", "One or More Not Completed", "Total"), escape=F,
+             col.names=c("", "All Completed", "One or More Not Completed", "Total"),
              booktabs = TRUE) %>%  
   add_indent(seq(1, total_rows - 1))  %>% 
-  kable_styling(latex_options = "scale_down") # %>%  column_spec(3:4, width = "4cm")
+  kable_styling(latex_options = c("scale_down","hold_position")) # %>%  column_spec(3:4, width = "4cm")
 
 
 ```
@@ -213,7 +223,7 @@ overall_surveys <- knitr::kable(all_srvy_comp_totals ,
                                 caption='Table 2. Initial Survey Submission Among Verified Participants \n Stratified by Active and Passive Recruits', 
                                 row.names=FALSE,align=c("l","c","c","c"), booktabs = TRUE) %>%  
   add_indent(seq(1, nrow(all_srvy_comp_totals) - 1))  %>%
-  kable_styling(latex_options = "scale_down")
+  kable_styling(latex_options = c("scale_down","hold_position"))
 
 add_footnote(overall_surveys, "Note: All sections were in MyConnect on July 5,2022. There were 766 verified participants beore that date.", notation = "none")
 
@@ -251,7 +261,7 @@ knitr::kable(section_comp,
              caption='Table 3: Initial Survey Section Submission Status Among Verified Participants', 
              col.names=c("Section", "Not Started", "Started", "Submitted", "Total Verified Participants"), 
              row.names=FALSE, align=c("l","c","c","c","c"), booktabs = TRUE) %>% 
-  kable_styling(latex_options = "hold_position")
+  kable_styling(latex_options = c("scale_down","hold_position"))
 
 
 ```
@@ -270,12 +280,7 @@ knitr::kable(section_comp,
 
 all_data <- all_data %>% group_by(Connect_ID) %>% mutate(last_mod_ts = max(d_832139544, d_770257102, d_264644252)) %>% ungroup()
 
-all_data <- all_data %>% mutate(days_ver_M1 = as.numeric(difftime(as.POSIXct(ymd_hms(d_517311251)), as.POSIXct(ymd_hms(d_914594314)), units="days")),
-                                days_ver_M2 = as.numeric(difftime(as.POSIXct(ymd_hms(d_832139544)), as.POSIXct(ymd_hms(d_914594314)), units="days")),
-                                days_ver_M3 = as.numeric(difftime(as.POSIXct(ymd_hms(d_770257102)), as.POSIXct(ymd_hms(d_914594314)), units="days")),
-                                days_ver_M4 = as.numeric(difftime(as.POSIXct(ymd_hms(d_264644252)), as.POSIXct(ymd_hms(d_914594314)), units="days")),
-                                days_ver_last = as.numeric(difftime(as.POSIXct(ymd_hms(last_mod_ts)), as.POSIXct(ymd_hms(d_914594314)), units="days")),
-                                ver_M1 = as.numeric(difftime(as.POSIXct(ymd_hms(d_517311251)), as.POSIXct(ymd_hms(d_914594314)), units="hours")),
+all_data <- all_data %>% mutate(ver_M1 = as.numeric(difftime(as.POSIXct(ymd_hms(d_517311251)), as.POSIXct(ymd_hms(d_914594314)), units="hours")),
                                 ver_M2 = as.numeric(difftime(as.POSIXct(ymd_hms(d_832139544)), as.POSIXct(ymd_hms(d_914594314)), units="hours")),
                                 ver_M3 = as.numeric(difftime(as.POSIXct(ymd_hms(d_770257102)), as.POSIXct(ymd_hms(d_914594314)), units="hours")),
                                 ver_M4 = as.numeric(difftime(as.POSIXct(ymd_hms(d_264644252)), as.POSIXct(ymd_hms(d_914594314)), units="hours")),
@@ -324,13 +329,13 @@ names(Table4a1)[1] <- "Recruit Type"
 knitr::kable(Table4a1,format.args = list(big.mark = ","),
              caption='Table 4.1 Time (in hours) from Verification to BOH Submission \n Stratified by Active and Passive Recruits', 
              row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% 
-  kable_styling(latex_options = "scale_down") 
+  kable_styling(latex_options = c("scale_down","hold_position")) 
 
 
 knitr::kable(Table4a2,format.args = list(big.mark = ","),
              caption='Table 4.2 Time (in hours) from Verification to BOH Submission for All Participants',
              row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% 
-  kable_styling(latex_options = "scale_down") 
+  kable_styling(latex_options = c("scale_down","hold_position")) 
 ```
 
 
@@ -378,7 +383,7 @@ colnames(table4)[1] <- "Section"
 knitr::kable(table4,format.args = list(big.mark = ","),
              caption='Table 5. Time (in hours) from Verification to Initial Survey Module Submission',
              row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% 
-  kable_styling(latex_options = "scale_down") 
+  kable_styling(latex_options = c("scale_down","hold_position")) 
 
 ```
 
@@ -386,38 +391,38 @@ knitr::kable(table4,format.args = list(big.mark = ","),
 
 \FloatBarrier
 
-```{r Table4_trend1, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, results='asis', include=FALSE}
+```{r Table4_trend1, include=FALSE}
 
 
-
-combined_plot <- ggplot(all_data, aes(x = as.Date(d_914594314))) +
-  stat_summary(aes(y = ver_M1_mins, color = "BOH"), fun = "mean", geom = "line", size = 0.5) +
-  stat_summary(aes(y = ver_M2_mins, color = "MRE"), fun = "mean", geom = "line", size = 0.5) +
-  stat_summary(aes(y = ver_M3_mins, color = "SAS"), fun = "mean", geom = "line", size = 0.5) +
-  stat_summary(aes(y = ver_M4_mins, color = "LAW"), fun = "mean", geom = "line", size = 0.5) +
-  scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
-  scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
-  theme(
-    panel.background = element_blank(),
-    legend.position = "bottom",
-    legend.title = element_text(face = "bold"),
-    axis.line = element_line(size = 0.2),
-    axis.text.x = element_text(angle = 60, hjust = 1),
-    axis.title.x = element_text(size = 14, face = "bold"),
-    axis.title.y = element_text(size = 14, face = "bold", color = "black"),
-    plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
-  ) +
-  theme(
-    plot.caption = element_text(hjust = 0),
-    legend.title = element_text(size = 8.5)
-  ) +
-  labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
-       properly view the average Submission Time frames.") +
-  ggtitle(label = "Figure 1. Overall Weekly Average Time (in minutes) \n from Verification to Initial Survey Submission") + 
-  labs(color = "Initial Survey")
-
-# Print or display the combined plot
-print(combined_plot)
+# 
+# combined_plot <- ggplot(all_data, aes(x = as.Date(d_914594314))) +
+#   stat_summary(aes(y = ver_M1_mins, color = "BOH"), fun = "mean", geom = "line", size = 0.5) +
+#   stat_summary(aes(y = ver_M2_mins, color = "MRE"), fun = "mean", geom = "line", size = 0.5) +
+#   stat_summary(aes(y = ver_M3_mins, color = "SAS"), fun = "mean", geom = "line", size = 0.5) +
+#   stat_summary(aes(y = ver_M4_mins, color = "LAW"), fun = "mean", geom = "line", size = 0.5) +
+#   scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
+#   scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
+#   theme(
+#     panel.background = element_blank(),
+#     legend.position = "bottom",
+#     legend.title = element_text(face = "bold"),
+#     axis.line = element_line(size = 0.2),
+#     axis.text.x = element_text(angle = 60, hjust = 1),
+#     axis.title.x = element_text(size = 14, face = "bold"),
+#     axis.title.y = element_text(size = 14, face = "bold", color = "black"),
+#     plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
+#   ) +
+#   theme(
+#     plot.caption = element_text(hjust = 0),
+#     legend.title = element_text(size = 8.5)
+#   ) +
+#   labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
+#        properly view the average Submission Time frames.") +
+#   ggtitle(label = "Figure 1. Overall Weekly Average Time (in minutes) \n from Verification to Initial Survey Submission") + 
+#   labs(color = "Initial Survey")
+# 
+# # Print or display the combined plot
+# print(combined_plot)
 
 
 
@@ -425,109 +430,109 @@ print(combined_plot)
 
 
 \FloatBarrier
-```{r Table4_trends2, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, results='asis', include=FALSE}
+```{r Table4_trends2, include=FALSE}
 
-timetrend2a <- ggplot(all_data, aes(x = as.Date(d_914594314), y = ver_M1_mins, color = Recruit_Type)) +
-  stat_summary(fun = "mean", geom = "line", size = 0.5) +
-  scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
-  scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
-  theme(
-    panel.background = element_blank(),
-    legend.position = "bottom",
-    axis.line = element_line(size = 0.2),
-    axis.text.x = element_text(angle = 60, hjust = 1),
-    axis.title.x = element_text(size = 14, face = "bold"),
-    axis.title.y = element_text(size = 14, face = "bold", color = "black"),
-    plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
-  ) +
-  theme(
-    plot.caption = element_text(hjust = 0),
-    legend.title = element_text(size = 8.5)
-  ) +
-  labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
-       properly view the average Submission Time frames.") +
-  ggtitle(label = "Figure 2.1 Weekly Average Time (in minutes) from Verification to BOH Submission") +
-  guides(color = guide_legend(title = "Recruitment Status"))
-
-timetrend2a
-
-
-
-timetrend2b <- ggplot(all_data, aes(x = as.Date(d_914594314), y = ver_M2_mins, color = Recruit_Type)) +
-  stat_summary(fun = "mean", geom = "line", size = 0.5) +
-  scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
-  scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
-  theme(
-    panel.background = element_blank(),
-    legend.position = "bottom",
-    axis.line = element_line(size = 0.2),
-    axis.text.x = element_text(angle = 60, hjust = 1),
-    axis.title.x = element_text(size = 14, face = "bold"),
-    axis.title.y = element_text(size = 14, face = "bold", color = "black"),
-    plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
-  ) +
-  theme(
-    plot.caption = element_text(hjust = 0),
-    legend.title = element_text(size = 8.5)
-  ) +
-  labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
-       properly view the average Submission Time frames.") +
-  ggtitle(label = "Figure 2.2 Weekly Average Time (in minutes) from Verification to MRE Submission") +
-  guides(color = guide_legend(title = "Recruitment Status"))
-
-timetrend2b
-
-
-
-timetrend2c <- ggplot(all_data, aes(x = as.Date(d_914594314), y = ver_M3_mins, color = Recruit_Type)) +
-  stat_summary(fun = "mean", geom = "line", size = 0.5) +
-  scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
-  scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
-  theme(
-    panel.background = element_blank(),
-    legend.position = "bottom",
-    axis.line = element_line(size = 0.2),
-    axis.text.x = element_text(angle = 60, hjust = 1),
-    axis.title.x = element_text(size = 14, face = "bold"),
-    axis.title.y = element_text(size = 14, face = "bold", color = "black"),
-    plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
-  ) +
-  theme(
-    plot.caption = element_text(hjust = 0),
-    legend.title = element_text(size = 8.5)
-  ) +
-  labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
-       properly view the average Submission Time frames.") +
-  ggtitle(label = "Figure 2.3 Weekly Average Time (in minutes) from Verification to SAS Submission") +
-  guides(color = guide_legend(title = "Recruitment Status"))
-
-timetrend2c
-
-
-
-timetrend2d <- ggplot(all_data, aes(x = as.Date(d_914594314), y = ver_M4_mins, color = Recruit_Type)) +
-  stat_summary(fun = "mean", geom = "line", size = 0.5) +
-  scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
-  scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
-  theme(
-    panel.background = element_blank(),
-    legend.position = "bottom",
-    axis.line = element_line(size = 0.2),
-    axis.text.x = element_text(angle = 60, hjust = 1),
-    axis.title.x = element_text(size = 14, face = "bold"),
-    axis.title.y = element_text(size = 14, face = "bold", color = "black"),
-    plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
-  ) +
-  theme(
-    plot.caption = element_text(hjust = 0),
-    legend.title = element_text(size = 8.5)
-  ) +
-  labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
-       properly view the average Submission Time frames.") +
-  ggtitle(label = "Figure 2.4 Weekly Average Time (in minutes) from Verification to LAW Submission") +
-  guides(color = guide_legend(title = "Recruitment Status"))
-
-timetrend2d
+# timetrend2a <- ggplot(all_data, aes(x = as.Date(d_914594314), y = ver_M1_mins, color = Recruit_Type)) +
+#   stat_summary(fun = "mean", geom = "line", size = 0.5) +
+#   scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
+#   scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
+#   theme(
+#     panel.background = element_blank(),
+#     legend.position = "bottom",
+#     axis.line = element_line(size = 0.2),
+#     axis.text.x = element_text(angle = 60, hjust = 1),
+#     axis.title.x = element_text(size = 14, face = "bold"),
+#     axis.title.y = element_text(size = 14, face = "bold", color = "black"),
+#     plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
+#   ) +
+#   theme(
+#     plot.caption = element_text(hjust = 0),
+#     legend.title = element_text(size = 8.5)
+#   ) +
+#   labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
+#        properly view the average Submission Time frames.") +
+#   ggtitle(label = "Figure 2.1 Weekly Average Time (in minutes) from Verification to BOH Submission") +
+#   guides(color = guide_legend(title = "Recruitment Status"))
+# 
+# timetrend2a
+# 
+# 
+# 
+# timetrend2b <- ggplot(all_data, aes(x = as.Date(d_914594314), y = ver_M2_mins, color = Recruit_Type)) +
+#   stat_summary(fun = "mean", geom = "line", size = 0.5) +
+#   scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
+#   scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
+#   theme(
+#     panel.background = element_blank(),
+#     legend.position = "bottom",
+#     axis.line = element_line(size = 0.2),
+#     axis.text.x = element_text(angle = 60, hjust = 1),
+#     axis.title.x = element_text(size = 14, face = "bold"),
+#     axis.title.y = element_text(size = 14, face = "bold", color = "black"),
+#     plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
+#   ) +
+#   theme(
+#     plot.caption = element_text(hjust = 0),
+#     legend.title = element_text(size = 8.5)
+#   ) +
+#   labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
+#        properly view the average Submission Time frames.") +
+#   ggtitle(label = "Figure 2.2 Weekly Average Time (in minutes) from Verification to MRE Submission") +
+#   guides(color = guide_legend(title = "Recruitment Status"))
+# 
+# timetrend2b
+# 
+# 
+# 
+# timetrend2c <- ggplot(all_data, aes(x = as.Date(d_914594314), y = ver_M3_mins, color = Recruit_Type)) +
+#   stat_summary(fun = "mean", geom = "line", size = 0.5) +
+#   scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
+#   scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
+#   theme(
+#     panel.background = element_blank(),
+#     legend.position = "bottom",
+#     axis.line = element_line(size = 0.2),
+#     axis.text.x = element_text(angle = 60, hjust = 1),
+#     axis.title.x = element_text(size = 14, face = "bold"),
+#     axis.title.y = element_text(size = 14, face = "bold", color = "black"),
+#     plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
+#   ) +
+#   theme(
+#     plot.caption = element_text(hjust = 0),
+#     legend.title = element_text(size = 8.5)
+#   ) +
+#   labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
+#        properly view the average Submission Time frames.") +
+#   ggtitle(label = "Figure 2.3 Weekly Average Time (in minutes) from Verification to SAS Submission") +
+#   guides(color = guide_legend(title = "Recruitment Status"))
+# 
+# timetrend2c
+# 
+# 
+# 
+# timetrend2d <- ggplot(all_data, aes(x = as.Date(d_914594314), y = ver_M4_mins, color = Recruit_Type)) +
+#   stat_summary(fun = "mean", geom = "line", size = 0.5) +
+#   scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
+#   scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
+#   theme(
+#     panel.background = element_blank(),
+#     legend.position = "bottom",
+#     axis.line = element_line(size = 0.2),
+#     axis.text.x = element_text(angle = 60, hjust = 1),
+#     axis.title.x = element_text(size = 14, face = "bold"),
+#     axis.title.y = element_text(size = 14, face = "bold", color = "black"),
+#     plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
+#   ) +
+#   theme(
+#     plot.caption = element_text(hjust = 0),
+#     legend.title = element_text(size = 8.5)
+#   ) +
+#   labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
+#        properly view the average Submission Time frames.") +
+#   ggtitle(label = "Figure 2.4 Weekly Average Time (in minutes) from Verification to LAW Submission") +
+#   guides(color = guide_legend(title = "Recruitment Status"))
+# 
+# timetrend2d
 
 ```
 
@@ -539,7 +544,7 @@ timetrend2d
 
 
 
-```{r Submission_Minutes,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
+```{r Submission_Minutes,echo=FALSE,error=FALSE,message=FALSE,warning=FALSE,results='asis'}
 
 
 
@@ -599,7 +604,7 @@ process_module <- function(data, start_time, end_time, completion_flag, completi
                col.names = c("Submission Time", "Total Participants", "Cumulative Percentage"), 
                row.names = FALSE, align = c("l", "c"), digits = 1, booktabs = TRUE) %>%  
     add_indent(seq(1, nrow(table_summary) - 1)) %>% 
-    kable_styling(latex_options = "hold_position")
+    kable_styling(latex_options = c("scale_down","hold_position"))
 }
 
 
@@ -618,42 +623,46 @@ table6.4_sum
 
 \FloatBarrier
 
-```{r Table7,echo=FALSE,error=FALSE,message=FALSE,results='asis'}
+```{r Table7,echo=FALSE,error=FALSE,message=FALSE,warning=FALSE,results='asis'}
 
-summarize_variable <- function(data, variable) {
-  data %>%
-    summarize(
-      N = n(),
-      Min = min(!!variable, na.rm = TRUE),
-      Q1 = quantile(!!variable, 0.25, na.rm = TRUE),
-      Median = median(!!variable, na.rm = TRUE),
-      Mean = mean(!!variable, na.rm = TRUE),
-      SD = sd(!!variable, na.rm = TRUE),
-      Q3 = quantile(!!variable, 0.75, na.rm = TRUE),
-      #Perc.85 = quantile(!!variable, 0.85, na.rm = TRUE),
-      Perc.90 = quantile(!!variable, 0.90, na.rm = TRUE),
-      #Perc.95 = quantile(!!variable, 0.95, na.rm = TRUE),
-      Max = max(!!variable, na.rm = TRUE)
-    )
+
+
+summarize_data <- function(data, filter_column, filter_value, target_column) {
+  data %>% 
+    filter(!!sym(filter_column) == filter_value) %>% 
+    summarize('N' = n(),
+              Min = min(!!sym(target_column), na.rm = TRUE),
+              Q1 = quantile(!!sym(target_column), 0.25, na.rm = TRUE),
+              Median = median(!!sym(target_column), na.rm = TRUE),
+              Mean = mean(!!sym(target_column), na.rm = TRUE), 
+              SD = sd(!!sym(target_column), na.rm = TRUE),
+              Q3 = quantile(!!sym(target_column), 0.75, na.rm = TRUE),
+              'Perc.85' = quantile(!!sym(target_column), 0.85, na.rm = TRUE),
+              'Perc.90' = quantile(!!sym(target_column), 0.90, na.rm = TRUE),
+              'Perc.95' = quantile(!!sym(target_column), 0.95, na.rm = TRUE),
+              Max = max(!!sym(target_column), na.rm = TRUE))
 }
 
-
-variables <- c("m1_comp_mins", "m2_comp_mins", "m3_comp_mins", "m4_comp_mins")
-
-# Summarize each variable and bind rows
-Table7 <- bind_rows(
-  lapply(variables, function(var) summarize_variable(all_data, sym(var)))
-)
+Table7a <- summarize_data(all_data, "d_949302066", 231311385, "m1_comp_mins")
+Table7b <- summarize_data(all_data, "d_536735468", 231311385, "m2_comp_mins")
+Table7c <- summarize_data(all_data, "d_976570371", 231311385, "m3_comp_mins")
+Table7d <- summarize_data(all_data, "d_663265240", 231311385, "m4_comp_mins")
 
 
-# Add the section labels
-Table7$Section <- c("BOH", "MRE", "SAS", "LAW")
+Table7 <- rbind(Table7a, Table7b, Table7c, Table7d)
 
 
-knitr::kable(Table7[, c(10,1:9)], format.args = list(big.mark = ","),
+Table7<- Table7[, c(1:7, 9, 11)]
+Table7[,10] <- c("BOH", "MRE", "SAS", "LAW")
+Table7<- Table7[, c(10,1:9)]
+colnames(Table7)[1] <- "Section"
+
+
+knitr::kable(Table7,format.args = list(big.mark = ","),
              caption='Table 7. Time (in minutes) from Start to Submit of Initial Survey Modules',
              row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% 
-  kable_styling(latex_options = "HOLD_position") 
+  kable_styling(latex_options = c("scale_down","hold_position")) 
+
 
 ```
 
@@ -684,7 +693,7 @@ knitr::kable(Numb5_table,
              col.names=c("Sections Submitted", "Active recruits"), 
              row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  
   add_indent(c(1:2)) %>% 
-  kable_styling(latex_options = "hold_position")
+  kable_styling(latex_options = c("scale_down","hold_position"))
 
 
 ```
@@ -692,7 +701,7 @@ knitr::kable(Numb5_table,
 
 \newpage
 
-```{r Menstrual, echo=FALSE, warning = FALSE, message=FALSE}
+```{r Menstrual_BQPull, include=FALSE}
 
 
 mens_ccc <- "WITH combined_survey AS (
@@ -713,9 +722,11 @@ JOIN combined_survey c ON p.Connect_ID = c.Connect_ID
 WHERE (p.d_253883960 = '231311385' OR p.d_265193023 = '231311385')"
 
 
-mens_table_cc <- bq_project_query(project_cc, mens_ccc)
+mens_table_cc <- bq_project_query(project, mens_ccc)
 menstrual <- bq_table_download(mens_table_cc, bigint = "integer64")
+```
 
+```{r Menstrual, echo=FALSE, warning = FALSE, message=FALSE}
 mens_surv <- menstrual %>%  mutate(menst=case_when(d_459098666==231311385~"Submitted",
                                                    d_459098666==615768760~"Started",
                                                    d_459098666==972455046~"Not Started"),
@@ -740,7 +751,7 @@ mens_surv_status <-
   modify_caption("Table 9. Menstrual Cycle Survey Submission Status for Eligible Participants") %>%
   as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
 
-add_footnote(mens_surv_status, "Note: Eligible participants are those that completed the Clinical Biospecimen Blood and Urine Survey or the Research Biospecimen Blood, Urine and Mouthwash survey. On that survey they must also have answered yes to SrvBlU_MENST60_v2r0, indicating that they have had a menstrual period in the last 60 days.", notation = "none")
+add_footnote(mens_surv_status, "Note: Eligible participants are those that completed the Clinical Biospecimen Blood and Urine Survey or the Research Biospecimen Blood, Urine and Mouthwash survey. On that survey they must also have answered yes to MENST60, indicating that they have had a menstrual period in the last 60 days.", notation = "none")
 
 
 ```
@@ -749,13 +760,9 @@ add_footnote(mens_surv_status, "Note: Eligible participants are those that compl
 
 
 
-```{r SSN, echo=FALSE, warning = FALSE}
-# ssn_surv = all_data %>%  mutate(started=case_when(d_126331570==615768760 ~ "Started",
-#                                                 d_126331570==231311385 ~ "Submitted",
-#                                                 TRUE ~ "Not Started"),
-#                                 provided4 =case_when(d_311580100==353358909 ~ "Full SSN Given",
-#                                                      d_914639140==353358909 ~ "Partial SSN Given",
-#                                                      TRUE ~ "No SSN given"))
+```{r SSN, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+
 ssn_surv = all_data %>%  mutate(provided4 =case_when(d_311580100==353358909 ~ "Full SSN",
                                                      d_914639140==353358909 ~ "Partial SSN",
                                                      TRUE ~ "No SSN"))
@@ -788,27 +795,295 @@ ssn_surv %>% tbl_cross(
 
 ```
 
+\newpage
+\FloatBarrier
+```{r Table11s, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+
+
+####### ALL 
+QOL_comp_elg <- all_data %>% filter(qolcomplt!="Not Eligible") %>% 
+  mutate(qolcomplt = factor(qolcomplt, levels=c("Not Started", "Started", "Submitted"))) %>% 
+  select(Site, qolcomplt) %>% dplyr::arrange(Site,qolcomplt) %>% 
+  tbl_cross(
+  row = Site,
+  col = qolcomplt,
+  label = list(qolcomplt ~ "Survey Completion",Site~"Site"),
+  percent = "row",
+  digits=c(0,2),
+  margin_text="Total QOL Eligible Participants") 
+
+QOL_comp_elg[["table_body"]]$stat_0 <- sapply(strsplit(QOL_comp_elg[["table_body"]]$stat_0," "),"[",1)
+
+QOL_comp_elg <- QOL_comp_elg %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total QOL Eligible \n Participants") %>%
+  modify_caption("Table 11. Completion of 3-Month Quality of Life Survey Among Eligible Participants") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+ 
+QOL_comp_elg %>% kable_styling(latex_options = c("scale_down","hold_position"))
 
 
 
 
-```{r Pref_Lang_Time_All, echo=FALSE, warning = FALSE, include=TRUE}
+##### verified on or after 12/1/23
+
+QOL_comp_elg_after <- all_data %>% filter(qolcomplt!="Not Eligible" & as.Date(d_914594314) >= "2023-12-01") %>% 
+  mutate(qolcomplt = factor(qolcomplt, levels=c("Not Started", "Started", "Submitted"))) %>% 
+  select(Site, qolcomplt) %>% dplyr::arrange(Site,qolcomplt) %>% 
+  tbl_cross(
+  row = Site,
+  col = qolcomplt,
+  label = list(qolcomplt ~ "Survey Completion",Site~"Site"),
+  percent = "row",
+  digits=c(0,2),
+  margin_text="Total QOL Eligible Participants") 
+
+QOL_comp_elg_after[["table_body"]]$stat_0 <- sapply(strsplit(QOL_comp_elg_after[["table_body"]]$stat_0," "),"[",1)
+
+ QOL_comp_elg_after <- QOL_comp_elg_after %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total QOL Eligible \n Participants") %>%
+  modify_caption("Table 11.a. Completion of 3-Month Quality of Life Survey Among eligible participants verified on or after December 1, 2023") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+QOL_comp_elg_after %>% kable_styling(latex_options = c("scale_down","hold_position")) 
+
+
+
+
+
+###### verified before 12/1/23
+QOL_comp_elg_before <- all_data %>% filter(qolcomplt!="Not Eligible" & as.Date(d_914594314) < "2023-12-01") %>% 
+  mutate(qolcomplt = factor(qolcomplt, levels=c("Not Started", "Started", "Submitted"))) %>% 
+  select(Site, qolcomplt) %>% dplyr::arrange(Site,qolcomplt) %>% 
+  tbl_cross(
+  row = Site,
+  col = qolcomplt,
+  label = list(qolcomplt ~ "Survey Completion",Site~"Site"),
+  percent = "row",
+  digits=c(0,2),
+  margin_text="Total QOL Eligible Participants") 
+
+QOL_comp_elg_before[["table_body"]]$stat_0 <- sapply(strsplit(QOL_comp_elg_before[["table_body"]]$stat_0," "),"[",1)
+
+QOL_comp_elg_before <- QOL_comp_elg_before %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total QOL Eligible \n Participants") %>%
+  modify_caption("Table 11.b. Completion of 3-Month Quality of Life Survey among eligible participants verified prior to December 1, 2023") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+
+QOL_comp_elg_before %>% kable_styling(latex_options = c("scale_down","hold_position")) %>% 
+  footnote(general = 'The QOL "PROMIS" or "QOL" survey was released to all those verified prior to December 1, 2023 on August 30, 2024.',general_title = "Note: ", footnote_as_chunk = T)
+
+```
+
+
+\newpage
+\FloatBarrier
+
+```{r Table12s, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+###### ALL ########
+QOL_comp_BL <- all_data %>%  filter(qolcomplt!="Not Eligible") %>%  
+  mutate(qolcomplt = factor(qolcomplt, levels=c("Not Started", "Started", "Submitted")),
+         completion = factor(completion, levels=c("Completed all baseline survey modules 1-4, no baseline samples", "Completed any baseline sample, did not complete baseline survey",
+                                                          "Completed both survey and sample(s)", "Completed neither survey or sample(s)"))) %>% 
+  select(completion, qolcomplt) %>% dplyr::arrange(completion,qolcomplt) %>% tbl_cross(
+  row = completion,
+  col = qolcomplt,
+  label = list(qolcomplt ~ "Survey Completion",completion~"Completion"),
+  percent = "row",
+  digits=c(0,2),
+  margin_text="Total QOL Eligible Participants") 
+
+#QOL_comp_BL[["table_body"]]$stat_0 <- sapply(strsplit(QOL_comp_BL[["table_body"]]$stat_0," "),"[",1)
+
+
+
+QOL_comp_BL <- QOL_comp_BL %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total QOL Eligible \n Participants") %>%
+  modify_caption("Table 12. Completion of 3-Month Quality of Life Survey by Baseline Data Completeness") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+QOL_comp_BL %>% kable_styling(latex_options = c("scale_down","hold_position"))
+
+
+###### On or After 12/1/23 ########
+
+QOL_comp_BL_after <- all_data %>% filter(as.Date(d_914594314) >= "2023-12-01" & qolcomplt!="Not Eligible") %>% 
+  mutate(completion = factor(completion, levels=c("Completed all baseline survey modules 1-4, no baseline samples", "Completed any baseline sample, did not complete baseline survey",
+                                                          "Completed both survey and sample(s)", "Completed neither survey or sample(s)")),
+         qolcomplt = factor(qolcomplt, levels=c("Not Started", "Started", "Submitted"))) %>% 
+  select(completion, qolcomplt) %>% dplyr::arrange(completion,qolcomplt) %>% tbl_cross(
+  row = completion,
+  col = qolcomplt,
+  label = list(qolcomplt ~ "Survey Completion",completion~"Completion"),
+  percent = "row",
+  digits=c(0,2),
+  margin_text="Total QOL Eligible Participants")
+
+ QOL_comp_BL_after <- QOL_comp_BL_after %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total QOL Eligible \n Participants") %>%
+  modify_caption("Table 12.a. Completion of 3-Month Quality of Life Survey by Baseline Data Completeness Among eligible participants verified on or after December 1, 2023") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+QOL_comp_BL_after %>% kable_styling(latex_options = c("scale_down","hold_position"))
+
+
+###### Before 12/1/23 ########
+
+QOL_comp_BL_before <- all_data %>% filter(as.Date(d_914594314) < "2023-12-01" & qolcomplt!="Not Eligible") %>% 
+  mutate(completion = factor(completion, levels=c("Completed all baseline survey modules 1-4, no baseline samples", "Completed any baseline sample, did not complete baseline survey",
+                                                          "Completed both survey and sample(s)", "Completed neither survey or sample(s)")),
+         qolcomplt = factor(qolcomplt, levels=c("Not Started", "Started", "Submitted"))) %>% 
+  select(completion, qolcomplt) %>% dplyr::arrange(completion,qolcomplt) %>% tbl_cross(
+  row = completion,
+  col = qolcomplt,
+  label = list(qolcomplt ~ "Survey Completion",completion~"Completion"),
+  percent = "row",
+  digits=c(0,2),
+  margin_text="Total QOL Eligible Participants")
+
+QOL_comp_BL_before <- QOL_comp_BL_before%>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total QOL Eligible \n Participants") %>%
+  modify_caption("Table 12.b. Completion of 3-Month Quality of Life Survey by Baseline Data Completeness Among eligible participants verified on before December 1, 2023") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+QOL_comp_BL_before %>% kable_styling(latex_options = c("scale_down","hold_position"))
+
+```
+
+
+\FloatBarrier
+```{r Table13, echo=FALSE, warning=FALSE, message=FALSE}
+
+
+
+
+QOL_time <- all_data %>% 
+  mutate(compTM_qol = as.numeric(difftime(as.POSIXct(ymd_hms(d_843688458)), as.POSIXct(ymd_hms(d_870643066)), units="mins")),
+         permission = case_when(compTM_qol<5 ~ "Under 5 Minutes",
+                                compTM_qol<10 ~ "5-10 Minutes",
+                                compTM_qol<15 ~ "10-15 Minutes",
+                                compTM_qol<20 ~ "15-20 Minutes",
+                                compTM_qol<30 ~ "20-30 Minutes",
+                                compTM_qol>=30 ~ "30+ Minutes"),
+         permission = factor(permission, levels=c("Under 5 Minutes", "5-10 Minutes", "10-15 Minutes", 
+                                                   "15-20 Minutes", "20-30 Minutes", "30+ Minutes")))  %>% 
+    group_by(permission) %>% tally()
+
+QOL_time$Percentage <- (QOL_time$n / sum(QOL_time$n)) * 100
+QOL_time <- QOL_time[c(1:6),]
+
+summary_row <- data.frame(permission = "Total QOL Eligible Participants",
+                          n = sum(QOL_time$n),
+                          Percentage = 100)
+
+
+QOL_TM <- rbind(QOL_time, summary_row)
+
+QOL_TM[1, 4] <- paste0(formatC(QOL_TM[1, 2], big.mark = ",", format = "d"), " (", round(QOL_TM[1, 3], digits = 1), "%)")
+QOL_TM[2, 4] <- paste0(formatC(QOL_TM[2, 2], big.mark = ",", format = "d"), " (", round(QOL_TM[2, 3], digits = 1), "%)")
+QOL_TM[3, 4] <- paste0(formatC(QOL_TM[3, 2], big.mark = ",", format = "d"), " (", round(QOL_TM[3, 3], digits = 1), "%)")
+QOL_TM[4, 4] <- paste0(formatC(QOL_TM[4, 2], big.mark = ",", format = "d"), " (", round(QOL_TM[4, 3], digits = 1), "%)")
+QOL_TM[5, 4] <- paste0(formatC(QOL_TM[5, 2], big.mark = ",", format = "d"), " (", round(QOL_TM[5, 3], digits = 1), "%)")
+QOL_TM[6, 4] <- paste0(formatC(QOL_TM[6, 2], big.mark = ",", format = "d"), " (", round(QOL_TM[6, 3], digits = 1), "%)")
+QOL_TM[7, 4] <- paste0(formatC(QOL_TM[7, 2], big.mark = ",", format = "d"), " (", round(QOL_TM[7, 3], digits = 1), "%)")
+
+
+QOL_TM_table <- QOL_TM[, c(1,4)]
+
+colnames(QOL_TM_table) <- c("Completion Time", "N%")
+
+knitr::kable(QOL_TM_table, #format.args = list(big.mark = ","),
+             caption = 'Table 13. 3-Month Quality of Life Survey Completion Time from Start to Submit \n Among Eligible Participants', 
+             booktabs=T, linesep = "", row.names=FALSE, align=c("l", "c")) %>% 
+  add_indent(c(1:(nrow(QOL_TM_table)-1))) %>%  
+  kable_styling(latex_options = c("scale_down","hold_position"))
+
+```
+
+
+```{r Table14, echo=FALSE, warning=FALSE, message=FALSE}
+
+
+
+
+## Time from QOL trigger to submission of QOL survey
+# category= 3mo QOL Survey Reminders attempt=1st contact notification_time will be used in place of FIRST_QOL_REMINDER
+
+trig_qol <- bq_project_query(project,
+query="SELECT distinct(token), notification_time FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP`
+where category='3mo QOL Survey Reminders' and attempt='1st contact'")
+trigger <- bigrquery::bq_table_download(trig_qol,bigint = "integer64")
+
+
+trigger_time <- left_join(all_data, trigger, by="token")
+
+
+## Those verified after 12/1/2024 were notified
+trigger_time$trig <- ifelse(as.Date(trigger_time$d_914594314)> "2024-12-01", trigger_time$notification_time,
+                            as.Date(as.Date(trigger_time$d_914594314) + 90))
+
+trig_time<- trigger_time %>%  filter(d_320303124 == 231311385) %>%
+  mutate(trigTM_qol = as.numeric(difftime(as.POSIXct(ymd_hms(d_843688458)), as.POSIXct(ymd_hms(notification_time)), units="days")))
+
+Trig_table = trig_time %>%
+  dplyr::summarize('N'=n(),
+                   Min = round(min(trigTM_qol, na.rm = TRUE), digits=2),
+                   Q1 = round(quantile(trigTM_qol, 0.25, na.rm = TRUE), digits=2),
+                   Median = round(median(trigTM_qol, na.rm = TRUE), digits=2),
+                   Mean = round(mean(trigTM_qol, na.rm = TRUE),  digits=2),
+                   SD= round(sd(trigTM_qol, na.rm = TRUE), digits=2),
+                   Q3 = round(quantile(trigTM_qol, 0.75, na.rm = TRUE), digits=2),
+                   'Perc.90' = round(quantile(trigTM_qol, 0.90, na.rm = TRUE), digits=2),
+                   Max = round(max(trigTM_qol, na.rm = TRUE), digits=2))
+
+
+
+knitr::kable(Trig_table, 
+             caption = 'Table 14. 3-Month Quality of Life Survey Completion from Trigger to Submit for \n Verified Participants, in Days', 
+             row.names=FALSE, format.args = list(big.mark = ","), linesep = "", 
+             booktabs = T, align=c("l", "c", "c", "c", "c", "c", "c", "c", "c")) %>% 
+  kable_styling(latex_options = c("scale_down","hold_position")) 
+
+```
+
+
+                   
+\FloatBarrier
+
+```{r Pref_Lang_Time_All, echo=FALSE, warning=FALSE, message=FALSE}
+
 
 all_data %>% tbl_cross(
-    col =Site,
-    row = Pref_lang,
+    col = Pref_lang,
+    row = Site,
     digits=c(0,1),
-    percent = "row",
+    percent = "column",
     label=list(Pref_lang="Preferred Language",
                 Site = "Site"),
     missing="ifany",
     margin_text="Total") %>% 
   modify_header(stat_0 = "Total") %>%
-  modify_caption("Table 11. Preferred Language by Site") %>%
+  modify_caption("Table 15. Preferred Language by Site") %>%
   as_kable_extra(escape = FALSE, addtl_fmt = TRUE) %>%  
-  kable_styling(latex_options = "scale_down")
+  kable_styling(latex_options = "scale_down") 
 
 ```
+
 
 
 
@@ -817,73 +1092,75 @@ all_data %>% tbl_cross(
 ```{r Survey_Flag_Setup, echo=FALSE, warning = FALSE, include=FALSE}
 
 
-# Define queries
+## SSN survey is not viewable in BQ so we will not have the language flag for that survey
+
+
+
 queries <- list(
-  m1_lang_c = "SELECT m1.Connect_ID, m1.d_784119588, d_255077064
+  m1_lang_c = "SELECT pts.Connect_ID, m1.d_784119588, d_255077064
                 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` m1
                 left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
                 on m1.Connect_ID=pts.Connect_ID
-                WHERE m1.Connect_ID IS NOT NULL and d_949302066='231311385'",
-  m2_lang_c = "SELECT m2.Connect_ID, m2.d_784119588, d_255077064 
+                WHERE pts.Connect_ID IS NOT NULL and d_949302066='231311385'",
+  m2_lang_c = "SELECT pts.Connect_ID, m2.d_784119588, d_255077064 
                 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module2_v2_JP` m2
                 left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
                 on m2.Connect_ID=pts.Connect_ID
-                WHERE m2.Connect_ID IS NOT NULL and d_976570371='231311385'",
-  m3_lang_c = "SELECT m3.Connect_ID, m3.d_784119588, d_255077064 
+                WHERE pts.Connect_ID IS NOT NULL and d_536735468='231311385'",
+  m3_lang_c = "SELECT pts.Connect_ID, m3.d_784119588, d_255077064 
                 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module3_v1_JP` m3
                 left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
                 on m3.Connect_ID=pts.Connect_ID
-                WHERE m3.Connect_ID IS NOT NULL and d_976570371='231311385'",
-  m4_lang_c = "SELECT m4.Connect_ID, m4.d_784119588, d_255077064 
+                WHERE pts.Connect_ID IS NOT NULL and d_976570371='231311385'",
+  m4_lang_c = "SELECT pts.Connect_ID, m4.d_784119588, d_255077064 
                 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module4_v1_JP` m4
                 left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
                 on m4.Connect_ID=pts.Connect_ID
-                WHERE m4.Connect_ID IS NOT NULL and pts.d_663265240='231311385'",
-  BUM_lang_c = "SELECT bum.Connect_ID, bum.d_784119588, d_255077064 
+                WHERE pts.Connect_ID IS NOT NULL and pts.d_663265240='231311385'",
+  BUM_lang_c = "SELECT pts.Connect_ID, bum.d_784119588, d_255077064 
                 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.bioSurvey_v1_JP` bum
                 left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
                 on bum.Connect_ID=pts.Connect_ID
-                WHERE bum.Connect_ID IS NOT NULL and d_265193023='231311385'",
-  BU_lang_c = "SELECT bu.Connect_ID, bu.d_784119588, d_255077064
+                WHERE pts.Connect_ID IS NOT NULL and d_265193023='231311385'",
+  BU_lang_c = "SELECT pts.Connect_ID, bu.d_784119588, d_255077064
                 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.clinicalBioSurvey_v1_JP` bu 
                 left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
                 on bu.Connect_ID=pts.Connect_ID
-                WHERE bu.Connect_ID IS NOT NULL and d_253883960='231311385'",
-  CV_lang_c = "SELECT cv.Connect_ID, cv.d_784119588, d_255077064 
+                WHERE pts.Connect_ID IS NOT NULL and d_253883960='231311385'",
+  CV_lang_c = "SELECT pts.Connect_ID, cv.d_784119588, d_255077064 
                 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.covid19Survey_v1_JP` cv
                 left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
                 on cv.Connect_ID=pts.Connect_ID
-                WHERE cv.Connect_ID IS NOT NULL and d_220186468='231311385'",
-  Mens_lang_c = "SELECT mns.Connect_ID, mns.d_784119588, d_255077064 
+                WHERE pts.Connect_ID IS NOT NULL and d_220186468='231311385'",
+  Mens_lang_c = "SELECT pts.Connect_ID, mns.d_784119588, d_255077064 
                 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.menstrualSurvey_v1_JP` mns
                 left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
                 on mns.Connect_ID=pts.Connect_ID
-                WHERE mns.Connect_ID IS NOT NULL and d_459098666='231311385'",
-  MW_lang_c = "SELECT mw.Connect_ID, mw.d_784119588, d_255077064 
+                WHERE pts.Connect_ID IS NOT NULL and d_459098666='231311385'",
+  MW_lang_c = "SELECT pts.Connect_ID, mw.d_784119588, d_255077064 
                 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.mouthwash_v1_JP` mw
                 left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
                 on mw.Connect_ID=pts.Connect_ID
-                WHERE mw.Connect_ID IS NOT NULL and d_547363263='231311385'",
-  QOL_lang_c = "SELECT qol.Connect_ID, qol.d_784119588, d_255077064
+                WHERE pts.Connect_ID IS NOT NULL and d_547363263='231311385'",
+  QOL_lang_c = "SELECT pts.Connect_ID, qol.d_784119588, d_255077064
                 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.promis_v1_JP` qol
                 left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
                 on qol.Connect_ID=pts.Connect_ID
-                WHERE qol.Connect_ID IS NOT NULL and d_320303124='231311385'"
-  #parts_lang_c = "SELECT Connect_ID, d_784119588 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE Connect_ID IS NOT NULL and d_126331570='231311385'"
+                WHERE pts.Connect_ID IS NOT NULL and d_320303124='231311385'"
 )
 
-# Initialize an empty list to store results
+
 results_list <- list()
 
-# Loop through queries and download data
+
 for (name in names(queries)) {
   query <- queries[[name]]
-  query_result <- bq_project_query(project_cc, query)
+  query_result <- bq_project_query(project, query)
   data <- bq_table_download(query_result, bigint = "integer64")
   results_list[[name]] <- data
 }
 
-# Access the data frames from the list
+
 m1_lang <- results_list$m1_lang_c
 m2_lang <- results_list$m2_lang_c
 m3_lang <- results_list$m3_lang_c
@@ -894,20 +1171,106 @@ CV_lang <- results_list$CV_lang_c
 Mens_lang <- results_list$Mens_lang_c
 MW_lang <- results_list$MW_lang_c
 QOL_lang <- results_list$QOL_lang_c
-#parts_lang <- results_list$parts_lang_c
+
 
 
 
 ```
 
-                          
+
 \FloatBarrier
-```{r Svy_Lang_Compare, echo=FALSE, warning = FALSE, include=TRUE}
-# Define the list of survey data frames and acronyms
+```{r Svy_Lang_Diff, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+
+# Define the list of survey data frames
 survey_dfs <- list(m1_lang, m2_lang, m3_lang, m4_lang, BUM_lang, BU_lang, CV_lang, Mens_lang, MW_lang, QOL_lang)
+
+# Initialize an empty data frame to store results for all participants
+all_scenarios <- data.frame(Connect_ID = character(), Flag = character(), Pref_lang = character(), stringsAsFactors = FALSE)
+
+# Loop through each survey data frame
+for (current_df in survey_dfs) {
+  current_df <- current_df %>%
+    mutate(
+      Flag = ifelse(is.na(d_784119588), NA, ifelse(d_784119588 == 773342525, "Spanish", "English")),
+      Pref_lang = case_when(d_255077064 == 773342525 ~ "Spanish", TRUE ~ "English")
+    )
+  
+  # Extract relevant columns and add to the scenario tracking data frame
+  participant_scenarios <- current_df %>%
+    select(Connect_ID, Flag, Pref_lang)
+  
+  all_scenarios <- bind_rows(all_scenarios, participant_scenarios)
+}
+
+# Summarize the scenario for each participant
+final_scenarios <- all_scenarios %>%
+  group_by(Connect_ID) %>%
+  summarize(
+    Flag_set = unique(na.omit(Flag)), # Remove NAs from Flags
+    Pref_lang_set = unique(Pref_lang),
+    scenario = case_when(
+      length(Flag_set) == 0 ~ "No survey language preference has been made", # No Flag values
+      all(Flag_set == Pref_lang_set) ~ "Survey Flags and Preferred Language Consistent", # All Flags match Pref_lang
+      any(Flag_set != Pref_lang_set) ~ "Any Survey Flag Inconsistent with Preferred Language" # Any inconsistency
+    )
+  ) %>%
+  ungroup()
+
+# Summarize the counts for each scenario
+scenario_counts <- final_scenarios %>%
+  count(scenario) %>%
+  dplyr::rename(Scenario = scenario, 'Total Participants' = n)
+
+consist <- knitr::kable(scenario_counts,
+                        caption = "Table 16. Consistency of Language Choice in Survey Completion",
+                        row.names = FALSE, align = c("l", "c"), digits = 2, booktabs = TRUE) %>%
+  kable_styling(latex_options = c("scale_down","hold_position")) 
+
+add_footnote(consist, "Note: Those who do not start any surveys will not have survey flags, and thus not be counted in this table. Those that start but do not complete a survey will still choose a survey language.", notation = "none")
+
+
+
+# 
+# # Initialize a data frame to store the counts for each scenario
+# scenario_counts <- data.frame(
+#   Scenario = c(
+#     "Survey Flags and Preferred Language Consistent",
+#     "Any Survey Flag Inconsistent with Preferred Language"
+#   ),
+#   Count = 0
+# )
+# 
+# # Loop through each survey data frame
+# for (current_df in survey_dfs) {
+#   # Apply the necessary mutations
+#   current_df <- current_df %>%
+#     mutate(
+#       Flag = case_when(d_784119588 == 773342525 ~ "Spanish", TRUE ~ "English"),
+#       Pref_lang = case_when(d_255077064 == 773342525 ~ "Spanish", TRUE ~ "English")
+#     )
+#   
+#   
+#   scenario_counts$Count[1] <- scenario_counts$Count[1] + nrow(current_df %>% filter((Flag == "Spanish" & Pref_lang == "Spanish")| Flag == "English" & Pref_lang == "English"))
+#   scenario_counts$Count[2] <- scenario_counts$Count[2] + nrow(current_df %>% filter((Flag == "English" & Pref_lang == "Spanish")| Flag == "Spanish" & Pref_lang == "English"))
+# }
+# 
+# 
+#  knitr::kable(scenario_counts,
+#                caption = "Table 12. Consistency of Language Choice in Survey Completion",
+#                row.names = FALSE, align = c("l","c","c","c","c","c","c","c"), digits = 2, booktabs = TRUE) %>%
+#     kable_styling(latex_options = c("scale_down","hold_position"))
+
+```
+
+\newpage                        
+\FloatBarrier
+```{r Svy_Lang_Compare, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+
 survey_acronyms <- c("BOH", "MRE", "SAS", "LAW", "BUM", "BU", "COVID", "MENS", "MW", "QOL")
 
-# Function to create the table with given data frame and acronym
+
 create_table <- function(current_df, current_acronym) {
   if (nrow(current_df) == 0) {
     return(data.frame(Survey = current_acronym, English = 0, Spanish = 0, Total = 0))
@@ -943,7 +1306,6 @@ create_table <- function(current_df, current_acronym) {
     }
   }
   
-  # Reorder columns to match expected order
   df_all_svry_flags <- df_all_svry_flags[expected_columns]
   
   return(df_all_svry_flags)
@@ -964,154 +1326,100 @@ for (i in seq_along(survey_dfs)) {
   df_overall <- create_table(current_df, current_acronym)
   all_flags_list_overall[[current_acronym]] <- df_overall
   
-  # Table where current_df$d_255077064 == 773342525
+  # Spanish
   current_df_cond1 <- current_df %>% filter(d_255077064 == 773342525)
   df_condition1 <- create_table(current_df_cond1, current_acronym)
   all_flags_list_condition1[[current_acronym]] <- df_condition1
   
-  # Table where current_df$d_255077064 == 163149180 | is.na(current_df$d_255077064)
+  # English
   current_df_cond2 <- current_df %>% filter(d_255077064 == 163149180 | is.na(d_255077064))
   df_condition2 <- create_table(current_df_cond2, current_acronym)
   all_flags_list_condition2[[current_acronym]] <- df_condition2
 }
 
-# Combine all results into single data frames
+
 final_df_overall <- do.call(rbind, all_flags_list_overall)
 final_df_condition1 <- do.call(rbind, all_flags_list_condition1)
 final_df_condition2 <- do.call(rbind, all_flags_list_condition2)
 
-# View the final combined data frames
 
 
 knitr::kable(final_df_overall,
-               caption = paste0("Table 12. Survey Completion by Survey Language \n Among All Participants"),
+               caption = paste0("Table 17. Survey Completion by Survey Language \n Among All Participants"),
                row.names = FALSE, align = c("l","c","c","c"), digits = 2, booktabs = TRUE) %>% 
   add_indent(1:10) %>%  
-  kable_styling(latex_options = "HOLD_position")
+  kable_styling(latex_options = c("scale_down","hold_position"))
 
 knitr::kable(final_df_condition1,
-               caption = paste0("Table 12.a. Survey Completion by Survey Language \n Among Participants with Preferred language of Spanish"),
+               caption = paste0("Table 17.a. Survey Completion by Survey Language \n Among Participants with Preferred language of Spanish"),
                row.names = FALSE, align = c("l","c","c","c"), digits = 2, booktabs = TRUE) %>% 
   add_indent(1:10) %>%  
-  kable_styling(latex_options = "HOLD_position")
+  kable_styling(latex_options = c("scale_down","hold_position"))
 
 knitr::kable(final_df_condition2,
-               caption = paste0("Table 12.b. Survey Completion by Survey Language \n Among Participants with Preferred language of English"),
+               caption = paste0("Table 17.b. Survey Completion by Survey Language \n Among Participants with Preferred language of English"),
                row.names = FALSE, align = c("l","c","c","c"), digits = 2, booktabs = TRUE) %>% 
   add_indent(1:10) %>%  
-  kable_styling(latex_options = "HOLD_position")
+  kable_styling(latex_options = c("scale_down","hold_position"))
 
 
 ```
 
+
+\newpage
 
 \FloatBarrier
-```{r Svy_Lang_Diff, echo=FALSE, warning = FALSE, include=TRUE}
+```{r BL_start_stop_Lang, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
-
-
-# Define the list of survey data frames
-survey_dfs <- list(m1_lang, m2_lang, m3_lang, m4_lang, BUM_lang, BU_lang, CV_lang, Mens_lang, MW_lang, QOL_lang)
-
-# Initialize a data frame to store the counts for each scenario
-scenario_counts <- data.frame(
-  Scenario = c(
-    "Flag == Spanish & Pref_lang == Spanish",
-    "Flag == Spanish & Pref_lang != Spanish",
-    "Flag != Spanish & Pref_lang == Spanish",
-    "Flag == English & Pref_lang == English",
-    "Flag == English & Pref_lang != English",
-    "Flag != English & Pref_lang == English"
-  ),
-  Count = 0
-)
-
-# Loop through each survey data frame
-for (current_df in survey_dfs) {
-  # Apply the necessary mutations
-  current_df <- current_df %>%
-    mutate(
-      Flag = case_when(d_784119588 == 773342525 ~ "Spanish", TRUE ~ "English"),
-      Pref_lang = case_when(d_255077064 == 773342525 ~ "Spanish", TRUE ~ "English")
-    )
-  
-  # Calculate counts for each scenario and add to the total counts
-  scenario_counts$Count[1] <- scenario_counts$Count[1] + nrow(current_df %>% filter(Flag == "Spanish" & Pref_lang == "Spanish"))
-  scenario_counts$Count[2] <- scenario_counts$Count[2] + nrow(current_df %>% filter(Flag == "Spanish" & Pref_lang != "Spanish"))
-  scenario_counts$Count[3] <- scenario_counts$Count[3] + nrow(current_df %>% filter(Flag != "Spanish" & Pref_lang == "Spanish"))
-  scenario_counts$Count[4] <- scenario_counts$Count[4] + nrow(current_df %>% filter(Flag == "English" & Pref_lang == "English"))
-  scenario_counts$Count[5] <- scenario_counts$Count[5] + nrow(current_df %>% filter(Flag == "English" & Pref_lang != "English"))
-  scenario_counts$Count[6] <- scenario_counts$Count[6] + nrow(current_df %>% filter(Flag != "English" & Pref_lang == "English"))
+summarize_data <- function(data, filter_column, filter_value, language_value, target_column) {
+    data %>% 
+        filter(!!sym(filter_column) == filter_value & Pref_lang == language_value) %>% 
+        summarize('N' = n(),
+                  Min = min(!!sym(target_column), na.rm = TRUE),
+                  Q1 = quantile(!!sym(target_column), 0.25, na.rm = TRUE),
+                  Median = median(!!sym(target_column), na.rm = TRUE),
+                  Mean = mean(!!sym(target_column), na.rm = TRUE), 
+                  SD = sd(!!sym(target_column), na.rm = TRUE),
+                  Q3 = quantile(!!sym(target_column), 0.75, na.rm = TRUE),
+                  'Perc.90' = quantile(!!sym(target_column), 0.90, na.rm = TRUE),
+                  Max = max(!!sym(target_column), na.rm = TRUE))
 }
 
+BOH_LangE <- summarize_data(all_data, "d_949302066", 231311385, "English", "m1_comp_mins")
+MRE_LangE <- summarize_data(all_data, "d_536735468", 231311385, "English", "m2_comp_mins")
+SAS_LangE <- summarize_data(all_data, "d_976570371", 231311385, "English", "m3_comp_mins")
+LAW_LangE <- summarize_data(all_data, "d_663265240", 231311385, "English", "m4_comp_mins")
 
- knitr::kable(scenario_counts,
-               caption = "Table 13. Consistency of Language Choice in Survey Completion",
-               row.names = FALSE, align = c("l","c","c","c","c","c","c","c"), digits = 2, booktabs = TRUE) %>%
-    kable_styling(latex_options = "HOLD_position")
+BOH_LangSP <- summarize_data(all_data, "d_949302066", 231311385, "Spanish", "m1_comp_mins")
+MRE_LangSP <- summarize_data(all_data, "d_536735468", 231311385, "Spanish", "m2_comp_mins")
+SAS_LangSP <- summarize_data(all_data, "d_976570371", 231311385, "Spanish", "m3_comp_mins")
+LAW_LangSP <- summarize_data(all_data, "d_663265240", 231311385, "Spanish", "m4_comp_mins")
+
+
+
+BL_lang_E <- rbind(BOH_LangE, MRE_LangE, SAS_LangE, LAW_LangE)
+BL_lang_SP <- rbind(BOH_LangSP, MRE_LangSP, SAS_LangSP, LAW_LangSP)
+
+
+BL_lang_E[,10] <- c("BOH", "MRE", "SAS", "LAW")
+BL_lang_SP[,10] <- c("BOH", "MRE", "SAS", "LAW")
+
+BL_lang_E<- BL_lang_E[, c(10,1:9)]
+BL_lang_SP<- BL_lang_SP[, c(10,1:9)]
+
+
+colnames(BL_lang_E)[1] <- "Section"
+colnames(BL_lang_SP)[1] <- "Section"
+
+knitr::kable(BL_lang_E, format.args = list(big.mark = ","), digits=2, 
+             caption='18.a. Time (in minutes) from Start to Submit of Initial Survey Modules for English',
+             row.names=FALSE, align=c("l","c","c","c","c","c","c","c","c"), booktabs = TRUE)%>% 
+    kable_styling(latex_options = c("scale_down","hold_position")) 
+
+knitr::kable(BL_lang_SP, format.args = list(big.mark = ","), digits=2, 
+             caption='Table 18.b. Time (in minutes) from Start to Submit of Initial Survey Modules for Spanish',
+             row.names=FALSE, align=c("l","c","c","c","c","c","c","c","c"),booktabs = TRUE)%>% 
+    kable_styling(latex_options = c("scale_down","hold_position")) 
 
 ```
-
-
-
-
-\FloatBarrier
-```{r Pref_Lang_Time, echo=FALSE, warning = FALSE, include=TRUE}
-
-summarize_variable <- function(data, variable) {
-  data %>%
-    summarize(
-      N = n(),
-      Min = min(!!variable, na.rm = TRUE),
-      Q1 = quantile(!!variable, 0.25, na.rm = TRUE),
-      Median = median(!!variable, na.rm = TRUE),
-      Mean = mean(!!variable, na.rm = TRUE),
-      SD = sd(!!variable, na.rm = TRUE),
-      Q3 = quantile(!!variable, 0.75, na.rm = TRUE),
-      Perc.90 = quantile(!!variable, 0.90, na.rm = TRUE),
-      Max = max(!!variable, na.rm = TRUE)
-    )
-}
-
-
-generate_table <- function(data, language, table_id) {
-  filtered_data <- data %>% filter(Pref_lang == language)
-  variables <- c("m1_comp_mins", "m2_comp_mins", "m3_comp_mins", "m4_comp_mins")
-  
-  Table7 <- bind_rows(
-    lapply(variables, function(var) summarize_variable(filtered_data, sym(var)))
-  )
-  
-  # Add the section labels
-  Table7$Section <- c("BOH", "MRE", "SAS", "LAW")
-  
-  # Format the table and replace NA values with "-"
-  Table7 <- Table7 %>%
-    mutate(across(everything(), ~ ifelse(is.na(.), "-", .)))
-  
-  
-  knitr::kable(Table7[, c(10, 1:9)],
-               caption = paste0("Table 14.", table_id, ". Time (in minutes) from Start to Submit of Initial Survey Modules for ", language),
-               row.names = FALSE, align = c("l","c","c","c","c","c","c","c"), digits = 2, booktabs = TRUE) %>%
-    kable_styling(latex_options = "HOLD_position")
-}
-
-
-languages <- unique(all_data$Pref_lang)
-table_ids <- c("a", "b")
-
-
-table_list <- list()
-
-for (i in seq_along(languages)) {
-  table_list[[i]] <- generate_table(all_data, languages[i], table_ids[i])
-}
-
-
-table_list[[1]] 
-#table_list[[2]] 
-
-
-```
-
 
