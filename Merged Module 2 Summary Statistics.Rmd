@@ -4007,80 +4007,82 @@ dt_house2e_summary %>%  gt::gt() %>%
 ```
 
 ## Exercise and Recreation 
-```{r Exercise, include=FALSE}
-
-#What type?
-ex_type= data_tib_m2 %>%  mutate(ex= case_when(D_517976064_D_904954920==1 ~ "Walk",
-                                             D_517976064_D_619501806==1 ~ "Run",
-                                             D_517976064_D_203192394==1 ~ "Play Tennis",
-                                             D_517976064_D_261267696==1 ~ "Play Golf",
-                                             D_517976064_D_926584500==1 ~ "Swim",
-                                             D_517976064_D_420058896==1 ~ "Bike",
-                                             D_517976064_D_868685663==1 ~ "Strength Training",
-                                             D_517976064_D_760484278==1 ~ "Yoga",
-                                             D_517976064_D_345916806==1 ~ "Martial Arts",
-                                             D_517976064_D_936042582==1 ~ "Dance",
-                                             D_517976064_D_182827107==1 ~ "Ski",
-                                             D_517976064_D_734860227==1 ~ "Cross Country",
-                                             D_517976064_D_371531887==1 ~ "Surfing",
-                                             D_517976064_D_423631576==1 ~ "Circuit",
-                                             D_517976064_D_181769837==1 ~ "Other",
-                                             D_517976064_D_535003378==1 ~ "None of the Above",
-                                             TRUE~ "Skipped this Question"))
 
 
-
-tmp_hr2<- ex_type[, grepl("517976064", colnames(ex_type))]
-
-
-tmpM2 <- tmp_hr2[, c(14,10, 3, 4, 15, 7, 13, 12, 5, 16, 2, 11, 6, 8, 1, 9)] 
-dt_exercise_dx <- NULL
-for (i in 1:16){
-  dt <- as.data.frame(tab1(tmpM2[,i])$output.table)
-  dt$dt_exercise_dx <- colnames(tmpM2)[i]
-  dt_exercise_dx <- rbind(dt_exercise_dx,dt[2,])
-
-}
+```{r Exercise, warning=FALSE, echo=FALSE, message=FALSE}
 
 
-dt_exercise_dx$dt_exercise_dx <- c("Walk","Run","Play Tennis","Play Golf","Swim","Bike", "Strength Training","Yoga","Martial Arts", "Dance", "Ski","Cross Country","Surfing","Circuit", "Other","None of the Above")
-```
+# Separate activity as a select all that apply, can choose more then one
+ex_flags <- data_tib_m2 %>%
+  mutate(
+    Walk = as.numeric(D_517976064_D_904954920 == 1),
+    Run = as.numeric(D_517976064_D_619501806 == 1),
+    Play_Tennis = as.numeric(D_517976064_D_203192394 == 1),
+    Play_Golf = as.numeric(D_517976064_D_261267696 == 1),
+    Swim = as.numeric(D_517976064_D_926584500 == 1),
+    Bike = as.numeric(D_517976064_D_420058896 == 1),
+    Strength_Training = as.numeric(D_517976064_D_868685663 == 1),
+    Yoga = as.numeric(D_517976064_D_760484278 == 1),
+    Martial_Arts = as.numeric(D_517976064_D_345916806 == 1),
+    Dance = as.numeric(D_517976064_D_936042582 == 1),
+    Ski = as.numeric(D_517976064_D_182827107 == 1),
+    Cross_Country = as.numeric(D_517976064_D_734860227 == 1),
+    Surfing = as.numeric(D_517976064_D_371531887 == 1),
+    Circuit = as.numeric(D_517976064_D_423631576 == 1),
+    Other = as.numeric(D_517976064_D_181769837 == 1),
+    None_of_the_Above = as.numeric(D_517976064_D_535003378 == 1),
+    Skipped = as.numeric(rowSums(select(., starts_with("D_") & where(is.numeric))) == 0)  # Flag for skipped
+  )
 
-```{r ExerTable, warning=FALSE, echo=FALSE, message=FALSE}
-colnames(dt_exercise_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
-dt_exercise <- dt_exercise_dx[, c(4,1,2)]
 
-skipped_mhg1 <- sum(table(ex_type$season=="Skipped this Question")[2])
-dt_exercise[as.numeric(dim(dt_exercise)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(ex_type)[[1]])*100,2))
+ex_long <- ex_flags %>%
+  pivot_longer(cols = starts_with("Walk"):starts_with("Skipped"),
+               names_to = "Activity", values_to = "Flag") %>%
+  filter(Flag == 1) %>%
+  mutate(Activity = case_when(
+    Activity == "Walk" ~ "Walk",
+    Activity == "Run" ~ "Run",
+    Activity == "Play_Tennis" ~ "Play Tennis",
+    Activity == "Play_Golf" ~ "Play Golf",
+    Activity == "Swim" ~ "Swim",
+    Activity == "Bike" ~ "Bike",
+    Activity == "Strength_Training" ~ "Strength Training",
+    Activity == "Yoga" ~ "Yoga",
+    Activity == "Martial_Arts" ~ "Martial Arts",
+    Activity == "Dance" ~ "Dance",
+    Activity == "Ski" ~ "Ski",
+    Activity == "Cross_Country" ~ "Cross Country",
+    Activity == "Surfing" ~ "Surfing",
+    Activity == "Circuit" ~ "Circuit",
+    Activity == "Other" ~ "Other",
+    Activity == "None_of_the_Above" ~ "None of the Above",
+    Activity == "Skipped" ~ "Skipped this Question"
+  ))
 
 
-dt_exercise_summary <- dt_exercise %>%  gt::gt() %>%
+dt_exercise_summary <- ex_long %>%
+  group_by(Activity) %>%
+  summarise(Frequency = n(), .groups = 'drop') %>%
+  mutate(Percentage = Frequency / sum(Frequency) * 100)
+
+
+dt_exercise_summary %>%
+  gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>%
+  fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
   tab_header(title = md("EXEREC1: Done any of these Exercises or Recreational Activities in the Past Year")) %>%
-  cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Activity**"), Percentage = md("**Percentage of Participants**")) %>%
-  # summary_rows(
-  #   column = c(n,Percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  #grand_summary_rows(columns=c(Frequency, Percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = Condition,
-    )
-  ) 
-tab_footnote(
-  dt_exercise_summary,
-  md("As this is a select all question, participants may select multiple responses."),
-  locations = cells_column_labels(columns = Percentage),
-  placement = c("left")
-)
+  cols_label(Frequency = md("**Number of Participants**"),
+             Activity = md("**Activity**"),
+             Percentage = md("**Percentage of Participants**")) %>%
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = Activity)) %>%
+  tab_footnote(
+    md("As this is a select all question, participants may select multiple responses."),
+    locations = cells_column_labels(columns = Percentage),
+    placement = "left"
+  )
+
 
 
 ```
@@ -4133,7 +4135,7 @@ dt_walk_summary %>%  gt::gt() %>%
     locations = cells_body(
       columns = ex,
     )
-  ) #
+  ) 
 
 
 #how often-walk
@@ -4144,7 +4146,7 @@ one_logic_funct2(D_267122668, D_517976064_D_904954920, 1, "EXEREC3A: Frequency o
 
 
 #time-walk
-data_tib_m2$D_901660173 <- factor(data_tib_m2$D_901660173,levels=c(648960871, 239152340, 582006876, 645894551, 996315715, 671267928, 647504893, "Skipped this Question"))
+data_tib_m2$D_901660173 <- factor(data_tib_m2$D_901660173,levels=c(428999623, 248303092, 206020811, 264163865, 638092100, 628177728, 805918496, "Skipped this Question"))
 one_logic_funct2(D_901660173, D_517976064_D_904954920, 1, "Time Spent per day Walking for Exercise")
 
 
