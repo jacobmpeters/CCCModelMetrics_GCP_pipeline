@@ -583,101 +583,72 @@ boxp_funct_F <- function(CID,Title, Xlab) {
 
 # Section 1: Medications
 ### All Pain Medication
-```{r PainMeds, include=FALSE}
 
-mds= data_tib_m2 %>%  mutate(medications= case_when( D_399982309_D_469512398==1 ~ "Baby Aspirin",
-                                                       D_399982309_D_194424439==1 ~ "Regular Aspirin",
-                                                       D_399982309_D_422188606==1 ~ "Ibuprofen",
-                                                       D_399982309_D_555555502==1 ~ "Acetaminophen",
-                                                       D_399982309_D_800410166==1 ~ "Naproxen",
-                                                       D_399982309_D_221645137==1 ~ "Celebrex",
-                                                       D_399982309_D_974248369==1 ~ "Prescription pain relievers",
-                                                       D_399982309_D_535003378==1 ~ "None",
-                                                       TRUE  ~ "Skipped this Question"))
-
-
-pain_medications_summary <- mds %>% group_by(medications) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(medications, n, percentage)
-
-
-# pain_medications_summary %>%  gt::gt() %>%  
-#   fmt_number(columns = "percentage", decimals = 2) %>%
-#   fmt_number(columns = "n", decimals = 0) %>%
-#   tab_header(title = md("Pain Relievers Used 4x a Month for 6+ Months")) %>% 
-#   cols_label(n= md("**Number of Participants**"), medications = md("**Product**"), percentage = md("**Percentage of Participants**")) %>% 
-#   # summary_rows(
-#   #   column = c(n,percentage),
-#   #   fns= list(
-#   #     Sum= ~sum(.)
-#   #   ), decimals=0) %>%
-#   tab_options(
-#       stub.font.weight = "bold"
-#     ) %>%
-#   tab_style(
-#     style = list(
-#       cell_text(weight = "bold")
-#     ),
-#     locations = cells_body(
-#       columns = medications,
-#     )
-#   ) 
-
-
-painmeds<- data_tib_m2[, grepl("399982309", colnames(data_tib_m2))]
-painmds <- painmeds[, c(4, 1, 3, 6, 7, 2, 8, 5)]
-
-medsp_dx <- NULL
-for (i in 1:8){
-  dt <- as.data.frame(tab1(painmds[,i])$output.table)
-  dt$medsp_dx <- colnames(painmds)[i]
-  medsp_dx <- rbind(medsp_dx,dt[2,])
-  
-}
-#medsp_dx$medsp_dx ### how are their race variables being assigned here?? wrong variable matching. Flattening issue?
-
-medsp_dx$medsp_dx <- c("Baby Aspirin","Regular Aspirin","Ibuprofen","Acetaminophen", "Naproxen", "Celebrex","Prescription pain relievers","None")
-```
 ```{r PainMedsTable, warning=FALSE, echo=FALSE, message=FALSE}
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
-# mgr1_1 <- medsp_dx[, c(4,1,2)]
-# 
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-# mgr1_2 <- medsp_dx[, c(4,1,2)]
 
-colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-mgr1 <- medsp_dx[, c(4,1,2)]
-
-skipped_mhg1 <- sum(table(mds$medications=="Skipped this Question")[2])
-mgr1[as.numeric(dim(mgr1)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(data_tib_m2)[[1]])*100,2))
-
-
-dt_mgr1 <- mgr1 %>%  gt::gt() %>%  
-  tab_header(title = md("PAINREL1: Pain Relievers Used 4x a Month for 6+ Months")) %>% 
-  cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"),  Condition = md("**Answer**")) %>% 
-  # summary_rows( groups=F,
-  #   column = c(Frequency,Percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  #grand_summary_rows(columns=c(Frequency, Percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-    stub.font.weight = "bold"
-  ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = Condition,
-    )
+# Create separate columns before merging to get indiv. counts of select all that apply question 
+mds_flags <- data_tib_m2 %>%
+  mutate(
+    Baby_Aspirin = as.numeric(D_399982309_D_469512398 == 1),
+    Regular_Aspirin = as.numeric(D_399982309_D_194424439 == 1),
+    Ibuprofen = as.numeric(D_399982309_D_422188606 == 1),
+    Acetaminophen = as.numeric(D_399982309_D_555555502 == 1),
+    Naproxen = as.numeric(D_399982309_D_800410166 == 1),
+    Celebrex = as.numeric(D_399982309_D_221645137 == 1),
+    Prescription_Pain_Relievers = as.numeric(D_399982309_D_974248369 == 1),
+    None = as.numeric(D_399982309_D_535003378 == 1),
+    # Skipped: flag if all medication columns are 0 or NA
+    Skipped = if_else(rowSums(select(., starts_with("D_399982309_D_")), na.rm = TRUE) == 0 &
+                      rowSums(!is.na(select(., starts_with("D_399982309_D_")))) == 0, 1, 0)
   )
-tab_footnote(
-  dt_mgr1,
-  md("As this is a select all question, participants may select multiple responses."),
-  locations = cells_column_labels(columns = Percentage),
-  placement = c("left")
-)
 
 
+mds_long <- mds_flags %>%
+  pivot_longer(cols = starts_with("Baby_Aspirin"):starts_with("Skipped"),
+               names_to = "Medication", values_to = "Flag") %>%
+  filter(Flag == 1) %>%
+  mutate(Medication = case_when(
+    Medication == "Baby_Aspirin" ~ "Baby Aspirin",
+    Medication == "Regular_Aspirin" ~ "Regular Aspirin",
+    Medication == "Ibuprofen" ~ "Ibuprofen",
+    Medication == "Acetaminophen" ~ "Acetaminophen",
+    Medication == "Naproxen" ~ "Naproxen",
+    Medication == "Celebrex" ~ "Celebrex",
+    Medication == "Prescription_Pain_Relievers" ~ "Prescription Pain Relievers",
+    Medication == "None" ~ "None",
+    Medication == "Skipped" ~ "Skipped this Question"
+  ))
+
+
+mds_summary <- mds_long %>%
+  group_by(Medication) %>%
+  summarise(Frequency = n(), .groups = 'drop') %>%
+  mutate(Percentage = Frequency / sum(Frequency) * 100)
+
+
+mds_summary %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>%
+  fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
+  tab_header(title = md("PAINREL1: Pain Relievers Used 4x a Month for 6+ Months")) %>%
+  cols_label(Frequency = md("**Number of Participants**"),
+             Medication = md("**Medications**"),
+             Percentage = md("**Percentage of Participants**")) %>%
+  grand_summary_rows(
+    columns = c(Frequency, Percentage),
+    fns = list(Total = ~sum(.)),
+    decimals = 0
+  ) %>%
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Medication)
+  ) %>%
+  tab_footnote(
+    md("Participants may select multiple responses or skip the question."),
+    locations = cells_column_labels(columns = Percentage),
+    placement = "left"
+  )
 
 
 ```
@@ -757,78 +728,73 @@ hist_funct(D_564374538, "PAINREL6_1: Years Ago Baby aspirin Last Taken", "Years"
 ```
 
 
-```{r ReasonBAspr, include=FALSE}
 
-#Reasons taken
-dt_reasons_P1= data_tib_m2  %>%   filter(D_399982309_D_469512398==1)
-
-bby_asp= dt_reasons_P1 %>%  mutate(reasons= case_when(D_643807999_D_323106499==1 ~ "Arthritis",
-                                             D_643807999_D_769901710==1 ~ "Back Pain",
-                                             D_643807999_D_727773491==1 ~ "Menstrual Pain",
-                                             D_643807999_D_283652434==1 ~ "Disease Prevention",
-                                             D_643807999_D_243596698==1 ~ "Headaches",
-                                             D_643807999_D_191656389==1 ~ "Illness or Fever",
-                                             D_643807999_D_853261835==1 ~ "Muscle Joint Pain",
-                                             D_643807999_D_558504672==1 ~ "Toothache",
-                                             TRUE~ "Skipped this Question"))
-
-
- 
-painmeds<- dt_reasons_P1[, grepl("643807999", colnames(dt_reasons_P1))]
-painmds <- painmeds[, c(4, 7, 6, 3, 2, 1, 8, 5)]
-
-medsp_dx <- NULL
-for (i in 1:8){
-  dt <- as.data.frame(tab1(painmds[,i])$output.table)
-  dt$medsp_dx <- colnames(painmds)[i]
-  medsp_dx <- rbind(medsp_dx,dt[2,])
-  
-}
-#medsp_dx$medsp_dx ### how are their race variables being assigned here?? wrong variable matching. Flattening issue?
-
-medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevention","Headaches","Illness or Fever","Muscle Joint Pain","Toothache")
-```
 ```{r ReasonBAsprTable, warning=FALSE, echo=FALSE, message=FALSE}
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
-# mgr1_1 <- medsp_dx[, c(4,1,2)]
-# 
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-# mgr1_2 <- medsp_dx[, c(4,1,2)]
 
-colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-pain7_1 <- medsp_dx[, c(4,1,2)]
+dt_reasons_P1 <- data_tib_m2 %>%  filter(D_399982309_D_469512398==1)
 
-skipped_mhg1 <- sum(table(bby_asp$reasons=="Skipped this Question")[2])
-pain7_1[as.numeric(dim(pain7_1)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P1)[[1]])*100,2))
+bby_asp_flags <- dt_reasons_P1 %>%
+  mutate(
+    Arthritis = as.numeric(D_643807999_D_323106499 == 1),
+    Back_Pain = as.numeric(D_643807999_D_769901710 == 1),
+    Menstrual_Pain = as.numeric(D_643807999_D_727773491 == 1),
+    Disease_Prevention = as.numeric(D_643807999_D_283652434 == 1),
+    Headaches = as.numeric(D_643807999_D_243596698 == 1),
+    Illness_Fever = as.numeric(D_643807999_D_191656389 == 1),
+    Muscle_Joint_Pain = as.numeric(D_643807999_D_853261835 == 1),
+    Toothache = as.numeric(D_643807999_D_558504672 == 1),
+    # Skipped: flag if all reason columns are 0 or NA
+    Skipped = if_else(rowSums(select(., starts_with("D_643807999_D_")), na.rm = TRUE) == 0 &
+                      rowSums(!is.na(select(., starts_with("D_643807999_D_")))) == 0, 1, 0)
+  )
 
 
-dt_pain7_1 <- pain7_1 %>%  gt::gt() %>%  
-  fmt_number(columns = "Percentage", decimals = 2) %>% 
-  tab_header(title = md("PAINREL7_1: Reasons for taking baby aspirin regularly")) %>% 
-  cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Answer**"), Percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
+bby_asp_long <- bby_asp_flags %>%
+  pivot_longer(cols = starts_with("Arthritis"):starts_with("Skipped"),
+               names_to = "Reason", values_to = "Flag") %>%
+  filter(Flag == 1) %>%
+  mutate(Reason = case_when(
+    Reason == "Arthritis" ~ "Arthritis",
+    Reason == "Back_Pain" ~ "Back Pain",
+    Reason == "Menstrual_Pain" ~ "Menstrual Pain",
+    Reason == "Disease_Prevention" ~ "Disease Prevention",
+    Reason == "Headaches" ~ "Headaches",
+    Reason == "Illness_Fever" ~ "Illness or Fever",
+    Reason == "Muscle_Joint_Pain" ~ "Muscle Joint Pain",
+    Reason == "Toothache" ~ "Toothache",
+    Reason == "Skipped" ~ "Skipped this Question"
+  ))
+
+
+bby_asp_summary <- bby_asp_long %>%
+  group_by(Reason) %>%
+  summarise(Frequency = n(), .groups = 'drop') %>%
+  mutate(Percentage = Frequency / sum(Frequency) * 100)
+
+
+bby_asp_summary %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>%
+  fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
+  tab_header(title = md("PAINREL7_1: Reasons for Taking Baby Aspirin")) %>%
+  cols_label(Frequency = md("**Number of Participants**"),
+             Reason = md("**Reasons**"),
+             Percentage = md("**Percentage of Participants**")) %>%
+  grand_summary_rows(
+    columns = c(Frequency, Percentage),
+    fns = list(Total = ~sum(.)),
+    decimals = 0
+  ) %>%
+  tab_options(stub.font.weight = "bold") %>%
   tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = Condition,
-    )
-  )# 
-
-tab_footnote(
-  dt_pain7_1,
-  md("As this is a select all question, participants may select multiple responses."),
-  locations = cells_column_labels(columns = Percentage),
-  placement = c("left")
-)
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Reason)
+  ) %>%
+  tab_footnote(
+    md("Participants may select multiple responses or skip the question."),
+    locations = cells_column_labels(columns = Percentage),
+    placement = "left"
+  )
 
 
 ```
@@ -907,78 +873,75 @@ dt_reasons_P2_summary %>%  gt::gt() %>%
 
 ```
 
-```{r ReasonAspirin, include=FALSE}
 
-#Reasons taken
-dt_reasons_P2= data_tib_m2 %>%  filter(D_399982309_D_194424439==1) 
-
-reg_asp= dt_reasons_P2 %>%  filter(D_399982309_D_194424439==1) %>%  mutate(reasons= case_when(D_275143071_D_323106499==1 ~ "Arthritis",
-                                             D_275143071_D_769901710==1 ~ "Back Pain",
-                                             D_275143071_D_727773491==1 ~ "Menstrual Pain",
-                                             D_275143071_D_283652434==1 ~ "Disease Prevention",
-                                             D_275143071_D_243596698==1 ~ "Headaches",
-                                             D_275143071_D_191656389==1 ~ "Illness or Fever",
-                                             D_275143071_D_853261835==1 ~ "Muscle Joint Pain",
-                                             D_275143071_D_558504672==1 ~ "Toothache",
-                                             TRUE~ "Skipped this Question"))
-
-
- 
-painmeds<- dt_reasons_P2[, grepl("275143071", colnames(dt_reasons_P2))]
-painmds <- painmeds[, c(4, 7, 6, 3, 2, 1, 8, 5)]
-
-medsp_dx <- NULL
-for (i in 1:8){
-  dt <- as.data.frame(tab1(painmds[,i])$output.table)
-  dt$medsp_dx <- colnames(painmds)[i]
-  medsp_dx <- rbind(medsp_dx,dt[2,])
-  
-}
-#medsp_dx$medsp_dx ### how are their race variables being assigned here?? wrong variable matching. Flattening issue?
-
-medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevention","Headaches","Illness or Fever","Muscle Joint Pain","Toothache")
-```
 ```{r ReasonAspirinTable, warning=FALSE, echo=FALSE, message=FALSE}
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
-# mgr1_1 <- medsp_dx[, c(4,1,2)]
-# 
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-# mgr1_2 <- medsp_dx[, c(4,1,2)]
 
-colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-pain7_2 <- medsp_dx[, c(4,1,2)]
-
-skipped_mhg1 <- sum(table(reg_asp$reasons=="Skipped this Question")[2])
-pain7_2[as.numeric(dim(pain7_2)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P2)[[1]])*100,2))
+dt_reasons_P2 <- data_tib_m2 %>% filter(D_399982309_D_194424439 == 1)
 
 
-dt_pain7_2 <- pain7_2 %>%  gt::gt() %>%  
-  fmt_number(columns = "Percentage", decimals = 2) %>% 
-  tab_header(title = md("PAINREL7_2: Reasons for taking regular aspirin regularly")) %>% 
-  cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Answer**"), Percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
+reg_asp_flags <- dt_reasons_P2 %>%
+  mutate(
+    Arthritis = as.numeric(D_275143071_D_323106499 == 1),
+    Back_Pain = as.numeric(D_275143071_D_769901710 == 1),
+    Menstrual_Pain = as.numeric(D_275143071_D_727773491 == 1),
+    Disease_Prevention = as.numeric(D_275143071_D_283652434 == 1),
+    Headaches = as.numeric(D_275143071_D_243596698 == 1),
+    Illness_or_Fever = as.numeric(D_275143071_D_191656389 == 1),
+    Muscle_Joint_Pain = as.numeric(D_275143071_D_853261835 == 1),
+    Toothache = as.numeric(D_275143071_D_558504672 == 1),
+    # Flag for skipped questions when all are 0 or NA
+    Skipped = if_else(rowSums(select(., starts_with("D_275143071_")), na.rm = TRUE) == 0 &
+                      rowSums(!is.na(select(., starts_with("D_275143071_")))) == 0, 1, 0)
+  )
+
+
+reg_asp_long <- reg_asp_flags %>%
+  pivot_longer(cols = starts_with("Arthritis"):starts_with("Skipped"),
+               names_to = "Reason", values_to = "Flag") %>%
+  filter(Flag == 1) %>%
+  mutate(Reason = case_when(
+    Reason == "Arthritis" ~ "Arthritis",
+    Reason == "Back_Pain" ~ "Back Pain",
+    Reason == "Menstrual_Pain" ~ "Menstrual Pain",
+    Reason == "Disease_Prevention" ~ "Disease Prevention",
+    Reason == "Headaches" ~ "Headaches",
+    Reason == "Illness_or_Fever" ~ "Illness or Fever",
+    Reason == "Muscle_Joint_Pain" ~ "Muscle Joint Pain",
+    Reason == "Toothache" ~ "Toothache",
+    Reason == "Skipped" ~ "Skipped this Question"
+  ))
+
+
+reg_asp_summary <- reg_asp_long %>%
+  group_by(Reason) %>%
+  summarise(Frequency = n(), .groups = 'drop') %>%
+  mutate(Percentage = Frequency / sum(Frequency) * 100)
+
+
+reg_asp_summary %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>%
+  fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
+  tab_header(title = md("PAINREL7_2: Reasons for taking regular aspirin regularly")) %>%
+  cols_label(Frequency = md("**Number of Participants**"),
+             Reason = md("**Reasons**"),
+             Percentage = md("**Percentage of Participants**")) %>%
+  grand_summary_rows(
+    columns = c(Frequency, Percentage),
+    fns = list(Total = ~sum(.)),
+    decimals = 0
+  ) %>%
+  tab_options(stub.font.weight = "bold") %>%
   tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = Condition,
-    )
-  )# 
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Reason)
+  ) %>%
+  tab_footnote(
+    md("Participants may select multiple responses or skip the question."),
+    locations = cells_column_labels(columns = Percentage),
+    placement = "left"
+  )
 
-tab_footnote(
-  dt_pain7_2,
-  md("As this is a select all question, participants may select multiple responses."),
-  locations = cells_column_labels(columns = Percentage),
-  placement = c("left")
-)
 
 ```
 
@@ -1017,79 +980,73 @@ hist_funct(D_491549803 , "PAINREL6_3: Years Ago Ibuprofen Last Taken", "Years", 
 
 ```
 
-```{r ReasonIbup, include=FALSE}
 
-#Reasons taken
+```{r IbupTable, warning=FALSE, echo=FALSE, message=FALSE}
+
 dt_reasons_P3= data_tib_m2  %>%  filter(D_399982309_D_422188606==1) 
 
-
-ibu= dt_reasons_P3 %>%  mutate(reasons= case_when(D_152138929_D_323106499==1 ~ "Arthritis",
-                                             D_152138929_D_769901710==1 ~ "Back Pain",
-                                             D_152138929_D_727773491==1 ~ "Menstrual Pain",
-                                             D_152138929_D_283652434==1 ~ "Disease Prevention",
-                                             D_152138929_D_243596698==1 ~ "Headaches",
-                                             D_152138929_D_191656389==1 ~ "Illness or Fever",
-                                             D_152138929_D_853261835==1 ~ "Muscle Joint Pain",
-                                             D_152138929_D_558504672==1 ~ "Toothache",
-                                             TRUE~ "Skipped this Question"))
-
-
- 
-painmeds<- dt_reasons_P3[, grepl("152138929", colnames(dt_reasons_P3))]
-painmds <- painmeds[, c(4, 7, 6, 3, 2, 1, 8, 5)]
-
-medsp_dx <- NULL
-for (i in 1:8){
-  dt <- as.data.frame(tab1(painmds[,i])$output.table)
-  dt$medsp_dx <- colnames(painmds)[i]
-  medsp_dx <- rbind(medsp_dx,dt[2,])
-  
-}
-#medsp_dx$medsp_dx ### how are their race variables being assigned here?? wrong variable matching. Flattening issue?
-
-medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevention","Headaches","Illness or Fever","Muscle Joint Pain","Toothache")
-```
-```{r IbupTable, warning=FALSE, echo=FALSE, message=FALSE}
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
-# mgr1_1 <- medsp_dx[, c(4,1,2)]
-# 
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-# mgr1_2 <- medsp_dx[, c(4,1,2)]
-
-colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-pain7_3 <- medsp_dx[, c(4,1,2)]
-
-skipped_mhg1 <- sum(table(ibu$reasons=="Skipped this Question")[2])
-pain7_3[as.numeric(dim(pain7_3)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P3)[[1]])*100,2))
+ibu_flags <- dt_reasons_P3 %>%
+  mutate(
+    Arthritis = as.numeric(D_152138929_D_323106499 == 1),
+    Back_Pain = as.numeric(D_152138929_D_769901710 == 1),
+    Menstrual_Pain = as.numeric(D_152138929_D_727773491 == 1),
+    Disease_Prevention = as.numeric(D_152138929_D_283652434 == 1),
+    Headaches = as.numeric(D_152138929_D_243596698 == 1),
+    Illness_or_Fever = as.numeric(D_152138929_D_191656389 == 1),
+    Muscle_Joint_Pain = as.numeric(D_152138929_D_853261835 == 1),
+    Toothache = as.numeric(D_152138929_D_558504672 == 1),
+    # Flag for skipped questions when all are 0 or NA
+    Skipped = if_else(rowSums(select(., starts_with("D_152138929_D_")), na.rm = TRUE) == 0 &
+                      rowSums(!is.na(select(., starts_with("D_152138929_D_")))) == 0, 1, 0)
+  )
 
 
-dt_pain7_3 <- pain7_3 %>%  gt::gt() %>%  
-  fmt_number(columns = "Percentage", decimals = 2) %>% 
-  tab_header(title = md("PAINREL7_3: Reasons for taking ibuprofen regularly")) %>% 
-  cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Answer**"), Percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
+ibu_long <- ibu_flags %>%
+  pivot_longer(cols = starts_with("Arthritis"):starts_with("Skipped"),
+               names_to = "Reason", values_to = "Flag") %>%
+  filter(Flag == 1) %>%
+  mutate(Reason = case_when(
+    Reason == "Arthritis" ~ "Arthritis",
+    Reason == "Back_Pain" ~ "Back Pain",
+    Reason == "Menstrual_Pain" ~ "Menstrual Pain",
+    Reason == "Disease_Prevention" ~ "Disease Prevention",
+    Reason == "Headaches" ~ "Headaches",
+    Reason == "Illness_or_Fever" ~ "Illness or Fever",
+    Reason == "Muscle_Joint_Pain" ~ "Muscle Joint Pain",
+    Reason == "Toothache" ~ "Toothache",
+    Reason == "Skipped" ~ "Skipped this Question"
+  ))
+
+
+ibu_summary <- ibu_long %>%
+  group_by(Reason) %>%
+  summarise(Frequency = n(), .groups = 'drop') %>%
+  mutate(Percentage = Frequency / sum(Frequency) * 100)
+
+
+ibu_summary %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>%
+  fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
+  tab_header(title = md("PAINREL7_3: Reasons for taking ibuprofen regularly")) %>%
+  cols_label(Frequency = md("**Number of Participants**"),
+             Reason = md("**Reasons**"),
+             Percentage = md("**Percentage of Participants**")) %>%
+  grand_summary_rows(
+    columns = c(Frequency, Percentage),
+    fns = list(Total = ~sum(.)),
+    decimals = 0
+  ) %>%
+  tab_options(stub.font.weight = "bold") %>%
   tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = Condition,
-    )
-  )# 
-
-tab_footnote(
-  dt_pain7_3,
-  md("As this is a select all question, participants may select multiple responses."),
-  locations = cells_column_labels(columns = Percentage),
-  placement = c("left")
-)
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Reason)
+  ) %>%
+  tab_footnote(
+    md("Participants may select multiple responses or skip the question."),
+    locations = cells_column_labels(columns = Percentage),
+    placement = "left"
+  )
 
 ```
 
@@ -1126,77 +1083,78 @@ hist_funct(D_846227588, "PAINREL6_4: Years Ago Tylenol Taken", "Years", "Frequen
 
 
 ```
-```{r ReasonAcetam, include=FALSE}
-
-#Reasons taken
-dt_reasons_P4 <- data_tib_m2 %>%   filter(D_399982309_D_555555502==1)
-acet= dt_reasons_P4 %>%  mutate(reasons= case_when(D_630231395_D_323106499==1 ~ "Arthritis",
-                                             D_630231395_D_769901710==1 ~ "Back Pain",
-                                             D_630231395_D_727773491==1 ~ "Menstrual Pain",
-                                             D_630231395_D_283652434==1 ~ "Disease Prevention",
-                                             D_630231395_D_243596698==1 ~ "Headaches",
-                                             D_630231395_D_191656389==1 ~ "Illness or Fever",
-                                             D_630231395_D_853261835==1 ~ "Muscle Joint Pain",
-                                             D_630231395_D_558504672==1 ~ "Toothache",
-                                             TRUE~ "Skipped this Question"))
 
 
- 
-painmeds<- dt_reasons_P4[, grepl("630231395", colnames(dt_reasons_P4))]
-painmds <- painmeds[, c(4, 7, 6, 3, 2, 1, 8, 5)]
 
-medsp_dx <- NULL
-for (i in 1:8){
-  dt <- as.data.frame(tab1(painmds[,i])$output.table)
-  dt$medsp_dx <- colnames(painmds)[i]
-  medsp_dx <- rbind(medsp_dx,dt[2,])
-  
-}
-#medsp_dx$medsp_dx ### how are their race variables being assigned here?? wrong variable matching. Flattening issue?
-
-medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevention","Headaches","Illness or Fever","Muscle Joint Pain","Toothache")
-```
 ```{r AcetamTable, warning=FALSE, echo=FALSE, message=FALSE}
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
-# mgr1_1 <- medsp_dx[, c(4,1,2)]
-# 
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-# mgr1_2 <- medsp_dx[, c(4,1,2)]
-
-colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-pain7_4 <- medsp_dx[, c(4,1,2)]
-
-skipped_mhg1 <- sum(table(acet$reasons=="Skipped this Question")[2])
-pain7_4[as.numeric(dim(pain7_4)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P4)[[1]])*100,2))
 
 
-dt_pain7_4 <- pain7_4 %>%  gt::gt() %>%  
-  fmt_number(columns = "Percentage", decimals = 2) %>% 
-  tab_header(title = md("PAINREL7_4: Reasons for taking Acetaminophen regularly")) %>% 
-  cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Answer**"), Percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
+dt_reasons_P4 <- data_tib_m2 %>% filter(D_399982309_D_555555502 == 1)
+
+
+acet_flags <- dt_reasons_P4 %>%
+  mutate(
+    Arthritis = as.numeric(D_630231395_D_323106499 == 1),
+    Back_Pain = as.numeric(D_630231395_D_769901710 == 1),
+    Menstrual_Pain = as.numeric(D_630231395_D_727773491 == 1),
+    Disease_Prevention = as.numeric(D_630231395_D_283652434 == 1),
+    Headaches = as.numeric(D_630231395_D_243596698 == 1),
+    Illness_or_Fever = as.numeric(D_630231395_D_191656389 == 1),
+    Muscle_Joint_Pain = as.numeric(D_630231395_D_853261835 == 1),
+    Toothache = as.numeric(D_630231395_D_558504672 == 1),
+    # Flag for skipped questions when all are 0 or NA
+    Skipped = if_else(rowSums(select(., starts_with("D_630231395_D_")), na.rm = TRUE) == 0 &
+                      rowSums(!is.na(select(., starts_with("D_630231395_D_")))) == 0, 1, 0)
+  )
+
+
+acet_long <- acet_flags %>%
+  pivot_longer(cols = starts_with("Arthritis"):starts_with("Skipped"),
+               names_to = "Reason", values_to = "Flag") %>%
+  filter(Flag == 1) %>%
+  mutate(Reason = case_when(
+    Reason == "Arthritis" ~ "Arthritis",
+    Reason == "Back_Pain" ~ "Back Pain",
+    Reason == "Menstrual_Pain" ~ "Menstrual Pain",
+    Reason == "Disease_Prevention" ~ "Disease Prevention",
+    Reason == "Headaches" ~ "Headaches",
+    Reason == "Illness_or_Fever" ~ "Illness or Fever",
+    Reason == "Muscle_Joint_Pain" ~ "Muscle Joint Pain",
+    Reason == "Toothache" ~ "Toothache",
+    Reason == "Skipped" ~ "Skipped this Question"
+  ))
+
+
+acet_summary <- acet_long %>%
+  group_by(Reason) %>%
+  summarise(Frequency = n(), .groups = 'drop') %>%
+  mutate(Percentage = Frequency / sum(Frequency) * 100)
+
+
+acet_summary %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>%
+  fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
+  tab_header(title = md("PAINREL7_4: Reasons for taking Acetaminophen regularly")) %>%
+  cols_label(Frequency = md("**Number of Participants**"),
+             Reason = md("**Reasons**"),
+             Percentage = md("**Percentage of Participants**")) %>%
+ grand_summary_rows(
+    columns = c(Frequency, Percentage),
+    fns = list(Total = ~sum(.)),
+    decimals = 0
+  ) %>%
+  tab_options(stub.font.weight = "bold") %>%
   tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = Condition,
-    )
-  )# 
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Reason)
+  ) %>%
+  tab_footnote(
+    md("Participants may select multiple responses or skip the question."),
+    locations = cells_column_labels(columns = Percentage),
+    placement = "left"
+  )
 
-tab_footnote(
-  dt_pain7_4,
-  md("As this is a select all question, participants may select multiple responses."),
-  locations = cells_column_labels(columns = Percentage),
-  placement = c("left")
-)
 
 ```
 
@@ -1236,77 +1194,78 @@ hist_funct(D_798182168, "PAINREL6_5: Years Ago Aleve Last Taken", "Years", "Freq
 
 
 ```
-```{r NaproxenReason, include=FALSE}
-
-#Reasons taken
-dt_reasons_P5 <- data_tib_m2 %>%   filter(D_399982309_D_800410166==1)
-napx= dt_reasons_P5 %>%  mutate(reasons= case_when(D_655266993_D_323106499==1 ~ "Arthritis",
-                                             D_655266993_D_769901710==1 ~ "Back Pain",
-                                             D_655266993_D_727773491==1 ~ "Menstrual Pain",
-                                             D_655266993_D_283652434==1 ~ "Disease Prevention",
-                                             D_655266993_D_243596698==1 ~ "Headaches",
-                                             D_655266993_D_191656389==1 ~ "Illness or Fever",
-                                             D_655266993_D_853261835==1 ~ "Muscle Joint Pain",
-                                             D_655266993_D_558504672==1 ~ "Toothache",
-                                             TRUE~ "Skipped this Question"))
 
 
- 
-painmeds<- dt_reasons_P5[, grepl("655266993", colnames(dt_reasons_P5))]
-painmds <- painmeds[, c(4, 7, 6, 3, 2, 1, 8, 5)]
 
-medsp_dx <- NULL
-for (i in 1:8){
-  dt <- as.data.frame(tab1(painmds[,i])$output.table)
-  dt$medsp_dx <- colnames(painmds)[i]
-  medsp_dx <- rbind(medsp_dx,dt[2,])
-  
-}
-#medsp_dx$medsp_dx ### how are their race variables being assigned here?? wrong variable matching. Flattening issue?
-
-medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevention","Headaches","Illness or Fever","Muscle Joint Pain","Toothache")
-```
 ```{r NaproxenTable, warning=FALSE, echo=FALSE, message=FALSE}
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
-# mgr1_1 <- medsp_dx[, c(4,1,2)]
-# 
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-# mgr1_2 <- medsp_dx[, c(4,1,2)]
-
-colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-pain7_5 <- medsp_dx[, c(4,1,2)]
-
-skipped_mhg1 <- sum(table(napx$reasons=="Skipped this Question")[2])
-pain7_5[as.numeric(dim(pain7_5)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P5)[[1]])*100,2))
 
 
-dt_pain7_5 <- pain7_5 %>%  gt::gt() %>%  
-  fmt_number(columns = "Percentage", decimals = 2) %>% 
-  tab_header(title = md("PAINREL7_5: Reasons for taking Naproxen regularly")) %>% 
-  cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Answer**"), Percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
+dt_reasons_P5 <- data_tib_m2 %>% filter(D_399982309_D_800410166 == 1)
+
+
+napx_flags <- dt_reasons_P5 %>%
+  mutate(
+    Arthritis = as.numeric(D_655266993_D_323106499 == 1),
+    Back_Pain = as.numeric(D_655266993_D_769901710 == 1),
+    Menstrual_Pain = as.numeric(D_655266993_D_727773491 == 1),
+    Disease_Prevention = as.numeric(D_655266993_D_283652434 == 1),
+    Headaches = as.numeric(D_655266993_D_243596698 == 1),
+    Illness_or_Fever = as.numeric(D_655266993_D_191656389 == 1),
+    Muscle_Joint_Pain = as.numeric(D_655266993_D_853261835 == 1),
+    Toothache = as.numeric(D_655266993_D_558504672 == 1),
+    # Flag for skipped questions when all are 0 or NA
+    Skipped = if_else(rowSums(select(., starts_with("D_655266993_D_")), na.rm = TRUE) == 0 &
+                      rowSums(!is.na(select(., starts_with("D_655266993_D_")))) == 0, 1, 0)
+  )
+
+
+napx_long <- napx_flags %>%
+  pivot_longer(cols = starts_with("Arthritis"):starts_with("Skipped"),
+               names_to = "Reason", values_to = "Flag") %>%
+  filter(Flag == 1) %>%
+  mutate(Reason = case_when(
+    Reason == "Arthritis" ~ "Arthritis",
+    Reason == "Back_Pain" ~ "Back Pain",
+    Reason == "Menstrual_Pain" ~ "Menstrual Pain",
+    Reason == "Disease_Prevention" ~ "Disease Prevention",
+    Reason == "Headaches" ~ "Headaches",
+    Reason == "Illness_or_Fever" ~ "Illness or Fever",
+    Reason == "Muscle_Joint_Pain" ~ "Muscle Joint Pain",
+    Reason == "Toothache" ~ "Toothache",
+    Reason == "Skipped" ~ "Skipped this Question"
+  ))
+
+
+napx_summary <- napx_long %>%
+  group_by(Reason) %>%
+  summarise(Frequency = n(), .groups = 'drop') %>%
+  mutate(Percentage = Frequency / sum(Frequency) * 100)
+
+
+napx_summary %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>%
+  fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
+  tab_header(title = md("PAINREL7_5: Reasons for taking Naproxen regularly")) %>%
+  cols_label(Frequency = md("**Number of Participants**"),
+             Reason = md("**Reasons**"),
+             Percentage = md("**Percentage of Participants**")) %>%
+  grand_summary_rows(
+    columns = c(Frequency, Percentage),
+    fns = list(Total = ~sum(.)),
+    decimals = 0
+  ) %>%
+  tab_options(stub.font.weight = "bold") %>%
   tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = Condition,
-    )
-  )# 
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Reason)
+  ) %>%
+  tab_footnote(
+    md("Participants may select multiple responses or skip the question."),
+    locations = cells_column_labels(columns = Percentage),
+    placement = "left"
+  )
 
-tab_footnote(
-  dt_pain7_5,
-  md("As this is a select all question, participants may select multiple responses."),
-  locations = cells_column_labels(columns = Percentage),
-  placement = c("left")
-)
 
 ```
 
@@ -1344,77 +1303,77 @@ hist_funct(D_322479862, "PAINREL6_6: Years Ago Celebrex Last Taken", "Years", "F
 
 
 ```
-```{r ReasonCelebrex, include=FALSE}
-
-#Reasons taken
-dt_reasons_P6 <- data_tib_m2 %>%   filter(D_399982309_D_221645137==1)
-cbx= dt_reasons_P6 %>%  mutate(reasons= case_when(D_509383583_D_323106499==1 ~ "Arthritis",
-                                             D_509383583_D_769901710==1 ~ "Back Pain",
-                                             D_509383583_D_727773491==1 ~ "Menstrual Pain",
-                                             D_509383583_D_283652434==1 ~ "Disease Prevention",
-                                             D_509383583_D_243596698==1 ~ "Headaches",
-                                             D_509383583_D_191656389==1 ~ "Illness or Fever",
-                                             D_509383583_D_853261835==1 ~ "Muscle Joint Pain",
-                                             D_509383583_D_558504672==1 ~ "Toothache",
-                                             TRUE~ "Skipped this Question"))
 
 
- 
-painmeds<- dt_reasons_P6[, grepl("509383583", colnames(dt_reasons_P6))]
-painmds <- painmeds[, c(4, 7, 6, 3, 2, 1, 8, 5)]
 
-medsp_dx <- NULL
-for (i in 1:8){
-  dt <- as.data.frame(tab1(painmds[,i])$output.table)
-  dt$medsp_dx <- colnames(painmds)[i]
-  medsp_dx <- rbind(medsp_dx,dt[2,])
-  
-}
-#medsp_dx$medsp_dx ### how are their race variables being assigned here?? wrong variable matching. Flattening issue?
-
-medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevention","Headaches","Illness or Fever","Muscle Joint Pain","Toothache")
-```
 ```{r CelebrexTable, warning=FALSE, echo=FALSE, message=FALSE}
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
-# mgr1_1 <- medsp_dx[, c(4,1,2)]
-# 
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-# mgr1_2 <- medsp_dx[, c(4,1,2)]
 
-colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-pain7_6 <- medsp_dx[, c(4,1,2)]
-
-skipped_mhg1 <- sum(table(cbx$reasons=="Skipped this Question")[2])
-pain7_6[as.numeric(dim(pain7_6)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P6)[[1]])*100,2))
+dt_reasons_P6 <- data_tib_m2 %>% filter(D_399982309_D_221645137 == 1)
 
 
-dt_pain7_6 <- pain7_6 %>%  gt::gt() %>%  
-  fmt_number(columns = "Percentage", decimals = 2) %>% 
-  tab_header(title = md("PAINREL7_6: Reasons for taking Celebrex regularly")) %>% 
-  cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Answer**"), Percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
+cbx_flags <- dt_reasons_P6 %>%
+  mutate(
+    Arthritis = as.numeric(D_509383583_D_323106499 == 1),
+    Back_Pain = as.numeric(D_509383583_D_769901710 == 1),
+    Menstrual_Pain = as.numeric(D_509383583_D_727773491 == 1),
+    Disease_Prevention = as.numeric(D_509383583_D_283652434 == 1),
+    Headaches = as.numeric(D_509383583_D_243596698 == 1),
+    Illness_or_Fever = as.numeric(D_509383583_D_191656389 == 1),
+    Muscle_Joint_Pain = as.numeric(D_509383583_D_853261835 == 1),
+    Toothache = as.numeric(D_509383583_D_558504672 == 1),
+    # Flag for skipped questions when all are 0 or NA
+    Skipped = if_else(rowSums(select(., starts_with("D_509383583_D_")), na.rm = TRUE) == 0 &
+                      rowSums(!is.na(select(., starts_with("D_509383583_D_")))) == 0, 1, 0)
+  )
+
+
+cbx_long <- cbx_flags %>%
+  pivot_longer(cols = starts_with("Arthritis"):starts_with("Skipped"),
+               names_to = "Reason", values_to = "Flag") %>%
+  filter(Flag == 1) %>%
+  mutate(Reason = case_when(
+    Reason == "Arthritis" ~ "Arthritis",
+    Reason == "Back_Pain" ~ "Back Pain",
+    Reason == "Menstrual_Pain" ~ "Menstrual Pain",
+    Reason == "Disease_Prevention" ~ "Disease Prevention",
+    Reason == "Headaches" ~ "Headaches",
+    Reason == "Illness_or_Fever" ~ "Illness or Fever",
+    Reason == "Muscle_Joint_Pain" ~ "Muscle Joint Pain",
+    Reason == "Toothache" ~ "Toothache",
+    Reason == "Skipped" ~ "Skipped this Question"
+  ))
+
+
+cbx_summary <- cbx_long %>%
+  group_by(Reason) %>%
+  summarise(Frequency = n(), .groups = 'drop') %>%
+  mutate(Percentage = Frequency / sum(Frequency) * 100)
+
+
+cbx_summary %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>%
+  fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
+  tab_header(title = md("PAINREL7_6: Reasons for taking Celebrex regularly")) %>%
+  cols_label(Frequency = md("**Number of Participants**"),
+             Reason = md("**Reasons**"),
+             Percentage = md("**Percentage of Participants**")) %>%
+  grand_summary_rows(
+    columns = c(Frequency, Percentage),
+    fns = list(Total = ~sum(.)),
+    decimals = 0
+  ) %>%
+  tab_options(stub.font.weight = "bold") %>%
   tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = Condition,
-    )
-  )# 
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Reason)
+  ) %>%
+  tab_footnote(
+    md("Participants may select multiple responses or skip the question."),
+    locations = cells_column_labels(columns = Percentage),
+    placement = "left"
+  )
 
-tab_footnote(
-  dt_pain7_6,
-  md("As this is a select all question, participants may select multiple responses."),
-  locations = cells_column_labels(columns = Percentage),
-  placement = c("left")
-)
 
 ```
 
@@ -1453,78 +1412,79 @@ hist_funct(D_737490587, "PAINREL6_7: Years Ago Prescription Opiods Last Taken", 
 
 
 ```
-```{r ReasonOpiod, include=FALSE}
-
-#Reasons taken
-dt_reasons_P7= data_tib_m2 %>%  filter(D_399982309_D_974248369==1)
 
 
-opd= dt_reasons_P7 %>%  mutate(reasons= case_when(D_887435355_D_323106499==1 ~ "Arthritis",
-                                             D_887435355_D_769901710==1 ~ "Back Pain",
-                                             D_887435355_D_727773491==1 ~ "Menstrual Pain",
-                                             D_887435355_D_283652434==1 ~ "Disease Prevention",
-                                             D_887435355_D_243596698==1 ~ "Headaches",
-                                             D_887435355_D_191656389==1 ~ "Illness or Fever",
-                                             D_887435355_D_853261835==1 ~ "Muscle Joint Pain",
-                                             D_887435355_D_558504672==1 ~ "Toothache",
-                                             TRUE~ "Skipped this Question"))
 
- 
-painmeds<- dt_reasons_P7[, grepl("887435355", colnames(dt_reasons_P7))]
-painmds <- painmeds[, c(4, 7, 6, 3, 2, 1, 8, 5)]
-
-medsp_dx <- NULL
-for (i in 1:8){
-  dt <- as.data.frame(tab1(painmds[,i])$output.table)
-  dt$medsp_dx <- colnames(painmds)[i]
-  medsp_dx <- rbind(medsp_dx,dt[2,])
-  
-}
-#medsp_dx$medsp_dx ### how are their race variables being assigned here?? wrong variable matching. Flattening issue?
-
-medsp_dx$medsp_dx <- c("Arthritis","Back Pain","Menstrual Pain","Disease Prevention","Headaches","Illness or Fever","Muscle Joint Pain","Toothache")
-```
 ```{r OpiodTable, warning=FALSE, echo=FALSE, message=FALSE}
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
-# mgr1_1 <- medsp_dx[, c(4,1,2)]
-# 
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-# mgr1_2 <- medsp_dx[, c(4,1,2)]
-
-colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-pain7_7 <- medsp_dx[, c(4,1,2)]
-
-skipped_mhg1 <- sum(table(opd$reasons=="Skipped this Question")[2])
-pain7_7[as.numeric(dim(pain7_7)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dt_reasons_P7)[[1]])*100,2))
 
 
-pain7_7 <- pain7_7 %>%  gt::gt() %>%  
-  fmt_number(columns = "Percentage", decimals = 2) %>% 
-  tab_header(title = md("PAINREL7_7: Reasons for taking Opiods regularly")) %>% 
-  cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Answer**"), Percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
+
+dt_reasons_P7 <- data_tib_m2 %>% filter(D_399982309_D_974248369 == 1)
+
+
+opd_flags <- dt_reasons_P7 %>%
+  mutate(
+    Arthritis = as.numeric(D_887435355_D_323106499 == 1),
+    Back_Pain = as.numeric(D_887435355_D_769901710 == 1),
+    Menstrual_Pain = as.numeric(D_887435355_D_727773491 == 1),
+    Disease_Prevention = as.numeric(D_887435355_D_283652434 == 1),
+    Headaches = as.numeric(D_887435355_D_243596698 == 1),
+    Illness_or_Fever = as.numeric(D_887435355_D_191656389 == 1),
+    Muscle_Joint_Pain = as.numeric(D_887435355_D_853261835 == 1),
+    Toothache = as.numeric(D_887435355_D_558504672 == 1),
+    # Flag for skipped questions when all are 0 or NA
+    Skipped = if_else(rowSums(select(., starts_with("D_887435355_D_")), na.rm = TRUE) == 0 &
+                      rowSums(!is.na(select(., starts_with("D_887435355_D_")))) == 0, 1, 0)
+  )
+
+
+opd_long <- opd_flags %>%
+  pivot_longer(cols = starts_with("Arthritis"):starts_with("Skipped"),
+               names_to = "Reason", values_to = "Flag") %>%
+  filter(Flag == 1) %>%
+  mutate(Reason = case_when(
+    Reason == "Arthritis" ~ "Arthritis",
+    Reason == "Back_Pain" ~ "Back Pain",
+    Reason == "Menstrual_Pain" ~ "Menstrual Pain",
+    Reason == "Disease_Prevention" ~ "Disease Prevention",
+    Reason == "Headaches" ~ "Headaches",
+    Reason == "Illness_or_Fever" ~ "Illness or Fever",
+    Reason == "Muscle_Joint_Pain" ~ "Muscle Joint Pain",
+    Reason == "Toothache" ~ "Toothache",
+    Reason == "Skipped" ~ "Skipped this Question"
+  ))
+
+
+opd_summary <- opd_long %>%
+  group_by(Reason) %>%
+  summarise(Frequency = n(), .groups = 'drop') %>%
+  mutate(Percentage = Frequency / sum(Frequency) * 100)
+
+
+opd_summary %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>%
+  fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
+  tab_header(title = md("PAINREL7_7: Reasons for taking Opioids regularly")) %>%
+  cols_label(Frequency = md("**Number of Participants**"),
+             Reason = md("**Reasons**"),
+             Percentage = md("**Percentage of Participants**")) %>%
+  grand_summary_rows(
+    columns = c(Frequency, Percentage),
+    fns = list(Total = ~sum(.)),
+    decimals = 0
+  ) %>%
+  tab_options(stub.font.weight = "bold") %>%
   tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = Condition,
-    )
-  )# 
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Reason)
+  ) %>%
+  tab_footnote(
+    md("Participants may select multiple responses or skip the question."),
+    locations = cells_column_labels(columns = Percentage),
+    placement = "left"
+  )
 
-tab_footnote(
-  pain7_7,
-  md("As this is a select all question, participants may select multiple responses."),
-  locations = cells_column_labels(columns = Percentage),
-  placement = c("left")
-)
 
 ```
 
@@ -2614,168 +2574,163 @@ one_logic_funct2(D_424047361, D_939897560, 353358909, "FERT3: Sought medical adv
 ```
 
 
-```{r Fert4, include=FALSE}
 
-dtfert4= fb %>% filter(D_424047361==353358909) 
-
-
-preg_iss= dtfert4 %>%  mutate(issue= case_when(D_548355426_D_548355426_D_342735868==1 ~ "Tubal blockage",
-                                             D_548355426_D_548355426_D_990599372==1 ~ "Ovary or hormone problem",
-                                             D_548355426_D_548355426_D_863286658==1 ~ "Endometriosis",
-                                             D_548355426_D_548355426_D_202355614==1 ~ "Cervical mucus",
-                                             D_548355426_D_548355426_D_201434907==1 ~ "Partner's infertility",
-                                             D_548355426_D_548355426_D_570171052==1 ~ "Not looked into",
-                                             D_548355426_D_548355426_D_498799217==1 ~ "No cause found",
-                                             D_548355426_D_548355426_D_807835037==1 ~ "Other",
-                                             TRUE~ "Skipped this Question"))
-
- 
-preg_issues<- preg_iss[, grepl("548355426", colnames(preg_iss))]
-preg_issues
-painmds <- preg_issues[, c(3,8,7,2,1,5,4,6 )]
-
-medsp_dx <- NULL
-for (i in 1:8){
-  dt <- as.data.frame(tab1(painmds[,i])$output.table)
-  dt$medsp_dx <- colnames(painmds)[i]
-  medsp_dx <- rbind(medsp_dx,dt[2,])
-  
-}
-#medsp_dx$medsp_dx ### how are their race variables being assigned here?? wrong variable matching. Flattening issue?
-
-medsp_dx$medsp_dx <- c("Tubal blockage","Ovary or hormone problem","Endometriosis","Cervical mucus","Partner's infertility","Not looked into","No cause found","Other")
-```
-```{r Fert4Table, warning=FALSE, echo=FALSE, message=FALSE}
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
-# mgr1_1 <- medsp_dx[, c(4,1,2)]
-# 
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-# mgr1_2 <- medsp_dx[, c(4,1,2)]
-
-colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-fert4 <- medsp_dx[, c(4,1,2)]
-
-skipped_mhg1 <- sum(table(preg_iss$issue=="Skipped this Question")[2])
-fert4[as.numeric(dim(fert4)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dtfert4)[[1]])*100,2))
+```{r Fert4, warning=FALSE, echo=FALSE, message=FALSE}
 
 
-fert4 <- fert4 %>%  gt::gt() %>%  
-  fmt_number(columns = "Percentage", decimals = 2) %>% 
-  tab_header(title = md("FERT4: Issue preventing pregnancy")) %>% 
-  cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Answer**"), Percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
+
+dtfert4 <- fb %>% filter(D_424047361 == 353358909)
+
+
+preg_iss_flags <- dtfert4 %>%
+  mutate(
+    Tubal_blockage = as.numeric(D_548355426_D_548355426_D_342735868 == 1),
+    Ovary_or_hormone_problem = as.numeric(D_548355426_D_548355426_D_990599372 == 1),
+    Endometriosis = as.numeric(D_548355426_D_548355426_D_863286658 == 1),
+    Cervical_mucus = as.numeric(D_548355426_D_548355426_D_202355614 == 1),
+    Partners_infertility = as.numeric(D_548355426_D_548355426_D_201434907 == 1),
+    Not_looked_into = as.numeric(D_548355426_D_548355426_D_570171052 == 1),
+    No_cause_found = as.numeric(D_548355426_D_548355426_D_498799217 == 1),
+    Other = as.numeric(D_548355426_D_548355426_D_807835037 == 1),
+    # Ensure numeric conversion for rowSums
+    Skipped = if_else(
+      rowSums(select(., starts_with("D_548355426_D_")) %>% mutate(across(everything(), as.numeric)), na.rm = TRUE) == 0 &
+        rowSums(!is.na(select(., starts_with("D_548355426_D_")) %>% mutate(across(everything(), as.numeric)))) == 0,1,0))
+
+
+preg_iss_long <- preg_iss_flags %>%
+  pivot_longer(cols = starts_with("Tubal_blockage"):starts_with("Skipped"),
+               names_to = "Issue", values_to = "Flag") %>%
+  filter(Flag == 1) %>%
+  mutate(Issue = case_when(
+    Issue == "Tubal_blockage" ~ "Tubal blockage",
+    Issue == "Ovary_or_hormone_problem" ~ "Ovary or hormone problem",
+    Issue == "Endometriosis" ~ "Endometriosis",
+    Issue == "Cervical_mucus" ~ "Cervical mucus",
+    Issue == "Partners_infertility" ~ "Partner's infertility",
+    Issue == "Not_looked_into" ~ "Not looked into",
+    Issue == "No_cause_found" ~ "No cause found",
+    Issue == "Other" ~ "Other",
+    Issue == "Skipped" ~ "Skipped this Question"
+  ))
+
+
+preg_iss_summary <- preg_iss_long %>%
+  group_by(Issue) %>%
+  summarise(Frequency = n(), .groups = 'drop') %>%
+  mutate(Percentage = Frequency / sum(Frequency) * 100)
+
+
+preg_iss_summary %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>%
+  fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
+  tab_header(title = md("FERT4: Issue preventing pregnancy")) %>%
+  cols_label(Frequency = md("**Number of Participants**"),
+             Issue = md("**Issue**"),
+             Percentage = md("**Percentage of Participants**")) %>%
+  grand_summary_rows(
+    columns = c(Frequency, Percentage),
+    fns = list(Total = ~sum(.)),
+    decimals = 0
+  ) %>%
+  tab_options(stub.font.weight = "bold") %>%
   tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = Condition,
-    )
-  )# 
-
-tab_footnote(
-  fert4,
-  md("As this is a select all question, participants may select multiple responses."),
-  locations = cells_column_labels(columns = Percentage),
-  placement = c("left")
-)
-
-
-
-#Used fertility meds
-one_logic_funct2(D_224681201, D_407056417, 536341288, "FERT5: Ever used fertility medication")
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Issue)
+  ) %>%
+  tab_footnote(
+    md("Participants may select multiple responses or skip the question."),
+    locations = cells_column_labels(columns = Percentage),
+    placement = "left"
+  )
 
 
 ```
 
 
 
-```{r Fert6, include=FALSE}
 
-dtFERT6= fb %>% filter(D_224681201==353358909)
-
-
-fert_med= dtFERT6 %>%  mutate(meds= case_when(D_881200765_D_881200765_D_619799524==1 ~ "Chlomid",
-                                             D_881200765_D_881200765_D_663814928==1 ~ "Injectables",
-                                             D_881200765_D_881200765_D_642004888==1 ~ "Danazol",
-                                             D_881200765_D_881200765_D_454641975==1 ~ "Danocrine",
-                                             D_881200765_D_881200765_D_256131117==1 ~ "Hcg",
-                                             D_881200765_D_881200765_D_532607252==1 ~ "Milophene",
-                                             D_881200765_D_881200765_D_459188493==1 ~ "Lupron depot",
-                                             D_881200765_D_881200765_D_304927036==1 ~ "Nolyadex",
-                                             D_881200765_D_881200765_D_100181644==1 ~ "Pergonal",
-                                             D_881200765_D_881200765_D_372219003==1 ~ "Serophene",
-                                             D_881200765_D_881200765_D_743731422==1 ~ "Synarel",
-                                             D_881200765_D_881200765_D_807835037==1 ~ "Other",
-                                             D_881200765_D_881200765_D_535003378==1 ~ "None of the above",
-                                             TRUE  ~ "Skipped this Question"))
-
- 
-tmpF6<- dtFERT6[, grepl("881200765", colnames(dtFERT6))]
-tmp2_1 <- tmpF6[, c(10, 12, 11, 6, 3, 8, 7, 4, 2, 5, 13, 14, 9)]
-fert6_dx <- NULL
-for (i in 1:13){
-  dt <- as.data.frame(tab1(tmp2_1[,i])$output.table)
-  dt$fert6_dx <- colnames(tmp2_1)[i]
-  fert6_dx <- rbind(fert6_dx,dt[2,])
-
-}
+```{r Fert6, warning=FALSE, echo=FALSE, message=FALSE}
 
 
-
-#fert6_dx$fert6_dx 
-
-#fert6_dx$fert6_dx <- c("Other specified", "Pergonal", "hCG", "Nolvadex", "Seophene", "Danocrine", "Lupron depot", "Milophene", "None of the above", "Clomid", "Danazol", "Gonadotropins", "Synarel nasal solution", "Other specified-double nested", "Other Medication")
-fert6_dx$fert6_dx <- c("Clomid","Injectables","Danazol","Danocrine","hCG","Milophene","Lupron depot","Nolvadex","Pergonal","Seophene","Synarel nasal solution", "Other Medication", "None of the above")
-```
-```{r Fert6Table, warning=FALSE, echo=FALSE, message=FALSE}
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
-# mgr1_1 <- medsp_dx[, c(4,1,2)]
-# 
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-# mgr1_2 <- medsp_dx[, c(4,1,2)]
-
-colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-fert6 <- medsp_dx[, c(4,1,2)]
-
-skipped_mhg1 <- sum(table(fert_med$meds=="Skipped this Question")[2])
-fert6[as.numeric(dim(fert6)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dtFERT6)[[1]])*100,2))
+dtFERT6 <- fb %>% filter(D_224681201 == 353358909)
 
 
-fert6 <- fert6 %>%  gt::gt() %>%  
-  fmt_number(columns = "Percentage", decimals = 2) %>% 
-  tab_header(title = md("FERT6: Used these fertility medications")) %>% 
-  cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Answer**"), Percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
+fert_med_flags <- dtFERT6 %>%
+  mutate(
+    Chlomid = as.numeric(D_881200765_D_881200765_D_619799524 == 1),
+    Injectables = as.numeric(D_881200765_D_881200765_D_663814928 == 1),
+    Danazol = as.numeric(D_881200765_D_881200765_D_642004888 == 1),
+    Danocrine = as.numeric(D_881200765_D_881200765_D_454641975 == 1),
+    Hcg = as.numeric(D_881200765_D_881200765_D_256131117 == 1),
+    Milophene = as.numeric(D_881200765_D_881200765_D_532607252 == 1),
+    Lupron_depot = as.numeric(D_881200765_D_881200765_D_459188493 == 1),
+    Nolyadex = as.numeric(D_881200765_D_881200765_D_304927036 == 1),
+    Pergonal = as.numeric(D_881200765_D_881200765_D_100181644 == 1),
+    Serophene = as.numeric(D_881200765_D_881200765_D_372219003 == 1),
+    Synarel = as.numeric(D_881200765_D_881200765_D_743731422 == 1),
+    Other = as.numeric(D_881200765_D_881200765_D_807835037 == 1),
+    None_of_the_above = as.numeric(D_881200765_D_881200765_D_535003378 == 1),
+    # Flag for skipped questions when all are 0 or NA
+    Skipped = if_else(
+      rowSums(select(., starts_with("D_881200765_D_881200765_")) %>% mutate(across(everything(), as.numeric)), na.rm = TRUE) == 0 &
+        rowSums(!is.na(select(., starts_with("D_881200765_D_881200765_")) %>% mutate(across(everything(), as.numeric)))) == 0,1,0))
+
+
+fert_med_long <- fert_med_flags %>%
+  pivot_longer(cols = starts_with("Chlomid"):starts_with("Skipped"),
+               names_to = "Medication", values_to = "Flag") %>%
+  filter(Flag == 1) %>%
+  mutate(Medication = case_when(
+    Medication == "Chlomid" ~ "Chlomid",
+    Medication == "Injectables" ~ "Injectables",
+    Medication == "Danazol" ~ "Danazol",
+    Medication == "Danocrine" ~ "Danocrine",
+    Medication == "Hcg" ~ "Hcg",
+    Medication == "Milophene" ~ "Milophene",
+    Medication == "Lupron_depot" ~ "Lupron depot",
+    Medication == "Nolyadex" ~ "Nolyadex",
+    Medication == "Pergonal" ~ "Pergonal",
+    Medication == "Serophene" ~ "Serophene",
+    Medication == "Synarel" ~ "Synarel",
+    Medication == "Other" ~ "Other",
+    Medication == "None_of_the_above" ~ "None of the above",
+    Medication == "Skipped" ~ "Skipped this Question"
+  ))
+
+
+fert_med_summary <- fert_med_long %>%
+  group_by(Medication) %>%
+  summarise(Frequency = n(), .groups = 'drop') %>%
+  mutate(Percentage = Frequency / sum(Frequency) * 100)
+
+
+fert_med_summary %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>%
+  fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
+  tab_header(title = md("FERT6: Used these fertility medications")) %>%
+  cols_label(Frequency = md("**Number of Participants**"),
+             Medication = md("**Medication**"),
+             Percentage = md("**Percentage of Participants**")) %>%
+  grand_summary_rows(
+    columns = c(Frequency, Percentage),
+    fns = list(Total = ~sum(.)),
+    decimals = 0
+  ) %>%
+  tab_options(stub.font.weight = "bold") %>%
   tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = Condition,
-    )
-  )# 
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Medication)
+  ) %>%
+  tab_footnote(
+    md("Participants may select multiple responses or skip the question."),
+    locations = cells_column_labels(columns = Percentage),
+    placement = "left"
+  )
 
-tab_footnote(
-  fert6,
-  md("As this is a select all question, participants may select multiple responses."),
-  locations = cells_column_labels(columns = Percentage),
-  placement = c("left")
-)
+
 ```
 
 ```{r Fert17, warning=FALSE, echo=FALSE,  message=FALSE}
@@ -3029,75 +2984,72 @@ one_logic_funct2(D_621744463, D_407056417, 536341288, "MENOHOR: Used Prescribed 
 ```
 
 ### Estrogen-only Prescription Hormones
-```{r Estrogen, include=FALSE}
 
-dtESTROHOR= fb  %>% filter(D_621744463==353358909)
-
-
-est_med= dtESTROHOR %>%  mutate(meds= case_when(D_668834883_D_668834883_D_246843973==1 ~ "Oral Estrogen",
-                                             D_668834883_D_668834883_D_854184254==1 ~ "Patch Estrgen",
-                                             D_668834883_D_668834883_D_515434780==1 ~ "Vaginal Ring/Vaginal Cream/Tablet Estrogen",
-                                             D_668834883_D_668834883_D_674148137==1 ~ "Estrogen only Skin Gel/Cream/Spray-on",
-                                             D_668834883_D_668834883_D_807835037==1 ~ "Other",
-                                             D_668834883_D_668834883_D_535003378==1 ~ "None of the above",
-                                             TRUE ~ "Skipped this Question"))
-
- 
-painmeds<- dtESTROHOR[, grepl("668834883", colnames(dtESTROHOR))]
-painmds <- painmeds[, c(2,8, 3,6, 7,4)]
-
-medsp_dx <- NULL
-for (i in 1:6){
-  dt <- as.data.frame(tab1(painmds[,i])$output.table)
-  dt$medsp_dx <- colnames(painmds)[i]
-  medsp_dx <- rbind(medsp_dx,dt[2,])
-  
-}
-#medsp_dx$medsp_dx ### how are their race variables being assigned here?? wrong variable matching. Flattening issue?
-
-medsp_dx$medsp_dx <- c("Oral Estrogen","Patch Estrgen", "Vaginal Ring/Vaginal Cream/Tablet Estrogen","Estrogen only Skin Gel/Cream/Spray-on","Other","None of the above")
-```
-```{r EstroTable, warning=FALSE, echo=FALSE, message=FALSE}
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
-# mgr1_1 <- medsp_dx[, c(4,1,2)]
-# 
-# colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-# mgr1_2 <- medsp_dx[, c(4,1,2)]
-
-colnames(medsp_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-estro <- medsp_dx[, c(4,1,2)]
-
-skipped_mhg1 <- sum(table(est_med$meds=="Skipped this Question")[2])
-estro[as.numeric(dim(estro)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dtESTROHOR)[[1]])*100,2))
+```{r EstrogenOnly, warning=FALSE, echo=FALSE, message=FALSE}
 
 
-estro <- estro %>%  gt::gt() %>%  
-  fmt_number(columns = "Percentage", decimals = 2) %>% 
-  tab_header(title = md("ESTROHOR: Ever used these hormone medications")) %>% 
-  cols_label(Frequency= md("**Number of Participants**"), Condition = md("**Answer**"), Percentage = md("**Percentage of Participants**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
+dtESTROHOR <- fb %>%  filter(D_621744463 == 353358909)
+
+
+est_med_flags <- dtESTROHOR %>% 
+  mutate(
+    Oral_Estrogen = as.numeric(D_668834883_D_668834883_D_246843973 == 1),
+    Patch_Estrogen = as.numeric(D_668834883_D_668834883_D_854184254 == 1),
+    Vaginal_Ring_Cream_Tablet_Estrogen = as.numeric(D_668834883_D_668834883_D_515434780 == 1),
+    Estrogen_only_Skin_Gel_Cream_Spray_on = as.numeric(D_668834883_D_668834883_D_674148137 == 1),
+    Other = as.numeric(D_668834883_D_668834883_D_807835037 == 1),
+    None_of_the_above = as.numeric(D_668834883_D_668834883_D_535003378 == 1),
+    # Flag for skipped questions when all are 0 or NA
+    Skipped = if_else(
+      rowSums(select(., starts_with("D_668834883_D_668834883_D_")) %>% mutate(across(everything(), as.numeric)), na.rm = TRUE) == 0 &
+        rowSums(!is.na(select(., starts_with("D_668834883_D_668834883_D_")) %>% mutate(across(everything(), as.numeric)))) == 0,1,0))
+
+
+est_med_long <- est_med_flags %>% 
+  pivot_longer(cols = starts_with("Oral_Estrogen"):starts_with("Skipped"),
+               names_to = "Medication", values_to = "Flag") %>%
+  filter(Flag == 1) %>%
+  mutate(Medication = case_when(
+    Medication == "Oral_Estrogen" ~ "Oral Estrogen",
+    Medication == "Patch_Estrogen" ~ "Patch Estrogen",
+    Medication == "Vaginal_Ring_Cream_Tablet_Estrogen" ~ "Vaginal Ring/Vaginal Cream/Tablet Estrogen",
+    Medication == "Estrogen_only_Skin_Gel_Cream_Spray_on" ~ "Estrogen only Skin Gel/Cream/Spray-on",
+    Medication == "Other" ~ "Other",
+    Medication == "None_of_the_above" ~ "None of the above",
+    Medication == "Skipped" ~ "Skipped this Question"
+  ))
+
+
+est_med_summary <- est_med_long %>% 
+  group_by(Medication) %>%
+  summarise(Frequency = n(), .groups = 'drop') %>%
+  mutate(Percentage = Frequency / sum(Frequency) * 100)
+
+
+est_med_summary %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>%
+  fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
+  tab_header(title = md("ESTROHOR: Ever used these hormone medications")) %>%
+  cols_label(Frequency = md("**Number of Participants**"),
+             Medication = md("**Medication**"),
+             Percentage = md("**Percentage of Participants**")) %>%
+  grand_summary_rows(
+    columns = c(Frequency, Percentage),
+    fns = list(Total = ~sum(.)),
+    decimals = 0
+  ) %>%
+  tab_options(stub.font.weight = "bold") %>%
   tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = Condition,
-    )
-  )# 
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Medication)
+  ) %>%
+  tab_footnote(
+    md("Participants may select multiple responses or skip the question."),
+    locations = cells_column_labels(columns = Percentage),
+    placement = "left"
+  )
 
-tab_footnote(
-  estro,
-  md("As this is a select all question, participants may select multiple responses."),
-  locations = cells_column_labels(columns = Percentage),
-  placement = c("left")
-)
 
 ```
 
@@ -3537,77 +3489,74 @@ dtseph2_summary %>%  gt::gt() %>%
 one_logic_funct2(D_111235606, D_621744463, 353358909, "TESTTHER1: Used Testosterone Therapy")
  
 
-```
-```{r testt2, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
-
-dtTESTTHER2= data_tib_m2  %>% filter(D_111235606==353358909)
+```  
 
 
-est_med= dtTESTTHER2 %>%  mutate(meds= case_when(D_946849196_D_729863969==1 ~ "Gel/Cream Testosterone",
-                                             D_946849196_D_108104748==1 ~ "Testosterone Injection",
-                                             D_946849196_D_717308596==1 ~ "Testosterone Skin Patch",
-                                             D_946849196_D_746788766==1 ~ "Testosterone Pills",
-                                             D_946849196_D_158214723==1 ~ "Gum or Inner-cheek Patch Testosterone",
-                                             D_946849196_D_658810736==1 ~ "Slow Release Implant Testosterone",
-                                             TRUE ~ "Skipped this Question"))
 
- 
-tmp_1<- dtTESTTHER2[, grepl("946849196", colnames(dtTESTTHER2))]
-tmp1 <- tmp_1[, c(5,1,4,6,2,3)]
-testtr2_dx <- NULL
-for (i in 1:6){
-  dt <- as.data.frame(tab1(tmp1[,i])$output.table)
-  dt$testtr2_dx <- colnames(tmp1)[i]
-  testtr2_dx <- rbind(testtr2_dx,dt[2,])
-  
-}
-testtr2_dx$testtr2_dx ### how are their race variables being assigned here?? wrong variable matching. Flattening issue?
-
-testtr2_dx$testtr2_dx <- c("Gel/Cream Testosterone","Testosterone Injection","Testosterone Skin Patch","Testosterone Pills","Gum or Inner-cheek Patch Testosterone","Slow Release Implant Testosterone")
-```
-```{r TestTable, warning=FALSE, echo=FALSE, message=FALSE}
-# colnames(testtr2_dx) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
-# testt2_1 <- testtr2_dx[, c(4,1,2)]
-# 
-# colnames(testtr2_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-# testt2_2 <- testtr2_dx[, c(4,1,2)]
-
-colnames(testtr2_dx) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-testt2 <- testtr2_dx[, c(4,1,2)]
-
-skipped_mhg1 <- sum(table(est_med$meds=="Skipped this Question")[2])
-testt2[as.numeric(dim(testt2)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dtTESTTHER2)[[1]])*100,2))
+```{r Test2, warning=FALSE, echo=FALSE, message=FALSE}
 
 
-dt_testt2 <- testt2 %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "Percentage", decimals = 2) %>% 
-  tab_header(title = md("TESTTHER2: Testosterone Medication Forms")) %>% 
-  cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"),  Condition = md("**Answer**")) %>% 
-  # summary_rows( groups=F,
-  #   column = c(Frequency,Percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  #grand_summary_rows(columns=c(Frequency, Percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = Condition,
-    )
+
+dtTESTTHER2 <- data_tib_m2 %>%  filter(D_111235606 == 353358909)
+
+
+test_med_flags <- dtTESTTHER2 %>% 
+  mutate(
+    Gel_Cream_Testosterone = as.numeric(D_946849196_D_729863969 == 1),
+    Testosterone_Injection = as.numeric(D_946849196_D_108104748 == 1),
+    Testosterone_Skin_Patch = as.numeric(D_946849196_D_717308596 == 1),
+    Testosterone_Pills = as.numeric(D_946849196_D_746788766 == 1),
+    Gum_Inner_cheek_Patch_Testosterone = as.numeric(D_946849196_D_158214723 == 1),
+    Slow_Release_Implant_Testosterone = as.numeric(D_946849196_D_658810736 == 1),
+    Skipped = if_else(rowSums(select(., starts_with("D_946849196_D_")), na.rm = TRUE) == 0 &
+                      rowSums(!is.na(select(., starts_with("D_946849196_D_")))) == 0, 1, 0)
   )
-tab_footnote(
-  dt_testt2,
-  md("As this is a select all question, participants may select multiple responses."),
-  locations = cells_column_labels(columns = Percentage),
-  placement = c("left")
-)
 
 
+test_med_long <- test_med_flags %>% 
+  pivot_longer(cols = starts_with("Gel_Cream_Testosterone"):starts_with("Skipped"),
+               names_to = "Medication", values_to = "Flag") %>%
+  filter(Flag == 1) %>%
+  mutate(Medication = case_when(
+    Medication == "Gel_Cream_Testosterone" ~ "Gel/Cream Testosterone",
+    Medication == "Testosterone_Injection" ~ "Testosterone Injection",
+    Medication == "Testosterone_Skin_Patch" ~ "Testosterone Skin Patch",
+    Medication == "Testosterone_Pills" ~ "Testosterone Pills",
+    Medication == "Gum_Inner_cheek_Patch_Testosterone" ~ "Gum or Inner-cheek Patch Testosterone",
+    Medication == "Slow_Release_Implant_Testosterone" ~ "Slow Release Implant Testosterone",
+    Medication == "Skipped" ~ "Skipped this Question"
+  ))
+
+
+test_med_summary <- test_med_long %>% 
+  group_by(Medication) %>%
+  summarise(Frequency = n(), .groups = 'drop') %>%
+  mutate(Percentage = Frequency / sum(Frequency) * 100)
+
+
+test_med_summary %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>%
+  fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
+  tab_header(title = md("TESTTHER2: Testosterone Medication Forms")) %>%
+  cols_label(Frequency = md("**Number of Participants**"),
+             Medication = md("**Medication**"),
+             Percentage = md("**Percentage of Participants**")) %>%
+  grand_summary_rows(
+    columns = c(Frequency, Percentage),
+    fns = list(Total = ~sum(.)),
+    decimals = 0
+  ) %>%
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Medication)
+  ) %>%
+  tab_footnote(
+    md("Participants may select multiple responses or skip the question."),
+    locations = cells_column_labels(columns = Percentage),
+    placement = "left"
+  )
 
 
 ```
@@ -3616,49 +3565,8 @@ tab_footnote(
 
 
 
-#Which forms
-# 
-# dtTESTTHER2= data_tib_m2  %>% filter(D_111235606==353358909)
-# 
-# 
-# est_med= dtTESTTHER2 %>%  mutate(meds= case_when(D_946849196_D_729863969==1 ~ "Gel/Cream Testosterone",
-#                                              D_946849196_D_108104748==1 ~ "Testosterone Injection",
-#                                              D_946849196_D_717308596==1 ~ "Testosterone Skin Patch",
-#                                              D_946849196_D_746788766==1 ~ "Testosterone Pills",
-#                                              D_946849196_D_158214723==1 ~ "Gum or Inner-cheek Patch Testosterone",
-#                                              D_946849196_D_658810736==1 ~ "Slow Release Implant Testosterone",
-#                                              TRUE ~ "Skipped this Question"))
-# 
-# 
-# dtTESTTHER2_summary <- est_med %>% group_by(meds) %>%   dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(meds, n, percentage)
-# 
-# 
-# dtTESTTHER2_summary %>%  gt::gt() %>%  
-#   fmt_number(columns = "percentage", decimals = 2) %>% 
-#   tab_header(title = md("TESTTHER2: Testosterone Medication Forms")) %>% 
-#   cols_label(n= md("**Number of Participants**"), meds = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
-#   # summary_rows(
-#   #   column = c(n,percentage),
-#   #   fns= list(
-#   #     Sum= ~sum(.)
-#   #   ), decimals=0) %>%
-#   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
-#   tab_options(
-#       stub.font.weight = "bold"
-#     ) %>%
-#   tab_style(
-#     style = list(
-#       cell_text(weight = "bold")
-#     ),
-#     locations = cells_body(
-#       columns = meds,
-#     )
-#   ) 
-
 
 #Age first used 
-#module2$D_797076693 <- round(as.numeric(module2$D_797076693), digits=0)
-#boxp_funct(D_797076693,"TESTTHER3: Age Testosterone First Used", "Age")
 hist_funct(D_797076693,"TESTTHER3: Age Testosterone First Used", "Age", "Number of Participants")
 
 #How often
@@ -4031,8 +3939,9 @@ ex_flags <- data_tib_m2 %>%
     Circuit = as.numeric(D_517976064_D_423631576 == 1),
     Other = as.numeric(D_517976064_D_181769837 == 1),
     None_of_the_Above = as.numeric(D_517976064_D_535003378 == 1),
-    Skipped = as.numeric(rowSums(select(., starts_with("D_") & where(is.numeric))) == 0)  # Flag for skipped
-  )
+    Skipped = if_else(rowSums(select(., starts_with("D_517976064_D_")), na.rm = TRUE) == 0 &
+                      rowSums(!is.na(select(., starts_with("D_517976064_D_")))) == 0, 1, 0))
+
 
 
 ex_long <- ex_flags %>%
@@ -4985,40 +4894,60 @@ one_logic_funct2(D_272119228, D_517976064_D_181769837, 1, "EXEREC4O:Time Spent D
 
 ## Lawn, Garden, and Home Repair
 ```{r Lawn, warning=FALSE, echo=FALSE, message=FALSE}
-#Outside of work --why are these not in a tibble? May need barplot instead
+
+# Individually count lawn events since it's select all that apply 
+chore_flags <- data_tib_m2 %>%
+  mutate(
+    Moderate_Chores = as.numeric(D_204421360_D_797221287 == 1),
+    Vigorous_Chores = as.numeric(D_204421360_D_500744195 == 1),
+    Home_Repair = as.numeric(D_204421360_D_383015037 == 1),
+    None_of_the_Above = as.numeric(D_204421360_D_535003378 == 1),
+    Skipped = if_else(rowSums(select(., starts_with("D_204421360_D_")), na.rm = TRUE) == 0 &
+                      rowSums(!is.na(select(., starts_with("D_204421360_D_")))) == 0, 1, 0))
 
 
-chore_type= data_tib_m2 %>%  mutate(chore= case_when(D_204421360_D_797221287==1 ~ "Moderate Chores",
-                                             D_204421360_D_500744195==1 ~ "Vigorous Chores",
-                                             D_204421360_D_383015037==1 ~ "Home Repair",
-                                             D_204421360_D_535003378==1 ~ "None of the Above",
-                                             TRUE~ "Skipped this Question"))
+chore_long <- chore_flags %>%
+  pivot_longer(cols = starts_with("Moderate_Chores"):starts_with("Skipped"),
+               names_to = "Chore", values_to = "Flag") %>%
+  filter(Flag == 1) %>%
+  mutate(Chore = case_when(
+    Chore == "Moderate_Chores" ~ "Moderate Chores",
+    Chore == "Vigorous_Chores" ~ "Vigorous Chores",
+    Chore == "Home_Repair" ~ "Home Repair",
+    Chore == "None_of_the_Above" ~ "None of the Above",
+    Chore == "Skipped" ~ "Skipped this Question"
+  ))
 
 
-dtLAWN1_summary <- chore_type %>% group_by(chore) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(chore, n, percentage)
+dtLAWN1_summary <- chore_long %>%
+  group_by(Chore) %>%
+  summarise(Frequency = n(), .groups = 'drop') %>%
+  mutate(Percentage = Frequency / sum(Frequency) * 100)
 
 
-dtLAWN1_summary %>%  gt::gt() %>%
-  fmt_number(columns = "percentage", decimals = 2) %>%
-  tab_header(title = md("LAWN1: Lawn, Garden and Home Repair Activities")) %>%
-  cols_label(n= md("**Number of Participants**"), chore = md("**Chores**"), percentage = md("**Percentage of Participants**")) %>%
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>   tab_options(
-      stub.font.weight = "bold"
-    ) %>%
+dtLAWN1_summary %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>%
+  fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
+  tab_header(title = md("LAWN1: Lawn, Garden, and Home Repair Activities")) %>%
+  cols_label(Frequency = md("**Number of Participants**"),
+             Chore = md("**Chores**"),
+             Percentage = md("**Percentage of Participants**")) %>%
+  grand_summary_rows(
+    columns = c(Frequency, Percentage),
+    fns = list(Total = ~sum(.)),
+    decimals = 0
+  ) %>%
+  tab_options(stub.font.weight = "bold") %>%
   tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = chore,
-    )
-  ) 
-
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Chore)
+  ) %>%
+  tab_footnote(
+    md("Participants may select multiple responses or skip the question."),
+    locations = cells_column_labels(columns = Percentage),
+    placement = "left"
+  )
 
 
 ```
@@ -5517,143 +5446,132 @@ one_logic_funct2(D_756521698, D_940733450, 353358909, "SNORING5: Frequency you S
 ```
 
 ## Sleep Problems
-```{r SleepProb, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
-slp_cond= data_tib_m2 %>%  mutate(cond= case_when(D_479628567_D_370923702==1 ~ "Sleep Apnea",
-                                             D_479628567_D_495144424==1 ~ "Insomnia",
-                                             D_479628567_D_728393970==1 ~ "Restless Legs",
-                                             D_479628567_D_531811052==1 ~ "Narcolepsy",
-                                             D_479628567_D_535003378==1 ~ "None of the above",
-                                             TRUE ~ "Skipped this Question"))
-
- 
-tmp_1<- slp_cond[, grepl("479628567", colnames(slp_cond))]
-tmp1 <- tmp_1[, c(1,2,5,3,4)]
-sleep_prob1 <- NULL
-for (i in 1:5){
-  dt <- as.data.frame(tab1(tmp1[,i])$output.table)
-  dt$sleep_prob1 <- colnames(tmp1)[i]
-  sleep_prob1 <- rbind(sleep_prob1,dt[2,])
-  
-}
-sleep_prob1$sleep_prob1 ### how are their race variables being assigned here?? wrong variable matching. Flattening issue?
-
-sleep_prob1$sleep_prob1 <- c("Sleep Apnea","Insomnia","Restless Legs", "Narcolepsy","None of the above")
-```
 ```{r SleepTable, warning=FALSE, echo=FALSE, message=FALSE}
-# colnames(sleep_prob1) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
-# testt2_1 <- sleep_prob1[, c(4,1,2)]
-# 
-# colnames(sleep_prob1) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-# testt2_2 <- sleep_prob1[, c(4,1,2)]
-
-colnames(sleep_prob1) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-slprob1 <- sleep_prob1[, c(4,1,2)]
-
-skipped_mhg1 <- sum(table(slp_cond$cond=="Skipped this Question")[2])
-slprob1[as.numeric(dim(slprob1)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(slp_cond)[[1]])*100,2))
 
 
-dt_slprob1 <- slprob1 %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "Percentage", decimals = 2) %>% 
-  tab_header(title = md("SLPROB1: Diagnosed with Conditions")) %>% 
-  cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"),  Condition = md("**Answer**")) %>% 
-  # summary_rows( groups=F,
-  #   column = c(Frequency,Percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  #grand_summary_rows(columns=c(Frequency, Percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = Condition,
-    )
+slp_cond_flags <- data_tib_m2 %>%
+  mutate(
+    Sleep_Apnea = as.numeric(D_479628567_D_370923702 == 1),
+    Insomnia = as.numeric(D_479628567_D_495144424 == 1),
+    Restless_Legs = as.numeric(D_479628567_D_728393970 == 1),
+    Narcolepsy = as.numeric(D_479628567_D_531811052 == 1),
+    None_of_the_Above = as.numeric(D_479628567_D_535003378 == 1),
+    # Skipped: flag if all condition columns are 0 or NA
+    Skipped = if_else(rowSums(select(., starts_with("D_479628567_D_")), na.rm = TRUE) == 0 &
+                      rowSums(!is.na(select(., starts_with("D_479628567_D_")))) == 0, 1, 0)
   )
-tab_footnote(
-  dt_slprob1,
-  md("As this is a select all question, participants may select multiple responses."),
-  locations = cells_column_labels(columns = Percentage),
-  placement = c("left")
-)
 
 
+slp_cond_long <- slp_cond_flags %>%
+  pivot_longer(cols = starts_with("Sleep_Apnea"):starts_with("Skipped"),
+               names_to = "Condition", values_to = "Flag") %>%
+  filter(Flag == 1) %>%
+  mutate(Condition = case_when(
+    Condition == "Sleep_Apnea" ~ "Sleep Apnea",
+    Condition == "Insomnia" ~ "Insomnia",
+    Condition == "Restless_Legs" ~ "Restless Legs",
+    Condition == "Narcolepsy" ~ "Narcolepsy",
+    Condition == "None_of_the_Above" ~ "None of the Above",
+    Condition == "Skipped" ~ "Skipped this Question"
+  ))
+
+
+slp_cond_summary <- slp_cond_long %>%
+  group_by(Condition) %>%
+  summarise(Frequency = n(), .groups = 'drop') %>%
+  mutate(Percentage = Frequency / sum(Frequency) * 100)
+
+
+slp_cond_summary %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>%
+  fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
+  tab_header(title = md("SLPROB1: Diagnosed with Conditions")) %>%
+  cols_label(Frequency = md("**Number of Participants**"),
+             Condition = md("**Conditions**"),
+             Percentage = md("**Percentage of Participants**")) %>%
+  grand_summary_rows(
+    columns = c(Frequency, Percentage),
+    fns = list(Total = ~sum(.)),
+    decimals = 0
+  ) %>%
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Condition)
+  ) %>%
+  tab_footnote(
+    md("Participants may select multiple responses or skip the question."),
+    locations = cells_column_labels(columns = Percentage),
+    placement = "left"
+  )
 
 
 ```
 
-```{r ProblemTable, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
 
-dtSLPROB2= data_tib_m2 %>% filter(D_479628567_D_370923702==1) 
-
-
-slp_tmnt= dtSLPROB2 %>%  mutate(tmnt= case_when(D_629010195_D_629010195_D_417201414==1 ~ "CPAP Machine",
-                                             D_629010195_D_629010195_D_959572576==1 ~ "Dental Devise",
-                                             D_629010195_D_629010195_D_576852249==1 ~ "Throat/Uvula Surgery",
-                                             D_629010195_D_629010195_D_807835037==1 ~ "Other",
-                                             D_629010195_D_629010195_D_535003378==1 ~ "None of the above",
-                                             TRUE ~ "Skipped this Question"))
-
- 
-tmp_1<- dtSLPROB2[, grepl("629010195", colnames(dtSLPROB2))]
-tmp1 <- tmp_1[, c(1,5,3,4,2)]
-sleep_prob1 <- NULL
-for (i in 1:5){
-  dt <- as.data.frame(tab1(tmp1[,i])$output.table)
-  dt$sleep_prob1 <- colnames(tmp1)[i]
-  sleep_prob1 <- rbind(sleep_prob1,dt[2,])
-  
-}
-sleep_prob1$sleep_prob1 ### how are their race variables being assigned here?? wrong variable matching. Flattening issue?
-
-sleep_prob1$sleep_prob1 <- c("Sleep Apnea","Insomnia","Restless Legs", "Narcolepsy","None of the above")
-```
 ```{r ProblemsTable, warning=FALSE, echo=FALSE, message=FALSE}
-# colnames(sleep_prob1) <- c("Frequency", "Percentage" , "  %(NA-)",  "Condition")
-# testt2_1 <- sleep_prob1[, c(4,1,2)]
-# 
-# colnames(sleep_prob1) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-# testt2_2 <- sleep_prob1[, c(4,1,2)]
 
-colnames(sleep_prob1) <- c("Frequency", "Percentage" , "  %(NA+)",  "Condition")
-slprob2 <- sleep_prob1[, c(4,1,2)]
-
-skipped_mhg1 <- sum(table(slp_tmnt$tmnt=="Skipped this Question")[2])
-slprob2[as.numeric(dim(slprob2)[[1]])+1,] <- c("Skipped this Question", skipped_mhg1, round((skipped_mhg1/dim(dtSLPROB2)[[1]])*100,2))
+dtSLPROB2 <- data_tib_m2 %>% filter(D_479628567_D_370923702 == 1)
 
 
-dt_slprob2 <- slprob2 %>%  gt::gt(rowname_col = "row_lab") %>%  
-  fmt_number(columns = "Percentage", decimals = 2) %>% 
-  tab_header(title = md("SLPROB2: Treatments Used for Sleep Apnea")) %>% 
-  cols_label(Frequency= md("**Number of Participants**"), Percentage=md("**Percentge of Participants**"),  Condition = md("**Answer**")) %>% 
-  # summary_rows( groups=F,
-  #   column = c(Frequency,Percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
-  #grand_summary_rows(columns=c(Frequency, Percentage),fns = ~sum(.,na.rm = T))|>
-  tab_options(
-      stub.font.weight = "bold"
-    ) %>%
-  tab_style(
-    style = list(
-      cell_text(weight = "bold")
-    ),
-    locations = cells_body(
-      columns = Condition,
-    )
+slp_tmnt_flags <- dtSLPROB2 %>%
+  mutate(
+    CPAP_Machine = as.numeric(D_629010195_D_629010195_D_417201414 == 1),
+    Dental_Device = as.numeric(D_629010195_D_629010195_D_959572576 == 1),
+    Throat_Uvula_Surgery = as.numeric(D_629010195_D_629010195_D_576852249 == 1),
+    Other = as.numeric(D_629010195_D_629010195_D_807835037 == 1),
+    None_of_the_Above = as.numeric(D_629010195_D_629010195_D_535003378 == 1),
+    # Flag for skipped questions when all are 0 or NA
+    Skipped = if_else(rowSums(select(., starts_with("D_629010195_D_629010195_")), na.rm = TRUE) == 0 &
+                      rowSums(!is.na(select(., starts_with("D_629010195_D_629010195_")))) == 0, 1, 0)
   )
-tab_footnote(
-  dt_slprob2,
-  md("As this is a select all question, participants may select multiple responses."),
-  locations = cells_column_labels(columns = Percentage),
-  placement = c("left")
-)
+
+
+slp_tmnt_long <- slp_tmnt_flags %>%
+  pivot_longer(cols = starts_with("CPAP_Machine"):starts_with("Skipped"),
+               names_to = "Treatment", values_to = "Flag") %>%
+  filter(Flag == 1) %>%
+  mutate(Treatment = case_when(
+    Treatment == "CPAP_Machine" ~ "CPAP Machine",
+    Treatment == "Dental_Device" ~ "Dental Device",
+    Treatment == "Throat_Uvula_Surgery" ~ "Throat/Uvula Surgery",
+    Treatment == "Other" ~ "Other",
+    Treatment == "None_of_the_Above" ~ "None of the Above",
+    Treatment == "Skipped" ~ "Skipped this Question"
+  ))
+
+
+slp_tmnt_summary <- slp_tmnt_long %>%
+  group_by(Treatment) %>%
+  summarise(Frequency = n(), .groups = 'drop') %>%
+  mutate(Percentage = Frequency / sum(Frequency) * 100)
+
+
+slp_tmnt_summary %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>%
+  fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
+  tab_header(title = md("SLPROB2: Treatments Used for Sleep Apnea")) %>%
+  cols_label(Frequency = md("**Number of Participants**"),
+             Treatment = md("**Treatments**"),
+             Percentage = md("**Percentage of Participants**")) %>%
+  grand_summary_rows(
+    columns = c(Frequency, Percentage),
+    fns = list(Total = ~sum(.)),
+    decimals = 0
+  ) %>%
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Treatment)
+  ) %>%
+  tab_footnote(
+    md("Participants may select multiple responses or skip the question."),
+    locations = cells_column_labels(columns = Percentage),
+    placement = "left"
+  )
 
 
 
