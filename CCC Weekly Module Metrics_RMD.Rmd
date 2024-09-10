@@ -847,7 +847,7 @@ QOL_comp_elg_after[["table_body"]]$stat_0 <- sapply(strsplit(QOL_comp_elg_after[
   #bold_labels() %>%
   #italicize_levels() %>% 
   modify_header(stat_0 = "Total QOL Eligible \n Participants") %>%
-  modify_caption("Table 11.a. Completion of 3-Month Quality of Life Survey Among eligible participants verified on or after December 1, 2023") %>%
+  modify_caption("Table 11.a. Completion of 3-Month Quality of Life Survey among Eligible participants Verified on or after December 1, 2023") %>%
   as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
 
 QOL_comp_elg_after %>% kable_styling(latex_options = c("scale_down","hold_position")) 
@@ -874,7 +874,7 @@ QOL_comp_elg_before <- QOL_comp_elg_before %>%
   #bold_labels() %>%
   #italicize_levels() %>% 
   modify_header(stat_0 = "Total QOL Eligible \n Participants") %>%
-  modify_caption("Table 11.b. Completion of 3-Month Quality of Life Survey among eligible participants verified prior to December 1, 2023") %>%
+  modify_caption("Table 11.b. Completion of 3-Month Quality of Life Survey among Eligible Participants Verified prior to December 1, 2023") %>%
   as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
 
 
@@ -934,7 +934,7 @@ QOL_comp_BL_after <- all_data %>% filter(as.Date(d_914594314) >= "2023-12-01" & 
   #bold_labels() %>%
   #italicize_levels() %>% 
   modify_header(stat_0 = "Total QOL Eligible \n Participants") %>%
-  modify_caption("Table 12.a. Completion of 3-Month Quality of Life Survey by Baseline Data Completeness Among eligible participants verified on or after December 1, 2023") %>%
+  modify_caption("Table 12.a. Completion of 3-Month Quality of Life Survey by Baseline Data Completeness among Eligible Participants Verified on or after December 1, 2023") %>%
   as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
 
 QOL_comp_BL_after %>% kable_styling(latex_options = c("scale_down","hold_position"))
@@ -958,7 +958,7 @@ QOL_comp_BL_before <- QOL_comp_BL_before%>%
   #bold_labels() %>%
   #italicize_levels() %>% 
   modify_header(stat_0 = "Total QOL Eligible \n Participants") %>%
-  modify_caption("Table 12.b. Completion of 3-Month Quality of Life Survey by Baseline Data Completeness Among eligible participants verified on before December 1, 2023") %>%
+  modify_caption("Table 12.b. Completion of 3-Month Quality of Life Survey by Baseline Data Completeness among Eligible Participants Verified on before December 1, 2023") %>%
   as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
 
 QOL_comp_BL_before %>% kable_styling(latex_options = c("scale_down","hold_position"))
