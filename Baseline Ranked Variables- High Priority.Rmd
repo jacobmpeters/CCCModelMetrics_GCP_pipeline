@@ -2670,6 +2670,8 @@ one_logic_funct(D_849945160,  D_407056417, 536341288, "PREG: Currently Pregnant"
 
 ```{r query3, include=FALSE}
 
+#Because of the size of the report, authentication has to happen more then once to prevent expiration 
+bq_auth()
 
 querymod3 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module3_v1_JP` where Connect_ID IS NOT NULL"
 mod3_table <- bq_project_query(project, querymod3)
@@ -3647,6 +3649,9 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
 
 ```{r query4, include=FALSE}
 
+#Because of the size of the report, authentication has to happen more then once to prevent expiration 
+bq_auth()
+
 querymod4 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module4_v1_JP` where Connect_ID IS NOT NULL"
 mod4_table <- bq_project_query(project, querymod4)
 mod4_data <- bq_table_download(mod4_table, bigint = "integer64")
@@ -4363,7 +4368,7 @@ gavePssn %>% dplyr::select(Completion, provided4)  %>% tbl_cross(
   #italicize_levels() %>% 
   modify_header() %>%
   modify_caption("Portion of SSN Given for Submitted SSN Surveys") #%>%
-  #as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
 
 # gavePssn_summary <- gavePssn  %>% dplyr::group_by(provided4) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(provided4, n, percentage) 
 # 
