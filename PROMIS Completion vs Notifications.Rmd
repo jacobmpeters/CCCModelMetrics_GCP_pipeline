@@ -49,7 +49,7 @@ currentdate <- Sys.Date()
 bq_auth()
 ```
 
-```{r, include=FALSE, warning=FALSE}
+```{r Verified_After_BQPull, include=FALSE, warning=FALSE}
 
 ##Load Data from BQ
 #Not all 4 Basline Modules are Completed--- removed AND d_100767870=104430631
@@ -137,9 +137,9 @@ email_count <- QOL_rem %>%  filter(notificationType=="email") %>%  summarise(n =
 
 \newpage
 
-# All Reminders
+# Reminders of those verified On or After 12/1/2023
 
-```{r, echo=FALSE,  warning=FALSE, message=FALSE}
+```{r After, echo=FALSE,  warning=FALSE, message=FALSE}
 
 QOL_rem <- QOL_rem %>%
   mutate(verification_date = as.POSIXct(d_914594314),
@@ -306,7 +306,7 @@ final_notif_all_gt <- as_tibble(final_notif_all)
 # Create a gt table and use text_transform to apply formatting
 all_reminders <- final_notif_all_gt %>% gt(rowname_col = "row_lab") %>%
   cols_label("All Reminders"= md(" "), n = md("**n**"), "%" = md("**%**")) %>% 
-   tab_header(title = md("Table 2. PROMIS Survey Reminders Evaluation, All Sites and All Notifications")) %>%
+   tab_header(title = md("Table 2. PROMIS Survey Reminders Evaluation, All Sites and All Notifications \n Among those Verified on or After December 1, 2023")) %>%
   tab_style(
     style = list(
       cell_text(weight = "bold")
@@ -345,5 +345,145 @@ all_reminders
 
 
 
+```{r Verified_Before_BQPull, include=FALSE, warning=FALSE}
 
 
+notif_before <- "SELECT notif.category, notif.attempt, notif.email, notif.notificationType, notif.notification_time, Connect_ID, d_512820379, d_821247024, d_914594314,  d_320303124 , d_843688458, notif.token,
+d_822499427, d_827220437, d_878865966, d_684635302, d_167958071, d_747006172, d_906417725, d_100767870, d_878865966, d_684635302, d_167958071
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` notif
+inner join `nih-nci-dceg-connect-prod-6d04.Connect.participants`  parts
+on notif.token = parts.token
+where parts.d_821247024=197316935 and category LIKE '%3mo QOL Survey Reminders%'  and d_914594314 < '2023-12-01T00:00:00Z'"
+
+notif_cc_before <- bq_project_query(project, notif_before)
+QOL_B <- bq_table_download(notif_cc_before, bigint = 'integer64')
+
+all_count <- QOL_B  %>%  summarise(n = n_distinct(Connect_ID))
+
+```
+
+
+\newpage
+
+# Reminders of those verified Before 12/1/2023
+
+```{r Before, echo=FALSE,  warning=FALSE, message=FALSE}
+
+
+comp_time <- QOL_B %>%
+  mutate(qol_completion_date = as.POSIXct(d_843688458),
+         QOL_completion_status=case_when(d_320303124==972455046 ~ "Not Started",
+                                         d_320303124==615768760 ~ "Started",
+                                         d_320303124==231311385 ~ "Submitted")) %>% 
+  filter(QOL_completion_status=="Submitted") %>%
+  mutate(time_frame = case_when(as.Date(qol_completion_date) < "2024-09-03" ~ "Survey Completed after Contact 1, before Contact 2",
+                                as.Date(qol_completion_date) < "2024-09-07" ~ "Survey Completed after Contact 2, before Contact 3",
+                                as.Date(qol_completion_date) < "2024-11-13" ~ "Survey Completed after Contact 3, before Contact 4",
+                                TRUE ~ "Survey Completed after Contact 4")) %>%  
+  filter(!is.na(time_frame)) %>% 
+  group_by(time_frame) %>%
+  summarise(n = n_distinct(Connect_ID))
+
+
+
+
+comp_time$time_frame <- factor(comp_time$time_frame, levels=c("Survey Completed after Contact 1, before Contact 2",
+                                                              "Survey Completed after Contact 2, before Contact 3", 
+                                                              "Survey Completed after Contact 3, before Contact 4",
+                                                              "Survey Completed on or after Contact 4")) 
+
+colnames(comp_time) <- c("All Reminders", "n")
+
+
+
+reminders_ct <- QOL_B  %>% mutate(cnt_number=case_when(attempt=="1st contact" ~ "Sent reminder Contact 1",
+                                                       attempt=="2nd contact" ~ "Sent reminder Contact 2",
+                                                       attempt=="3rd contact" ~ "Sent reminder Contact 3",
+                                                       attempt=="4th contact" ~ "Sent reminder Contact 4"))
+ attempt_counts <- reminders_ct %>%
+     group_by(Connect_ID, cnt_number) %>%
+     slice_head() %>%  # Keep only the first row for each unique Connect_ID and contacts_number- that way the case_when doesn't eliminate participants with each case
+     group_by(cnt_number) %>%
+     summarise(Count = n_distinct(Connect_ID))
+
+Sent_rows <- data.frame(Column1 = attempt_counts$cnt_number, Column2 = attempt_counts$Count)
+colnames(Sent_rows) <- c("All Reminders", "n")
+
+
+
+
+
+EligibleList <- c("Eligible for reminder Contact 2","Eligible for reminder Contact 3","Eligible for reminder Contact 4")
+EligibleNumb <- c(sum(all_count$n)- sum(comp_time[1,2]), 
+                  Sent_rows[2,2]- sum(comp_time[2,2]),
+                  Sent_rows[3,2]- sum(comp_time[3,2]))
+
+                  #(sum(all_count$n)- (sum(completedbefore2) + sum(NE_count2)))- ((sum(completedbefore3) + sum(NE_count3))))
+
+
+Eligible_rows <- data.frame(Column1 = EligibleList, Column2 = EligibleNumb)
+colnames(Eligible_rows) <- c("All Reminders", "n")
+
+
+
+
+
+
+final_notif_all <- bind_rows(comp_time, Sent_rows, Eligible_rows)
+final_notif_all <- final_notif_all[c(4,1,7,5,2,8,6,3,9),]
+
+final_notif_all$'%' <- c(paste(100*round(final_notif_all[1,2]/sum(all_count$n), digits=4), "%"),
+                            paste(100*round(final_notif_all[2,2]/sum(all_count$n), digits=3), "%"),
+                            paste(100*round(final_notif_all[3,2]/sum(all_count$n), digits=3), "%"),
+                            paste(100*round(final_notif_all[4,2]/final_notif_all[3,2], digits=3), "%"),
+                            paste(100*round(final_notif_all[5,2]/final_notif_all[4,2], digits=3), "%"),
+                            paste(100*round(final_notif_all[6,2]/final_notif_all[4,2], digits=3), "%"),
+                            paste(100*round(final_notif_all[7,2]/final_notif_all[6,2], digits=3), "%"),
+                            paste(100*round(final_notif_all[8,2]/final_notif_all[7,2], digits=3), "%"),
+                            paste(100*round(final_notif_all[9,2]/final_notif_all[7,2], digits=3), "%"))
+
+
+# Specify the rows to be bolded
+bold_rows <- c(1,3,4,6,7,9)
+
+final_notif_all_gt <- as_tibble(final_notif_all)
+
+# Create a gt table and use text_transform to apply formatting
+all_reminders_before <- final_notif_all_gt %>% gt(rowname_col = "row_lab") %>%
+  cols_label("All Reminders"= md(" "), n = md("**n**"), "%" = md("**%**")) %>% 
+   tab_header(title = md("Table 3. PROMIS Survey Reminders Evaluation, All Sites and All Notifications \n Among those Verified Before December 1, 2023")) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = "All Reminders",
+      rows = bold_rows
+    )) %>%
+ tab_footnote(
+  footnote=("No remindes are sent to participants after they refuse all future activities, withdraw, are deceased or request suspended contact. Participants are also not sent subsequent reminders after they refuse the 3 month PROMIS survey or refuse all PROMIS surveys. This may account for small discrepancies between the number eligible for a reminder and the number sent."),
+  locations = cells_column_labels(columns = "All Reminders")
+)%>% 
+ tab_footnote(
+  footnote=("
+'Eligible for reminder' is calculated as all partcipants verified before 12/1/2023 who have reached the necessary post-verification date and have not yet completed the PROMIS survey. Eligible participants will receive both emails and texts unless they opt out of receiving text messages."),
+  locations = cells_column_labels(columns = "All Reminders")
+) %>% 
+ tab_footnote(
+  footnote=("
+'Sent reminder' does not take into account whether the email or text was successfully delivered or opened. A small percentage of Connect emails and texts are undeliverable and the percent opened is unknown."),
+  locations = cells_column_labels(columns = "All Reminders")
+) %>% 
+ tab_footnote(
+  footnote=("
+' Email reminder schedule: Contact 1 is sent on August 29th, 2024; Contact 2 on September 3rd, 2024; Contact 3 on Setpember 7th, 2024; Contact 4 will be sent on Octber 13th, 2024."),
+  locations = cells_column_labels(columns = "All Reminders")
+) 
+
+all_reminders_before
+  
+
+
+# Email Reminders Only, No SMS Text Reminders - no one
+# SMS Reminders Only, No Email Reminders - no one
+```

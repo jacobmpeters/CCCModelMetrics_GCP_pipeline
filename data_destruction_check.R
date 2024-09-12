@@ -80,6 +80,7 @@ for (variable in variable_names) {
 }
 
 # Print the dataframe with counts for specified variables
+
 print(stub_df)
 
 
