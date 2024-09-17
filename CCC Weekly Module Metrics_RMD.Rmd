@@ -75,7 +75,9 @@ SAS= Smoking, Alcohol, and Sun Exposure (Module 3)
 
 
 ```{r BQPull, include=FALSE}
-knitr::opts_chunk$set(comment = NA)
+knitr::opts_chunk$set(dev = "png", fig.path = "", comment = NA)
+
+#knitr::opts_chunk$set(comment = NA)
 
 project = "nih-nci-dceg-connect-prod-6d04"
 queryreccc <- "SELECT  Connect_ID, d_512820379, d_821247024, d_914594314, d_832139544, d_949302066 , d_205553981, 
@@ -391,152 +393,6 @@ knitr::kable(table4,format.args = list(big.mark = ","),
 
 \FloatBarrier
 
-```{r Table4_trend1, include=FALSE}
-
-
-# 
-# combined_plot <- ggplot(all_data, aes(x = as.Date(d_914594314))) +
-#   stat_summary(aes(y = ver_M1_mins, color = "BOH"), fun = "mean", geom = "line", size = 0.5) +
-#   stat_summary(aes(y = ver_M2_mins, color = "MRE"), fun = "mean", geom = "line", size = 0.5) +
-#   stat_summary(aes(y = ver_M3_mins, color = "SAS"), fun = "mean", geom = "line", size = 0.5) +
-#   stat_summary(aes(y = ver_M4_mins, color = "LAW"), fun = "mean", geom = "line", size = 0.5) +
-#   scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
-#   scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
-#   theme(
-#     panel.background = element_blank(),
-#     legend.position = "bottom",
-#     legend.title = element_text(face = "bold"),
-#     axis.line = element_line(size = 0.2),
-#     axis.text.x = element_text(angle = 60, hjust = 1),
-#     axis.title.x = element_text(size = 14, face = "bold"),
-#     axis.title.y = element_text(size = 14, face = "bold", color = "black"),
-#     plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
-#   ) +
-#   theme(
-#     plot.caption = element_text(hjust = 0),
-#     legend.title = element_text(size = 8.5)
-#   ) +
-#   labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
-#        properly view the average Submission Time frames.") +
-#   ggtitle(label = "Figure 1. Overall Weekly Average Time (in minutes) \n from Verification to Initial Survey Submission") + 
-#   labs(color = "Initial Survey")
-# 
-# # Print or display the combined plot
-# print(combined_plot)
-
-
-
-```
-
-
-\FloatBarrier
-```{r Table4_trends2, include=FALSE}
-
-# timetrend2a <- ggplot(all_data, aes(x = as.Date(d_914594314), y = ver_M1_mins, color = Recruit_Type)) +
-#   stat_summary(fun = "mean", geom = "line", size = 0.5) +
-#   scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
-#   scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
-#   theme(
-#     panel.background = element_blank(),
-#     legend.position = "bottom",
-#     axis.line = element_line(size = 0.2),
-#     axis.text.x = element_text(angle = 60, hjust = 1),
-#     axis.title.x = element_text(size = 14, face = "bold"),
-#     axis.title.y = element_text(size = 14, face = "bold", color = "black"),
-#     plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
-#   ) +
-#   theme(
-#     plot.caption = element_text(hjust = 0),
-#     legend.title = element_text(size = 8.5)
-#   ) +
-#   labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
-#        properly view the average Submission Time frames.") +
-#   ggtitle(label = "Figure 2.1 Weekly Average Time (in minutes) from Verification to BOH Submission") +
-#   guides(color = guide_legend(title = "Recruitment Status"))
-# 
-# timetrend2a
-# 
-# 
-# 
-# timetrend2b <- ggplot(all_data, aes(x = as.Date(d_914594314), y = ver_M2_mins, color = Recruit_Type)) +
-#   stat_summary(fun = "mean", geom = "line", size = 0.5) +
-#   scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
-#   scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
-#   theme(
-#     panel.background = element_blank(),
-#     legend.position = "bottom",
-#     axis.line = element_line(size = 0.2),
-#     axis.text.x = element_text(angle = 60, hjust = 1),
-#     axis.title.x = element_text(size = 14, face = "bold"),
-#     axis.title.y = element_text(size = 14, face = "bold", color = "black"),
-#     plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
-#   ) +
-#   theme(
-#     plot.caption = element_text(hjust = 0),
-#     legend.title = element_text(size = 8.5)
-#   ) +
-#   labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
-#        properly view the average Submission Time frames.") +
-#   ggtitle(label = "Figure 2.2 Weekly Average Time (in minutes) from Verification to MRE Submission") +
-#   guides(color = guide_legend(title = "Recruitment Status"))
-# 
-# timetrend2b
-# 
-# 
-# 
-# timetrend2c <- ggplot(all_data, aes(x = as.Date(d_914594314), y = ver_M3_mins, color = Recruit_Type)) +
-#   stat_summary(fun = "mean", geom = "line", size = 0.5) +
-#   scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
-#   scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
-#   theme(
-#     panel.background = element_blank(),
-#     legend.position = "bottom",
-#     axis.line = element_line(size = 0.2),
-#     axis.text.x = element_text(angle = 60, hjust = 1),
-#     axis.title.x = element_text(size = 14, face = "bold"),
-#     axis.title.y = element_text(size = 14, face = "bold", color = "black"),
-#     plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
-#   ) +
-#   theme(
-#     plot.caption = element_text(hjust = 0),
-#     legend.title = element_text(size = 8.5)
-#   ) +
-#   labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
-#        properly view the average Submission Time frames.") +
-#   ggtitle(label = "Figure 2.3 Weekly Average Time (in minutes) from Verification to SAS Submission") +
-#   guides(color = guide_legend(title = "Recruitment Status"))
-# 
-# timetrend2c
-# 
-# 
-# 
-# timetrend2d <- ggplot(all_data, aes(x = as.Date(d_914594314), y = ver_M4_mins, color = Recruit_Type)) +
-#   stat_summary(fun = "mean", geom = "line", size = 0.5) +
-#   scale_x_date(name = "Date", date_labels = "%y-%m-%d", date_breaks = "2 weeks", expand = c(0, 0)) +
-#   scale_y_continuous(name = "Time (in minutes)", limits = c(-10, 450), expand = c(0, 0)) +
-#   theme(
-#     panel.background = element_blank(),
-#     legend.position = "bottom",
-#     axis.line = element_line(size = 0.2),
-#     axis.text.x = element_text(angle = 60, hjust = 1),
-#     axis.title.x = element_text(size = 14, face = "bold"),
-#     axis.title.y = element_text(size = 14, face = "bold", color = "black"),
-#     plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
-#   ) +
-#   theme(
-#     plot.caption = element_text(hjust = 0),
-#     legend.title = element_text(size = 8.5)
-#   ) +
-#   labs(caption = "Survey Submission Times greater than 450 minutes (7.5 hours) have been excluded to 
-#        properly view the average Submission Time frames.") +
-#   ggtitle(label = "Figure 2.4 Weekly Average Time (in minutes) from Verification to LAW Submission") +
-#   guides(color = guide_legend(title = "Recruitment Status"))
-# 
-# timetrend2d
-
-```
-
-
 
 
 
@@ -604,7 +460,7 @@ process_module <- function(data, start_time, end_time, completion_flag, completi
                col.names = c("Submission Time", "Total Participants", "Cumulative Percentage"), 
                row.names = FALSE, align = c("l", "c"), digits = 1, booktabs = TRUE) %>%  
     add_indent(seq(1, nrow(table_summary) - 1)) %>% 
-    kable_styling(latex_options = c("scale_down","hold_position"))
+    kable_styling(latex_options = "scale_down") #c("scale_down","hold_position"))
 }
 
 
@@ -693,7 +549,7 @@ knitr::kable(Numb5_table,
              col.names=c("Sections Submitted", "Active recruits"), 
              row.names=FALSE, align=c("l","c"),digits=1, booktabs = TRUE) %>%  
   add_indent(c(1:2)) %>% 
-  kable_styling(latex_options = c("scale_down","hold_position"))
+  kable_styling(latex_options = "scale_down")
 
 
 ```
@@ -1011,7 +867,7 @@ knitr::kable(QOL_TM_table, #format.args = list(big.mark = ","),
              caption = 'Table 13. 3-Month Quality of Life Survey Completion Time from Start to Submit \n Among Eligible Participants', 
              booktabs=T, linesep = "", row.names=FALSE, align=c("l", "c")) %>% 
   add_indent(c(1:(nrow(QOL_TM_table)-1))) %>%  
-  kable_styling(latex_options = c("scale_down","hold_position"))
+  kable_styling(latex_options = "scale_down") #c("scale_down","hold_position"))
 
 ```
 
@@ -1225,7 +1081,7 @@ scenario_counts <- final_scenarios %>%
 consist <- knitr::kable(scenario_counts,
                         caption = "Table 16. Consistency of Language Choice in Survey Completion",
                         row.names = FALSE, align = c("l", "c"), digits = 2, booktabs = TRUE) %>%
-  kable_styling(latex_options = c("scale_down","hold_position")) 
+  kable_styling(latex_options = "scale_down") # c("scale_down","hold_position")) 
 
 add_footnote(consist, "Note: Those who do not start any surveys will not have survey flags, and thus not be counted in this table. Those that start but do not complete a survey will still choose a survey language.", notation = "none")
 
@@ -1348,19 +1204,19 @@ knitr::kable(final_df_overall,
                caption = paste0("Table 17. Survey Completion by Survey Language \n Among All Participants"),
                row.names = FALSE, align = c("l","c","c","c"), digits = 2, booktabs = TRUE) %>% 
   add_indent(1:10) %>%  
-  kable_styling(latex_options = c("scale_down","hold_position"))
+  kable_styling(latex_options = "scale_down")
 
 knitr::kable(final_df_condition1,
                caption = paste0("Table 17.a. Survey Completion by Survey Language \n Among Participants with Preferred language of Spanish"),
                row.names = FALSE, align = c("l","c","c","c"), digits = 2, booktabs = TRUE) %>% 
   add_indent(1:10) %>%  
-  kable_styling(latex_options = c("scale_down","hold_position"))
+  kable_styling(latex_options = "scale_down")
 
 knitr::kable(final_df_condition2,
                caption = paste0("Table 17.b. Survey Completion by Survey Language \n Among Participants with Preferred language of English"),
                row.names = FALSE, align = c("l","c","c","c"), digits = 2, booktabs = TRUE) %>% 
   add_indent(1:10) %>%  
-  kable_styling(latex_options = c("scale_down","hold_position"))
+  kable_styling(latex_options = "scale_down")
 
 
 ```
