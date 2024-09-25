@@ -396,6 +396,7 @@ knitr::kable(table4,format.args = list(big.mark = ","),
 
 
 
+
 \newpage
 
 
@@ -907,7 +908,19 @@ Trig_table = trig_time %>%
                    'Perc.90' = round(quantile(trigTM_qol, 0.90, na.rm = TRUE), digits=2),
                    Max = round(max(trigTM_qol, na.rm = TRUE), digits=2))
 
+knitr::kable(Trig_table, 
+             caption = 'Table 14. 3-Month Quality of Life Survey Completion from Trigger to Submit for \n Verified Participants, in Days', 
+             row.names=FALSE, format.args = list(big.mark = ","), linesep = "", 
+             booktabs = T, align=c("l", "c", "c", "c", "c", "c", "c", "c", "c")) %>% 
+  kable_styling(latex_options = c("scale_down","hold_position")) 
 
+```
+
+
+                   
+\FloatBarrier
+
+```{r Pref_Lang_Time_All, echo=FALSE, warning=FALSE, message=FALSE}
 
 knitr::kable(Trig_table, 
              caption = 'Table 14. 3-Month Quality of Life Survey Completion from Trigger to Submit for \n Verified Participants, in Days', 
