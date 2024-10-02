@@ -556,7 +556,7 @@ dt_all_races_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>% 
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("Race/Ethnicity of Participants Who Completed BOH Section of First Survey")) %>% 
-  cols_label(n= md("**N**"), race = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**N**"), race = md("**Answer**"), percentage = md("**%**")) %>% 
     grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -608,7 +608,7 @@ dt_am_ind_ethn_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>% 
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>%
   tab_header(title = md("Ethnicity of American Indian/Native American Participants")) %>%
-  cols_label(n= md("**N**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>%
+  cols_label(n= md("**N**"), ethnicity = md("**Answer**"), percentage = md("**%**")) %>%
     grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -662,7 +662,7 @@ dt_asian_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>% 
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("Ethnicity of Asian and Asian American Participants")) %>% 
-  cols_label(n= md("**N**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**N**"), ethnicity = md("**Answer**"), percentage = md("**%**")) %>% 
     grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -721,7 +721,7 @@ dt_black_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>% 
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("Ethnicity of Black/African/African American Participants")) %>% 
-  cols_label(n= md("**N**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**N**"), ethnicity = md("**Answer**"), percentage = md("**%**")) %>% 
     grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -777,7 +777,7 @@ dt_hisp_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>% 
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("Ethnicity of Hispanic/Latino/Spanish Participants")) %>% 
-  cols_label(n= md("**N**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**N**"), ethnicity = md("**Answer**"), percentage = md("**%**")) %>% 
     grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -833,7 +833,7 @@ dt_mideast_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>% 
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("Ethnicity of Middle Eastern or North African Participants")) %>% 
-  cols_label(n= md("**N**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**N**"), ethnicity = md("**Answer**"), percentage = md("**%**")) %>% 
     grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -888,7 +888,7 @@ dt_hawi_summary <- dt_hawi %>% group_by(ethnicity) %>% dplyr::summarize(n=n(), p
 dt_hawi_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
   fmt_number(columns = "percentage", decimals = 2) %>% fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("Ethnicity of Hawaiian or Pacific Islander Participants")) %>% 
-  cols_label(n= md("**N**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**N**"), ethnicity = md("**Answer**"), percentage = md("**%**")) %>% 
     grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -944,7 +944,7 @@ dt_white_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>% 
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("Ethnicity of White Participants")) %>% 
-  cols_label(n= md("**N**"), ethnicity = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**N**"), ethnicity = md("**Answer**"), percentage = md("**%**")) %>% 
     grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -999,7 +999,7 @@ dt_appearence_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>% 
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>%
   tab_header(title = md("Gender")) %>%
-  cols_label(n= md("**N**"),descr = md("**Description**"), percentage = md("**Percentage of Participants**")) %>%
+  cols_label(n= md("**N**"),descr = md("**Description**"), percentage = md("**%**")) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1044,7 +1044,7 @@ dt_sex2_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>% 
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("Body Part of Intersex Participants")) %>% 
-  cols_label(n= md("**N**"), body_part = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**N**"), body_part = md("**Answer**"), percentage = md("**%**")) %>% 
     grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1166,7 +1166,7 @@ dt_skincnc_type_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>% 
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("SKINCANC2: Type(s) or Skin Cancer Diagnosed")) %>% 
-  cols_label(n= md("**N**"),Type = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**N**"),Type = md("**Answer**"), percentage = md("**%**")) %>% 
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -1763,7 +1763,7 @@ dt_fam_canc_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>% 
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("Primary Relative(s) Diagnosed With Cancer")) %>% 
-  cols_label(n= md("**N**"), status = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**N**"), status = md("**Answer**"), percentage = md("**%**")) %>% 
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -1839,7 +1839,7 @@ dt_mom_cnc_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>% 
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("MOMCANC2 Mom's Diagnosed Cancer Type")) %>% 
-  cols_label(n= md("**N**"), cancer = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**N**"), cancer = md("**Answer**"), percentage = md("**%**")) %>% 
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -2171,7 +2171,7 @@ dt_agep_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>% 
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("HORNONCISWOM: Used Hormones to Make Body Look More Feminine")) %>% 
-  cols_label(n= md("**N**"), horm = md("**Answer**"), percentage = md("**Percentage of Participants**")) %>% 
+  cols_label(n= md("**N**"), horm = md("**Answer**"), percentage = md("**%**")) %>% 
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
