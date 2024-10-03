@@ -1241,7 +1241,7 @@ Comp_by_Demographic %>% kable_styling(latex_options = c("scale_down", "hold_posi
 ```
 
 \FloatBarrier
-```{r Table13, echo=FALSE, warning=FALSE, message=FALSE}
+```{r QOL_start_stop, echo=FALSE, warning=FALSE, message=FALSE}
 
 
 
@@ -1337,7 +1337,7 @@ knitr::kable(Trig_table,
                    
 \FloatBarrier
 
-```{r Pref_Lang_Time_All, echo=FALSE, warning=FALSE, message=FALSE}
+```{r QOL_trig, echo=FALSE, warning=FALSE, message=FALSE}
 
 knitr::kable(Trig_table, 
              caption = 'Table 19. 3-Month Quality of Life Survey Completion from Trigger to Submit for \n Verified Participants, in Days', 
