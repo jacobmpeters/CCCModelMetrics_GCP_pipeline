@@ -43,10 +43,18 @@ library(lubridate)
 library(tidyverse)
 library(knitr)
 #install_tinytex()
-#library(tinytex)
+library(tinytex)
 #library(vtable)
 library(kableExtra)
 library(gtsummary)
+library(data.table)
+
+
+library(arsenal)
+library(rio)
+library(scales)
+library(gt)
+library(stringr) 
 
 
 bq_auth()
@@ -83,7 +91,8 @@ project = "nih-nci-dceg-connect-prod-6d04"
 queryreccc <- "SELECT  Connect_ID, d_512820379, d_821247024, d_914594314, d_832139544, d_949302066 , d_205553981, 
 d_536735468 , d_976570371, d_663265240, d_265193023, d_222161762,d_770257102, d_264644252, d_265193023, d_541836531, 
 d_386488297, d_452942800, d_517311251 , d_822499427, d_126331570, d_914639140, d_311580100, d_827220437, d_100767870, 
-d_831041022, d_255077064, d_320303124, d_684635302, d_843688458, d_870643066, d_878865966, d_167958071, token
+d_831041022, d_255077064, d_320303124, d_684635302, d_843688458, d_870643066, d_878865966, d_167958071, token,
+state_d_934298480, state_d_706256705, state_d_435027713
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IS NOT NULL  and (d_512820379='486306141' OR d_512820379='854703046') " 
 
 #and d_831041022='104430631'-- not needed, according to 3/12/24 decisions we'll be keeping participant journeys in overall counts
@@ -143,6 +152,18 @@ all_data <- all_data %>%  mutate(Site = case_when(d_827220437==472940358 ~ "Bayl
                                                   d_827220437==303349821 ~ "Marshfield",
                                                   d_827220437==657167265 ~ "Sanford",
                                                   d_827220437==809703864 ~ "UChicago"),
+                                 age = case_when(state_d_934298480 == "713781738"~ "30-34",
+                                                 state_d_934298480 == '631272782' ~ "35-39",
+                                                 state_d_934298480 == '124276120' ~ "40-45",
+                                                 state_d_934298480 == '450985724' ~ "46-50",
+                                                 state_d_934298480 == '363147933' ~ "51-55",
+                                                 state_d_934298480 == '636706443' ~ "56-60",
+                                                 state_d_934298480 == '771230670' ~ "61-65",
+                                                 state_d_934298480 == '722846087' ~ "66-70"),
+                                 sex = case_when(state_d_706256705 == '536341288' | state_d_435027713 == '536341288' ~ "Female",
+                                                 state_d_706256705 == '654207589' | state_d_435027713 == '654207589' ~ "Male",
+                                                 #state_d_706256705 == '830573274' ~ "Intersex or Other", # too small of a count for now, need to combine with unknown 
+                                                 state_d_706256705 == '830573274' | state_d_706256705 == '178420302' | state_d_435027713 == '178420302' ~ "Unknown"),
                                  BSL_compl = case_when(d_100767870==353358909 ~ "All Baseline Modules Completed",
                                                        TRUE ~ "One or More Baseline Modules Not Completed"),
                                  Pref_lang=case_when(d_255077064 == 773342525 ~ "Spanish",
@@ -157,7 +178,8 @@ all_data <- all_data %>%  mutate(Site = case_when(d_827220437==472940358 ~ "Bayl
                                  completion = case_when(d_100767870=="353358909" & 
                                                           (d_878865966=="353358909" | d_684635302=="353358909" | d_167958071=="353358909") ~ "Completed both survey and sample(s)",
                                                         d_100767870=="353358909" ~ "Completed all baseline survey modules 1-4, no baseline samples",
-                                                        (d_878865966=="353358909" | d_684635302=="353358909" | d_167958071=="353358909") ~ "Completed any baseline sample, did not complete baseline survey",
+                                                        (d_878865966=="353358909" | d_684635302=="353358909" | 
+                                                           d_167958071=="353358909") ~ "Completed any baseline sample, did not complete baseline survey",
                                                         TRUE ~ "Completed neither survey or sample(s)"),
                                  m1_comp_mins = as.numeric(difftime(as.POSIXct(ymd_hms(d_517311251)), as.POSIXct(ymd_hms(d_205553981)), units="hours"))*60,
                                  m2_comp_mins = as.numeric(difftime(as.POSIXct(ymd_hms(d_832139544)), as.POSIXct(ymd_hms(d_541836531)), units="hours"))*60,
@@ -331,7 +353,7 @@ names(Table4a1)[1] <- "Recruit Type"
 knitr::kable(Table4a1,format.args = list(big.mark = ","),
              caption='Table 4.1 Time (in hours) from Verification to BOH Submission \n Stratified by Active and Passive Recruits', 
              row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% 
-  kable_styling(latex_options = c("scale_down","hold_position")) 
+  kable_styling(latex_options = c("scale_down")) 
 
 
 knitr::kable(Table4a2,format.args = list(big.mark = ","),
@@ -823,8 +845,403 @@ QOL_comp_BL_before %>% kable_styling(latex_options = c("scale_down","hold_positi
 ```
 
 
+
+
+
+```{r Overall_BySex_ByAge, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+
+Comp_by_Sex <- all_data %>% filter(qolcomplt!="Not Eligible") %>% 
+  mutate(qolcomplt = factor(qolcomplt, levels=c("Not Started", "Started", "Submitted"))) %>% 
+  select(sex, qolcomplt) %>% dplyr::arrange(sex,qolcomplt) %>% 
+  tbl_cross(
+  row = sex,
+  col = qolcomplt,
+  label = list(qolcomplt ~ "Survey Completion",sex~"Sex"),
+  percent = "row",
+  digits=c(0,2),
+  margin_text="Total QOL Eligible Participants") 
+
+
+Comp_by_Sex_table <- Comp_by_Sex %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total QOL Eligible \n Participants") %>%
+  modify_caption("Table 13. 3-Month Quality of Life Survey Completion Rate by Site Defined Sex \n Among Eligible Participants") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+ 
+Comp_by_Sex_table %>% kable_styling(latex_options = c("scale_down","hold_position"))
+
+
+
+
+
+
+
+Comp_by_Age <- all_data %>% filter(qolcomplt!="Not Eligible") %>% 
+  mutate(qolcomplt = factor(qolcomplt, levels=c("Not Started", "Started", "Submitted"))) %>% 
+  select(age, qolcomplt) %>% dplyr::arrange(age,qolcomplt) %>% 
+  tbl_cross(
+  row = age,
+  col = qolcomplt,
+  label = list(qolcomplt ~ "Survey Completion",age~"Age"),
+  percent = "row",
+  digits=c(0,2),
+  margin_text="Total QOL Eligible Participants") 
+
+#Comp_by_Age[["table_body"]]$stat_0 <- sapply(strsplit(Comp_by_Age[["table_body"]]$stat_0," "),"[",1)
+
+Comp_by_Age <- Comp_by_Age %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total QOL Eligible \n Participants") %>%
+  modify_caption("Table 14. 3-Month Quality of Life Survey Completion Rate by Age \n Among Eligible Participants") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+ 
+Comp_by_Age %>% kable_styling(latex_options = c("scale_down","hold_position"))
+
+
+```
+
+
+```{r merge1, include=FALSE, warning=FALSE}
+
+dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
+dd <- dplyr::bind_rows(dictionary,.id="CID")
+dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
+dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name')
+
+dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
+dd$CID <- rownames(dd)
+#https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
+#devtools::install_github("tidyverse/reprex")
+
+
+recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
+                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935'")
+recr_m1 <- bq_table_download(recr_M1,bigint = "integer64",n_max = Inf, page_size = 10000)
+cnames <- names(recr_m1)
+# Check that it doesn't match any non-number
+numbers_only <- function(x) !grepl("\\D", x)
+# to check variables in recr_noinact_wl1
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(recr_m1,varname)
+  recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+sql_M1_1 <- bq_project_query(project, query="SELECT Connect_ID, D_384191091_D_384191091_D_583826374, D_384191091_D_384191091_D_636411467, D_384191091_D_384191091_D_458435048, D_384191091_D_384191091_D_706998638, D_384191091_D_384191091_D_973565052, D_384191091_D_384191091_D_586825330, D_384191091_D_384191091_D_412790539, D_384191091_D_384191091_D_807835037,D_384191091_D_747350323,D_384191091_D_384191091_D_746038746 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
+sql_M1_2 <- bq_project_query(project, query="SELECT Connect_ID, D_384191091_D_384191091_D_583826374 ,D_384191091_D_384191091_D_636411467, D_384191091_D_384191091_D_458435048, D_384191091_D_384191091_D_706998638, D_384191091_D_384191091_D_973565052, D_384191091_D_384191091_D_586825330,D_384191091_D_384191091_D_412790539,D_384191091_D_384191091_D_807835037,D_384191091_D_747350323,D_384191091_D_384191091_D_746038746 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
+
+
+M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64",n_max = Inf) #1436 #1436 vars: 1507 01112023 
+M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64",n_max = Inf) #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
+
+mod1_v1 <- M1_V1
+cnames <- names(M1_V1)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v1,varname)
+  mod1_v1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+mod1_v2 <- M1_V2
+cnames <- names(M1_V2)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v2,varname)
+  mod1_v2[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+M1_V1.var <- colnames(M1_V1)
+M1_V2.var <- colnames(M1_V2)
+var.matched <- M1_V1.var[which(M1_V1.var %in% M1_V2.var)]
+length(var.matched)  #1275 #1278 vars 01112023 #1348 vars 05022023
+
+V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched] #232 #229 01112023 #159 05022023
+V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched] #253 #253 01112023 #545 05022023
+
+length(M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID])
+#[1] 59 with the completion of two versions of Module1 
+#[1] 62 with completing both versions of M1 ###double checked 03/28/2023
+#68 double checked 05/02/2023
+
+common.IDs <- M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID]
+M1_V1_common <- mod1_v1[,var.matched]
+
+M1_V2_common <- mod1_v2[,var.matched]
+M1_V1_common$version <- 1
+M1_V2_common$version <- 2
+
+##to check the completion of M1 among these duplicates
+partM1_dups <- recr_m1[which(recr_m1$Connect_ID %in% common.IDs),]
+table(partM1_dups$d_949302066)
+
+M1_common  <- rbind(M1_V1_common, M1_V2_common) #including 136 duplicates (version 1 and version 2) from 68 participants 05022023
+#M1_response <- matrix(data=NA, nrow=118, ncol=967)
+
+m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)] #230 vars 03282023 #160 vars 05/02/2023
+m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] #255 vars 03282023 #546 vars 05/02/2023
+m1_v1_only$version <- 1
+m1_v2_only$version <- 2
+#for (i in 1:length)
+##to check the completion in each version
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #1364 03282023 # 1370 05022023
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #4870 03282023 # 5731 05022023
+
+#library(janitor)
+
+m1_common <- rbind(M1_V1_common,M1_V2_common)
+m1_common_v1 <- base::merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
+m1_combined_v1v2 <- base::merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
+m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] #7289 including duplicates 05022023
+
+m1_complete <- m1_complete %>% arrange(desc(version)) 
+
+
+m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),] 
+table(m1_complete_nodup$version)
+
+
+
+
+all_data$Connect_ID <- as.numeric(all_data$Connect_ID)
+
+
+promis_df= left_join(m1_complete_nodup, all_data, by="Connect_ID")
+dim(promis_df)
+
+
+promis <- as_tibble(promis_df)
+
+
+knitr::opts_chunk$set(comment = NA)
+
+```
+
+
+
+```{r Race, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+## Multi-racial
+
+multi_race=0    
+for (i in 1:length(promis$Connect_ID)){
+  AI=ifelse((promis$D_384191091_D_384191091_D_583826374[[i]]==1 & (promis$D_384191091_D_384191091_D_636411467[[i]]==1 | promis$D_384191091_D_384191091_D_458435048[[i]]==1|
+                                               promis$D_384191091_D_384191091_D_706998638[[i]]==1 | promis$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                               promis$D_384191091_D_384191091_D_586825330[[i]]==1 | promis$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                               promis$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  As=ifelse((promis$D_384191091_D_384191091_D_636411467[[i]]==1 & (promis$D_384191091_D_384191091_D_583826374[[i]]==1 | promis$D_384191091_D_384191091_D_458435048[[i]]==1|
+                                                        promis$D_384191091_D_384191091_D_706998638[[i]]==1 | promis$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        promis$D_384191091_D_384191091_D_586825330[[i]]==1 | promis$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        promis$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Bl=ifelse((promis$D_384191091_D_384191091_D_458435048[[i]]==1 & (promis$D_384191091_D_384191091_D_583826374[[i]]==1 | promis$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        promis$D_384191091_D_384191091_D_706998638[[i]]==1 | promis$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        promis$D_384191091_D_384191091_D_586825330[[i]]==1 | promis$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        promis$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Hs=ifelse((promis$D_384191091_D_384191091_D_706998638[[i]]==1 & (promis$D_384191091_D_384191091_D_583826374[[i]]==1 | promis$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        promis$D_384191091_D_384191091_D_458435048[[i]]==1 | promis$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        promis$D_384191091_D_384191091_D_586825330[[i]]==1 | promis$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        promis$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Me=ifelse((promis$D_384191091_D_384191091_D_973565052[[i]]==1 & (promis$D_384191091_D_384191091_D_583826374[[i]]==1 | promis$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        promis$D_384191091_D_384191091_D_458435048[[i]]==1 | promis$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        promis$D_384191091_D_384191091_D_586825330[[i]]==1 | promis$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        promis$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Hw=ifelse((promis$D_384191091_D_384191091_D_586825330[[i]]==1 & (promis$D_384191091_D_384191091_D_583826374[[i]]==1 | promis$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        promis$D_384191091_D_384191091_D_458435048[[i]]==1 | promis$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        promis$D_384191091_D_384191091_D_973565052[[i]]==1 | promis$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        promis$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Wh=ifelse((promis$D_384191091_D_384191091_D_412790539[[i]]==1 & (promis$D_384191091_D_384191091_D_583826374[[i]]==1 | promis$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        promis$D_384191091_D_384191091_D_458435048[[i]]==1 | promis$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        promis$D_384191091_D_384191091_D_586825330[[i]]==1 | promis$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        promis$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Ot=ifelse((promis$D_384191091_D_384191091_D_807835037[[i]]==1 & (promis$D_384191091_D_384191091_D_583826374[[i]]==1 | promis$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        promis$D_384191091_D_384191091_D_458435048[[i]]==1 | promis$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        promis$D_384191091_D_384191091_D_586825330[[i]]==1 | promis$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        promis$D_384191091_D_384191091_D_412790539[[i]]==1)), 1, 0)
+  multi_race= multi_race + sum(AI+As+Bl+Hs+Me+Hw+Wh+Ot, na.rm=T)
+
+}
+
+#cat("Percentage of multirace participants:", (multi_race/(dim(promis)[1]))*100)
+   
+   
+
+promis$multi_racial <- c(rep(1, times=multi_race), rep(0, times=(dim(promis)[1]- multi_race)))
+
+
+
+## RACE
+
+promis = promis %>%  mutate(race= case_when(multi_racial==1 ~ "Multi-Racial",
+                                                     D_384191091_D_384191091_D_583826374==1 ~ "American Indian or Native American",
+                                                     D_384191091_D_384191091_D_636411467==1 ~ "Asian/Asian American",
+                                                     D_384191091_D_384191091_D_458435048==1 ~ "Black, African American, or African",
+                                                     D_384191091_D_384191091_D_706998638==1 ~ "Hispanic, Latino, or Spanish",
+                                                     D_384191091_D_384191091_D_973565052==1 ~ "Middle Eastern or North African",
+                                                     D_384191091_D_384191091_D_586825330==1 ~ "Hawaiian or Pacific Islander",
+                                                     D_384191091_D_384191091_D_412790539==1 ~ "White",
+                                                     (D_384191091_D_384191091_D_807835037==1 | !is.na(D_384191091_D_747350323)) ~ "Other",
+                                                     D_384191091_D_384191091_D_746038746==1 ~ "Prefer Not to Answer",
+                                                     TRUE  ~ "Skipped this question"))
+
+```
+
+
+
+
+```{r By_Race, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+
+Comp_by_race <- promis %>% filter(qolcomplt!="Not Eligible") %>% 
+  mutate(qolcomplt = factor(qolcomplt, levels=c("Not Started", "Started", "Submitted"))) %>% 
+  select(race, qolcomplt) %>% dplyr::arrange(race,qolcomplt) %>% 
+  tbl_cross(
+  row = race,
+  col = qolcomplt,
+  label = list(qolcomplt ~ "Survey Completion",race~"Race"),
+  percent = "row",
+  digits=c(0,2),
+  margin_text="Total QOL Eligible Participants") 
+
+#Comp_by_race[["table_body"]]$stat_0 <- sapply(strsplit(Comp_by_race[["table_body"]]$stat_0," "),"[",1)
+
+Comp_by_race <- Comp_by_race %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total QOL Eligible \n Participants") %>%
+  modify_caption("Table 15. 3-Month Quality of Life Survey Completion Rate by Race \n Among Eligible Participants") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+reduced <- all_data %>% filter(d_949302066 != 231311385 & qolcomplt!="Not Eligible") # Those who are eligible for PROMIS but didn't complete mod1 yet
+#dim(reduced)[[1]] 
+
+Comp_by_race %>% kable_styling(latex_options = c("scale_down","hold_position")) %>% 
+  footnote(general = paste0('In order to determine race, Module 1 must first be completed. There are ', dim(reduced)[[1]] , ' QOL eligible participants that have either not started or not finished Module 1.'),general_title = "Note: ", footnote_as_chunk = T)
+
+
+```
+
+
+```{r By_Race_And_Sex, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+promis = promis %>%  mutate(sex_race= case_when(sex=="Female" & multi_racial==1 ~ "Female: Multi-Racial",
+                                            sex=="Female" & D_384191091_D_384191091_D_583826374==1 ~ "Female: American Indian or Native American",
+                                            sex=="Female" & D_384191091_D_384191091_D_636411467==1 ~ "Female: Asian/Asian American",
+                                            sex=="Female" & D_384191091_D_384191091_D_458435048==1 ~ "Female: Black, African American, or African",
+                                            sex=="Female" & D_384191091_D_384191091_D_706998638==1 ~ "Female: Hispanic, Latino, or Spanish",
+                                            sex=="Female" & D_384191091_D_384191091_D_973565052==1 ~ "Female: Middle Eastern or North African",
+                                            sex=="Female" & D_384191091_D_384191091_D_586825330==1 ~ "Female: Hawaiian or Pacific Islander",
+                                            sex=="Female" & D_384191091_D_384191091_D_412790539==1 ~ "Female: White",
+                                            sex=="Female" & (D_384191091_D_384191091_D_807835037==1 | !is.na(D_384191091_D_747350323)) ~ "Female: Other",
+                                            sex=="Female" & D_384191091_D_384191091_D_746038746==1 ~ "Female: Prefer Not to Answer",
+                                            
+                                            sex=="Male" & multi_racial==1 ~ "Male: Multi-Racial",
+                                            sex=="Male" & D_384191091_D_384191091_D_583826374==1 ~ "Male: American Indian or Native American",
+                                            sex=="Male" & D_384191091_D_384191091_D_636411467==1 ~ "Male: Asian/Asian American",
+                                            sex=="Male" & D_384191091_D_384191091_D_458435048==1 ~ "Male: Black, African American, or African",
+                                            sex=="Male" & D_384191091_D_384191091_D_706998638==1 ~ "Male: Hispanic, Latino, or Spanish",
+                                            sex=="Male" & D_384191091_D_384191091_D_973565052==1 ~ "Male: Middle Eastern or North African",
+                                            sex=="Male" & D_384191091_D_384191091_D_586825330==1 ~ "Male: Hawaiian or Pacific Islander",
+                                            sex=="Male" & D_384191091_D_384191091_D_412790539==1 ~ "Male: White",
+                                            sex=="Male" & (D_384191091_D_384191091_D_807835037==1 | !is.na(D_384191091_D_747350323)) ~ "Male: Other",
+                                            sex=="Male" & D_384191091_D_384191091_D_746038746==1 ~ "Male: Prefer Not to Answer",
+                                            
+                                            sex=="Unknown" & multi_racial==1 ~ "Unknown: Multi-Racial",
+                                            sex=="Unknown" & D_384191091_D_384191091_D_583826374==1 ~ "Unknown: American Indian or Native American",
+                                            sex=="Unknown" & D_384191091_D_384191091_D_636411467==1 ~ "Unknown: Asian/Asian American",
+                                            sex=="Unknown" & D_384191091_D_384191091_D_458435048==1 ~ "Unknown: Black, African American, or African",
+                                            sex=="Unknown" & D_384191091_D_384191091_D_706998638==1 ~ "Unknown: Hispanic, Latino, or Spanish",
+                                            sex=="Unknown" & D_384191091_D_384191091_D_973565052==1 ~ "Unknown: Middle Eastern or North African",
+                                            sex=="Unknown" & D_384191091_D_384191091_D_586825330==1 ~ "Unknown: Hawaiian or Pacific Islander",
+                                            sex=="Unknown" & D_384191091_D_384191091_D_412790539==1 ~ "Unknown: White",
+                                            sex=="Unknown" & (D_384191091_D_384191091_D_807835037==1 | !is.na(D_384191091_D_747350323)) ~ "Unknown: Other",
+                                            sex=="Unknown" & D_384191091_D_384191091_D_746038746==1 ~ "Unknown: Prefer Not to Answer",
+                                                     TRUE  ~ "Skipped this question"))
+
+Comp_by_sex_race <- promis %>% filter(qolcomplt!="Not Eligible") %>% 
+  mutate(qolcomplt = factor(qolcomplt, levels=c("Not Started", "Started", "Submitted"))) %>% 
+  select(sex_race, qolcomplt) %>% dplyr::arrange(sex_race,qolcomplt) %>% 
+  tbl_cross(
+  row = sex_race,
+  col = qolcomplt,
+  label = list(qolcomplt ~ "Survey Completion",sex_race~"Sex and Race"),
+  percent = "row",
+  digits=c(0,2),
+  margin_text="Total QOL Eligible Participants") 
+
+#Comp_by_sex_race[["table_body"]]$stat_0 <- sapply(strsplit(Comp_by_sex_race[["table_body"]]$stat_0," "),"[",1)
+
+Comp_by_sex_race <- Comp_by_sex_race %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  modify_header(stat_0 = "Total QOL Eligible \n Participants") %>%
+  modify_caption("Table 16. 3-Month Quality of Life Survey Completion Rate by Sex and Race \n Among Eligible Participants") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+reduced <- all_data %>% filter(d_949302066 != 231311385 & qolcomplt!="Not Eligible") # Those who are eligible for PROMIS but didn't complete mod1 yet
+#dim(reduced)[[1]] 
+
+Comp_by_sex_race %>% kable_styling(latex_options = c("scale_down","hold_position")) %>% 
+  footnote(general = paste0('In order to determine race, Module 1 must first be completed. There are ', dim(reduced)[[1]] , ' QOL eligible participants that have either not started or not finished Module 1.'),general_title = "Note: ", footnote_as_chunk = T)
+
+
+```
+
+
+```{r By_Demographic, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+promis <- promis %>%
+  mutate(
+    "White Women" = if_else(race == "White" & sex == "Female", 1, 0),
+    "Black Men" = if_else(race == "Black, African American, or African" & sex == "Male", 1, 0),
+    "Women Under 45" = if_else((age == "35-39" | age == "40-45") & sex == "Female", 1, 0),
+    "Women Over 45" = if_else((age == "46-50" | age == "51-55" | age == "56-60" | age == "61-65" | age == "66-70") & sex == "Female", 1, 0),
+    "Men Under 45" = if_else((age == "35-39" | age == "40-45") & sex == "Male", 1, 0),
+    "Men Over 45" = if_else((age == "46-50" | age == "51-55" | age == "56-60" | age == "61-65" | age == "66-70") & sex == "Male", 1, 0)
+  )
+
+# Can be in more then one category
+all_data_long <- promis %>%
+  pivot_longer(cols = c("White Women", "Black Men", "Women Under 45", "Women Over 45", "Men Under 45", "Men Over 45"),
+               names_to = "Demographic_Group", values_to = "Flag") %>%
+  filter(Flag == 1)  # Keep only rows where participants are in one or more of these demographics
+
+
+Comp_by_Demographic <- all_data_long %>% 
+  filter(qolcomplt != "Not Eligible") %>%
+  mutate(qolcomplt = factor(qolcomplt, levels = c("Not Started", "Started", "Submitted")),
+         Demographic_Group = factor(Demographic_Group, levels=c("White Women","Black Men","Women Under 45","Women Over 45","Men Under 45","Men Over 45"))) %>%
+  select(Demographic_Group, qolcomplt) %>%
+  #arrange(Demographic_Group, qolcomplt) %>%
+  tbl_cross(
+    row = Demographic_Group,
+    col = qolcomplt,
+    label = list(qolcomplt ~ "Survey Completion", Demographic_Group ~ "Demographic"),
+    percent = "row",
+    digits = c(0, 2),
+    margin_text = "Total"
+  )
+
+
+Comp_by_Demographic <- Comp_by_Demographic %>%
+  modify_header(stat_0 = "Total") %>%
+  modify_caption("Tbale 17. 3-Month Quality of Life Survey Completion Rate \n by Demographic Among Eligible Participants") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+# Style the table output
+Comp_by_Demographic %>% kable_styling(latex_options = c("scale_down", "hold_position"))  %>% 
+  footnote(general = "Participants may be counted more then once in these categories.",general_title = "Note: ", footnote_as_chunk = T)
+
+
+```
+
 \FloatBarrier
-```{r Table13, echo=FALSE, warning=FALSE, message=FALSE}
+```{r QOL_start_stop, echo=FALSE, warning=FALSE, message=FALSE}
 
 
 
@@ -865,7 +1282,7 @@ QOL_TM_table <- QOL_TM[, c(1,4)]
 colnames(QOL_TM_table) <- c("Completion Time", "N%")
 
 knitr::kable(QOL_TM_table, #format.args = list(big.mark = ","),
-             caption = 'Table 13. 3-Month Quality of Life Survey Completion Time from Start to Submit \n Among Eligible Participants', 
+             caption = 'Table 18. 3-Month Quality of Life Survey Completion Time from Start to Submit \n Among Eligible Participants', 
              booktabs=T, linesep = "", row.names=FALSE, align=c("l", "c")) %>% 
   add_indent(c(1:(nrow(QOL_TM_table)-1))) %>%  
   kable_styling(latex_options = "scale_down") #c("scale_down","hold_position"))
@@ -920,10 +1337,10 @@ knitr::kable(Trig_table,
                    
 \FloatBarrier
 
-```{r Pref_Lang_Time_All, echo=FALSE, warning=FALSE, message=FALSE}
+```{r QOL_trig, echo=FALSE, warning=FALSE, message=FALSE}
 
 knitr::kable(Trig_table, 
-             caption = 'Table 14. 3-Month Quality of Life Survey Completion from Trigger to Submit for \n Verified Participants, in Days', 
+             caption = 'Table 19. 3-Month Quality of Life Survey Completion from Trigger to Submit for \n Verified Participants, in Days', 
              row.names=FALSE, format.args = list(big.mark = ","), linesep = "", 
              booktabs = T, align=c("l", "c", "c", "c", "c", "c", "c", "c", "c")) %>% 
   kable_styling(latex_options = c("scale_down","hold_position")) 
@@ -947,7 +1364,7 @@ all_data %>% tbl_cross(
     missing="ifany",
     margin_text="Total") %>% 
   modify_header(stat_0 = "Total") %>%
-  modify_caption("Table 15. Preferred Language by Site") %>%
+  modify_caption("Table 20. Preferred Language by Site") %>%
   as_kable_extra(escape = FALSE, addtl_fmt = TRUE) %>%  
   kable_styling(latex_options = "scale_down") 
 
@@ -1092,7 +1509,7 @@ scenario_counts <- final_scenarios %>%
   dplyr::rename(Scenario = scenario, 'Total Participants' = n)
 
 consist <- knitr::kable(scenario_counts,
-                        caption = "Table 16. Consistency of Language Choice in Survey Completion",
+                        caption = "Table 21. Consistency of Language Choice in Survey Completion",
                         row.names = FALSE, align = c("l", "c"), digits = 2, booktabs = TRUE) %>%
   kable_styling(latex_options = "scale_down") # c("scale_down","hold_position")) 
 
@@ -1214,19 +1631,19 @@ final_df_condition2 <- do.call(rbind, all_flags_list_condition2)
 
 
 knitr::kable(final_df_overall,
-               caption = paste0("Table 17. Survey Completion by Survey Language \n Among All Participants"),
+               caption = paste0("Table 22. Survey Completion by Survey Language \n Among All Participants"),
                row.names = FALSE, align = c("l","c","c","c"), digits = 2, booktabs = TRUE) %>% 
   add_indent(1:10) %>%  
   kable_styling(latex_options = "scale_down")
 
 knitr::kable(final_df_condition1,
-               caption = paste0("Table 17.a. Survey Completion by Survey Language \n Among Participants with Preferred language of Spanish"),
+               caption = paste0("Table 22.a. Survey Completion by Survey Language \n Among Participants with Preferred language of Spanish"),
                row.names = FALSE, align = c("l","c","c","c"), digits = 2, booktabs = TRUE) %>% 
   add_indent(1:10) %>%  
   kable_styling(latex_options = "scale_down")
 
 knitr::kable(final_df_condition2,
-               caption = paste0("Table 17.b. Survey Completion by Survey Language \n Among Participants with Preferred language of English"),
+               caption = paste0("Table 22.b. Survey Completion by Survey Language \n Among Participants with Preferred language of English"),
                row.names = FALSE, align = c("l","c","c","c"), digits = 2, booktabs = TRUE) %>% 
   add_indent(1:10) %>%  
   kable_styling(latex_options = "scale_down")
@@ -1281,12 +1698,12 @@ colnames(BL_lang_E)[1] <- "Section"
 colnames(BL_lang_SP)[1] <- "Section"
 
 knitr::kable(BL_lang_E, format.args = list(big.mark = ","), digits=2, 
-             caption='18.a. Time (in minutes) from Start to Submit of Initial Survey Modules for English',
+             caption='23.a. Time (in minutes) from Start to Submit of Initial Survey Modules for English',
              row.names=FALSE, align=c("l","c","c","c","c","c","c","c","c"), booktabs = TRUE)%>% 
     kable_styling(latex_options = c("scale_down","hold_position")) 
 
 knitr::kable(BL_lang_SP, format.args = list(big.mark = ","), digits=2, 
-             caption='Table 18.b. Time (in minutes) from Start to Submit of Initial Survey Modules for Spanish',
+             caption='Table 23.b. Time (in minutes) from Start to Submit of Initial Survey Modules for Spanish',
              row.names=FALSE, align=c("l","c","c","c","c","c","c","c","c"),booktabs = TRUE)%>% 
     kable_styling(latex_options = c("scale_down","hold_position")) 
 
