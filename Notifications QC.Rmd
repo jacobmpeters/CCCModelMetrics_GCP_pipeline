@@ -579,7 +579,7 @@ if (nrow(HIPAA_rem) > 50) {
 
 
 \FloatBarrier
-## The same participant received multiple HP Baseline Biospecimen invitations on the same day. 
+## The same participant received multiple HP Verified, BL Survey Reminder and Biospecimen Scheduling Invites on the same day. 
 ```{r HPBB, echo=FALSE, message=FALSE, warning=FALSE}
 HPBB <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
 category,
@@ -588,7 +588,7 @@ category,
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
 left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
 on p.token=n.token
-WHERE category='HP Baseline Biospecimen Invitation' and date(notification_time) >= (CURRENT_DATE()-7)
+WHERE category='HP Verified, BL Survey Reminder and Biospecimen Scheduling Invite' and date(notification_time) >= (CURRENT_DATE()-7)
 #AND notificationType = 'email'
 GROUP BY Connect_ID,category, DATE(notification_time)
 HAVING COUNT(*) > 1"
@@ -605,6 +605,40 @@ if (nrow(HPBio_rem) > 50) {
   cat("No errors\n")
 } else {
   knitr::kable(HPBio_rem) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+
+```
+
+
+\FloatBarrier
+## The same participant received multiple BSWH Verified, BL Survey Reminder and Biospecimen Scheduling Invites on the same day. 
+```{r BSWHBB, echo=FALSE, message=FALSE, warning=FALSE}
+BSWHBB <- "SELECT distinct(p.Connect_ID), #distinct(n.token), 
+category,
+       DATE(notification_time) as repeat_date, 
+       COUNT(*) as num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+left join  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+on p.token=n.token
+WHERE category='BSWH Verified, BL Survey Reminder and Biospecimen Scheduling Invite' and date(notification_time) >= (CURRENT_DATE()-7)
+#AND notificationType = 'email'
+GROUP BY Connect_ID,category, DATE(notification_time)
+HAVING COUNT(*) > 1"
+
+BSWHBB_table <- bq_project_query(project, BSWHBB)
+BSWHBio_rem <- bq_table_download(BSWHBB_table, bigint = "integer64") #currently 483, max 5
+
+
+if (nrow(BSWHBio_rem) > 50) {
+  cat("There are", nrow(BSWHBio_rem), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(BSWHBio_rem,glue("{local_drive}Multiple_BSWHBio_rem_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(BSWHBio_rem) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(BSWHBio_rem) %>% kable_styling(latex_options = "scale_down")
 }
 }
 
