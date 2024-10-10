@@ -45,6 +45,8 @@ library(listr) ###to work on a list of vector, files or..
 library(sqldf) ##sql
 library(lubridate) ###date time
 library(stringr) ###to work on patterns, characters
+library(knitr)
+library(kableExtra)
 
 options(tinytex.verbose = TRUE)
 
@@ -53,9 +55,9 @@ bq_auth()
 
 ```{r BQ_Pull, include=FALSE}
 
-project <- "nih-nci-dceg-connect-prod-6d04"
-PQOL3 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.promis_v1_JP` where Connect_ID is not null"
-parts <- "SELECT Connect_ID, token,  D_471593703, state_d_934298480, D_230663853,D_335767902, D_982402227, D_564964481, D_795827569, D_544150384,D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, d_663265240, d_878865966, d_684635302, d_167958071, d_914639140, d_311580100, d_371067537 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and d_320303124='231311385'" 
+project <- "nih-nci-dceg-connect-stg-5519"
+PQOL3 <- "SELECT * FROM `nih-nci-dceg-connect-stg-5519.FlatConnect.promis_v1_JP` where Connect_ID is not null"
+parts <- "SELECT Connect_ID, token,  D_471593703, state_d_934298480, D_230663853,D_335767902, D_982402227, D_564964481, D_795827569, D_544150384,D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_126331570, d_536735468, d_663265240, d_878865966, d_684635302, d_167958071, d_914639140, d_311580100, d_371067537 FROM `nih-nci-dceg-connect-stg-5519.FlatConnect.participants_JP` where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and d_320303124='231311385'" 
 
 parts_table <- bq_project_query(project, parts)
 parts_data <- bq_table_download(parts_table, bigint = "integer64",n_max = Inf, page_size = 10000)
@@ -127,6 +129,8 @@ simple_funct(D_284353934_D_917425212, "Ability to do go up and down stairs at a 
 simple_funct(D_284353934_D_783201540, "Ability to do go for a walk of at least 15 minutes")
 simple_funct(D_284353934_D_780866928, "Ability to run errands and shop")
 
+
+
 ```
 
 
@@ -142,6 +146,7 @@ simple_funct(D_404946076_D_429680247, " I felt fearful")
 simple_funct(D_404946076_D_179665441, " I found it hard to focus on anything other than my anxiety")
 simple_funct(D_404946076_D_195292223, " My worries overwhelmed me")
 simple_funct(D_404946076_D_829976839, " I felt uneasy")
+
 ```
 
 # Depression in the last 7 days
@@ -156,6 +161,7 @@ simple_funct(D_715048033_D_468039454, " I felt worthless")
 simple_funct(D_715048033_D_361835532, " I felt helpless")
 simple_funct(D_715048033_D_803322918, " I felt depressed")
 simple_funct(D_715048033_D_168582270, " I felt hopeless")
+
 ```
 
 # Fatigue in the last 7 days
@@ -170,6 +176,7 @@ simple_funct(D_907490539_D_467404576, " I felt fatigued")
 simple_funct(D_907490539_D_658945347, " I had trouble starting things because I am tired")
 simple_funct(D_907490539_D_105063268, " I felt run-down")
 simple_funct(D_907490539_D_787436735, " Level of fatigue")
+
 ```
 
 # Sleep in the last 7 days
@@ -184,6 +191,7 @@ simple_funct(D_336566965_D_992194402, "Quality of sleep")
 simple_funct(D_336566965_D_624200915, "Sleep was refreshing")
 simple_funct(D_336566965_D_526006101, "Problems sleeping")
 simple_funct(D_336566965_D_644233792, "Difficulty Falling Asleep")
+
 ```
 
 # Physcial Fitness
@@ -198,6 +206,7 @@ simple_funct(D_420392309_D_271090432, "I have trouble doing all of my regular le
 simple_funct(D_420392309_D_828608766, "I have trouble doing all of the family activities that I want to do")
 simple_funct(D_420392309_D_886047084, "I have trouble doing all of my usual work (include work at home)")
 simple_funct(D_420392309_D_226478149, "I have trouble doing all of the activities with friends that I want to do")
+
 ```
 
 # Pain in the last 7 days
@@ -212,6 +221,7 @@ simple_funct(D_420560514_D_693503159, "Pain interfered with your day to day acti
 simple_funct(D_420560514_D_754781311, "Pain interfere with work around the home")
 simple_funct(D_420560514_D_380975443, "Pain interfered with your ability to participate in social activities")
 simple_funct(D_420560514_D_426764225, "Pain interfered with your household chores")
+
 ```
 
 # Social Satisfaction 
@@ -226,6 +236,7 @@ simple_funct(D_261177801_D_313287837, "I am satisfied with my ability to do thin
 simple_funct(D_261177801_D_598001940, "I am satisfied with my ability to do things for fun with others")
 simple_funct(D_261177801_D_733106290, "I feel good about my ability to do things for my friends")
 simple_funct(D_261177801_D_542492755, "I am satisfied with my ability to perform my daily routines")
+
 ```
 
 # Social Isolation
@@ -240,6 +251,7 @@ simple_funct(D_326712049_D_437905191, "I feel left out")
 simple_funct(D_326712049_D_387564567, "I feel that people barely know me")
 simple_funct(D_326712049_D_479680555, "I feel isolated from others")
 simple_funct(D_326712049_D_311938392, "I feel that people are around me but not with me")
+
 ```
 
 # Cognitive Function 
@@ -254,7 +266,5 @@ simple_funct(D_230486322_D_960308206, "My thinking has been slow")
 simple_funct(D_230486322_D_974618086, "It has seemed like my brain was not working as well as usual")
 simple_funct(D_230486322_D_115480943, "I have had to work harder than usual to keep track of what I was doing")
 simple_funct(D_230486322_D_650091514, "I have had trouble shifting back and forth between different activities that require thinking")
+
 ```
-
-
-
