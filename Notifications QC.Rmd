@@ -111,11 +111,13 @@ AllPossibleNotifications AS (
             'Verified, BL Survey Reminders New Pts 8th Contact',
             'Verified, BL Survey Reminders New Pts 9th Contact',
             'HF Baseline Biospecimen Scheduling Invitation',
+            'BSWH Baseline Biospecimen invitation',
             'Baseline Clinical Biospecimen Survey Reminder',
             'Biospecimen Home Collection Kit Reminder',
             'Biospecimen Home Collection Survey Reminder',
             'Biospecimen Survey Reminder',
             'Biospecimen Home Collection Acknowledgement',
+            '2024 Connect Experience Survey'
             'newsletter',
             'eNewsletter'
         ) and 
