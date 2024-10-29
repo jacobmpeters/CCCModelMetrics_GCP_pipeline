@@ -78,8 +78,7 @@ dd$CID <- rownames(dd)
 
 project <- "nih-nci-dceg-connect-prod-6d04"
 billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be consistent
-##517311251 Date/time Status of Completion of Background and Overall Health                         SrvBOH_TmComplete_v1r0
-##949302066 Flag for Baseline Module Background and Overall Health                        SrvBOH_BaseStatus_v1r0
+
 recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
                             d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935'")
 recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
@@ -128,13 +127,10 @@ M1_V2.var <- colnames(M1_V2)
 var.matched <- M1_V1.var[which(M1_V1.var %in% M1_V2.var)]
 length(var.matched)  #1275 #1278 vars 01112023 #1348 vars 05022023
 
-V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched] #232 #229 01112023 #159 05022023
-V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched] #253 #253 01112023 #545 05022023
+V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched] 
+V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched] 
 
 length(M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID])
-#[1] 59 with the completion of two versions of Module1 
-#[1] 62 with completing both versions of M1 ###double checked 03/28/2023
-#68 double checked 05/02/2023
 
 common.IDs <- M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID]
 M1_V1_common <- mod1_v1[,var.matched]
@@ -147,24 +143,23 @@ M1_V2_common$version <- 2
 partM1_dups <- recr_m1[which(recr_m1$Connect_ID %in% common.IDs),]
 table(partM1_dups$d_949302066)
 
-M1_common  <- rbind(M1_V1_common, M1_V2_common) #including 136 duplicates (version 1 and version 2) from 68 participants 05022023
-#M1_response <- matrix(data=NA, nrow=118, ncol=967)
+M1_common  <- rbind(M1_V1_common, M1_V2_common) 
 
-m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)] #230 vars 03282023 #160 vars 05/02/2023
-m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] #255 vars 03282023 #546 vars 05/02/2023
+m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)] 
+m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] 
 m1_v1_only$version <- 1
 m1_v2_only$version <- 2
 #for (i in 1:length)
 ##to check the completion in each version
-length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #1364 03282023 # 1370 05022023
-length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #4870 03282023 # 5731 05022023
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) 
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) 
 
 #library(janitor)
 
 m1_common <- rbind(M1_V1_common,M1_V2_common)
 m1_common_v1 <- base::merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
 m1_combined_v1v2 <- base::merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
-m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] #7289 including duplicates 05022023
+m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),]
 
 m1_complete <- m1_complete %>% arrange(desc(version)) 
 
@@ -173,7 +168,7 @@ m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),]
 table(m1_complete_nodup$version)
 
 
-parts <- "SELECT Connect_ID, token, d_976570371, d_770257102, d_386488297
+parts <- "SELECT Connect_ID, token, d_976570371, d_770257102, d_386488297, d_371067537
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
 where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and 
 (d_919254129='353358909') and (d_699625233='353358909') and (d_949302066='231311385') and d_976570371='231311385'"
@@ -183,7 +178,7 @@ parts_data <- bq_table_download(parts_table, bigint = "integer64")
 parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID)
 
 
-base_vars= left_join(m1_complete_nodup, parts_data, by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
+base_vars= left_join(parts_data, m1_complete_nodup, by="Connect_ID") 
 dim(base_vars)
 
 
@@ -205,7 +200,7 @@ mod3_data <- bq_table_download(mod3_table, bigint = "integer64")
 mod3_data$Connect_ID <- as.numeric(mod3_data$Connect_ID)
 
 
-merge_m3P= left_join(base_vars, mod3_data, by="Connect_ID")
+module3= left_join(base_vars, mod3_data, by="Connect_ID")
 
 
 cat("Particiapnts with Module 3 Completion: ", dim(module3)[[1]])
@@ -216,7 +211,7 @@ data_tib_all3 <- as_tibble(module3)
 
 ```
 
-```{r fucntions, warning=FALSE, message=FALSE, include=FALSE}
+```{r functions, warning=FALSE, message=FALSE, include=FALSE}
 #Created Functions for this code
 
 #Histogram 
@@ -268,12 +263,16 @@ dict <- list("104430631"="No", "353358909"="Yes", "265550580"="Didn't Drink", "9
 
 
 
-data_tib_all3$DOB <- paste0(str_sub(module3$D_371067537,1,4), "-", str_sub(module3$D_371067537,5,6), "-", str_sub(module3$D_371067537,7,8)) 
+
+#Age- all participants that completed Module 3 have the derived age variable calculated
+data_tib_all3$DOB <- paste0(str_sub(data_tib_all3$d_371067537,1,4), "-", str_sub(data_tib_all3$d_371067537,5,6), "-", str_sub(data_tib_all3$d_371067537,7,8)) 
 data_tib_all3$DOB <- as.Date(data_tib_all3$DOB) #, format='%y-%m-%d')
 currentDate <- as.Date(Sys.Date(), format='%y/%m/%d')
 
 
 data_tib_all3$AGEGRID <- time_length(difftime(currentDate, data_tib_all3$DOB), "years")
+
+
 
 
 
@@ -3359,12 +3358,12 @@ dt_edu_summary %>%  gt::gt(rowname_col = "row_lab") %>%
                                                                         # IF THEY NEVER STOPPED DRINKING, THEN AGE STARTED<ALCLIFE, IF STOPPED TEHN STARTED<ALCLIFE AND ALCLIFE<AGESTOPPED
 
 
-data_tib_all3$DOB <- paste0(str_sub(module3$D_371067537,1,4), "-", str_sub(module3$D_371067537,5,6), "-", str_sub(module3$D_371067537,7,8)) 
-data_tib_all3$DOB <- as.Date(data_tib_all3$DOB) #, format='%y-%m-%d')
-currentDate <- as.Date(Sys.Date(), format='%y/%m/%d')
-
-
-data_tib_all3$AGEGRID <- time_length(difftime(currentDate, data_tib_all3$DOB), "years")
+# data_tib_all3$DOB <- paste0(str_sub(module3$D_371067537,1,4), "-", str_sub(module3$D_371067537,5,6), "-", str_sub(module3$D_371067537,7,8)) 
+# data_tib_all3$DOB <- as.Date(data_tib_all3$DOB) #, format='%y-%m-%d')
+# currentDate <- as.Date(Sys.Date(), format='%y/%m/%d')
+# 
+# 
+# data_tib_all3$AGEGRID <- time_length(difftime(currentDate, data_tib_all3$DOB), "years")
 
 
 
