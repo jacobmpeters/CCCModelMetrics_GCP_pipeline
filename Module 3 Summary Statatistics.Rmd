@@ -170,7 +170,7 @@ table(m1_complete_nodup$version)
 
 parts <- "SELECT Connect_ID, token, d_976570371, d_770257102, d_386488297, d_371067537
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
-where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and 
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and d_821247024='197316935' and
 (d_919254129='353358909') and (d_699625233='353358909') and (d_949302066='231311385') and d_976570371='231311385'"
 parts_table <- bq_project_query(project, parts)
 parts_data <- bq_table_download(parts_table, bigint = "integer64")
@@ -203,7 +203,7 @@ mod3_data$Connect_ID <- as.numeric(mod3_data$Connect_ID)
 module3= left_join(base_vars, mod3_data, by="Connect_ID")
 
 
-cat("Particiapnts with Module 3 Completion: ", dim(module3)[[1]])
+cat("Participants with Module 3 Completion: ", dim(module3)[[1]])
 
 data_tib_all3 <- as_tibble(module3)
 

@@ -55,9 +55,7 @@ dd$CID <- rownames(dd)
 #devtools::install_github("tidyverse/reprex")
 
 project <- "nih-nci-dceg-connect-prod-6d04"
-billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be consistent
-##517311251 Date/time Status of Completion of Background and Overall Health                         SrvBOH_TmComplete_v1r0
-##949302066 Flag for Baseline Module Background and Overall Health                        SrvBOH_BaseStatus_v1r0
+billing <- "nih-nci-dceg-connect-prod-6d04" 
 recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
                             d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935'")
 recr_m1 <- bq_table_download(recr_M1,bigint = "integer64",n_max = Inf, page_size = 10000)
@@ -75,8 +73,8 @@ sql_M1_1 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect
 sql_M1_2 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
 
 
-M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64",n_max = Inf) #1436 #1436 vars: 1507 01112023 
-M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64",n_max = Inf) #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
+M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64",n_max = Inf) 
+M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64",n_max = Inf) 
 
 mod1_v1 <- M1_V1
 cnames <- names(M1_V1)
@@ -98,15 +96,13 @@ for (i in 1: length(cnames)){
 M1_V1.var <- colnames(M1_V1)
 M1_V2.var <- colnames(M1_V2)
 var.matched <- M1_V1.var[which(M1_V1.var %in% M1_V2.var)]
-length(var.matched)  #1275 #1278 vars 01112023 #1348 vars 05022023
+length(var.matched) 
 
-V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched] #232 #229 01112023 #159 05022023
-V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched] #253 #253 01112023 #545 05022023
+V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched]
+V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched]
 
 length(M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID])
-#[1] 59 with the completion of two versions of Module1 
-#[1] 62 with completing both versions of M1 ###double checked 03/28/2023
-#68 double checked 05/02/2023
+
 
 common.IDs <- M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID]
 M1_V1_common <- mod1_v1[,var.matched]
@@ -119,24 +115,23 @@ M1_V2_common$version <- 2
 partM1_dups <- recr_m1[which(recr_m1$Connect_ID %in% common.IDs),]
 table(partM1_dups$d_949302066)
 
-M1_common  <- rbind(M1_V1_common, M1_V2_common) #including 136 duplicates (version 1 and version 2) from 68 participants 05022023
-#M1_response <- matrix(data=NA, nrow=118, ncol=967)
+M1_common  <- rbind(M1_V1_common, M1_V2_common) 
 
-m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)] #230 vars 03282023 #160 vars 05/02/2023
-m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] #255 vars 03282023 #546 vars 05/02/2023
+m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)]
+m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] 
 m1_v1_only$version <- 1
 m1_v2_only$version <- 2
 #for (i in 1:length)
 ##to check the completion in each version
-length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #1364 03282023 # 1370 05022023
-length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #4870 03282023 # 5731 05022023
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) 
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) 
 
 #library(janitor)
 
 m1_common <- rbind(M1_V1_common,M1_V2_common)
 m1_common_v1 <- base::merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
 m1_combined_v1v2 <- base::merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
-m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] #7289 including duplicates 05022023
+m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] 
 
 m1_complete <- m1_complete %>% arrange(desc(version)) 
 
@@ -146,8 +141,11 @@ table(m1_complete_nodup$version)
 
 
 
-parts <- "SELECT Connect_ID, token,  state_d_934298480, D_564964481, D_795827569, D_544150384,  d_126331570, d_536735468, d_663265240, d_878865966, d_684635302, d_167958071, d_949302066 ,  d_976570371, d_914639140, d_311580100, d_100767870
-FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (D_919254129='353358909') and (D_699625233='353358909') and (d_949302066='231311385')" 
+parts <- "SELECT Connect_ID, token,  state_d_934298480, D_564964481, D_795827569, D_544150384,  d_126331570, 
+d_536735468, d_663265240, d_878865966, d_684635302, d_167958071, d_949302066 ,  d_976570371, d_914639140, d_311580100, d_100767870
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and d_919254129='353358909' and d_699625233='353358909' and 
+d_949302066='231311385'  and d_821247024='197316935'" 
 
 
 parts_table <- bq_project_query(project, parts)
@@ -156,7 +154,7 @@ parts_data <- bq_table_download(parts_table, bigint = "integer64",n_max = Inf, p
 parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID)
 
 
-merged= left_join(m1_complete_nodup, parts_data, by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
+merged= left_join(parts_data, m1_complete_nodup, by="Connect_ID")
 dim(merged)
 
 
@@ -1120,11 +1118,6 @@ dt_language_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("LANG: Language Spoken in Childhood Home")) %>% 
   cols_label(n= md("**N**"), language = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows( groups=F,
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -2022,9 +2015,7 @@ dd$CID <- rownames(dd)
 #devtools::install_github("tidyverse/reprex")
 
 project <- "nih-nci-dceg-connect-prod-6d04"
-billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be consistent
-##517311251 Date/time Status of Completion of Background and Overall Health                         SrvBOH_TmComplete_v1r0
-##949302066 Flag for Baseline Module Background and Overall Health                        SrvBOH_BaseStatus_v1r0
+billing <- "nih-nci-dceg-connect-prod-6d04" 
 recr_m2 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379, 
                             d_536735468 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935'")
 recr_m2 <- bq_table_download(recr_m2,bigint = "integer64",n_max = Inf, page_size = 10000)
@@ -2042,8 +2033,8 @@ sql_m2_1 <- bq_project_query(project, query="SELECT Connect_ID, D_798889867, D_8
 sql_m2_2 <- bq_project_query(project, query="SELECT Connect_ID, D_798889867, D_849945160 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module2_v2_JP` where Connect_ID is not null")
 
 
-M2_V1 <- bq_table_download(sql_m2_1,bigint = "integer64") #1436 #1436 vars: 1507 01112023 
-M2_V2 <- bq_table_download(sql_m2_2,bigint = "integer64") #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
+M2_V1 <- bq_table_download(sql_m2_1,bigint = "integer64") 
+M2_V2 <- bq_table_download(sql_m2_2,bigint = "integer64") 
 
 mod2_v1 <- M2_V1
 cnames <- names(M2_V1)
@@ -2065,15 +2056,12 @@ for (i in 1: length(cnames)){
 M2_V1.var <- colnames(M2_V1)
 M2_V2.var <- colnames(M2_V2)
 var.matched <- M2_V1.var[which(M2_V1.var %in% M2_V2.var)]
-length(var.matched)  #1275 #1278 vars 01112023 #1348 vars 05022023
+length(var.matched)  
 
-V1_only_vars <- colnames(M2_V1)[colnames(M2_V1) %nin% var.matched] #232 #229 01112023 #159 05022023
-V2_only_vars <- colnames(M2_V2)[colnames(M2_V2) %nin% var.matched] #253 #253 01112023 #545 05022023
+V1_only_vars <- colnames(M2_V1)[colnames(M2_V1) %nin% var.matched] 
+V2_only_vars <- colnames(M2_V2)[colnames(M2_V2) %nin% var.matched]
 
 length(M2_V1$Connect_ID[M2_V1$Connect_ID %in% M2_V2$Connect_ID])
-#[1] 59 with the completion of two versions of module2 
-#[1] 62 with completing both versions of M1 ###double checked 03/28/2023
-#68 double checked 05/02/2023
 
 common.IDs <- M2_V1$Connect_ID[M2_V1$Connect_ID %in% M2_V2$Connect_ID]
 M2_V1_common <- mod2_v1[,var.matched]
@@ -2086,24 +2074,23 @@ M2_V2_common$version <- 2
 partM2_dups <- recr_m2[which(recr_m2$Connect_ID %in% common.IDs),]
 table(partM2_dups$d_536735468)
 
-M2_common  <- rbind(M2_V1_common, M2_V2_common) #including 136 duplicates (version 1 and version 2) from 68 participants 05022023
-#M2_response <- matrix(data=NA, nrow=118, ncol=967)
+M2_common  <- rbind(M2_V1_common, M2_V2_common) 
 
-M2_v1_only <- mod2_v1[,c("Connect_ID", V1_only_vars)] #230 vars 03282023 #160 vars 05/02/2023
-M2_v2_only <- mod2_v2[,c("Connect_ID", V2_only_vars)] #255 vars 03282023 #546 vars 05/02/2023
+M2_v1_only <- mod2_v1[,c("Connect_ID", V1_only_vars)]
+M2_v2_only <- mod2_v2[,c("Connect_ID", V2_only_vars)]
 M2_v1_only$version <- 1
 M2_v2_only$version <- 2
 #for (i in 1:length)
 ##to check the completion in each version
-length(recr_m2$Connect_ID[which(recr_m2$Connect_ID %in% M2_v1_only$Connect_ID & recr_m2$d_536735468 ==231311385)]) #1364 03282023 # 1370 05022023
-length(recr_m2$Connect_ID[which(recr_m2$Connect_ID %in% M2_v2_only$Connect_ID & recr_m2$d_536735468 ==231311385)]) #4870 03282023 # 5731 05022023
+length(recr_m2$Connect_ID[which(recr_m2$Connect_ID %in% M2_v1_only$Connect_ID & recr_m2$d_536735468 ==231311385)])
+length(recr_m2$Connect_ID[which(recr_m2$Connect_ID %in% M2_v2_only$Connect_ID & recr_m2$d_536735468 ==231311385)]) 
 
 #library(janitor)
 
 M2_common <- rbind(M2_V1_common,M2_V2_common)
 M2_common_v1 <- base::merge(M2_common, M2_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
 M2_combined_v1v2 <- base::merge(M2_common_v1,M2_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
-M2_complete <- M2_combined_v1v2[which(M2_combined_v1v2$Connect_ID %in% recr_m2$Connect_ID[which(recr_m2$d_536735468 ==231311385 )]),] #7289 including duplicates 05022023
+M2_complete <- M2_combined_v1v2[which(M2_combined_v1v2$Connect_ID %in% recr_m2$Connect_ID[which(recr_m2$d_536735468 ==231311385 )]),]
 
 M2_complete <- M2_complete %>% arrange(desc(version)) 
 
@@ -2115,7 +2102,7 @@ table(M2_complete_nodup$version)
 M2_complete_nodup$Connect_ID <- as.numeric(M2_complete_nodup$Connect_ID)
 
 
-merge_m2= left_join(M2_complete_nodup,merged,  by="Connect_ID") #%>%  left_join(m3_data, by="Connect_ID")
+merge_m2= left_join(merged, M2_complete_nodup, by="Connect_ID") 
 
 data_tib_all2 <- as_tibble(merge_m2)
 
@@ -2227,7 +2214,7 @@ mod3_data <- bq_table_download(mod3_table, bigint = "integer64")
 mod3_data$Connect_ID <- as.numeric(mod3_data$Connect_ID)
 
 
-data_all3= left_join( mod3_data,parts_data, by="Connect_ID")
+data_all3= left_join(parts_data, mod3_data, by="Connect_ID")
 
 data_all3 <- data_all3 %>% filter(d_976570371==231311385)
 
@@ -2507,7 +2494,6 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>% fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md(Title)) %>% 
   cols_label(n= md("**N**"), oth_age = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
@@ -2607,11 +2593,6 @@ dt_cig_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("Frequency of Cigarette Smoking")) %>% 
   cols_label(n= md("**N**"), often = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -2650,11 +2631,6 @@ dt_cigar_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("Frequency of Cigar Smoking")) %>% 
   cols_label(n= md("**N**"), often = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -2694,11 +2670,6 @@ dt_e_cig_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("Frequency of Electronic Cigarette Smoking")) %>% 
   cols_label(n= md("**N**"), often = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -2751,11 +2722,6 @@ dt_mj_frequency_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("Frequency of Cannabis Smoking")) %>% 
   cols_label(n= md("**N**"), often = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -2870,7 +2836,6 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("ALCLIFE2A: Frequency of Drinking: Ages 0-17")) %>% 
   cols_label(n= md("**N**"), oth_age = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
@@ -2908,7 +2873,6 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("ALCLIFE2B: Frequency of Drinking: Ages 18-24")) %>% 
   cols_label(n= md("**N**"), oth_age = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
@@ -2944,7 +2908,6 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("ALCLIFE2C: Frequency of Drinking: Ages 25-29")) %>% 
   cols_label(n= md("**N**"), oth_age = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
@@ -2979,7 +2942,6 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("ALCLIFE2D: Frequency of Drinking: Ages 30-39")) %>% 
   cols_label(n= md("**N**"), oth_age = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
@@ -3017,7 +2979,6 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("ALCLIFE2E: Frequency of Drinking: Ages 40-49")) %>% 
   cols_label(n= md("**N**"), oth_age = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
@@ -3052,7 +3013,6 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("ALCLIFE2F: Frequency of Drinking: Ages 50-59")) %>% 
   cols_label(n= md("**N**"), oth_age = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
@@ -3088,7 +3048,6 @@ dt_alcl_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("ALCLIFE2G: Frequency of Drinking: Ages 60-69")) %>% 
   cols_label(n= md("**N**"), oth_age = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows( groups=F, column = c(n,percentage), fns= list(Sum= ~sum(.)), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(stub.font.weight = "bold") %>%
   tab_style(style = list(cell_text(weight = "bold")),
@@ -3140,7 +3099,7 @@ mod4_table <- bq_project_query(project, querymod4)
 mod4_data <- bq_table_download(mod4_table, bigint = "integer64")
 mod4_data$Connect_ID <- as.numeric(mod4_data$Connect_ID)
 
-merge_m4P= left_join(mod4_data, merged, by="Connect_ID") 
+merge_m4P= left_join(merged, mod4_data, by="Connect_ID") 
 
 data_all4 <- merge_m4P %>% filter(d_663265240==231311385)
 
@@ -3253,11 +3212,6 @@ dtNUMWORK_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("NUMWORK: Number of Workplaces You Currently Commute to")) %>% 
   cols_label(n= md("**N**"), meds = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
     stub.font.weight = "bold"
@@ -3742,12 +3696,6 @@ ssn_surv_summary_gt <- ssn_surv_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("Status of the SSN Suvery")) %>% 
   cols_label(n= md("**N**"), started = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows(
-  #   groups = everything(),
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum, #, na.rm = TRUE), 
-  #     decimals=0)) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -3826,11 +3774,6 @@ dt_all_ages_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("Age of Participants at Recruitment")) %>% 
   cols_label(n= md("**N**"), age = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows(
-  #   column = c(participants,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -3870,11 +3813,6 @@ dt_sibcanc1_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this not
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>%
   tab_header(title = md("SIBCANC: Siblings 1-13 Diagnosed with Cancer")) %>%
   cols_label(status = md("**Answer**"), n = md("**N**"), percentage = md("**%**")) %>%
-    # summary_rows(
-    # column = c(n,percentage),
-    # fns= list(
-    #   Sum= ~sum(.)
-    # ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -3942,11 +3880,6 @@ sibling_bd_canc <- dt_body_sibling_summary %>%  gt::gt(rowname_col = "row_lab") 
   fmt_number(column = "bodyp", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("SIBCANC2: Type of Cancer Sibling 1-4 Diagnosed With")) %>% 
   cols_label(bodyp = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -3996,11 +3929,6 @@ dt_CHILDcanc1_summary %>%  gt::gt(rowname_col = "row_lab") %>%  ## why is this n
   fmt_number(column = "n", decimals=0, use_seps = TRUE) %>%
   tab_header(title = md("CHILDCANC: Children 1-10 Diagnosed with Cancer")) %>%
   cols_label(status = md("**Answer**"), n = md("**N**"), percentage = md("**%**")) %>%
-    # summary_rows(
-    # column = c(n,percentage),
-    # fns= list(
-    #   Sum= ~sum(.)
-    # ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -4067,11 +3995,6 @@ kid_bd_canc <- dt_body_kid_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(column = "bodyp", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("CHILDCAN2: Type of Cancer Children 1-4 Diagnosed With")) %>% 
   cols_label(bodyp = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows(
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -4125,11 +4048,6 @@ dt_curr_bus_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>% fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("BSNSSTYP1: Current Employer Business Type")) %>% 
   cols_label(n= md("**N**"), category = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows( groups=F,
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -4182,11 +4100,6 @@ dt_long_bus_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>% fmt_number(column = "n", decimals=0, use_seps = TRUE) %>% 
   tab_header(title = md("BSNSSTYP2: Employer Business Type for Longest Held Position")) %>% 
   cols_label(n= md("**N**"), category = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows( groups=F,
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
   #summary_rows(groups=F, fns = list(label = md("**ALL**"), id = "totals") ~ sum(.)) %>% 
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(

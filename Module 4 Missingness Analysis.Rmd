@@ -147,9 +147,7 @@ dd$CID <- rownames(dd)
 devtools::install_github("tidyverse/reprex")
 
 project <- "nih-nci-dceg-connect-prod-6d04"
-billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be consistent
-##517311251 Date/time Status of Completion of Background and Overall Health                         SrvBOH_TmComplete_v1r0
-##949302066 Flag for Baseline Module Background and Overall Health                        SrvBOH_BaseStatus_v1r0
+billing <- "nih-nci-dceg-connect-prod-6d04" 
 recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
                             d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935'")
 recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
@@ -163,12 +161,14 @@ for (i in 1: length(cnames)){
   recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
 }
 
-sql_M1_1 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
-sql_M1_2 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
+
+#Only the STUDENT variable is pulled from Mod1 to Mod4
+sql_M1_1 <- bq_project_query(project, query="SELECT Connect_ID, D_784967158 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
+sql_M1_2 <- bq_project_query(project, query="SELECT Connect_ID, D_784967158 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
 
 
-M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64") #1436 #1436 vars: 1507 01112023 
-M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64") #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
+M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64") 
+M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64") 
 
 mod1_v1 <- M1_V1
 cnames <- names(M1_V1)
@@ -190,15 +190,13 @@ for (i in 1: length(cnames)){
 M1_V1.var <- colnames(M1_V1)
 M1_V2.var <- colnames(M1_V2)
 var.matched <- M1_V1.var[which(M1_V1.var %in% M1_V2.var)]
-length(var.matched)  #1275 #1278 vars 01112023 #1348 vars 05022023
+length(var.matched)  
 
-V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched] #232 #229 01112023 #159 05022023
-V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched] #253 #253 01112023 #545 05022023
+V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched] 
+V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched] 
 
 length(M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID])
-#[1] 59 with the completion of two versions of Module1 
-#[1] 62 with completing both versions of M1 ###double checked 03/28/2023
-#68 double checked 05/02/2023
+
 
 common.IDs <- M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID]
 M1_V1_common <- mod1_v1[,var.matched]
@@ -211,24 +209,23 @@ M1_V2_common$version <- 2
 partM1_dups <- recr_m1[which(recr_m1$Connect_ID %in% common.IDs),]
 table(partM1_dups$d_949302066)
 
-M1_common  <- rbind(M1_V1_common, M1_V2_common) #including 136 duplicates (version 1 and version 2) from 68 participants 05022023
-#M1_response <- matrix(data=NA, nrow=118, ncol=967)
+M1_common  <- rbind(M1_V1_common, M1_V2_common)
 
-m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)] #230 vars 03282023 #160 vars 05/02/2023
-m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] #255 vars 03282023 #546 vars 05/02/2023
+m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)] 
+m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] 
 m1_v1_only$version <- 1
 m1_v2_only$version <- 2
 #for (i in 1:length)
 ##to check the completion in each version
-length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #1364 03282023 # 1370 05022023
-length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #4870 03282023 # 5731 05022023
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) 
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) 
 
 #library(janitor)
 
 m1_common <- rbind(M1_V1_common,M1_V2_common)
 m1_common_v1 <- base::merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
 m1_combined_v1v2 <- base::merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
-m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] #7289 including duplicates 05022023
+m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] 
 
 m1_complete <- m1_complete %>% arrange(desc(version)) 
 
@@ -240,8 +237,10 @@ table(m1_complete_nodup$version)
 parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
 D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
 D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_827220437,
-D_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_663265240, d_452942800 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
-where Connect_ID IS NOT NULL"
+D_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_663265240, d_452942800 
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (d_919254129='353358909') and 
+(d_699625233='353358909') and (d_949302066='231311385') and d_663265240='231311385' and d_821247024='197316935'"
 querymod4 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module4_v1_JP` where Connect_ID IS NOT NULL"
 
 parts_table <- bq_project_query(project, parts)
@@ -253,46 +252,21 @@ mod4_data <- bq_table_download(mod4_table, bigint = "integer64")
 parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID) ###need to convert type- m1... is double and parts is character
 mod4_data$Connect_ID <- as.numeric(mod4_data$Connect_ID)
 
-mergeall= left_join(m1_complete_nodup, mod4_data, by="Connect_ID") %>%  left_join(parts_data, by="Connect_ID")
-dim(mergeall)
+module4= left_join(parts_data, m1_complete_nodup, by="Connect_ID") %>%  left_join(mod4_data, by="Connect_ID")
+dim(module4)
 
 knitr::opts_chunk$set(comment = NA)
 
-
-#Has a recruitment flag
-mergeall <- mergeall %>% filter(D_512820379==486306141 | D_512820379==854703046)
-dim(mergeall)
-
-active4 <- mergeall %>% filter(D_512820379==486306141)
-dim(active4)
-passive4 <- mergeall %>% filter(D_512820379==854703046)
-dim(passive4)
-
-#User consent submitted
-mergeall <- mergeall %>% filter(D_919254129==353358909)
-dim(mergeall)
-
-#User profile submitted
-mergeall <- mergeall %>% filter(D_699625233==353358909)
-dim(mergeall)
-
-#Verified by site
-sum(mergeall$d_821247024==197316935, na.rm=TRUE)
-#all who have started or completed survey are verified
-
-#Mod1 completed
-mergeall <- mergeall %>% filter(D_949302066==231311385)
-dim(mergeall)
-
-
-#Mod4 completed
-module4 <- mergeall %>% filter(d_663265240==231311385)
-dim(module4)
-
-cat("Particiapnts with Module 4 Completion: ", dim(module4)[[1]])
-
-
 ```
+
+
+```{r, warning=FALSE, echo=FALSE,  message=FALSE, collapse=TRUE}
+
+
+cat("Participants with Module 4 Completion:", dim(module4)[[1]])
+
+
+``` 
 
 ```{r MissingnessLibraries, warning=FALSE, include=FALSE}
 #Missingness Analysis Set Up
