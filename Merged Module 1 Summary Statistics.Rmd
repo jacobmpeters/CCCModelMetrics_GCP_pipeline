@@ -208,7 +208,7 @@ parts_data <- bq_table_download(parts_table, bigint = "integer64")
 
 parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID) ###need to convert type- m1... is double and parts is character
 
-module1= left_join(m1_complete_nodup, parts_data, by="Connect_ID") 
+module1= left_join(parts_data, m1_complete_nodup, by="Connect_ID") 
 dim(module1)
 ```
 
