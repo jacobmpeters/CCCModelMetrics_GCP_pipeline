@@ -5,10 +5,7 @@ date: "`r Sys.Date()`"
 output: pdf_document
 ---
 
-
-
-Original Missingness Analysis of Module 4-- Reviewing the skipping of questions by participants 
-Using the skip logic from Qx:https://nih.app.box.com/file/923661036132?s=o816d6804w154fqf5y161ii7ngvcezqg
+This report gives the distribution of all Module 4 missing responses using the skip logic from Qx:https://nih.app.box.com/file/923661036132?s=o816d6804w154fqf5y161ii7ngvcezqg for those that completed this survey.
 
 
 To avoid confusion, these tables will NOT have sums of missing responses at the bottom. Participants are able to skip one or all components of a question in Module 4; those counted in the 'skipped entire (question)' rows will be counted within all other rows of the table.
@@ -134,22 +131,26 @@ bq_auth()
 
 
 ```{r M1Merge, include=FALSE}
-project = "nih-nci-dceg-connect-prod-6d04"
 
+#Data Dictionary for column names
 dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
 dd <- dplyr::bind_rows(dictionary,.id="CID")
 dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
 dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name')
-
 dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
 dd$CID <- rownames(dd)
 #https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
 devtools::install_github("tidyverse/reprex")
 
+
+
+
+
+## BQ Pull from the participants table just to use for versioning
 project <- "nih-nci-dceg-connect-prod-6d04"
 billing <- "nih-nci-dceg-connect-prod-6d04" 
 recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
-                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935'")
+                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935' and d_949302066 ='231311385'")
 recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
 cnames <- names(recr_m1)
 # Check that it doesn't match any non-number
@@ -162,85 +163,74 @@ for (i in 1: length(cnames)){
 }
 
 
-#Only the STUDENT variable is pulled from Mod1 to Mod4
-sql_M1_1 <- bq_project_query(project, query="SELECT Connect_ID, D_784967158 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
-sql_M1_2 <- bq_project_query(project, query="SELECT Connect_ID, D_784967158 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
 
 
-M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64") 
-M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64") 
+#### Handling participants that somehow completed both Mod1 version 1 and Mod1 version 2
 
-mod1_v1 <- M1_V1
-cnames <- names(M1_V1)
-###to check variables and convert to numeric
-for (i in 1: length(cnames)){
-  varname <- cnames[i]
-  var<-pull(mod1_v1,varname)
-  mod1_v1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
-}
-mod1_v2 <- M1_V2
-cnames <- names(M1_V2)
-###to check variables and convert to numeric
-for (i in 1: length(cnames)){
-  varname <- cnames[i]
-  var<-pull(mod1_v2,varname)
-  mod1_v2[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
-}
+sql_M1_1 <- bq_project_query(project, query = "SELECT Connect_ID, D_784967158 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` WHERE Connect_ID IS NOT NULL")
+sql_M1_2 <- bq_project_query(project, query = "SELECT Connect_ID, D_784967158 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` WHERE Connect_ID IS NOT NULL")
 
-M1_V1.var <- colnames(M1_V1)
-M1_V2.var <- colnames(M1_V2)
-var.matched <- M1_V1.var[which(M1_V1.var %in% M1_V2.var)]
-length(var.matched)  
+M1_V1 <- bq_table_download(sql_M1_1, bigint = "integer64")
+M1_V2 <- bq_table_download(sql_M1_2, bigint = "integer64")
 
-V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched] 
-V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched] 
+# Select matching column names
+M1_V1_vars <- colnames(M1_V1)
+M1_V2_vars <- colnames(M1_V2)
+common_vars <- intersect(M1_V1_vars, M1_V2_vars)
 
-length(M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID])
+# Subset to common columns
+M1_V1_common <- M1_V1[, common_vars]
+M1_V2_common <- M1_V2[, common_vars]
 
-
-common.IDs <- M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID]
-M1_V1_common <- mod1_v1[,var.matched]
-
-M1_V2_common <- mod1_v2[,var.matched]
+# Add version indicator
 M1_V1_common$version <- 1
 M1_V2_common$version <- 2
 
-##to check the completion of M1 among these duplicates
-partM1_dups <- recr_m1[which(recr_m1$Connect_ID %in% common.IDs),]
-table(partM1_dups$d_949302066)
+# Identify columns with mismatched types
+mismatched_cols <- names(M1_V1_common)[sapply(names(M1_V1_common), function(col) {
+  class(M1_V1_common[[col]]) != class(M1_V2_common[[col]])
+})]
 
-M1_common  <- rbind(M1_V1_common, M1_V2_common)
+# Convert mismatched columns to character for consistency
+M1_V1_common <- M1_V1_common %>%
+  mutate(across(all_of(mismatched_cols), as.character))
+M1_V2_common <- M1_V2_common %>%
+  mutate(across(all_of(mismatched_cols), as.character))
 
-m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)] 
-m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] 
-m1_v1_only$version <- 1
-m1_v2_only$version <- 2
-#for (i in 1:length)
-##to check the completion in each version
-length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) 
-length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) 
+# Combine both versions for participants who completed both
+M1_common <- bind_rows(M1_V1_common, M1_V2_common) %>%
+  arrange(Connect_ID, desc(version))
 
-#library(janitor)
+# For columns unique to each version
+V1_only_vars <- setdiff(M1_V1_vars, common_vars)
+V2_only_vars <- setdiff(M1_V2_vars, common_vars)
 
-m1_common <- rbind(M1_V1_common,M1_V2_common)
-m1_common_v1 <- base::merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
-m1_combined_v1v2 <- base::merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
-m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] 
+# Subset each version for unique columns and add version indicator
+m1_v1_only <- M1_V1[, c("Connect_ID", V1_only_vars)] %>%
+  mutate(version = 1)
+m1_v2_only <- M1_V2[, c("Connect_ID", V2_only_vars)] %>%
+  mutate(version = 2)
 
-m1_complete <- m1_complete %>% arrange(desc(version)) 
+# Combine the unique and common data
+m1_common_v1 <- left_join(M1_common, m1_v1_only, by = c("Connect_ID", "version"))
+m1_combined_v1v2 <- left_join(m1_common_v1, m1_v2_only, by = c("Connect_ID", "version"))
+
+# Filter for complete cases where specific completion criteria are met
+m1_complete <- m1_combined_v1v2 %>%
+  filter(Connect_ID %in% recr_m1$Connect_ID[recr_m1$d_949302066 == 231311385]) %>%
+  arrange(desc(version))
+
+# Remove duplicates, keeping only the most recent version for each Connect_ID
+m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),]
+
+m1_complete_nodup$Connect_ID <- as.numeric(m1_complete_nodup$Connect_ID)
 
 
-m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),] 
-table(m1_complete_nodup$version)
-
-
-parts <- "SELECT Connect_ID, token, D_512820379, D_471593703, state_d_934298480, D_230663853,
-D_335767902, D_982402227, D_919254129, D_699625233, D_564964481, D_795827569, D_544150384,
-D_371067537, D_430551721, D_821247024, D_914594314,  state_d_725929722, d_827220437,
-D_949302066 , D_517311251, D_205553981, D_117249500, d_976570371, d_663265240, d_452942800 
+## Define requirements of the data: active or passive,  user profile done, consented, mod4 done, verified
+parts <- "SELECT Connect_ID, token,  d_452942800 
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
-where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (d_919254129='353358909') and 
-(d_699625233='353358909') and (d_949302066='231311385') and d_663265240='231311385' and d_821247024='197316935'"
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and 
+d_919254129='353358909' and d_699625233='353358909' and d_663265240='231311385' and d_821247024='197316935'"
 querymod4 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module4_v1_JP` where Connect_ID IS NOT NULL"
 
 parts_table <- bq_project_query(project, parts)
@@ -254,6 +244,8 @@ mod4_data$Connect_ID <- as.numeric(mod4_data$Connect_ID)
 
 module4= left_join(parts_data, m1_complete_nodup, by="Connect_ID") %>%  left_join(mod4_data, by="Connect_ID")
 dim(module4)
+
+### Issue: there are 3 people that took module 4 twice. They are somehow showing up on this report but not on the low or high priority reports
 
 knitr::opts_chunk$set(comment = NA)
 

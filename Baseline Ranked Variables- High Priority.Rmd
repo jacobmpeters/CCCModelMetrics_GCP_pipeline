@@ -7,6 +7,8 @@ output: pdf_document
 
 
 
+This report gives the distribution of all Baseline Survey responses for questions deemed 'high priority'; this includes derived variables. Among the Module 1 and Module 2 responses, if a participant was somehow able to complete both versions of either survey, only the version 2 data is kept.
+
 
 ```{r libraries, include=FALSE}
 
@@ -44,21 +46,27 @@ bq_auth()
 
 ```{r merge1, include=FALSE, warning=FALSE}
 
+
+#Data Dictionary for column names
 dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
 dd <- dplyr::bind_rows(dictionary,.id="CID")
 dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
 dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name')
-
 dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
 dd$CID <- rownames(dd)
 #https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
-#devtools::install_github("tidyverse/reprex")
+devtools::install_github("tidyverse/reprex")
 
+
+
+
+
+## BQ Pull from the participants table just to use for versioning
 project <- "nih-nci-dceg-connect-prod-6d04"
 billing <- "nih-nci-dceg-connect-prod-6d04" 
 recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
-                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935'")
-recr_m1 <- bq_table_download(recr_M1,bigint = "integer64",n_max = Inf, page_size = 10000)
+                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935' and d_949302066 ='231311385'")
+recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
 cnames <- names(recr_m1)
 # Check that it doesn't match any non-number
 numbers_only <- function(x) !grepl("\\D", x)
@@ -69,79 +77,72 @@ for (i in 1: length(cnames)){
   recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
 }
 
-sql_M1_1 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
-sql_M1_2 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
 
 
-M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64",n_max = Inf) 
-M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64",n_max = Inf) 
 
-mod1_v1 <- M1_V1
-cnames <- names(M1_V1)
-###to check variables and convert to numeric
-for (i in 1: length(cnames)){
-  varname <- cnames[i]
-  var<-pull(mod1_v1,varname)
-  mod1_v1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
-}
-mod1_v2 <- M1_V2
-cnames <- names(M1_V2)
-###to check variables and convert to numeric
-for (i in 1: length(cnames)){
-  varname <- cnames[i]
-  var<-pull(mod1_v2,varname)
-  mod1_v2[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
-}
+#### Handling participants that somehow completed both Mod1 version 1 and Mod1 version 2
 
-M1_V1.var <- colnames(M1_V1)
-M1_V2.var <- colnames(M1_V2)
-var.matched <- M1_V1.var[which(M1_V1.var %in% M1_V2.var)]
-length(var.matched) 
+sql_M1_1 <- bq_project_query(project, query = "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` WHERE Connect_ID IS NOT NULL")
+sql_M1_2 <- bq_project_query(project, query = "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` WHERE Connect_ID IS NOT NULL")
 
-V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched]
-V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched]
+M1_V1 <- bq_table_download(sql_M1_1, bigint = "integer64")
+M1_V2 <- bq_table_download(sql_M1_2, bigint = "integer64")
 
-length(M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID])
+# Select matching column names
+M1_V1_vars <- colnames(M1_V1)
+M1_V2_vars <- colnames(M1_V2)
+common_vars <- intersect(M1_V1_vars, M1_V2_vars)
 
+# Subset to common columns
+M1_V1_common <- M1_V1[, common_vars]
+M1_V2_common <- M1_V2[, common_vars]
 
-common.IDs <- M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID]
-M1_V1_common <- mod1_v1[,var.matched]
-
-M1_V2_common <- mod1_v2[,var.matched]
+# Add version indicator
 M1_V1_common$version <- 1
 M1_V2_common$version <- 2
 
-##to check the completion of M1 among these duplicates
-partM1_dups <- recr_m1[which(recr_m1$Connect_ID %in% common.IDs),]
-table(partM1_dups$d_949302066)
+# Identify columns with mismatched types
+mismatched_cols <- names(M1_V1_common)[sapply(names(M1_V1_common), function(col) {
+  class(M1_V1_common[[col]]) != class(M1_V2_common[[col]])
+})]
 
-M1_common  <- rbind(M1_V1_common, M1_V2_common) 
+# Convert mismatched columns to character for consistency
+M1_V1_common <- M1_V1_common %>%
+  mutate(across(all_of(mismatched_cols), as.character))
+M1_V2_common <- M1_V2_common %>%
+  mutate(across(all_of(mismatched_cols), as.character))
 
-m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)]
-m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] 
-m1_v1_only$version <- 1
-m1_v2_only$version <- 2
-#for (i in 1:length)
-##to check the completion in each version
-length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) 
-length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) 
+# Combine both versions for participants who completed both
+M1_common <- bind_rows(M1_V1_common, M1_V2_common) %>%
+  arrange(Connect_ID, desc(version))
 
-#library(janitor)
+# For columns unique to each version
+V1_only_vars <- setdiff(M1_V1_vars, common_vars)
+V2_only_vars <- setdiff(M1_V2_vars, common_vars)
 
-m1_common <- rbind(M1_V1_common,M1_V2_common)
-m1_common_v1 <- base::merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
-m1_combined_v1v2 <- base::merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
-m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] 
+# Subset each version for unique columns and add version indicator
+m1_v1_only <- M1_V1[, c("Connect_ID", V1_only_vars)] %>%
+  mutate(version = 1)
+m1_v2_only <- M1_V2[, c("Connect_ID", V2_only_vars)] %>%
+  mutate(version = 2)
 
-m1_complete <- m1_complete %>% arrange(desc(version)) 
+# Combine the unique and common data
+m1_common_v1 <- left_join(M1_common, m1_v1_only, by = c("Connect_ID", "version"))
+m1_combined_v1v2 <- left_join(m1_common_v1, m1_v2_only, by = c("Connect_ID", "version"))
+
+# Filter for complete cases where specific completion criteria are met
+m1_complete <- m1_combined_v1v2 %>%
+  filter(Connect_ID %in% recr_m1$Connect_ID[recr_m1$d_949302066 == 231311385]) %>%
+  arrange(desc(version))
+
+# Remove duplicates, keeping only the most recent version for each Connect_ID
+m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),]
+
+m1_complete_nodup$Connect_ID <- as.numeric(m1_complete_nodup$Connect_ID)
 
 
-m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),] 
-table(m1_complete_nodup$version)
-
-
-
-parts <- "SELECT Connect_ID, token,  state_d_934298480, D_564964481, D_795827569, D_544150384,  d_126331570, 
+## Define requirements of the data: active or passive,  user profile done, consented, mod1 done, verified
+parts <- "SELECT Connect_ID, token,  state_d_934298480, d_564964481, d_795827569, d_544150384,  d_126331570, 
 d_536735468, d_663265240, d_878865966, d_684635302, d_167958071, d_949302066 ,  d_976570371, d_914639140, d_311580100, d_100767870
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
 where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and d_919254129='353358909' and d_699625233='353358909' and 
@@ -1998,11 +1999,6 @@ simple_funct1(D_646504105, "ALTADDRESS1: Any Other Mailing Address")
 rm(list = setdiff(ls(), c("merged", "data_tib_base", "parts_data", "dict", "project")))
 
 
-########
-
-library(data.table)
-
-######## Merge Version 1 and Version 2 of Module 2 ##############
 
 dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
 dd <- dplyr::bind_rows(dictionary,.id="CID")
@@ -2014,8 +2010,8 @@ dd$CID <- rownames(dd)
 #https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
 #devtools::install_github("tidyverse/reprex")
 
-project <- "nih-nci-dceg-connect-prod-6d04"
-billing <- "nih-nci-dceg-connect-prod-6d04" 
+
+
 recr_m2 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379, 
                             d_536735468 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935'")
 recr_m2 <- bq_table_download(recr_m2,bigint = "integer64",n_max = Inf, page_size = 10000)
@@ -2029,73 +2025,65 @@ for (i in 1: length(cnames)){
   recr_m2[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
 }
 
-sql_m2_1 <- bq_project_query(project, query="SELECT Connect_ID, D_798889867, D_849945160 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module2_v1_JP` where Connect_ID is not null")
-sql_m2_2 <- bq_project_query(project, query="SELECT Connect_ID, D_798889867, D_849945160 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module2_v2_JP` where Connect_ID is not null")
 
 
-M2_V1 <- bq_table_download(sql_m2_1,bigint = "integer64") 
-M2_V2 <- bq_table_download(sql_m2_2,bigint = "integer64") 
 
-mod2_v1 <- M2_V1
-cnames <- names(M2_V1)
-###to check variables and convert to numeric
-for (i in 1: length(cnames)){
-  varname <- cnames[i]
-  var<-pull(mod2_v1,varname)
-  mod2_v1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
-}
-mod2_v2 <- M2_V2
-cnames <- names(M2_V2)
-###to check variables and convert to numeric
-for (i in 1: length(cnames)){
-  varname <- cnames[i]
-  var<-pull(mod2_v2,varname)
-  mod2_v2[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
-}
+### Deal with Mod2 duplicates (took both version 1 and vesion 2, and only select version 2 data)
+sql_M2_1 <- bq_project_query(project, query = "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module2_v1_JP` WHERE Connect_ID IS NOT NULL")
+sql_M2_2 <- bq_project_query(project, query = "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module2_v2_JP` WHERE Connect_ID IS NOT NULL")
 
-M2_V1.var <- colnames(M2_V1)
-M2_V2.var <- colnames(M2_V2)
-var.matched <- M2_V1.var[which(M2_V1.var %in% M2_V2.var)]
-length(var.matched)  
+M2_V1 <- bq_table_download(sql_M2_1, bigint = "integer64")
+M2_V2 <- bq_table_download(sql_M2_2, bigint = "integer64")
 
-V1_only_vars <- colnames(M2_V1)[colnames(M2_V1) %nin% var.matched] 
-V2_only_vars <- colnames(M2_V2)[colnames(M2_V2) %nin% var.matched]
+# Select matching column names
+M2_V1_vars <- colnames(M2_V1)
+M2_V2_vars <- colnames(M2_V2)
+common_vars <- intersect(M2_V1_vars, M2_V2_vars)
 
-length(M2_V1$Connect_ID[M2_V1$Connect_ID %in% M2_V2$Connect_ID])
+# Subset to common columns
+M2_V1_common <- M2_V1[, common_vars]
+M2_V2_common <- M2_V2[, common_vars]
 
-common.IDs <- M2_V1$Connect_ID[M2_V1$Connect_ID %in% M2_V2$Connect_ID]
-M2_V1_common <- mod2_v1[,var.matched]
-
-M2_V2_common <- mod2_v2[,var.matched]
+# Add version indicator
 M2_V1_common$version <- 1
 M2_V2_common$version <- 2
 
-##to check the completion of M1 among these duplicates
-partM2_dups <- recr_m2[which(recr_m2$Connect_ID %in% common.IDs),]
-table(partM2_dups$d_536735468)
+# Identify columns with mismatched types
+mismatched_cols <- names(M2_V1_common)[sapply(names(M2_V1_common), function(col) {
+  class(M2_V1_common[[col]]) != class(M2_V2_common[[col]])
+})]
 
-M2_common  <- rbind(M2_V1_common, M2_V2_common) 
+# Convert mismatched columns to character for consistency
+M2_V1_common <- M2_V1_common %>%
+  mutate(across(all_of(mismatched_cols), as.character))
+M2_V2_common <- M2_V2_common %>%
+  mutate(across(all_of(mismatched_cols), as.character))
 
-M2_v1_only <- mod2_v1[,c("Connect_ID", V1_only_vars)]
-M2_v2_only <- mod2_v2[,c("Connect_ID", V2_only_vars)]
-M2_v1_only$version <- 1
-M2_v2_only$version <- 2
-#for (i in 1:length)
-##to check the completion in each version
-length(recr_m2$Connect_ID[which(recr_m2$Connect_ID %in% M2_v1_only$Connect_ID & recr_m2$d_536735468 ==231311385)])
-length(recr_m2$Connect_ID[which(recr_m2$Connect_ID %in% M2_v2_only$Connect_ID & recr_m2$d_536735468 ==231311385)]) 
+# Combine both versions for participants who completed both
+M2_common <- bind_rows(M2_V1_common, M2_V2_common) %>%
+  arrange(Connect_ID, desc(version))
 
-#library(janitor)
+# For columns unique to each version
+V1_only_vars <- setdiff(M2_V1_vars, common_vars)
+V2_only_vars <- setdiff(M2_V2_vars, common_vars)
 
-M2_common <- rbind(M2_V1_common,M2_V2_common)
-M2_common_v1 <- base::merge(M2_common, M2_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
-M2_combined_v1v2 <- base::merge(M2_common_v1,M2_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
-M2_complete <- M2_combined_v1v2[which(M2_combined_v1v2$Connect_ID %in% recr_m2$Connect_ID[which(recr_m2$d_536735468 ==231311385 )]),]
+# Subset each version for unique columns and add version indicator
+m2_v1_only <- M2_V1[, c("Connect_ID", V1_only_vars)] %>%
+  mutate(version = 1)
+m2_v2_only <- M2_V2[, c("Connect_ID", V2_only_vars)] %>%
+  mutate(version = 2)
 
-M2_complete <- M2_complete %>% arrange(desc(version)) 
+# Combine the unique and common data
+M2_common_v1 <- left_join(M2_common, m2_v1_only, by = c("Connect_ID", "version"))
+M2_combined_v1v2 <- left_join(M2_common_v1, m2_v2_only, by = c("Connect_ID", "version"))
 
+# Filter for complete cases where specific completion criteria are met
+M2_complete <- M2_combined_v1v2 %>%
+  filter(Connect_ID %in% recr_m2$Connect_ID[recr_m2$d_536735468 == 231311385]) %>%
+  arrange(desc(version))
 
-M2_complete_nodup <- M2_complete[!duplicated(M2_complete$Connect_ID),] 
+# Remove duplicates, keeping only the most recent version for each Connect_ID
+M2_complete_nodup <- M2_complete[!duplicated(M2_complete$Connect_ID),]
 table(M2_complete_nodup$version)
 
 
@@ -3869,7 +3857,7 @@ body_sibling= sibling  %>%  mutate(bodyp= case_when(as.numeric(multc1)>1  ~ "Mul
                                                  (D_578895128_2_2_D_578895128_2_2_D_764891959==1 | D_578895128_1_1_D_578895128_1_1_D_764891959==1 | D_578895128_3_3_D_578895128_3_3_D_764891959==1  | D_578895128_4_4_D_578895128_4_4_D_764891959==1) ~ "Stomach",
                                                  (D_578895128_2_2_D_578895128_2_2_D_248374037==1 | D_578895128_1_1_D_578895128_1_1_D_248374037==1 | D_578895128_3_3_D_578895128_3_3_D_248374037==1 | D_578895128_4_4_D_578895128_4_4_D_248374037==1) ~ "Testicular",
                                                  (D_578895128_2_2_D_578895128_2_2_D_139822395==1 | D_578895128_1_1_D_578895128_1_1_D_139822395==1 | D_578895128_3_3_D_578895128_3_3_D_139822395==1 | D_578895128_4_4_D_578895128_4_4_D_139822395==1) ~ "Thyroid",
-                                                 ((D_578895128_1_1_D_578895128_1_1_D_807835037 | D_578895128_2_2_D_578895128_2_2_D_807835037 | D_578895128_3_3_D_578895128_3_3_D_807835037 | D_578895128_4_4_D_578895128_4_4_D_807835037==1 | !is.na(D_578895128_1_1_D_957429734_1) | !is.na(D_578895128_2_2_D_957429734_2) | !is.na(D_578895128_3_3_D_957429734_3) | !is.na(D_578895128_4_4_D_957429734_4))) ~ "Other",
+                                                 ((D_578895128_1_1_D_578895128_1_1_D_807835037==1 | D_578895128_2_2_D_578895128_2_2_D_807835037==1 | D_578895128_3_3_D_578895128_3_3_D_807835037==1 | D_578895128_4_4_D_578895128_4_4_D_807835037==1 | !is.na(D_578895128_1_1_D_957429734_1) | !is.na(D_578895128_2_2_D_957429734_2) | !is.na(D_578895128_3_3_D_957429734_3) | !is.na(D_578895128_4_4_D_957429734_4))) ~ "Other",
                                                  (D_578895128_1_1_D_578895128_1_1_D_178420302==1 | D_578895128_2_2_D_578895128_2_2_D_178420302==1 | D_578895128_3_3_D_578895128_3_3_D_178420302==1 | D_578895128_4_4_D_578895128_4_4_D_178420302==1) ~ "Unknown", 
                                                  TRUE ~ "Skipped this Question"))
                                  
