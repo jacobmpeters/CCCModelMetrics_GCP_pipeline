@@ -1,0 +1,501 @@
+---
+title: "Letter Variant Next Steps"
+author: "Kelsey Sanchez"
+date: "`r Sys.Date()`"
+header-includes:  
+    \usepackage{placeins}
+
+
+output:
+  pdf_document:
+    extra_dependencies: ["float"]
+---
+
+```{r libraries, include=FALSE}
+
+
+#rm(list = ls())
+library(bigrquery)
+library(foreach)
+library(stringr)
+#library(plyr)
+#library(expss) ###to add labels
+library(epiDisplay) ##recommended applied here crosstable, tab1
+library(gmodels) ##recommended
+library(magrittr)
+library(arsenal)
+library(gtsummary)
+library(rio)
+library(knitr)
+library(kableExtra)
+library(ggplot2)
+library(gridExtra)
+library(scales)
+#library(gt)
+#install(tinytex)
+library(tinytex)
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(reshape)  ###to work on transition from long to wide or wide to long data
+library(listr) ###to work on a list of vector, files or..
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(stringr) ###to work on patterns, charaters
+library(janitor)
+
+
+options(tinytex.verbose = TRUE)
+
+bq_auth()
+
+
+```
+
+
+```{r BQ_Data_Pull, include=FALSE}
+
+demo <- "SELECT Connect_ID, token,
+d_827220437, state_d_253532712, state_d_934298480, state_d_684926335, state_d_849518448, state_d_119643471, 
+state_d_706256705, state_d_435027713, d_949302066, d_536735468, d_663265240, d_976570371, d_100767870, 
+d_878865966, d_684635302, d_167958071, state_d_811353546, d_230663853, d_558435199, d_919254129, d_699625233,
+state_d_158291096
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
+where state_d_811353546 is not null"
+demo_table <- bq_project_query(project, demo)
+letter_cont <- bq_table_download(demo_table, bigint = "integer64")
+
+
+letter_cont <- letter_cont %>% 
+  mutate(site = case_when(d_827220437 == '472940358' ~ "Baylor Scott and White Health",
+                          d_827220437 == '531629870' ~ "HealthPartners",
+                          d_827220437 == '548392715' ~ "Henry Ford Health System",
+                          d_827220437 == '303349821' ~ "Marshfield Clinic Health System",
+                          d_827220437 == '657167265' ~ "Sanford Health",
+                          d_827220437 == '809703864' ~ "University of Chicago Medicine",
+                          d_827220437 == '125001209' ~ "Kaiser Permanente Colorado",
+                          d_827220437 == '327912200' ~ "Kaiser Permanente Georgia",
+                          d_827220437 == '452412599' ~ "Kaiser Permanente Northwest",
+                          d_827220437 == '300267574' ~ "Kaiser Permanente Hawaii"),
+       age = case_when(state_d_934298480 == "713781738"~ "30-34",
+                         state_d_934298480 == '631272782' ~ "35-39",
+                         state_d_934298480 == '124276120' ~ "40-45",
+                         state_d_934298480 == '450985724' ~ "46-50",
+                         state_d_934298480 == '363147933' ~ "51-55",
+                         state_d_934298480 == '636706443' ~ "56-60",
+                         state_d_934298480 == '771230670' ~ "61-65",
+                         state_d_934298480 == '722846087' ~ "66-70"),
+       race = case_when(state_d_684926335 == '635279662' |state_d_849518448 == '768826601' | state_d_119643471 == '635279662' | 
+                          state_d_253532712=='723775357' ~ "White, Non-Hispanic" , 
+                        state_d_684926335 %in% c('232334767', '401335456') |
+                          state_d_849518448 == '181769837' |
+                          state_d_253532712 %in% c('153444133','572474909','308427446','211228524','277568192','611398522','181769837') |
+                          state_d_119643471 %in% c( '232334767','211228524','308427446','432722256','232663805','785578696','200929978','490725843','965998904') ~ "Other",
+                        state_d_684926335 == '178420302'  | 
+                          state_d_849518448 == '178420302' | 
+                          state_d_253532712 == '178420302' |
+                          state_d_119643471  %in% c( '986445321','746038746','178420302') |
+                          (is.na(state_d_119643471) & d_827220437 == '657167265') ~ "Unknown"),
+       sex = case_when(state_d_706256705 == '536341288' | state_d_435027713 == '536341288' ~ "Female",
+                       state_d_706256705 == '654207589' | state_d_435027713 == '654207589' ~ "Male",
+                       #state_d_706256705 == '830573274' ~ "Intersex or Other", # too small of a count for now, need to combine with unknown 
+                       state_d_706256705 == '830573274' | state_d_706256705 == '178420302' | state_d_435027713 == '178420302' ~ "Unknown/Other"),
+       basesvcomplt = case_when(d_949302066!= '231311385' ~ "None",
+                                d_949302066 == '231311385' & d_536735468 == '231311385' & 
+                                  d_663265240 == '231311385' & d_976570371 == '231311385' ~ "All",
+                                d_949302066 == '231311385' & d_536735468 != '231311385' & 
+                                  d_663265240 != '231311385' & d_976570371 != '231311385' ~ "BOH only",
+                                TRUE ~ "2 or 3 Sections"),
+       completion = case_when(d_100767870=="353358909" & 
+                                (d_878865966=="353358909" | d_684635302=="353358909" | d_167958071=="353358909") ~ "Completed Survey and Sample(s)",
+                              d_100767870=="353358909"  ~ "Completed Survey, No Sample(s)",
+                              (d_878865966=="353358909" | d_684635302=="353358909" | d_167958071=="353358909") ~ "Completed Sample(s), No Survey",
+                              TRUE ~ "Completed Neither"),
+       collections = case_when((d_878865966=="353358909" | d_684635302=="353358909" | d_167958071=="353358909") ~ "Collected",
+                               TRUE ~ "Not Collected"),
+       letter = case_when(state_d_811353546=="711757828" ~ "Join Connect today to help prevent cancer tomorrow",
+                          state_d_811353546=="943427992" ~ "Receive a $25 payment for participating",
+                          state_d_811353546=="648219696" ~ "Join to honor the memory of those lost to cancer",
+                          state_d_811353546=="798915634" ~ "Join others in your community who are changing the future of cancer prevention",
+                          state_d_811353546=="896010519" ~ "You can easily do most study tasks on your own"),
+       signed_in= case_when(d_230663853=="353358909" ~ "Yes",
+                            TRUE ~ "No"),
+       hippaa = case_when(d_558435199=="353358909" ~ "Yes",
+                          TRUE ~ "No"),
+       consent= case_when(d_919254129=="353358909" ~ "Yes",
+                          TRUE ~ "No"),
+       user_profile = case_when(d_699625233=="353358909" ~ "Yes",
+                                TRUE ~ "No"),
+       refusal = case_when(state_d_158291096=="353358909" ~ "Active Refusal",
+                           state_d_158291096=="104430631" & signed_in=="No" ~ "Passive refusal (no refusal or account creation)",
+                           TRUE ~ "No Refusal"))
+       
+```
+
+
+
+```{r newTable1, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+compare_Age <- letter_cont %>%
+    tbl_cross(
+      row = age,
+      col = letter,
+      label = list(letter ~ "Letter Variant", age ~ "Age"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+compare_Race <- letter_cont %>%
+    tbl_cross(
+      row = race,
+      col = letter,
+      label = list(letter ~ "Letter Variant", race ~ "Race"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+compare_Sex <- letter_cont %>%
+    tbl_cross(
+      row = sex,
+      col = letter,
+      label = list(letter ~ "Letter Variant", sex ~ "Sex"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+
+compare_Site <- letter_cont %>%
+    tbl_cross(
+      row = site,
+      col = letter,
+      label = list(letter ~ "Letter Variant", site ~ "Site"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+
+
+
+# Convert tbl_cross objects to data frames
+df_Age <- as.data.frame(compare_Age)
+df_Race <- as.data.frame(compare_Race)
+df_Sex <- as.data.frame(compare_Sex)
+df_Site <- as.data.frame(compare_Site)
+
+# Rename the blank column to 'Temp_Demographic'
+colnames(df_Age)[1] <- "Temp_Demographic"
+colnames(df_Race)[1] <- "Temp_Demographic"
+colnames(df_Sex)[1] <- "Temp_Demographic"
+colnames(df_Site)[1] <- "Temp_Demographic"
+
+# Add a demographic column to each data frame
+df_Age <- df_Age %>% mutate(Demographic = "Age") %>% select(Demographic, everything())
+df_Race <- df_Race %>% mutate(Demographic = "Race") %>% select(Demographic, everything())
+df_Sex <- df_Sex %>% mutate(Demographic = "Sex") %>% select(Demographic, everything())
+df_Site <- df_Site %>% mutate(Demographic = "Site") %>% select(Demographic, everything())
+
+# Combine all data frames into one
+combined_df <- bind_rows(df_Site, df_Race, df_Sex, df_Age)
+
+# Replace NA values with blank spaces
+combined_df[is.na(combined_df)] <- ""
+
+# Check the result
+combined_df <- combined_df[, c(2:9)]
+
+colnames(combined_df)[1] <- "Total"
+
+
+
+```
+
+
+# Table 1: Randomization of letter content by demographic factors, Connect for Cancer Prevention Study, eligible individuals invited X/XX/2024 to XXX/XX/2024
+
+```{r knitTable1, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+knitr::kable(combined_df , 
+             #caption='Table 1: How recruits learned about  the study among participants in the Connect for Cancer Prevention cohort', 
+             row.names=FALSE,align=c("l","c","c","c","c","c","c","c"),
+             #col.names=c("Demographics", "Digital","Traditional","Both","Total Consented \n Recruits"), #escape=F, #linebreak(
+             booktabs = TRUE) %>%  
+  landscape() %>% 
+  add_indent(c(2:7, 9:12, 14:17, 19:24))  %>% 
+  kable_styling(latex_options = "scale_down", full_width= FALSE)
+  
+```
+
+\FloatBarrier
+
+
+```{r table2, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+#Indiviudal workflows
+cumm_counts <- letter_cont %>% 
+  mutate('Step 1: MyConnect Account/ Signed In' = d_230663853 == '353358909',
+         'Step 2: User Profile' = d_699625233 == '353358909',
+         'Step 3: Consent & HIPAA' = (d_919254129 == '353358909' & d_558435199=="353358909") ,
+          "Biospecimen Donation" = collections == "Collected", 
+         'Some Survey Modules' = (basesvcomplt=="BOH only" | basesvcomplt=="2 or 3 Sections"),
+         'All Survey Modules' = basesvcomplt=="All",
+         'Biospecimen Donation & All Survey Modules' =  completion=="Completed Survey and Sample(s)")
+
+
+# Will need to create a separate total column, since total recruits will be much larger then the sums of these columns
+total_participants_per_letter <- cumm_counts %>%
+  group_by(letter) %>%
+  tally()
+
+#total_participants_per_letter[6,] <- c("Total", sum(total_participants_per_letter$n))
+
+# long format to count instances of each independently
+long_recr <- cumm_counts %>%
+  select(letter, 'Step 1: MyConnect Account/ Signed In', 'Step 2: User Profile', 'Step 3: Consent & HIPAA',"Biospecimen Donation", 
+         'Some Survey Modules','All Survey Modules','Biospecimen Donation & All Survey Modules') %>%
+  pivot_longer(cols = 'Step 1: MyConnect Account/ Signed In':'Biospecimen Donation & All Survey Modules', names_to = "cumm_workflow", values_to = "in_category") %>%
+  filter(in_category) %>%
+  select(-in_category)
+
+
+long_recr$cumm_workflow <- factor(long_recr$cumm_workflow, levels = c('Step 1: MyConnect Account/ Signed In', 'Step 2: User Profile', 
+                                                                      'Step 3: Consent & HIPAA',"Biospecimen Donation", 
+                                                                      'Some Survey Modules','All Survey Modules','Biospecimen Donation & All Survey Modules'))
+
+
+
+workflow2 <- long_recr %>%
+  tbl_cross(
+    row = letter,
+    col = cumm_workflow,
+    label = list(cumm_workflow ~ " ", letter ~ " "),
+    percent = "row",
+    digits = c(0, 2),
+    missing = "ifany",
+    #missing_text = "Missing",
+    margin_text = "Total Invited"
+  ) #%>%  add_p()
+
+workflow2[["table_body"]]$stat_1 <- sapply(strsplit(workflow2[["table_body"]]$stat_1," "),"[",1)
+workflow2[["table_body"]]$stat_2 <- sapply(strsplit(workflow2[["table_body"]]$stat_2," "),"[",1)
+workflow2[["table_body"]]$stat_3 <- sapply(strsplit(workflow2[["table_body"]]$stat_3," "),"[",1)
+workflow2[["table_body"]]$stat_4 <- sapply(strsplit(workflow2[["table_body"]]$stat_4," "),"[",1)
+workflow2[["table_body"]]$stat_5 <- sapply(strsplit(workflow2[["table_body"]]$stat_5," "),"[",1)
+workflow2[["table_body"]]$stat_6 <- sapply(strsplit(workflow2[["table_body"]]$stat_6," "),"[",1)
+workflow2[["table_body"]]$stat_7 <- sapply(strsplit(workflow2[["table_body"]]$stat_7," "),"[",1)
+workflow2[["table_body"]]$stat_0 <- sapply(strsplit(workflow2[["table_body"]]$stat_0," "),"[",1)
+
+
+
+workflow2_df <- as.data.frame(workflow2$table_body)[c(2:7), c(5:12)]
+
+# Add back the total row
+workflow2_df <- workflow2_df %>%
+  left_join(total_participants_per_letter, by = c("label" = "letter"))
+
+workflow2_df[nrow( workflow2_df), ncol( workflow2_df)] <- sum( workflow2_df$n, na.rm = TRUE)
+
+
+colnames(workflow2_df) <- c('Letter', 'Step 1: MyConnect Account/ Signed In', 'Step 2: User Profile', 'Step 3: Consent & HIPAA',
+                            "Biospecimen Donation",'Some Survey Modules','All Survey Modules','Biospecimen Donation & All Survey Modules', "Total Invited")
+
+
+
+```
+
+
+
+
+
+# Table 2a: Completion of recruitment workflow steps and study activities by letter type, Connect for Cancer Prevention Study, eligible individuals invited X/XX/2024 to XXX/XX/2024
+
+```{r knitTable2, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+
+knitr::kable(workflow2 , 
+             #caption='Table 1. Completion of Initial Surveys by Site', 
+             row.names=FALSE,align=c("l","c","c","c","c","c","c","c","c","c"),
+             #col.names=c("Site", "All Completed", "One or More Not Completed", "Total"),
+             booktabs = TRUE) %>%  
+  add_indent(seq(1, nrow(workflow2) - 1))  %>% 
+  kable_styling(latex_options = c("scale_down","hold_position"))
+
+```
+
+
+
+\FloatBarrier
+
+# Table 2b: Connect enrollment milestones by message Among those who have Consented
+
+```{r Table2b, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+Refusal_tables <- letter_cont %>%
+  filter(refusal!="No Refusal") %>% 
+    tbl_cross(
+      col = refusal,
+      row = letter,
+      label = list(letter ~ " ", refusal ~ " "),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>%  add_p()
+
+Refusal_tables 
+
+## Doing this makes the other lines NA under the one p-value
+# knitr::kable(Refusal_tables, 
+#              row.names=FALSE,align=c("l","c","c","c","c","c","c","c","c"),
+#              booktabs = TRUE) %>%  
+#   landscape() %>% 
+#   kable_styling(latex_options = "scale_down", full_width= FALSE)
+  
+```
+
+
+
+
+
+
+```{r Table1_Repeated_Consented, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+### This same table as Table 1 needs to be repeated four times
+## 1. Of those who consented
+## 2. Of those who donated biospecimens
+## 3. Of those who completed all surveys
+## 4. Of those who completed biospecimens and surveys
+## 5. Of those who opted out of Connect
+
+
+## Can't get the looping right so I'll have to code this5 different times
+
+
+const <- letter_cont %>%  filter(consent=="Yes")
+bio_comp <- letter_cont %>%  filter(collections=="Collected")
+survey_comp <- letter_cont %>%  filter(basesvcomplt="All")
+both_comp <- letter_cont %>%  filter(completion=="Completed Survey and Sample(s)")
+refused <- letter_cont %>%  filter(refusal=="Active Refusal")
+
+
+
+
+
+#dfs <- c(letter_cont, bio_comp, survey_comp, both_comp, refusal)
+
+#for (df in dfs){
+
+compare_Age <- const %>%
+    tbl_cross(
+      row = age,
+      col = letter,
+      label = list(letter ~ "Letter Variant", age ~ "Age"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+compare_Race <- const %>%
+    tbl_cross(
+      row = race,
+      col = letter,
+      label = list(letter ~ "Letter Variant", race ~ "Race"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+compare_Sex <- const %>%
+    tbl_cross(
+      row = sex,
+      col = letter,
+      label = list(letter ~ "Letter Variant", sex ~ "Sex"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+
+compare_Site <- const %>%
+    tbl_cross(
+      row = site,
+      col = letter,
+      label = list(letter ~ "Letter Variant", site ~ "Site"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+
+
+
+# Convert tbl_cross objects to data frames
+df_Age <- as.data.frame(compare_Age)
+df_Race <- as.data.frame(compare_Race)
+df_Sex <- as.data.frame(compare_Sex)
+df_Site <- as.data.frame(compare_Site)
+
+# Rename the blank column to 'Temp_Demographic'
+colnames(df_Age)[1] <- "Temp_Demographic"
+colnames(df_Race)[1] <- "Temp_Demographic"
+colnames(df_Sex)[1] <- "Temp_Demographic"
+colnames(df_Site)[1] <- "Temp_Demographic"
+
+# Add a demographic column to each data frame
+df_Age <- df_Age %>% mutate(Demographic = "Age") %>% select(Demographic, everything())
+df_Race <- df_Race %>% mutate(Demographic = "Race") %>% select(Demographic, everything())
+df_Sex <- df_Sex %>% mutate(Demographic = "Sex") %>% select(Demographic, everything())
+df_Site <- df_Site %>% mutate(Demographic = "Site") %>% select(Demographic, everything())
+
+# Combine all data frames into one
+combined_df_consented <- bind_rows(df_Site, df_Race, df_Sex, df_Age)
+
+# Replace NA values with blank spaces
+combined_df_consented[is.na(combined_df_consented)] <- ""
+
+# Check the result
+combined_df_consented <- combined_df_consented[, c(2:9)]
+
+colnames(combined_df_consented)[1] <- "Total"
+
+#}
+
+
+
+```
+
+\FloatBarrier
+# Table 3a: Connect enrollment milestones by message Among those who have Consented
+
+```{r knitTable1, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+knitr::kable(combined_df_consented, 
+             row.names=FALSE,align=c("l","c","c","c","c","c","c","c"),
+             booktabs = TRUE) %>%  
+  landscape() %>% 
+  add_indent(c(2:7, 9:12, 14:17, 19:24))  %>% ## add indents 
+  kable_styling(latex_options = "scale_down", full_width= FALSE, font_size=6)
+  
+```
+
+
+
+
+
+
