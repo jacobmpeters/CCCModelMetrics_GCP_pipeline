@@ -34,7 +34,7 @@ library(data.table) ###to write or read and data management
 library(tidyverse) ###for data management
 library(dplyr) ###data management
 library(lubridate) ###date time
-library(stringr) ###to work on patterns, charaters
+library(stringr) ###to work on patterns, characters
 options(tinytex.verbose = TRUE)
 
 bq_auth()
@@ -2788,7 +2788,7 @@ one_logic_funct3(D_228752045,D_447720598_D_181769837,1, "OTHERALC1: Frequency of
                                                                         # IF THEY NEVER STOPPED DRINKING, THEN AGE STARTED<ALCLIFE, IF STOPPED TEHN STARTED<ALCLIFE AND ALCLIFE<AGESTOPPED
 
 
-data_tib_all3$DOB <- paste0(data_all3$D_544150384, "-", data_all3$D_564964481, "-", data_all3$D_795827569) 
+data_tib_all3$DOB <- paste0(data_all3$d_544150384, "-", data_all3$d_564964481, "-", data_all3$d_795827569) 
 data_tib_all3$DOB <- as.Date(data_tib_all3$DOB) #, format='%y-%m-%d')
 currentDate <- as.Date(Sys.Date(), format='%y/%m/%d')
 
