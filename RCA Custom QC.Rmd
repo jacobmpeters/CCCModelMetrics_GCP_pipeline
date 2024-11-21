@@ -1,0 +1,168 @@
+---
+title: "RCA Custom QC Metrics"
+author: "Kelsey Sanchez"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r libraries, include=FALSE}
+
+library(bigrquery)
+library(sqldf)
+library(gt)
+library(gtsummary)
+library(tidyverse)
+
+bq_auth()
+
+```
+
+
+```{r BQ pull, include=FALSE}
+
+project = "nih-nci-dceg-connect-prod-6d04"
+rca_qc_sql <- "SELECT rca.Connect_ID, 
+d_345545422 as Date_of_Diagnosis,
+d_740819233_d_149205077 as Cancer_Site,
+d_740819233_d_868006655 as Cancer_Site_Text_Box,
+d_421730068 as AccessionID,
+  CASE 
+    WHEN pts.d_827220437 = '472940358' THEN 'Baylor Scott and White Health'
+    WHEN pts.d_827220437 = '125001209' THEN 'KP Colorado'
+    WHEN pts.d_827220437 = '327912200' THEN 'KP Georgia'
+    WHEN pts.d_827220437 = '300267574' THEN 'KP Hawaii'
+    WHEN pts.d_827220437 = '452412599' THEN 'KP Northwest'
+    WHEN pts.d_827220437 = '548392715' THEN 'Henry Ford'
+    WHEN pts.d_827220437 = '531629870' THEN 'HealthPartners'
+    WHEN pts.d_827220437 = '303349821' THEN 'Marshfield'
+    WHEN pts.d_827220437 = '657167265' THEN 'Sanford'
+    WHEN pts.d_827220437 = '809703864' THEN 'UChicago'
+    ELSE 'Unknown Site'
+  END AS Site
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.cancerOccurrence_JP` rca
+left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` as pts
+on rca.Connect_ID=pts.Connect_ID"
+
+rca_qc_table <- bq_project_query(project, rca_qc_sql)
+rca_qc <- bq_table_download(rca_qc_table, bigint = "integer64")
+
+```
+
+
+
+1. For every given cancer occurence, there can only be one cancer site
+```{r, echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+#sata, multiples, any multiple >1
+
+mult_cnc_site= rca_qc  %>%  
+  mutate(mult_cnc = ifelse(Cancer_Site == 939782495, 1, 0) +
+           if_else(Cancer_Site == 135725957, 1, 0) +
+           if_else(Cancer_Site == 518416174, 1, 0) +
+           if_else(Cancer_Site == 847945207, 1, 0) +
+           if_else(Cancer_Site == 283025574, 1, 0) +
+           if_else(Cancer_Site == 942970912, 1, 0) +
+           if_else(Cancer_Site == 596122041, 1, 0) +
+           if_else(Cancer_Site == 489400183, 1, 0) +
+           if_else(Cancer_Site == 863246236, 1, 0) +
+           if_else(Cancer_Site == 607793249, 1, 0) +
+           if_else(Cancer_Site == 532172400, 1, 0) +
+           if_else(Cancer_Site == 754745617, 1, 0) +
+           if_else(Cancer_Site == 665036297, 1, 0) +
+           if_else(Cancer_Site == 200837530, 1, 0) +
+           if_else(Cancer_Site == 990319383, 1, 0) +
+           if_else(Cancer_Site == 603181162, 1, 0) +
+           if_else(Cancer_Site == 482225200, 1, 0) +
+           if_else(Cancer_Site == 295976386, 1, 0) +
+           if_else(Cancer_Site == 764891959, 1, 0) +
+           if_else(Cancer_Site == 248374037, 1, 0) +
+           if_else(Cancer_Site == 139822395, 1, 0) +
+           if_else(Cancer_Site == 723614811, 1, 0) +
+           if_else(Cancer_Site == 807835037| !is.na(Cancer_Site_Text_Box), 1, 0) +
+           if_else(Cancer_Site == 178420302, 1, 0)) %>% 
+  filter(mult_cnc>1) %>%  select(Connect_ID, mult_cnc)
+
+
+if (nrow(mult_cnc_site) == 0) {
+  cat("No errors")
+} else {
+mult_cnc_site %>%  gt() %>%  
+  cols_label(Connect_ID= md("**Connect ID**"), mult_cnc = md("**Number of Cancer Occurences**")) %>% 
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(style = list(cell_text(weight = "bold")),
+            locations = cells_body(columns = mult_cnc))
+}
+
+```
+
+2. List of participants with multiple cancer occurrences.
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#find duplicate connect IDs via sql, grab connect_ID, date of diagnoiss, cancer site, accession ID, and site
+multiple_occ <- "WITH multiple_rows AS (
+  SELECT Connect_ID
+  FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.cancerOccurrence_JP`
+  GROUP BY Connect_ID
+  HAVING COUNT(*) > 1
+)
+SELECT rca.Connect_ID, 
+d_345545422 as Date_of_Diagnosis,
+d_740819233_d_149205077 as Cancer_Site,
+d_740819233_d_868006655 as Cancer_Site_Text_Box,
+d_421730068 as AccessionID,
+  CASE 
+    WHEN pts.d_827220437 = '472940358' THEN 'Baylor Scott and White Health'
+    WHEN pts.d_827220437 = '125001209' THEN 'KP Colorado'
+    WHEN pts.d_827220437 = '327912200' THEN 'KP Georgia'
+    WHEN pts.d_827220437 = '300267574' THEN 'KP Hawaii'
+    WHEN pts.d_827220437 = '452412599' THEN 'KP Northwest'
+    WHEN pts.d_827220437 = '548392715' THEN 'Henry Ford'
+    WHEN pts.d_827220437 = '531629870' THEN 'HealthPartners'
+    WHEN pts.d_827220437 = '303349821' THEN 'Marshfield'
+    WHEN pts.d_827220437 = '657167265' THEN 'Sanford'
+    WHEN pts.d_827220437 = '809703864' THEN 'UChicago'
+    ELSE 'Unknown Site'
+  END AS Site
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.cancerOccurrence_JP` rca
+left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` as pts
+on rca.Connect_ID=pts.Connect_ID
+WHERE rca.Connect_ID IN (SELECT Connect_ID FROM multiple_rows)
+order by rca.Connect_ID asc"
+
+
+multiple_occ_table <- bq_project_query(project, multiple_occ)
+mult_occ <- bq_table_download(multiple_occ_table, bigint = "integer64")
+
+write.csv(mult_occ,'Multiple_RCA_Cancer_Occurences.csv', row.names = F,na="")
+
+
+
+cat(paste0("This has been converted into a csv file to be uploaded in the same Box folder a this report.",
+           "\n",
+           "There are ", nrow(mult_occ), " rows in that file, made up of ", length(unique(mult_occ$Connect_ID)), " individual Connect IDs."))
+
+```
+
+
+3. No accession ID should be repeated for any Healthcare Site.
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#group accession IDs by site and make sure there are no duplicates
+
+rca_acc_ID <- rca_qc %>%  select(Site, AccessionID) %>% 
+  filter(!is.na(AccessionID)) %>% 
+  group_by(Site, AccessionID) %>%  tally() %>% 
+  filter(n>1)
+
+
+if (nrow(rca_acc_ID) == 0) {
+  cat("No errors")
+} else {
+  rca_acc_ID %>% 
+    gt() %>%
+    cols_label(Site = md("**Site**"), AccessionID = md("**Accession ID**"), n = md("**N**")) %>%
+    tab_options(stub.font.weight = "bold") %>%
+    tab_style(style = list(cell_text(weight = "bold")),
+              locations = cells_body(columns = AccessionID))
+}
+
+
+```
+

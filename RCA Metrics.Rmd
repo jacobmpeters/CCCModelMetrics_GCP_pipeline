@@ -1,0 +1,516 @@
+---
+title: "Connect Rapid Case Algorithm (RCA) Metrics"
+author: "Kelsey Sanchez"
+date: 'Data Extracted and Report Ran: `r Sys.Date()`'
+header-includes: 
+  \usepackage[labelformat=empty]{caption} 
+  \usepackage{placeins} 
+  \usepackage{booktabs}
+  \usepackage{pdflscape}
+  
+output:
+  pdf_document:
+    latex_engine: xelatex
+    extra_dependencies: ["float"]
+    toc: no
+    keep_tex: yes
+    fig_width: 7
+    fig_height: 5
+    fig_caption: yes
+    df_print: paged
+---
+
+
+This rapid case ascertainment (RCA) metrics report contains tables and plots from RCA data that the participating healthcare sites send to the Connect Coordinating Center (CCC). The RCA variables in this report are a limited set of necessary variables decided upon by the RCA Working Group and the CCC. The variables are comprised of data pulled from the electronic health record and data that was manually reviewed by site representatives. The purpose of receiving RCA data is to identify Connect participants who have been diagnosed with cancer sooner than this information is available for linkage in state tumor registries. These variables are only to be used operationally.
+
+```{r libraries, include=FALSE, warning=FALSE}
+
+ # \usepackage{caption}
+ # \captionsetup[figure]{labelformat=empty}
+
+
+#old.packages()
+#update.packages("tinytex")
+
+
+library(bigrquery)
+library(dplyr)
+library(gmodels)
+library(epiDisplay)
+library(lubridate)
+library(tidyverse)
+library(knitr)
+library(tinytex)
+library(kableExtra)
+library(gtsummary)
+library(data.table)
+
+#library(arsenal)
+#library(rio)
+#library(scales)
+library(gt)
+library(stringr) 
+
+
+bq_auth()
+
+```
+
+
+```{r BQPull, include=FALSE}
+knitr::opts_chunk$set(dev = "png", fig.path = "", comment = NA)
+
+#knitr::opts_chunk$set(comment = NA)
+
+project = "nih-nci-dceg-connect-prod-6d04"
+pt_pull <- "SELECT Connect_ID,  d_827220437, d_987563196, d_821247024
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
+where Connect_ID IS NOT NULL  and (d_512820379='486306141' OR d_512820379='854703046') and 
+d_821247024='197316935' and d_919254129='353358909' and d_558435199='353358909' #verified, consented, HIPAA auth
+and d_747006172='104430631' and d_773707518='104430631'"  #not WD, no HIPAA revoked
+RCA_pull <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.cancerOccurrence_JP` 
+where Connect_ID is not null" 
+
+
+pt_pull_table <- bq_project_query(project, pt_pull)
+data_pt <- bq_table_download(pt_pull_table, bigint = "integer64")
+
+RCA_pull_table <- bq_project_query(project, RCA_pull)
+data_rca <- bq_table_download(RCA_pull_table, bigint = "integer64")
+
+data_c <- left_join(data_pt, data_rca, by="Connect_ID")
+
+
+rca= as_tibble(data_c) 
+
+rca <- rca %>% mutate(Site = case_when(d_827220437==472940358 ~ "Baylor Scott and White Health",
+                                       d_827220437==125001209 ~ "KP Colorado",
+                                       d_827220437==327912200 ~ "KP Georgia",
+                                       d_827220437==300267574 ~ "KP Hawaii",
+                                       d_827220437==452412599 ~ "KP Northwest",
+                                       d_827220437==548392715 ~ "Henry Ford",
+                                       d_827220437==531629870 ~ "HealthPartners",
+                                       d_827220437==303349821 ~ "Marshfield Health Clinic",
+                                       d_827220437==657167265 ~ "Sanford Health",
+                                       d_827220437==809703864 ~ "University of Chicago Medicine"),
+                      dead = case_when(d_114227122=="337516613" ~ "Alive",
+                                       d_114227122=="353358909" ~ "Deceased",
+                                       TRUE ~ "Unknown"),
+                      awareness = case_when(d_844209241=="104430631" ~ "Alive",
+                                       d_844209241=="646675764" ~ "Deceased",
+                                       TRUE ~ "Unknown"),
+                      'Cancer Flag' = case_when(d_525972260 =="353358909" ~ "Cancer Occurrence",
+                                                TRUE ~ "No Cancer Occurrence"))
+
+
+
+```
+
+
+
+ \newpage
+ 
+```{r Occ_by_Site, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+all_counts <- rca %>% 
+  filter(!is.na(Site) & d_525972260==353358909) %>% 
+  group_by(Site) %>%  tally()
+
+all_counts_pts <- all_counts %>% 
+  mutate(counts = paste0(all_counts$n, " (", round(all_counts$n/(sum(all_counts$n))*100, digits=1), "%)")) %>% 
+  select(Site, counts)
+
+all_counts_pts[(nrow(all_counts_pts)+1),] <- list("Total", paste0(sum(all_counts$n), " (100%)"))
+
+
+total_rows <- nrow(all_counts_pts)
+knitr::kable(all_counts_pts , 
+             caption='Table 1. Number of Cancer Occurrences by Healthcare System', 
+             row.names=FALSE,align=c("l","c"),
+             col.names=c("Site", "N (%)"),
+             booktabs = TRUE) %>%  
+  add_indent(seq(1, total_rows - 1))  %>% 
+  kable_styling(latex_options = c("scale_down","hold_position")) 
+
+```
+
+
+\FloatBarrier
+
+```{r Cancer_Location, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+all_locations <- rca %>% 
+  mutate(
+    `Anal` = if_else(d_740819233_d_149205077 == 939782495, 1, 0),
+    `Bladder` = if_else(d_740819233_d_149205077 == 135725957, 1, 0),
+    `Brain` = if_else(d_740819233_d_149205077 == 518416174, 1, 0),
+    `Breast` = if_else(d_740819233_d_149205077 == 847945207, 1, 0),
+    `Cervical` = if_else(d_740819233_d_149205077 == 283025574, 1, 0),
+    `Colon/Rectal` = if_else(d_740819233_d_149205077 == 942970912, 1, 0),
+    `Esophageal` = if_else(d_740819233_d_149205077 == 596122041, 1, 0),
+    `Head and Neck` = if_else(d_740819233_d_149205077 == 489400183, 1, 0),
+    `Kidney` = if_else(d_740819233_d_149205077 == 863246236, 1, 0),
+    `Leukemia` = if_else(d_740819233_d_149205077 == 607793249, 1, 0),
+    Liver = if_else(d_740819233_d_149205077 == 532172400, 1, 0),
+    `Lung or Bronchial` = if_else(d_740819233_d_149205077 == 754745617, 1, 0),
+    `Non-Hodgkins Lymphoma` = if_else(d_740819233_d_149205077 == 665036297, 1, 0),
+    Lymphoma = if_else(d_740819233_d_149205077 == 200837530, 1, 0),
+    `Melanoma (skin)` = if_else(d_740819233_d_149205077 == 990319383, 1, 0),
+    `Non-melanoma skin (basal or squamous)` = if_else(d_740819233_d_149205077 == 487917585, 1, 0), #-- removed
+    `Ovarian` = if_else(d_740819233_d_149205077 == 603181162, 1, 0),
+    Pancreatic = if_else(d_740819233_d_149205077 == 482225200, 1, 0),
+    Prostate = if_else(d_740819233_d_149205077 == 295976386, 1, 0),
+    Stomach = if_else(d_740819233_d_149205077 == 764891959, 1, 0),
+    Testicular = if_else(d_740819233_d_149205077 == 248374037, 1, 0),
+    Thyroid = if_else(d_740819233_d_149205077 == 139822395, 1, 0),
+    `Uterine (endometrial)` = if_else(d_740819233_d_149205077 == 723614811, 1, 0),
+    Other = if_else(d_740819233_d_149205077 == 807835037| !is.na(d_740819233_d_868006655), 1, 0),
+    Unknown = if_else(d_740819233_d_149205077 == 178420302, 1, 0),
+    Skipped = if_else(rowSums(select(., starts_with("d_740819233_d_")) == 0 | is.na(select(., starts_with("d_740819233_d_")))) == ncol(select(., starts_with("d_740819233_d_"))), 1, 0))
+
+
+cancer_loc <- all_locations %>% filter(d_525972260==353358909) 
+
+location_counts <- cancer_loc %>% 
+  #filter(d_525972260==353358909) %>%  
+  select(Anal:Skipped) %>%
+  pivot_longer(cols = everything(), names_to = "Cancer_Site", values_to = "Selected") %>%
+  filter(Selected == 1) %>%
+  group_by(Cancer_Site) %>%
+  summarise(Frequency = n()) 
+
+pivot_data <- location_counts %>%
+  ungroup() %>%
+  mutate(Percentage = 100 * round(Frequency / sum(Frequency), digits=2),
+         Freq = formatC(Frequency, format = "f", big.mark = ",", digits = 0),
+         Occurrence = paste0(Freq, " (", Percentage, "%)")) %>% 
+  select(Cancer_Site, Occurrence)
+  
+pivot_data[nrow(pivot_data)+1,] <- list("Total", paste0(sum(location_counts$Frequency), " (100%)"))
+
+ pivot_data %>%
+  gt() %>% 
+  tab_header(title = md("Table 2. Number of Cancer Occurrences by Cancer Site")) %>%
+  cols_label(Occurrence = md("**Occurrence**"), 
+             Cancer_Site = md("**Cancer Site**")) %>%
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Cancer_Site)
+  ) %>%
+  tab_footnote(
+    md("As this is a select all question, may have more than one cancer site."),
+    locations = cells_column_labels(columns = Occurrence),
+    placement = c("left")
+  )
+
+
+```
+
+
+\FloatBarrier
+
+```{r num_occ, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+cancer_loc_grouped <- cancer_loc %>%  rowwise() %>%
+  mutate(cancer_site_count = sum(c_across(Anal:Unknown)), #) %>% 
+         canc_occ = paste("Participants with ", cancer_site_count, " Cancer Occurrences")) %>%
+  ungroup()
+
+
+summary_table <- cancer_loc_grouped  %>%
+  group_by(canc_occ) %>%
+  summarise(participant_count = n()) %>%
+  arrange(canc_occ)
+
+summary_table$pct = paste0(summary_table$participant_count, " (", 
+                           summary_table$participant_count/sum(summary_table$participant_count)*100, "%)")
+
+summary_table[nrow(summary_table)+1,] <- list("Total", sum(summary_table$participant_count), paste0(sum(summary_table$participant_count), " (100%)"))
+
+summary_table %>% select(canc_occ, pct) %>% 
+  gt() %>% 
+  tab_header(title = md("Table 3. Number of Cancer Occurrences per Participant")) %>%
+  cols_label(canc_occ = md("**Number of Occurrence**"), 
+             pct = md("**Number of Participants**")) %>%
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = pct)
+  )
+  
+```
+
+\newpage
+\FloatBarrier
+
+```{r RCA_time, message=FALSE, echo=FALSE, warning=FALSE, results='asis', fig.keep = "none"}
+#, fig.keep = "none"
+
+currentDate <- Sys.Date()
+currentDate <- as.Date(currentDate)
+
+rca_date_counts <- rca %>%  
+  filter(!is.na(d_345545422) & d_525972260==353358909) %>% 
+  mutate(occ_date = paste0(str_sub(as.Date(rca$d_345545422)[!is.na(rca$d_345545422)], 0, 7), "-01")) %>% 
+    filter(occ_date!="NA-01") %>% 
+  group_by(occ_date) %>% tally()
+
+
+#By Count
+ggplot(rca_date_counts, aes(x = as.Date(occ_date), y=n)) +
+  geom_line() + 
+  scale_y_continuous(name = "Number of Occurrences") +
+  scale_x_date(name = "Month and Year", date_labels = "%m-%y", date_breaks = "4 weeks",
+               limits = c(as.Date("2021-02-01"), as.Date(currentDate-7)), expand = c(0,0)) +
+  ggtitle(label = "Figure 1: Number of Cancer Occurrences \n by Cancer Diagnosis Month and Year") +
+  labs(color = "Kit Status") +
+  theme(panel.background = element_blank(),
+        legend.title = element_text(size = 8),
+        legend.position = "bottom",
+        axis.line = element_line(size = 0.2),
+        axis.text.x = element_text(angle = 60, hjust = 1),
+        axis.title.x = element_text(size = 14, face = "bold"),
+        axis.title.y = element_text(size = 14, face = "bold", color = "black"),
+        plot.title = element_text(hjust = 0.5, size = 12, face = "bold")) +
+  guides(fill = guide_legend(nrow = 2, byrow = TRUE))
+
+
+
+
+#Cumulative
+ggplot(rca_date_counts, aes(x = as.Date(occ_date), y=cumsum(n))) +
+  geom_line() + 
+  scale_y_continuous(name = "Cumulative Number of Occurrences") +
+  scale_x_date(name = "Month and Year", date_labels = "%m-%y", date_breaks = "4 weeks",
+               limits = c(as.Date("2021-02-01"), as.Date(currentDate-7)), expand = c(0,0)) +
+  ggtitle(label = "Figure 2: Cumulative Number of Cancer Occurrences \n by Cancer Diagnosis Month and Year") +
+  labs(color = "Kit Status") +
+  theme(panel.background = element_blank(),
+        legend.title = element_text(size = 8),
+        legend.position = "bottom",
+        axis.line = element_line(size = 0.2),
+        axis.text.x = element_text(angle = 60, hjust = 1),
+        axis.title.x = element_text(size = 14, face = "bold"),
+        axis.title.y = element_text(size = 14, face = "bold", color = "black"),
+        plot.title = element_text(hjust = 0.5, size = 12, face = "bold")) +
+  guides(fill = guide_legend(nrow = 2, byrow = TRUE))
+
+
+```
+
+\newpage
+\FloatBarrier
+
+```{r Occ_by_Verif, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+  
+occ_by_site <- rca  %>% 
+    filter(!is.na(Site)) %>% select(Site, 'Cancer Flag') %>% 
+  tbl_cross(col ='Cancer Flag',
+            row = Site, 
+            percent = "row",
+            digits= c(0,1),
+            label= c(Site~ "Site", 'Cancer Flag' ~ " "),
+            missing="ifany",
+            #missing_text="0 ( 0 %)",
+            margin_text="Total Verified Participants") 
+
+occ_by_site %>%
+  modify_caption("Table 4. Number of Verified Participants Diagnosed with Cancer as Identified by RCA") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+```
+
+
+\FloatBarrier
+
+```{r Flags_by_Site, include=FALSE}
+
+all_sites_list <- rca %>% 
+  distinct(Site) %>% 
+  filter(!is.na(Site))  
+
+
+site_counts <- rca %>% 
+  group_by(Site) %>% 
+  summarize(
+    canc_occ = sum(d_525972260 == 353358909, na.rm = TRUE),  
+    verified = sum(d_821247024 == 197316935, na.rm = TRUE)          
+  )
+
+
+all_sites <- all_sites_list %>% 
+  left_join(site_counts, by = "Site") %>% 
+  replace_na(list(canc_occ = 0, verified = 0))
+
+all_sites[11,] <- list("Total", sum(all_sites$canc_occ), sum(all_sites$verified))
+
+
+all_sites %>% 
+  gt() %>% 
+  tab_header(title = md("Table 5. Number of Verified Participants Diagnosed with Cancer \n as reported by Healthcare Site")) %>%
+  cols_label(canc_occ = md("**Cancer Flag**"), 
+             verified = md("**Total Verified Participants**")) %>%
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = verified)
+  )
+
+
+```
+
+
+
+
+
+
+\FloatBarrier
+
+```{r Num_Occ_by_Site, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+Num_Occ_by_Site <- cancer_loc_grouped %>% 
+    filter(!is.na(Site)) %>% select(Site, cancer_site_count) %>% 
+  tbl_cross(col = cancer_site_count,
+            row = Site, 
+            percent = "row",
+            digits= c(0,1),
+            label= c(Site~ "Site", cancer_site_count ~ "Number of Cancer Occurrences"),
+            missing="ifany",
+            #missing_text="0 ( 0 %)",
+            margin_text="Total Verified Participants") 
+
+Num_Occ_by_Site %>%
+  modify_caption("Table 5. Number of Cancer Occurrences Among Verified Participants \n as Identified by RCA") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+```
+
+\FloatBarrier
+```{r Location_by_Verified, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+
+unique_sites <- unique(cancer_loc$Site[!is.na(cancer_loc$Site)])
+
+for (i in 1:length(unique_sites)) {
+  current_site <- unique_sites[i]
+  verif_total <- sum(cancer_loc$d_821247024 == "197316935" & cancer_loc$Site == current_site, na.rm = TRUE)
+
+  loc_verification <- cancer_loc %>%
+    filter(d_525972260 == 353358909 & Site == current_site) %>%
+    select(Anal:Skipped) %>%
+    pivot_longer(cols = everything(), names_to = "Cancer_Site", values_to = "Selected") %>%
+    filter(Selected == 1) %>%
+    group_by(Cancer_Site) %>%
+    summarise(Frequency = n()) 
+  
+  loc_verif <- loc_verification %>% 
+    ungroup() %>%
+    mutate(Percentage = 100 * round(Frequency / verif_total, digits = 2),
+           Freq = formatC(Frequency, format = "f", big.mark = ",", digits = 0),
+           Occurrence = paste0(Freq, " (", Percentage, "%)")) %>%
+    select(Cancer_Site, Occurrence)
+  
+  loc_verif[nrow(loc_verif)+1,] <- list("Total Verified Participants", paste0(sum(loc_verification$Frequency), " (100%)"))
+  
+  # Use as_latex() for PDF/LaTeX rendering
+  loc_verif %>%
+    gt() %>%
+    tab_header(title = md(paste0("Table ", i + 5, ". Verified Participants Diagnosed with Cancer by Primary Site", "\n", "by Healthcare Site ", current_site))) %>%
+    cols_label(Occurrence = md("**Total Participants with Cancer**"), 
+               Cancer_Site = md("**Cancer Site**")) %>%
+    tab_options(stub.font.weight = "bold") %>%
+    tab_style(
+      style = list(cell_text(weight = "bold")),
+      locations = cells_body(columns = Cancer_Site)
+    ) %>%
+    as_latex() %>%  # Ensure proper rendering in PDF output
+    cat()  # Output directly
+}
+
+
+
+```
+
+
+\FloatBarrier
+
+ 
+```{r Live_Status, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+# all_counts <- rca %>% 
+#   #filter(d_525972260==353358909) %>%  
+#   group_by(dead) %>%  tally()
+# 
+# all_counts_pts <- all_counts %>% 
+#   mutate(counts = paste0(all_counts$n, " (", round(all_counts$n/(sum(all_counts$n))*100, digits=1), "%)")) %>% 
+#   select(dead, counts)
+# 
+# all_counts_pts[(nrow(all_counts_pts)+1),] <- list("Total", paste0(sum(all_counts$n), " (100%)"))
+# 
+# 
+# total_rows <- nrow(all_counts_pts)
+# knitr::kable(all_counts_pts , 
+#              caption='Table 17. Vital Status of Participants with Cancer per Manual Chart Review \n at time of RCA Data Submission', 
+#              row.names=FALSE,align=c("l","c"),
+#              col.names=c("Vital Status", "Cancer Occurrences"),
+#              booktabs = TRUE) %>%  
+#   add_indent(seq(1, total_rows - 1))  %>% 
+#   kable_styling(latex_options = c("scale_down","hold_position")) 
+
+
+
+
+```
+
+
+
+```{r Aware_Status, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+# all_counts <- rca %>% 
+#   #filter(d_525972260==353358909) %>%  
+#   group_by(awareness) %>%  tally()
+# 
+# all_counts_pts <- all_counts %>% 
+#   mutate(counts = paste0(all_counts$n, " (", round(all_counts$n/(sum(all_counts$n))*100, digits=1), "%)")) %>% 
+#   select(awareness, counts)
+# 
+# all_counts_pts[(nrow(all_counts_pts)+1),] <- list("Total", paste0(sum(all_counts$n), " (100%)"))
+# 
+# 
+# total_rows <- nrow(all_counts_pts)
+# knitr::kable(all_counts_pts , 
+#              caption='Table 18. Awareness Status of Participants with Cancer per Manual Chart Review \n at time of RCA Data Submission', 
+#              row.names=FALSE,align=c("l","c"),
+#              col.names=c("Vital Status", "Cancer Occurrences"),
+#              booktabs = TRUE) %>%  
+#   add_indent(seq(1, total_rows - 1))  %>% 
+#   kable_styling(latex_options = c("scale_down","hold_position")) 
+
+
+
+
+```
+
+
+
+```{r Aware_vs_Dead, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+  
+aware_by_dead <- rca  %>% 
+    select(dead, awareness) %>% 
+  tbl_cross(col =awareness,
+            row = dead, 
+            percent = "row",
+            digits= c(0,1),
+            label= c(dead~ "Vital Status", awareness ~ "Awareness"),
+            missing="ifany",
+            #missing_text="0 ( 0 %)",
+            margin_text="Total Verified Participants") 
+
+aware_by_dead %>%
+  modify_caption("Table 17. Number of Verified Participants Diagnosed with Cancer as Identified by RCA") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+```
