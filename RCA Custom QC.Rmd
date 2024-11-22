@@ -105,7 +105,34 @@ multiple_occ <- "WITH multiple_rows AS (
 )
 SELECT rca.Connect_ID, 
 d_345545422 as Date_of_Diagnosis,
-d_740819233_d_149205077 as Cancer_Site,
+CASE
+    WHEN d_740819233_d_149205077 = '939782495' THEN 'Anal'
+    WHEN d_740819233_d_149205077 = '135725957' THEN 'Bladder'
+    WHEN d_740819233_d_149205077 = '518416174' THEN 'Brain'
+    WHEN d_740819233_d_149205077 = '847945207' THEN 'Breast'
+    WHEN d_740819233_d_149205077 = '283025574' THEN 'Cervical'
+    WHEN d_740819233_d_149205077 = '942970912' THEN 'Colon/rectal'
+    WHEN d_740819233_d_149205077 = '596122041' THEN 'Esophageal'
+    WHEN d_740819233_d_149205077 = '489400183' THEN 'Head and neck'
+    WHEN d_740819233_d_149205077 = '863246236' THEN 'Kidney'
+    WHEN d_740819233_d_149205077 = '607793249' THEN 'Leukemia'
+    WHEN d_740819233_d_149205077 = '532172400' THEN 'Liver'
+    WHEN d_740819233_d_149205077 = '754745617' THEN 'Lung or bronchial'
+    WHEN d_740819233_d_149205077 = '665036297' THEN 'Non-Hodgkins lymphoma'
+    WHEN d_740819233_d_149205077 = '200837530' THEN 'Lymphoma'
+    WHEN d_740819233_d_149205077 = '990319383' THEN 'Melanoma'
+    WHEN d_740819233_d_149205077 = '487917585' THEN 'Non-melanoma skin'
+    WHEN d_740819233_d_149205077 = '603181162' THEN 'Ovarian'
+    WHEN d_740819233_d_149205077 = '482225200' THEN 'Pancreatic'
+    WHEN d_740819233_d_149205077 = '295976386' THEN 'Prostate'
+    WHEN d_740819233_d_149205077 = '764891959' THEN 'Stomach'
+    WHEN d_740819233_d_149205077 = '248374037' THEN 'Testicular'
+    WHEN d_740819233_d_149205077 = '139822395' THEN 'Thyroid'
+    WHEN d_740819233_d_149205077 = '723614811' THEN 'Uterine'
+    WHEN d_740819233_d_149205077 = '807835037' THEN 'Other'
+    WHEN d_740819233_d_149205077 = '178420302' THEN 'Unavailable/Unknown'
+    ELSE NULL
+END AS Cancer_Site,
 d_740819233_d_868006655 as Cancer_Site_Text_Box,
 d_421730068 as AccessionID,
   CASE 
@@ -128,16 +155,28 @@ WHERE rca.Connect_ID IN (SELECT Connect_ID FROM multiple_rows)
 order by rca.Connect_ID asc"
 
 
+
+
+
 multiple_occ_table <- bq_project_query(project, multiple_occ)
 mult_occ <- bq_table_download(multiple_occ_table, bigint = "integer64")
 
-write.csv(mult_occ,'Multiple_RCA_Cancer_Occurences.csv', row.names = F,na="")
+write.csv(mult_occ,paste0('Multiple_RCA_Cancer_Occurences_', Sys.Date(), '.csv'), row.names = F,na="")
 
 
 
 cat(paste0("This has been converted into a csv file to be uploaded in the same Box folder a this report.",
            "\n",
            "There are ", nrow(mult_occ), " rows in that file, made up of ", length(unique(mult_occ$Connect_ID)), " individual Connect IDs."))
+
+
+# if (nrow(mult_occ) == 0) {
+#   cat("No errors")
+# } else {
+# mult_occ %>%  gt() %>%  
+#   cols_label(Connect_ID= md("**Connect ID**"), Cancer_Site = md("**Cancer Site**"), Cancer_Site_Text_Box = md("**Cancer Site text Box**"), AccessionID = md("**Accession ID**"), Site = md("**Site**")) %>% 
+#   tab_options(stub.font.weight = "bold") 
+# }
 
 ```
 
