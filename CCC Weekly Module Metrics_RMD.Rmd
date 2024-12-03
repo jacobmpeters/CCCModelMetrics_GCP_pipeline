@@ -1459,7 +1459,7 @@ knitr::kable(CES_com_df,
 ```{r CES_Start_Stop, echo=FALSE, warning=FALSE, message=FALSE}
 
 
-CES_time <- all_data %>% filter(d_956490759 == 231311385) %>%
+CES_time <- all_data %>% filter(CES_status=="Submitted") %>%
   mutate(comp_tm_CES = as.numeric(difftime(as.POSIXct(ymd_hms(d_199471989)), as.POSIXct(ymd_hms(d_263355177)), units="mins")),
          start_stop_time = case_when(comp_tm_CES<5 ~ "Under 5 Minutes",
                                 comp_tm_CES<10 ~ "5-10 Minutes",
@@ -1508,7 +1508,7 @@ knitr::kable(CES_TM_table,
 
 
 ces_notif_time<- all_data %>%  
-  filter(d_956490759 == 231311385) %>%
+  filter(CES_status=="Submitted") %>%
   mutate(notification_time = "2024-09-30",
          time = as.numeric(difftime(as.Date(d_199471989), as.Date(notification_time), units="days")))
 

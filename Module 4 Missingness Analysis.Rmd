@@ -227,7 +227,7 @@ m1_complete_nodup$Connect_ID <- as.numeric(m1_complete_nodup$Connect_ID)
 
 
 ## Define requirements of the data: active or passive,  user profile done, consented, mod4 done, verified
-parts <- "SELECT Connect_ID, token,  d_452942800 
+parts <- "SELECT Connect_ID, token,  d_452942800, d_264644252
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
 where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and 
 d_919254129='353358909' and d_699625233='353358909' and d_663265240='231311385' and d_821247024='197316935'"
