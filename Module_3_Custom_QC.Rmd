@@ -1,0 +1,559 @@
+---
+title: "Module 3 Custom_QC"
+author: "Kelsey Sanchez"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r library, include=FALSE}
+#rm(list = ls())
+
+
+#update.packages("tinytex")
+#require(devtools)
+#install_version("ggplot2", version = "0.9.1", repos = "http://cran.us.r-project.org")
+#tinytex::install_tinytex(version = "2020.10")
+#tinytex::reinstall_tinytex(repository = "illinois")
+
+
+
+library(bigrquery)
+library(foreach)
+library(stringr)
+#library(plyr)
+library(expss) ###to add labels
+library(epiDisplay) ##recommended applied here crosstable, tab1
+library(gmodels) ##recommended
+library(magrittr)
+library(arsenal)
+library(gtsummary)
+library(rio)
+
+
+
+library(ggplot2)
+library(gridExtra)
+library(scales)
+library(gt)
+#install(tinytex)
+library(tinytex)
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(reshape)  ###to work on transition from long to wide or wide to long data
+library(listr) ###to work on a list of vector, files or..
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(stringr) ###to work on patterns, characters
+
+options(tinytex.verbose = TRUE)
+
+bq_auth()
+```
+
+
+```{r M1merge, include=FALSE, warning=FALSE}
+
+
+#Data Dictionary for column names
+dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
+dd <- dplyr::bind_rows(dictionary,.id="CID")
+dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
+dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name')
+dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
+dd$CID <- rownames(dd)
+#https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
+devtools::install_github("tidyverse/reprex")
+
+
+
+
+
+## BQ Pull from the participants table just to use for versioning
+project <- "nih-nci-dceg-connect-prod-6d04"
+billing <- "nih-nci-dceg-connect-prod-6d04" 
+recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
+                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935' and d_949302066 ='231311385'")
+recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
+cnames <- names(recr_m1)
+# Check that it doesn't match any non-number
+numbers_only <- function(x) !grepl("\\D", x)
+# to check variables in recr_noinact_wl1
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(recr_m1,varname)
+  recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+
+
+
+#### Handling participants that somehow completed both Mod1 version 1 and Mod1 version 2
+
+sql_M1_1 <- bq_project_query(project, query = "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` WHERE Connect_ID IS NOT NULL")
+sql_M1_2 <- bq_project_query(project, query = "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` WHERE Connect_ID IS NOT NULL")
+
+M1_V1 <- bq_table_download(sql_M1_1, bigint = "integer64")
+M1_V2 <- bq_table_download(sql_M1_2, bigint = "integer64")
+
+# Select matching column names
+M1_V1_vars <- colnames(M1_V1)
+M1_V2_vars <- colnames(M1_V2)
+common_vars <- intersect(M1_V1_vars, M1_V2_vars)
+
+# Subset to common columns
+M1_V1_common <- M1_V1[, common_vars]
+M1_V2_common <- M1_V2[, common_vars]
+
+# Add version indicator
+M1_V1_common$version <- 1
+M1_V2_common$version <- 2
+
+# Identify columns with mismatched types
+mismatched_cols <- names(M1_V1_common)[sapply(names(M1_V1_common), function(col) {
+  class(M1_V1_common[[col]]) != class(M1_V2_common[[col]])
+})]
+
+# Convert mismatched columns to character for consistency
+M1_V1_common <- M1_V1_common %>%
+  mutate(across(all_of(mismatched_cols), as.character))
+M1_V2_common <- M1_V2_common %>%
+  mutate(across(all_of(mismatched_cols), as.character))
+
+# Combine both versions for participants who completed both
+M1_common <- bind_rows(M1_V1_common, M1_V2_common) %>%
+  arrange(Connect_ID, desc(version))
+
+# For columns unique to each version
+V1_only_vars <- setdiff(M1_V1_vars, common_vars)
+V2_only_vars <- setdiff(M1_V2_vars, common_vars)
+
+# Subset each version for unique columns and add version indicator
+m1_v1_only <- M1_V1[, c("Connect_ID", V1_only_vars)] %>%
+  mutate(version = 1)
+m1_v2_only <- M1_V2[, c("Connect_ID", V2_only_vars)] %>%
+  mutate(version = 2)
+
+# Combine the unique and common data
+m1_common_v1 <- left_join(M1_common, m1_v1_only, by = c("Connect_ID", "version"))
+m1_combined_v1v2 <- left_join(m1_common_v1, m1_v2_only, by = c("Connect_ID", "version"))
+
+# Filter for complete cases where specific completion criteria are met
+m1_complete <- m1_combined_v1v2 %>%
+  filter(Connect_ID %in% recr_m1$Connect_ID[recr_m1$d_949302066 == 231311385]) %>%
+  arrange(desc(version))
+
+# Remove duplicates, keeping only the most recent version for each Connect_ID
+m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),]
+
+m1_complete_nodup$Connect_ID <- as.numeric(m1_complete_nodup$Connect_ID)
+
+
+
+parts <- "SELECT Connect_ID, token, d_976570371, d_770257102, d_386488297, d_371067537
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and d_821247024='197316935' and
+(d_919254129='353358909') and (d_699625233='353358909') and (d_949302066='231311385') and d_976570371='231311385'"
+parts_table <- bq_project_query(project, parts)
+parts_data <- bq_table_download(parts_table, bigint = "integer64")
+
+parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID)
+
+
+base_vars= left_join(parts_data, m1_complete_nodup, by="Connect_ID") 
+dim(base_vars)
+
+
+knitr::opts_chunk$set(comment = NA)
+
+
+
+querymod3 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module3_v1_JP` where Connect_ID IS NOT NULL"
+mod3_table <- bq_project_query(project, querymod3)
+mod3_data <- bq_table_download(mod3_table, bigint = "integer64")
+mod3_data$Connect_ID <- as.numeric(mod3_data$Connect_ID)
+
+
+module3= left_join(base_vars, mod3_data, by="Connect_ID")
+
+data_tib_all3 <- as_tibble(module3)
+
+
+
+
+
+data_tib_all3$d_386488297 <- as.Date(data_tib_all3$d_386488297)
+
+```
+
+
+## CIGLIFEA-H must be between 0-999 if the survey was started after January 2024 prod push, otherwise the values must be between 1 and 999.
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+
+error_set1 <- data_tib_all3  %>% 
+  filter((d_386488297 < "2024-01-01" & 
+            (as.numeric(D_594608533)<1 | as.numeric(D_923371868)<1 | as.numeric(D_445537380)<1 | as.numeric(D_387489930)<1 | 
+               as.numeric(D_493642768)<1 | as.numeric(D_821629868)<1 | as.numeric(D_434034366)<1 | as.numeric(D_842088582)<1 | 
+               as.numeric(D_594608533)>999 | as.numeric(D_923371868)>999 | as.numeric(D_445537380)>999 | as.numeric(D_387489930)>999 | 
+            as.numeric(D_493642768)>999 | as.numeric(D_821629868)>999 | as.numeric(D_434034366)>999 | as.numeric(D_842088582)>999)) | 
+           (d_386488297 > "2024-01-01" & 
+              (as.numeric(D_594608533)<0 | as.numeric(D_923371868)<0 | as.numeric(D_445537380)<0 | as.numeric(D_387489930)<0 | 
+                 as.numeric(D_493642768)<0 | as.numeric(D_821629868)<0 | as.numeric(D_434034366)<0 | as.numeric(D_842088582)<0 | 
+               as.numeric(D_594608533)>999 | as.numeric(D_923371868)>999 | as.numeric(D_445537380)>999 | as.numeric(D_387489930)>999 | 
+                 as.numeric(D_493642768)>999 | as.numeric(D_821629868)>999 | as.numeric(D_434034366)>999 | as.numeric(D_842088582)>999))) %>% 
+  select(Connect_ID, D_594608533,D_923371868,D_445537380,D_387489930,D_493642768,D_821629868,D_434034366,D_842088582, d_386488297) %>% 
+  arrange(desc(d_386488297))
+
+colnames(error_set1) <- c("Connect ID", "CIGLIFEA", "CIGLIFEB", "CIGLIFEC", "CIGLIFED", "CIGLIFEE", "CIGLIFEF", "CIGLIFEG", "CIGLIFEH", "Date_M3_Completed")
+if (nrow(error_set1) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(error_set1)
+}
+           
+  
+```
+
+
+
+## CIGARLIFEA-H must be between 0-999 if the survey was started after January 2024 prod push, otherwise the values must be between 1 and 999.
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+error_set2 <- data_tib_all3  %>% 
+  filter((d_386488297 < "2024-01-01" & 
+            (as.numeric(D_254689566)<1 | as.numeric(D_951151270)<1 | as.numeric(D_237415094)<1 | as.numeric(D_868868325)<1 | 
+               as.numeric(D_243519559)<1 | as.numeric(D_440364083)<1 | as.numeric(D_365370279)<1 | as.numeric(D_645681293)<1 | 
+               as.numeric(D_254689566)>999 | as.numeric(D_951151270)>999 | as.numeric(D_237415094)>999 | as.numeric(D_868868325)>999 | 
+            as.numeric(D_243519559)>999 | as.numeric(D_440364083)>999 | as.numeric(D_365370279)>999 | as.numeric(D_645681293)>999)) | 
+           (d_386488297 > "2024-01-01" & 
+              (as.numeric(D_254689566)<0 | as.numeric(D_951151270)<0 | as.numeric(D_237415094)<0 | as.numeric(D_868868325)<0 | 
+                 as.numeric(D_243519559)<0 | as.numeric(D_440364083)<0 | as.numeric(D_365370279)<0 | as.numeric(D_645681293)<0 | 
+               as.numeric(D_254689566)>999 | as.numeric(D_951151270)>999 | as.numeric(D_237415094)>999 | as.numeric(D_868868325)>999 | 
+                 as.numeric(D_243519559)>999 | as.numeric(D_440364083)>999 | as.numeric(D_365370279)>999 | as.numeric(D_645681293)>999))) %>% 
+  select(Connect_ID, D_254689566,D_951151270,D_237415094,D_868868325,D_243519559,D_365370279,D_645681293, D_440364083, d_386488297) %>% 
+  arrange(desc(d_386488297))
+
+colnames(error_set2) <- c("Connect ID", "CIGARLIFEA", "CIGARLIFEB", "CIGARLIFEC", "CIGARLIFED", "CIGARLIFEE", "CIGARLIFEF", "CIGARLIFEG", "CIGARLIFEH", "Date_M3_Completed")
+if (nrow(error_set2) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(error_set2)
+}
+           
+  
+```
+
+
+## PIPELIFEA-H must be between 0-999 if the survey was started after January 2024 prod push, otherwise the values must be between 1 and 999.
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+#PIPEHLIFE hasn't been responded to yet so excluded here 
+
+error_set3 <- data_tib_all3  %>% 
+  filter((d_386488297 < "2024-01-01" & 
+            (as.numeric(D_689339933)<1 | as.numeric(D_812430894)<1 | as.numeric(D_178242940)<1 | as.numeric(D_501545129)<1 | 
+               as.numeric(D_197309242)<1 | as.numeric(D_550850568)<1 | as.numeric(D_277284423)<1 | 
+               as.numeric(D_689339933)>999 | as.numeric(D_812430894)>999 | as.numeric(D_178242940)>999 | as.numeric(D_501545129)>999 | 
+            as.numeric(D_197309242)>999 | as.numeric(D_550850568)>999 | as.numeric(D_277284423)>999)) | 
+           (d_386488297 > "2024-01-01" & 
+              (as.numeric(D_689339933)<0 | as.numeric(D_812430894)<0 | as.numeric(D_178242940)<0 | as.numeric(D_501545129)<0 | 
+                 as.numeric(D_197309242)<0 | as.numeric(D_550850568)<0 | as.numeric(D_277284423)<0 | 
+               as.numeric(D_689339933)>999 | as.numeric(D_812430894)>999 | as.numeric(D_178242940)>999 | as.numeric(D_501545129)>999 | 
+                 as.numeric(D_197309242)>999 | as.numeric(D_550850568)>999 | as.numeric(D_277284423)>999))) %>% 
+  select(Connect_ID, D_689339933,D_812430894,D_178242940,D_501545129,D_197309242,D_550850568,D_277284423, d_386488297) %>% 
+  arrange(desc(d_386488297))
+
+colnames(error_set3) <- c("Connect ID", "PIPELIFEA", "PIPELIFEB", "PIPELIFEC", "PIPELIFED", "PIPELIFEE", "PIPELIFEF", "PIPELIFEG", "Date_M3_Completed")
+if (nrow(error_set3) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(error_set3)
+}
+
+```
+
+
+## TOMARLIFEA-H must be between 0-999 if the survey was started after January 2024 prod push, otherwise the values must be between 1 and 999.
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+#TOMARLIFEH not answered yet, excluded here 
+
+error_set4 <- data_tib_all3  %>% 
+  filter((d_386488297 < "2024-01-01" & 
+            (as.numeric(D_381268397)<1 | as.numeric(D_723763329)<1 | as.numeric(D_724990284)<1 | as.numeric(D_383748300)<1 | 
+               as.numeric(D_199612020)<1 | as.numeric(D_755298453)<1 | as.numeric(D_777877159)<1  | 
+               as.numeric(D_381268397)>999 | as.numeric(D_723763329)>999 | as.numeric(D_724990284)>999 | as.numeric(D_383748300)>999 | 
+            as.numeric(D_199612020)>999 | as.numeric(D_755298453)>999 | as.numeric(D_777877159)>999)) | 
+           (d_386488297 > "2024-01-01" & 
+              (as.numeric(D_381268397)<0 | as.numeric(D_723763329)<0 | as.numeric(D_724990284)<0 | as.numeric(D_383748300)<0 | 
+                 as.numeric(D_199612020)<0 | as.numeric(D_755298453)<0 | as.numeric(D_777877159)<0 |  
+               as.numeric(D_381268397)>999 | as.numeric(D_723763329)>999 | as.numeric(D_724990284)>999 | as.numeric(D_383748300)>999 | 
+                 as.numeric(D_199612020)>999 | as.numeric(D_755298453)>999 | as.numeric(D_777877159)>999))) %>% 
+  select(Connect_ID, D_381268397,D_723763329,D_724990284,D_383748300,D_199612020,D_755298453,D_777877159,d_386488297) %>% 
+  arrange(desc(d_386488297))
+
+colnames(error_set4) <- c("Connect ID", "TOMARLIFEA", "TOMARLIFEB", "TOMARLIFEC", "TOMARLIFED", "TOMARLIFEE", "TOMARLIFEF", "TOMARLIFEG", "Date_M3_Completed")
+if (nrow(error_set4) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(error_set4)
+}
+           
+
+```
+
+
+## EAMARLIFEA-H must be between 0-999 if the survey was started after January 2024 prod push, otherwise the values must be between 1 and 999.
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+error_set5 <- data_tib_all3  %>% 
+  filter((d_386488297 < "2024-01-01" & 
+            (as.numeric(D_922708844)<1 | as.numeric(D_336810811)<1 | as.numeric(D_925215135)<1 | as.numeric(D_402300898)<1 | 
+               as.numeric(D_677733128)<1 | as.numeric(D_702729897)<1 | as.numeric(D_795265404)<1 | as.numeric(D_432310123)<1 | 
+               as.numeric(D_922708844)>999 | as.numeric(D_336810811)>999 | as.numeric(D_925215135)>999 | as.numeric(D_402300898)>999 | 
+            as.numeric(D_677733128)>999 | as.numeric(D_702729897)>999 | as.numeric(D_795265404)>999 | as.numeric(D_432310123)>999)) | 
+           (d_386488297 > "2024-01-01" & 
+              (as.numeric(D_922708844)<0 | as.numeric(D_336810811)<0 | as.numeric(D_925215135)<0 | as.numeric(D_402300898)<0 | 
+                 as.numeric(D_677733128)<0 | as.numeric(D_702729897)<0 | as.numeric(D_795265404)<0 | as.numeric(D_432310123)<0 | 
+               as.numeric(D_922708844)>999 | as.numeric(D_336810811)>999 | as.numeric(D_925215135)>999 | as.numeric(D_402300898)>999 | 
+                 as.numeric(D_677733128)>999 | as.numeric(D_702729897)>999 | as.numeric(D_795265404)>999 | as.numeric(D_432310123)>999))) %>% 
+  select(Connect_ID, D_922708844,D_336810811,D_925215135,D_402300898,D_677733128,D_702729897,D_795265404,D_432310123, d_386488297) %>% 
+  arrange(desc(d_386488297))
+
+colnames(error_set5) <- c("Connect ID", "EAMARLIFEA", "EAMARLIFEB", "EAMARLIFEC", "EAMARLIFED", "EAMARLIFEE", "EAMARLIFEF", "EAMARLIFEG", "EAMARLIFEH", "Date_M3_Completed")
+if (nrow(error_set5) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(error_set5)
+}
+
+  
+```
+
+
+## THMARLIFEA-H must be between 0-999 if the survey was started after January 2024 prod push, otherwise the values must be between 1 and 999.
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+error_set6 <- data_tib_all3  %>% 
+  filter((d_386488297 < "2024-01-01" & 
+            (as.numeric(D_349510816)<1 | as.numeric(D_375227733)<1 | as.numeric(D_752795304)<1 | as.numeric(D_417552256)<1 | 
+               as.numeric(D_963040791)<1 | as.numeric(D_685659661)<1 | as.numeric(D_511145980)<1 | as.numeric(D_227784207)<1 | 
+               as.numeric(D_349510816)>999 | as.numeric(D_375227733)>999 | as.numeric(D_752795304)>999 | as.numeric(D_417552256)>999 | 
+            as.numeric(D_963040791)>999 | as.numeric(D_685659661)>999 | as.numeric(D_511145980)>999 | as.numeric(D_227784207)>999)) | 
+           (d_386488297 > "2024-01-01" & 
+              (as.numeric(D_349510816)<0 | as.numeric(D_375227733)<0 | as.numeric(D_752795304)<0 | as.numeric(D_417552256)<0 | 
+                 as.numeric(D_963040791)<0 | as.numeric(D_685659661)<0 | as.numeric(D_511145980)<0 | as.numeric(D_227784207)<0 | 
+               as.numeric(D_349510816)>999 | as.numeric(D_375227733)>999 | as.numeric(D_752795304)>999 | as.numeric(D_417552256)>999 | 
+                 as.numeric(D_963040791)>999 | as.numeric(D_685659661)>999 | as.numeric(D_511145980)>999 | as.numeric(D_227784207)>999))) %>% 
+  select(Connect_ID, D_349510816,D_375227733,D_752795304,D_417552256,D_963040791,D_685659661,D_511145980,D_227784207, d_386488297) %>% 
+  arrange(desc(d_386488297))
+
+colnames(error_set6) <- c("Connect ID", "THMARLIFEA", "THMARLIFEB", "THMARLIFEC", "THMARLIFED", "THMARLIFEE", "THMARLIFEF", "THMARLIFEG", "THMARLIFEH", "Date_M3_Completed")
+if (nrow(error_set6) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(error_set6)
+}
+
+
+```
+
+```{r, include=FALSE}
+
+qc_funct_9b <- function(PRODUCT1_CID, PRODUCT4_CID, PRODUCT5_CID, PRODUCT8C_CID, PRODUCT9B_CID){ 
+  CID_SYM_P1 <- rlang::ensym(PRODUCT1_CID)
+  CID_SYM_P4 <- rlang::ensym(PRODUCT4_CID)
+  CID_SYM_P5 <- rlang::ensym(PRODUCT5_CID)
+  CID_SYM_P8C <- rlang::ensym(PRODUCT8C_CID)
+  CID_SYM_P9B <- rlang::ensym(PRODUCT9B_CID)
+
+  dt_prod9b <- data_tib_all3 %>%  select(Connect_ID, !!CID_SYM_P8C, !!CID_SYM_P4, !!CID_SYM_P5, !!CID_SYM_P1, !!CID_SYM_P9B, d_386488297)
+  gt_prod9b <- dt_prod9b %>% filter(!is.na(!!CID_SYM_P9B) & 
+                                      (!!CID_SYM_P4== 804785430|
+                                          ((!is.na(!!CID_SYM_P4) | !!CID_SYM_P4!=419415087) & !!CID_SYM_P5==484055234 & !!CID_SYM_P8C== 353358909) | 
+                                          ((!is.na(!!CID_SYM_P4) |  !!CID_SYM_P4!=419415087) & !!CID_SYM_P5==802197176 & !!CID_SYM_P8C== 353358909))) %>% 
+    arrange(desc(d_386488297))
+}
+
+
+```
+
+
+## Only display CIG9B if NOT (CIG4 = 3 OR (CIG4 = 0,1,2 and CIG5 = 1 and CIG8C = 1) OR (CIG4 = 0,1,2 and CIG5 = 2 and CIG8C = 1))
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+error_set7 <- qc_funct_9b(D_763164658, D_639684251, D_798549704, D_400969127, D_815776236)
+colnames(error_set7) <- c("Connect ID", "CIG8C", "CIG4", "CIG5", "CIG1", "CIG9B", "Date_M3_Completed")
+if (nrow(error_set7) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(error_set7)
+}
+
+```
+
+## Only display ECIG9B if NOT (ECIG4 = 3 OR (ECIG4 = 0,1,2 and ECIG5 = 1 and ECIG8C = 1) OR (ECIG4 = 0,1,2 and ECIG5 = 2 and ECIG8C = 1))
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+error_set8 <- qc_funct_9b(D_624111331, D_751046675, D_238422161, D_242276545, D_333072838)
+colnames(error_set8) <- c("Connect ID", "ECIG8C", "ECIG4", "ECIG5", "ECIG1", "ECIG9B", "Date_M3_Completed")
+if (nrow(error_set8) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(error_set8)
+}
+
+```
+
+## Only display CIGAR9B if NOT (CIGAR4 = 3 OR (CIGAR4 = 0,1,2 and CIGAR5 = 1 and CIGAR8C = 1) OR (CIGAR4 = 0,1,2 and CIGAR5 = 2 and CIGAR8C = 1))
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+error_set9 <- qc_funct_9b(D_182431332, D_564438246, D_789271762, D_395480458, D_287715042)
+colnames(error_set9) <- c("Connect ID","CIGAR8C", "CIGAR4", "CIGAR5", "CIGAR1", "CIGAR9B", "Date_M3_Completed")
+if (nrow(error_set9) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(error_set9)
+}
+
+```
+
+## Only display CHEW9B if NOT (CHEW4 = 3 OR (CHEW4 = 0,1,2 and CHEW5 = 1 and CHEW8C = 1) OR (CHEW4 = 0,1,2 and CHEW5 = 2 and CHEW8C = 1))
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+error_set10 <- qc_funct_9b(D_306320432, D_101710639, D_344631681, D_785139115, D_673842048)
+colnames(error_set10) <- c("Connect ID", "CHEW8C", "CHEW4", "CHEW5", "CHEW1", "CHEW9B", "Date_M3_Completed")
+if (nrow(error_set10) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(error_set10)
+}
+
+```
+
+## Only display HOOKAH9B if NOT (HOOKAH4 = 3 OR (HOOKAH4 = 0,1,2 and HOOKAH5 = 1 and HOOKAH8C = 1) OR (HOOKAH4 = 0,1,2 and HOOKAH5 = 2 and HOOKAH8C = 1))
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+error_set11 <- qc_funct_9b(D_981755099, D_472007171, D_787047261, D_585702271, D_720305356)
+colnames(error_set11) <- c("Connect ID", "HOOKAH8C", "HOOKAH4", "HOOKAH5", "HOOKAH1", "HOOKAH9B", "Date_M3_Completed")
+if (nrow(error_set11) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(error_set11)
+}
+
+
+```
+
+## Only display PIPE9B if NOT (PIPE4 = 3 OR (PIPE4 = 0,1,2 and PIPE5 = 1 and PIPE8C = 1) OR (PIPE4 = 0,1,2 and PIPE5 = 2 and PIPE8C = 1))
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+error_set12 <- qc_funct_9b(D_559388168, D_458395129, D_845122623, D_311569789, D_385490512)
+colnames(error_set12) <- c("Connect ID", "PIPE8C", "PIPE4", "PIPE5", "PIPE1", "PIPE9B", "Date_M3_Completed")
+if (nrow(error_set12) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(error_set12)
+}
+
+```
+
+## Only display SMMAR9B	if NOT (SMMAR4 = 3 OR (SMMAR4 = 0,1,2 and SMMAR5 = 1 and SMMAR8C = 1) OR (SMMAR4 = 0,1,2 and SMMAR5 = 2 and SMMAR8C = 1))
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+error_set13 <- qc_funct_9b(D_319397722, D_503058092, D_180308733, D_129677435, D_722122662)
+colnames(error_set13) <- c("Connect ID", "SMMAR8C", "SMMAR4", "SMMAR5", "SMMAR1", "SMMAR9B", "Date_M3_Completed")
+if (nrow(error_set13) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(error_set13)
+}
+
+```
+
+## Only display TOMMAR9B	if NOT (TOMAR4 = 3 OR (TOMAR4 = 0,1,2 and TOMAR5 = 1 and TOMAR8C = 1) OR (TOMAR4 = 0,1,2 and TOMAR5 = 2 and TOMAR8C = 1))
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+error_set14 <- qc_funct_9b(D_524914900, D_891825638, D_444759994, D_698314386, D_171050898)
+colnames(error_set14) <- c("Connect ID", "TOMMAR8C", "TOMMAR4", "TOMMAR5", "TOMMAR1", "TOMMAR9B", "Date_M3_Completed")
+if (nrow(error_set14) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(error_set14)
+}
+
+```
+
+## Only display ELMAR9B	if NOT (ELMAR4 = 3 OR (ELMAR4 = 0,1,2 and ELMAR5 = 1 and ELMAR8C = 1) OR (ELMAR4 = 0,1,2 and ELMAR5 = 2 and ELMAR8C = 1))
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+error_set15 <- qc_funct_9b(D_325229459, D_521073718, D_859228803, D_142164107, D_177252178)
+colnames(error_set15) <- c("Connect ID", "ELMMAR8C", "ELMMAR4", "ELMMAR5", "ELMMAR1", "ELMMAR9B", "Date_M3_Completed")
+if (nrow(error_set15) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(error_set15)
+}
+
+```
+
+## Only display EMMAR9B	if NOT (EAMAR4 = 3 OR (EAMAR4 = 0,1,2 and EAMAR5 = 1 and EAMAR8C = 1) OR (EAMAR4 = 0,1,2 and EAMAR5 = 2 and EAMAR8C = 1))
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+error_set16 <- qc_funct_9b(D_101170268, D_742544044, D_921663542, D_259481608, D_891996278)
+colnames(error_set16) <- c("Connect ID", "EAMMAR8C", "EAMMAR4", "EAMMAR5", "EAMMAR1", "EAMMAR9B", "Date_M3_Completed")
+if (nrow(error_set16) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(error_set16)
+}
+
+```
+
+## Only display THMAR9B	if NOT (THMAR4 = 3 OR (THMAR4 = 0,1,2 and THMAR5 = 1 and THMAR8C = 1) OR (THMAR4 = 0,1,2 and THMAR5 = 2 and THMAR8C = 1))
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+error_set17 <- qc_funct_9b(D_355689185, D_420155119, D_532755074, D_536166591, D_937550939)
+colnames(error_set17) <- c("Connect ID", "THMMAR8C", "THMMAR4", "THMMAR5", "THMMAR1", "THMMAR9B", "Date_M3_Completed")
+if (nrow(error_set17) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(error_set17)
+}
+
+```
+
+## Only display ALCOHOL9 if (ALCOHOL2 = 3) AND (IF RESPONSE PROVIDED TO REGALCOHOL_AGE) AND ((ALCOHOL5 = 1) OR (ALCOHOL5 = 0 AND RESPONSE PROVIDED TO ALCOHOL6))
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+error_set18 <- data_tib_all3 %>%  filter(!((D_429228540==132232896 & !is.na(D_556837046_D_141874857) & D_338467033==353358909) |
+                                    (D_338467033==104430631 & !is.na(D_480426504))) & 
+                                  !is.na(D_254739443)) %>% 
+  select(Connect_ID, D_429228540, D_556837046_D_141874857, D_338467033, D_480426504, D_254739443, d_386488297) %>% 
+  arrange(desc(d_386488297))
+
+colnames(error_set18) <- c("Connect ID", "ALCOHOL2", "REGALCOHOL_AGE", "ALCOHOL5","ALCOHOL6", "ALCOHOL9", "Date_M3_Completed")
+if (nrow(error_set18) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(error_set18)
+}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
