@@ -45,6 +45,8 @@ library(listr) ###to work on a list of vector, files or..
 library(sqldf) ##sql
 library(lubridate) ###date time
 library(stringr) ###to work on patterns, characters
+library(knitr)
+library(kableExtra)
 
 options(tinytex.verbose = TRUE)
 
@@ -480,7 +482,7 @@ colnames(error_set14) <- c("Connect ID", "TOMMAR8C", "TOMMAR4", "TOMMAR5", "TOMM
 if (nrow(error_set14) == 0) {
   cat("No errors")
 } else {
-  knitr::kable(error_set14)
+  knitr::kable(error_set14) %>% kable_styling(latex_options = "scale_down", full_width = FALSE, font_size = 8) 
 }
 
 ```
@@ -524,20 +526,35 @@ if (nrow(error_set17) == 0) {
 
 ```
 
-## Only display ALCOHOL9 if (ALCOHOL2 = 3) AND (IF RESPONSE PROVIDED TO REGALCOHOL_AGE) AND ((ALCOHOL5 = 1) OR (ALCOHOL5 = 0 AND RESPONSE PROVIDED TO ALCOHOL6))
+## Only display ALCOHOL9 if (ALCOHOL2 = 3) AND (RESPONSE PROVIDED TO REGALCOHOL_AGE) AND (ALCOHOL5 = 1)
 ```{r, message=FALSE, warning=FALSE, echo=FALSE}
 
-error_set18 <- data_tib_all3 %>%  filter(!((D_429228540==132232896 & !is.na(D_556837046_D_141874857) & D_338467033==353358909) |
-                                    (D_338467033==104430631 & !is.na(D_480426504))) & 
+error_set18 <- data_tib_all3 %>%  filter(!(D_429228540==132232896 & !is.na(D_556837046_D_141874857) & D_338467033==353358909) & # |
+                                    #(D_338467033==104430631 & !is.na(D_480426504))) & 
                                   !is.na(D_254739443)) %>% 
-  select(Connect_ID, D_429228540, D_556837046_D_141874857, D_338467033, D_480426504, D_254739443, d_386488297) %>% 
+  dplyr::select(Connect_ID, D_429228540, D_556837046_D_141874857, D_338467033,D_254739443, d_386488297) %>% 
   arrange(desc(d_386488297))
 
-colnames(error_set18) <- c("Connect ID", "ALCOHOL2", "REGALCOHOL_AGE", "ALCOHOL5","ALCOHOL6", "ALCOHOL9", "Date_M3_Completed")
+
+
+### IMS NOTED LOGIC CHANGES THAT SEEMED TO HAVE FIXED MOST OF THE PROBLEMS. THEY SAID: 
+
+
+# Up to 1/14/2024, the display logic was: [DISPLAY ALCOHOL9 – ALCLIFE4H IF (ALCOHOL2=3 OR 2) AND IF RESPONSE PROVIDED TO THE FOLLOWING VARIABLES: (1) ALCOHOL4; ALCOHOL5; AND (2) IF SHOWN, ALCOHOL6. OTHERWISE GO TO SUN EXPOSURE SECTION].
+# The 01/21/2024 version has display logic: [DISPLAY ALCOHOL9 IF (ALCOHOL2= 3), (REGALCOHOL_AGE= #), AND ([ALCOHOL5= 1] OR [ALCOHOL5= 0 AND ALCOHOL6= #]) ELSE, GO TO INTROSE]
+# Sometime between 1/22/2024 – 6/25/2024, the display logic changed to: [DISPLAY ALCOHOL9 IF (ALCOHOL2= 3)), (REGALCOHOL_AGE= #), AND (ALCOHOL5= 1) ELSE, GO TO ALCLIFE1]
+# Currently, the code is as per [DISPLAY ALCOHOL9 IF (ALCOHOL2= 3)), (REGALCOHOL_AGE= #), AND (ALCOHOL5= 1) ELSE, GO TO ALCLIFE1]
+                                                                      
+error_set18 <- error_set18 %>% filter(d_386488297 > "2024-06-25")                                                                      
+                                                                      
+                                                                      
+
+
+colnames(error_set18) <- c("Connect ID", "ALCOHOL2", "REGALCOHOL_AGE", "ALCOHOL5","ALCOHOL9", "Date_M3_Completed")
 if (nrow(error_set18) == 0) {
   cat("No errors")
 } else {
-  knitr::kable(error_set18)
+  knitr::kable(error_set18) %>%  landscape()
 }
 
 ```
