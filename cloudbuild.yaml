@@ -16,6 +16,11 @@ steps:
    entrypoint: gcloud
    args: ['run','deploy','ccc-module-metrics-api', '--image=gcr.io/nih-nci-dceg-connect-prod-6d04/ccc-module-metrics-api:$COMMIT_SHA',  '--cpu=8','--memory=32Gi', '--region=us-central1', '--service-account=qa-qc-prod@nih-nci-dceg-connect-prod-6d04.iam.gserviceaccount.com']
 
+# Cloud Build suggested High CPU to improve build time which was previousl 12+ minutes
+options:
+  machineType: 'E2_HIGHCPU_8'
+  
+
 tags:
   - reporting_pipeline
   - module_metrics    

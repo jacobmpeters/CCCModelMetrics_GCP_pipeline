@@ -34,7 +34,25 @@ mod2_stats:
   gcp_info:
     cloud_scheduler: ccc-module2-statistics
     frequency: "0 12 1 * *" # first of the month at 12 PM
+    
+mod2_qc_metrics:
+  r_file_name: "Module_2_Custom_QC.Rmd"
+  report_file_name: "Module_2_Custom_QC.pdf"
+  box_folders:
+    - "211160736918"
+  gcp_info:
+    cloud_scheduler: ccc-mod2-qc-metrics
+    frequency: "15 14 * * 1" 
 
+mod3_qc_metrics:
+  r_file_name: "Module_3_Custom_QC.Rmd"
+  report_file_name: "Module_3_Custom_QC.pdf"
+  box_folders:
+    - "226704654836"
+  gcp_info:
+    cloud_scheduler: ccc-module3-qc-metrics
+    frequency: "45 14 1 * *" # first of the month at 12:30 PM
+    
 mod3_stats:
   r_file_name: "Module 3 Summary Statatistics.Rmd"
   report_file_name: "Module_3_Summary_Statatistics.pdf"
@@ -124,3 +142,21 @@ promis_notification_metrics:
   gcp_info:
     cloud_scheduler: ccc-promis-notification-metrics
     frequency: "45 13 * * 1" 
+    
+rca_metrics:
+  r_file_name: "RCA Metrics.Rmd"
+  report_file_name: "RCA_Metrics.pdf"
+  box_folders:
+    - "251314285484"
+  gcp_info:
+    cloud_scheduler: ccc-rca-metrics
+    frequency: "00 14 * * 1" 
+    
+rca_qc_metrics:
+  r_file_name: "RCA Custom QC.Rmd"
+  report_file_name: "RCA_Custom_QC.pdf"
+  box_folders:
+    - "236420612811"
+  gcp_info:
+    cloud_scheduler: ccc-rca-qc-metrics
+    frequency: "30 14 * * 1"
