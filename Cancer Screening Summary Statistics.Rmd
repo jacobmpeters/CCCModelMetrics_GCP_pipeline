@@ -1,0 +1,745 @@
+---
+title: "Cancer Screening Summary Statistics"
+author: "Kelsey Sanchez"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+
+```{r libraries, include=FALSE}
+
+library(bigrquery)
+library(foreach)
+library(stringr)
+#library(plyr)
+#library(expss) ###to add labels
+library(epiDisplay) ##recommended applied here crosstable, tab1
+library(gmodels) ##recommended
+library(magrittr)
+library(arsenal)
+library(gtsummary)
+library(rio)
+
+
+
+library(ggplot2)
+library(gridExtra)
+library(scales)
+library(gt)
+#install(tinytex)
+library(tinytex)
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(reshape)  ###to work on transition from long to wide or wide to long data
+library(listr) ###to work on a list of vector, files or..
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(stringr) ###to work on patterns, characters
+
+
+bq_auth()
+
+```
+
+
+```{r BQ Pull, include=FALSE}
+
+## Grab module 1 variables first 
+
+
+#Data Dictionary for column names
+dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
+dd <- dplyr::bind_rows(dictionary,.id="CID")
+dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
+dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name')
+dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
+dd$CID <- rownames(dd)
+#https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
+devtools::install_github("tidyverse/reprex")
+
+
+
+
+
+## BQ Pull from the participants table just to use for versioning
+project <- "nih-nci-dceg-connect-prod-6d04"
+billing <- "nih-nci-dceg-connect-prod-6d04" 
+recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
+                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935' and d_949302066 ='231311385'")
+recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
+cnames <- names(recr_m1)
+# Check that it doesn't match any non-number
+numbers_only <- function(x) !grepl("\\D", x)
+# to check variables in recr_noinact_wl1
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(recr_m1,varname)
+  recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+
+
+
+#### Handling participants that somehow completed both Mod1 version 1 and Mod1 version 2
+
+sql_M1_1 <- bq_project_query(project, query = "SELECT Connect_ID, D_407056417, D_750420077_D_108025529, D_750420077_D_434651539, D_750420077_D_505282171, D_750420077_D_578416151, D_750420077_D_846483618, D_289664241_D_289664241, D_613744428 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` WHERE Connect_ID IS NOT NULL")
+sql_M1_2 <- bq_project_query(project, query = "SELECT Connect_ID, D_407056417, D_750420077_D_108025529, D_750420077_D_434651539, D_750420077_D_505282171, D_750420077_D_578416151, D_750420077_D_582784267, D_750420077_D_700100953, D_750420077_D_751402477, D_750420077_D_846483618, D_289664241_D_918409306, D_613744428 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` WHERE Connect_ID IS NOT NULL")
+
+M1_V1 <- bq_table_download(sql_M1_1, bigint = "integer64")
+M1_V2 <- bq_table_download(sql_M1_2, bigint = "integer64")
+
+# Select matching column names
+M1_V1_vars <- colnames(M1_V1)
+M1_V2_vars <- colnames(M1_V2)
+common_vars <- intersect(M1_V1_vars, M1_V2_vars)
+
+# Subset to common columns
+M1_V1_common <- M1_V1[, common_vars]
+M1_V2_common <- M1_V2[, common_vars]
+
+# Add version indicator
+M1_V1_common$version <- 1
+M1_V2_common$version <- 2
+
+# Identify columns with mismatched types
+mismatched_cols <- names(M1_V1_common)[sapply(names(M1_V1_common), function(col) {
+  class(M1_V1_common[[col]]) != class(M1_V2_common[[col]])
+})]
+
+# Convert mismatched columns to character for consistency
+M1_V1_common <- M1_V1_common %>%
+  mutate(across(all_of(mismatched_cols), as.character))
+M1_V2_common <- M1_V2_common %>%
+  mutate(across(all_of(mismatched_cols), as.character))
+
+# Combine both versions for participants who completed both
+M1_common <- bind_rows(M1_V1_common, M1_V2_common) %>%
+  arrange(Connect_ID, desc(version))
+
+# For columns unique to each version
+V1_only_vars <- setdiff(M1_V1_vars, common_vars)
+V2_only_vars <- setdiff(M1_V2_vars, common_vars)
+
+# Subset each version for unique columns and add version indicator
+m1_v1_only <- M1_V1[, c("Connect_ID", V1_only_vars)] %>%
+  mutate(version = 1)
+m1_v2_only <- M1_V2[, c("Connect_ID", V2_only_vars)] %>%
+  mutate(version = 2)
+
+# Combine the unique and common data
+m1_common_v1 <- left_join(M1_common, m1_v1_only, by = c("Connect_ID", "version"))
+m1_combined_v1v2 <- left_join(m1_common_v1, m1_v2_only, by = c("Connect_ID", "version"))
+
+# Filter for complete cases where specific completion criteria are met
+m1_complete <- m1_combined_v1v2 %>%
+  filter(Connect_ID %in% recr_m1$Connect_ID[recr_m1$d_949302066 == 231311385]) %>%
+  arrange(desc(version))
+
+# Remove duplicates, keeping only the most recent version for each Connect_ID
+m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),]
+
+m1_complete_nodup$Connect_ID <- as.numeric(m1_complete_nodup$Connect_ID)
+
+
+
+
+
+
+
+
+
+pt_pull <- "SELECT Connect_ID,  d_827220437, d_987563196, d_821247024
+FROM `nih-nci-dceg-connect-stg-5519.FlatConnect.participants_JP` 
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and d_821247024='197316935' and 
+(d_919254129='353358909') and (d_699625233='353358909') and 
+(d_949302066='231311385')"  
+CSH_pull <- "SELECT * FROM `nih-nci-dceg-connect-stg-5519.FlatConnect.cancerOccurrence_JP` 
+where Connect_ID is not null" 
+
+
+pt_pull_table <- bq_project_query(project, pt_pull)
+data_pt <- bq_table_download(pt_pull_table, bigint = "integer64")
+
+CSH_pull_table <- bq_project_query(project, CSH_pull)
+data_CSH <- bq_table_download(CSH_pull_table, bigint = "integer64")
+
+screening <- left_join(data_pt, data_CSH, by="Connect_ID")
+
+
+screen= as_tibble(screening)
+
+```
+
+
+
+
+```{r functions, include=FALSE}
+
+dict <- list("353358909"="Yes", "104430631"="No",  "178420302"="Do not Know", 
+             "Yes, because of puberty or hormones already in my body",
+             "Yes, because of hormonal medication or device",
+             "Less than 1 year ago",
+             "More than 1 year ago, but less than 2 years ago",
+             "More than 2 years ago, but less than 5 years ago",
+             "More than 5 years ago, but less than 10 years ago",
+             "Over 10 years ago",
+             "Once",
+             "Twice",
+             "3 to 5 times",
+             "6 to 10 times",
+             "Over 10 time")
+
+
+
+#GT table for questions asked to all (no skip logic)
+simple_funct2 <- function(CID, Title){  
+  CID_SYM <- rlang::ensym(CID)
+  dt_select <- screen %>%  select(Connect_ID, !!CID_SYM)
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+  
+  gt_yn %>%  gt::gt()  %>%  
+    fmt_number(columns = "percentage", decimals = 2) %>% 
+    tab_header(title = md(Title)) %>% 
+    cols_label(n= md("**N**"), answer = md("**Answer**"), percentage = md("**%**")) %>%  
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+    tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+    tab_style(
+      style = list(
+        cell_text(weight = "bold")
+      ),
+      locations = cells_body(
+        columns = answer,
+      )
+    ) 
+}
+
+
+#GT table with one filter/skip logic
+one_logic_funct2 <- function(CID, CID_prev, Prev_Answer, Title){  
+  CID_SYM <- rlang::ensym(CID)
+  CID_SYM_P <- rlang::ensym(CID_prev)
+  dt_select <- screen %>%  filter(!!CID_SYM_P == Prev_Answer) %>%  select(Connect_ID, !!CID_SYM) 
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**N**"),  answer = md("**Answer**"), percentage = md("**%**")) %>% 
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) 
+}
+
+
+#GT table with two filter/skip logics
+two_skip_funct2 <- function(CID, Title, CID_prev, Prev_Answer1, Prev_Answer2){  
+  CID_SYM <- rlang::ensym(CID)
+  CID_SYM_P <- rlang::ensym(CID_prev)
+  dt_select <- screen %>%  filter(!!CID_SYM_P == Prev_Answer1 | !!CID_SYM_P == Prev_Answer2) %>%  select(Connect_ID, !!CID_SYM) 
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**N**"),  answer = md("**Answer**"), percentage = md("**%**")) %>% 
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) 
+}
+
+
+
+#GT table with three filter/skip logics
+three_skip_funct2 <- function(CID, Title, CID_prev, Prev_Answer1, Prev_Answer2, Prev_Answer3){  
+  CID_SYM <- rlang::ensym(CID)
+  CID_SYM_P <- rlang::ensym(CID_prev)
+  dt_select <- screen %>%  filter(!!CID_SYM_P == Prev_Answer1 | !!CID_SYM_P == Prev_Answer2| !!CID_SYM_P == Prev_Answer3) %>%  
+    select(Connect_ID, !!CID_SYM) 
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**N**"),  answer = md("**Answer**"), percentage = md("**%**")) %>% 
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) 
+}
+
+
+
+#Boxplot
+boxp_funct <- function(CID,Title, Xlab) {
+  CID_SYM <- rlang::ensym(CID)
+  screen %>% mutate(!!CID_SYM:=as.numeric(!!CID_SYM)) %>%
+    filter(!is.na(!!CID_SYM)) %>%
+    ggplot(aes(x=!!CID_SYM))+
+    xlab(Xlab) + geom_boxplot()+  ggtitle(Title)+
+    theme(axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()  #remove y axis ticks
+        )
+}
+
+
+```
+
+
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+
+which_sex2 <- screen %>%
+  mutate(
+    Penis = if_else(D_750420077_D_582784267 == 1, 1, 0),
+    Testes = if_else(D_750420077_D_751402477 == 1, 1, 0),
+    `Prostate Gland` = if_else(D_750420077_D_700100953 == 1, 1, 0),
+    Vagina = if_else(D_750420077_D_846483618 == 1, 1, 0),
+    Cervix = if_else(D_750420077_D_505282171 == 1, 1, 0),
+    Uterus = if_else(D_750420077_D_578416151 == 1, 1, 0),
+    Ovaries = if_else(D_750420077_D_434651539 == 1, 1, 0),
+    `Fallopian Tubes` = if_else(D_750420077_D_108025529 == 1, 1, 0),
+    Skipped = if_else(rowSums(select(., starts_with("D_750420077_D_")) == 0 | is.na(select(., starts_with("D_750420077_D_")))) == ncol(select(., starts_with("D_750420077_D_"))), 1, 0)
+  )
+
+
+pivot_sex <- which_sex2 %>%
+  select(`Penis`:Skipped) %>%
+  pivot_longer(cols = everything(), names_to = "Body_Parts", values_to = "Selected") %>%
+  filter(Selected == 1) %>%
+  group_by(Surgery) %>%
+  summarise(Frequency = n()) %>%
+  ungroup() %>%
+  mutate(Percentage = 100 * Frequency / sum(Frequency))
+
+dt_sex <- pivot_sex %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>% 
+  fmt_number(column = "Frequency", decimals=0, use_seps = TRUE) %>%
+  tab_header(title = md("MHGROUP9: Surgeries Had")) %>%
+  cols_label(Frequency = md("**N**"), 
+             Percentage = md("**%**"), 
+             Body_Parts = md("**Answer**")) %>%
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Body_Parts)
+  ) %>%
+  tab_footnote(
+    footnote = "As this is a select all question, participants may select multiple responses.",
+    locations = cells_column_labels(columns = Percentage)
+  ) 
+
+dt_sex
+
+
+
+```
+
+
+
+## MH GROUP9
+```{r MhGroup9, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+knitr::opts_chunk$set(dev = "png", fig.path = "")
+
+
+mhgroup9 <- screen %>%
+  mutate(
+    `Tonsillectomy` = if_else(D_624179836_D_797189152 == 1, 1, 0),
+    Cholecystectomy = if_else(D_624179836_D_633546100 == 1, 1, 0),
+    Appendectomy = if_else(D_624179836_D_866002271 == 1, 1, 0),
+    Splenectomy = if_else(D_624179836_D_209101810 == 1, 1, 0),
+    Thyroidectomy = if_else(D_624179836_D_413734739 == 1, 1, 0),
+    Nephrectomy = if_else(D_624179836_D_215525943 == 1, 1, 0),
+    Liposuction = if_else(D_624179836_D_118789503 == 1, 1, 0),
+    `Gastric Bypass` = if_else(D_624179836_D_715563991 == 1, 1, 0),
+    `Breast Surgery` = if_else(D_624179836_D_533491176 == 1, 1, 0),
+    Hysterectomy = if_else(D_624179836_D_220755749 == 1, 1, 0),
+    `Tubal Ligation` = if_else(D_624179836_D_465318416 == 1, 1, 0),
+    Oophorectomy = if_else(D_624179836_D_630100221 == 1, 1, 0),
+    Salpingectomy = if_else(D_624179836_D_692881833 == 1, 1, 0),
+    Vasectomy = if_else(D_624179836_D_654450030 == 1, 1, 0),
+    `Orchiectomy or Orchidectomy` = if_else(D_624179836_D_532603425 == 1, 1, 0),
+    Prostatectomy = if_else(D_624179836_D_733236542 == 1, 1, 0),
+    Penectomy = if_else(D_624179836_D_961987554 == 1, 1, 0),
+    None = if_else(D_624179836_D_535003378 == 1, 1, 0),
+    Skipped = if_else(rowSums(select(., starts_with("D_624179836_D_")) == 0 | is.na(select(., starts_with("D_624179836_D_")))) == ncol(select(., starts_with("D_624179836_D_"))), 1, 0)
+  )
+
+pivot_data9 <- mhgroup9 %>%
+  select(`Tonsillectomy`:Skipped) %>%
+  pivot_longer(cols = everything(), names_to = "Surgery", values_to = "Selected") %>%
+  filter(Selected == 1) %>%
+  group_by(Surgery) %>%
+  summarise(Frequency = n()) %>%
+  ungroup() %>%
+  mutate(Percentage = 100 * Frequency / sum(Frequency))
+
+dt_mgr9 <- pivot_data9 %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>% 
+  fmt_number(column = "Frequency", decimals=0, use_seps = TRUE) %>%
+  tab_header(title = md("MHGROUP9: Surgeries Had")) %>%
+  cols_label(Frequency = md("**N**"), 
+             Percentage = md("**%**"), 
+             Surgery = md("**Answer**")) %>%
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Surgery)
+  ) %>%
+  tab_footnote(
+    footnote = "As this is a select all question, participants may select multiple responses.",
+    locations = cells_column_labels(columns = Percentage)
+  ) 
+
+dt_mgr9
+
+
+```
+
+
+```{r MHGroup9Diagn, warning=FALSE, echo=FALSE, message=FALSE}
+#	Tonsils removed (tonsillectomy)
+tonsil_a_sg=boxp_funct(D_367884741_D_206625031,"Age at Tonisllectomy Surgery","Age") 
+tonsil_y_sg=boxp_funct(D_367884741_D_261863326,"Year of Tonisllectomy Surgery","Year")
+grid.arrange(tonsil_a_sg, tonsil_y_sg, nrow=2)
+
+
+#	Gallbladder removed (cholecystectomy)
+gall_a_sg=boxp_funct(D_178353079_D_206625031,"Age at Cholecystectomy Surgery","Age") 
+gall_y_sg=boxp_funct(D_178353079_D_261863326,"Year of Cholecystectomy Surgery","Year")
+grid.arrange(gall_a_sg, gall_y_sg, nrow=2)
+
+
+#	Appendix removed (appendectomy)
+apdx_a_sg=boxp_funct(D_550075233_D_206625031,"Age at Appendectomy Surgery","Age") 
+apdx_y_sg=boxp_funct(D_550075233_D_261863326,"Year of Appendectomy Surgery","Year")
+grid.arrange(apdx_a_sg, apdx_y_sg, nrow=2)
+
+#	Spleen removed (Splenectomy)
+apdx_a_sg=boxp_funct(D_927516732_D_206625031,"Age at Splenectomy Surgery","Age") 
+apdx_y_sg=boxp_funct(D_927516732_D_261863326,"Year of Splenectomy Surgery","Year")
+grid.arrange(apdx_a_sg, apdx_y_sg, nrow=2)
+
+#	Throid removed (Thyroidectomy)
+apdx_a_sg=boxp_funct(D_552788665_D_206625031,"Age at Thyroidectomy Surgery","Age") 
+apdx_y_sg=boxp_funct(D_552788665_D_261863326,"Year of Thyroidectomy Surgery","Year")
+grid.arrange(apdx_a_sg, apdx_y_sg, nrow=2)
+
+#Type of Kidney Surgery
+590891714	Which of these best describes the type of kidney removal surgery that you had
+
+#	Kidney(s) removed (appendectomy)
+apdx_a_sg=boxp_funct(D_216506024_D_206625031,"Age at Nephrectomy Surgery","Age") 
+apdx_y_sg=boxp_funct(D_216506024_D_261863326,"Year of Nephrectomy Surgery","Year")
+grid.arrange(apdx_a_sg, apdx_y_sg, nrow=2)
+
+
+#	Liposuction
+lipo_a_sg=boxp_funct(D_860920332_D_206625031,"Age at Liposuction Surgery","Age") 
+lipo_y_sg=boxp_funct(D_860920332_D_261863326,"Year of Liposuction Surgery","Year")
+grid.arrange(lipo_a_sg, lipo_y_sg, nrow=2)
+
+
+#	Bariatric surgery (lap band, gastric bypass)
+bar_sg_a_sg=boxp_funct(D_986613440_D_206625031,"Age at Gastric Bypass Surgery","Age")
+bar_sg_y_sg=boxp_funct(D_986613440_D_261863326,"Year of Gastric Bypass Surgery","Year")
+grid.arrange(bar_sg_a_sg, bar_sg_y_sg, nrow=2)
+
+```
+
+
+
+```{r BreastSurgery, include=FALSE}
+
+  #type of breast surgery
+br_surg= screen  %>% filter(D_624179836_D_533491176==1) %>%  
+  mutate(
+    `Breast Implants` = if_else(D_517307064_D_517307064_D_752953170 == 1, 1, 0),
+    `Mastopexy` = if_else(D_517307064_D_517307064_D_325506683 == 1, 1, 0),
+    `Breast Implants` = if_else(D_517307064_D_517307064_D_752953170 == 1, 1, 0),
+    #Mastectomy = if_else(D_517307064_D_517307064_D_325506683 == 1 | D_517307064_D_517307064_D_256196714 == 1, 1, 0),
+    `Breast Reconstruction` = if_else(D_517307064_D_517307064_D_335563082 == 1, 1, 0),
+    `Breast Reduction` = if_else(D_517307064_D_517307064_D_955881350 == 1, 1, 0),
+    `Partial Mastectomy` = if_else(D_517307064_D_517307064_D_492902023 == 1, 1, 0),
+    `Mastectomy` = if_else(D_517307064_D_517307064_D_256196714 == 1, 1, 0),
+    `Double Mastectomy` = if_else(D_517307064_D_517307064_D_802859122 == 1, 1, 0),
+    Abscess = if_else(D_517307064_D_517307064_D_520432394 == 1, 1, 0),
+    `Removal of Lactiferous` = if_else(D_517307064_D_517307064_D_667901971 == 1, 1, 0),
+    Other = if_else(D_517307064_D_517307064_D_807835037 == 1 | !is.na(D_517307064_D_942347130), 1, 0),
+    None = if_else(D_517307064_D_517307064_D_535003378 == 1, 1, 0),
+    Skipped = if_else(rowSums(select(., starts_with("D_517307064_D_517307064_")) == 0 | is.na(select(., starts_with("D_517307064_D_517307064_")))) == ncol(select(., starts_with("D_517307064_D_517307064_"))), 1, 0)
+  )
+
+
+
+
+pivot_breast <- br_surg %>%
+  select(`Tonsillectomy`:Skipped) %>%
+  pivot_longer(cols = everything(), names_to = "Surgery", values_to = "Selected") %>%
+  filter(Selected == 1) %>%
+  group_by(Surgery) %>%
+  summarise(Frequency = n()) %>%
+  ungroup() %>%
+  mutate(Percentage = 100 * Frequency / sum(Frequency))
+
+dt_breast <- pivot_breast %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>% 
+  fmt_number(column = "Frequency", decimals=0, use_seps = TRUE) %>%
+  tab_header(title = md("MHGROUP9: Surgeries Had")) %>%
+  cols_label(Frequency = md("**N**"), 
+             Percentage = md("**%**"), 
+             Surgery = md("**Answer**")) %>%
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Surgery)
+  ) %>%
+  tab_footnote(
+    footnote = "As this is a select all question, participants may select multiple responses.",
+    locations = cells_column_labels(columns = Percentage)
+  ) %>%
+  tab_footnote(
+    footnote = md("As this is a select all question, participants may select multiple responses."),
+    locations = cells_column_labels(columns = Surgery)
+  )
+
+dt_breast
+
+```
+
+
+```{r BreastSurgYear, warning=FALSE, echo=FALSE, message=FALSE}
+#cat("Breast Implants")
+implant_a_sg=boxp_funct(D_477690298_D_623218391,"Age at Breats Implants Surgery","Age")
+implant_y_sg=boxp_funct(D_477690298_D_802622485,"Year of Breats Implants Surgery","Year")
+grid.arrange(implant_a_sg, implant_y_sg, nrow=2)
+
+
+#cat("Mastopexy")
+mastop_a_sg=boxp_funct(D_176453768_D_623218391,"Age at Mastopexy Surgery","Age")
+mastop_y_sg=boxp_funct(D_176453768_D_802622485,"Year of Mastopexy Surgery","Year")
+grid.arrange(mastop_a_sg, mastop_y_sg, nrow=2)
+
+
+#cat("Breast Reconstruction")
+recon_a_sg=boxp_funct(D_145786416_D_623218391,"Age at Breast Reconstruction Surgery","Age")
+recon_y_sg=boxp_funct(D_145786416_D_802622485,"Year of Breast Reconstruction Surgery","Year") 
+grid.arrange(recon_a_sg, recon_y_sg, nrow=2)
+
+#cat("Breast Reduction")
+reduct_a_sg=boxp_funct(D_287605131_D_623218391,"Age at Breast Reduction Surgery","Age")
+reduct_y_sg=boxp_funct(D_287605131_D_802622485,"Year of Breast Reduction Surgery","Year")
+grid.arrange(reduct_a_sg, reduct_y_sg, nrow=2)
+
+#cat("Partial Mastectomy")
+prtms_a_sg=boxp_funct(D_701157499_D_623218391,"Age at Partial Mastectomy Surgery","Age")
+prtms_y_sg=boxp_funct(D_701157499_D_802622485,"Year of Partial Mastectomy Surgery","Year")
+grid.arrange(prtms_a_sg, prtms_y_sg, nrow=2)
+
+#cat("Mastectomy")
+mastec_a_sg=boxp_funct(D_428639167_D_623218391,"Age at Mastectomy Surgery","Age") 
+mastec_y_sg=boxp_funct(D_428639167_D_802622485,"Year of Mastectomy Surgery","Year") 
+grid.arrange(mastec_a_sg, mastec_y_sg, nrow=2)
+
+#cat("Double Mastectomy")
+dbmas_a_sg=boxp_funct(D_282355641_D_623218391,"Age at Double Mastectomy Surgery","Age")
+dbmas_y_sg=boxp_funct(D_282355641_D_802622485,"Year of Double Mastectomy Surgery","Year")
+grid.arrange(dbmas_a_sg, dbmas_y_sg, nrow=2)
+
+#cat("Breast Abscess")
+abscess_a_sg=boxp_funct(D_539301647_D_623218391,"Age at Breast Abscess Surgery","Age") 
+abscess_y_sg=boxp_funct(D_539301647_D_802622485,"Year of Breast Abscess Surgery","Year") 
+grid.arrange(abscess_a_sg, abscess_y_sg, nrow=2)
+
+#cat("Lactiferous Surgery")
+lact_a_sg=boxp_funct(D_579225381_D_623218391,"Age at Removal of Lactiferous Surgery","Age")
+lact_y_sg=boxp_funct(D_579225381_D_802622485,"Year of Removal of Lactiferous Surgery","Year")
+grid.arrange(lact_a_sg, lact_y_sg, nrow=2)
+
+#cat("Other Breast Surgery")
+othb_a_sg=boxp_funct(D_891214661_D_623218391,"Age at Other Breast Surgery","Age")
+othb_y_sg=boxp_funct(D_891214661_D_802622485,"Year of Other Breast Surgery","Year")
+grid.arrange(othb_a_sg, othb_y_sg, nrow=2)
+
+#cat("Hysterectomy") 
+hyst_a_sg=boxp_funct(D_150352141_D_206625031,"Age at Hysterectomy","Age") 
+hyst_y_sg=boxp_funct(D_150352141_D_261863326,"Year of Hysterectomy","Year")
+grid.arrange(hyst_a_sg, hyst_y_sg, nrow=2)
+
+
+#cat("Tubal Ligation")  
+tublig_a_sg=boxp_funct(D_122887481_D_206625031,"Age at Tubal Ligation Surgery","Age") 
+tublig_y_sg=boxp_funct(D_122887481_D_261863326,"Year of Tubal Ligation Surgery","Year")
+grid.arrange(tublig_a_sg, tublig_y_sg, nrow=2)
+
+
+#cat("Oophorectomy")
+  #type
+cat(round((sum(screen$D_378892977==333647143, na.rm=T)/sum(screen$D_624179836_D_630100221==1, na.rm=T))*100, digits=2), "% Had One Ovary Removed")
+cat(round((sum(screen$D_378892977==109972911, na.rm=T)/sum(screen$D_624179836_D_630100221==1, na.rm=T))*100, digits=2), "% Had Both Ovaries Removed")
+cat(round((sum(screen$D_378892977==535003378, na.rm=T)/sum(screen$D_624179836_D_630100221==1, na.rm=T))*100, digits=2), "% Had Neither of These Oophorectomy Types")
+  #age/year of surgery
+ooph_a_sg=boxp_funct(D_534007917_D_206625031,"Age at Tubal Oophorectomy","Age") 
+ooph_y_sg=boxp_funct(D_534007917_D_261863326,"Year of Tubal Oophorectomy","Year")
+grid.arrange(ooph_a_sg, ooph_y_sg, nrow=2)
+
+
+#cat("Salpingectomy") 
+  #type
+cat(round((sum(screen$D_224791140==448068764, na.rm=T)/sum(screen$D_624179836_D_692881833==1, na.rm=T))*100, digits=2), "% Had One Fallopian Tube Removed")
+cat(round((sum(screen$D_224791140==537173119, na.rm=T)/sum(screen$D_624179836_D_692881833==1, na.rm=T))*100, digits=2), "% Had Both Fallopian Tubes Removed")
+cat(round((sum(screen$D_224791140==535003378, na.rm=T)/sum(screen$D_624179836_D_692881833==1, na.rm=T))*100, digits=2), "% Had Neither of These Salpingectomy Types")
+  #age/year
+salp_a_sg=boxp_funct(D_752636038_D_206625031,"Age at Tubal Salpingectomy","Age") 
+salp_y_sg=boxp_funct(D_752636038_D_261863326,"Year of Tubal Salpingectomy","Year")
+grid.arrange(salp_a_sg, salp_y_sg, nrow=2)
+
+
+#	Vasectomy 
+vasec_a_sg=boxp_funct(D_518750011_D_206625031,"Age at Tubal Vasectomy","Age") 
+vasec_y_sg=boxp_funct(D_518750011_D_261863326,"Year of Tubal Vasectomy","Year")
+grid.arrange(vasec_a_sg, vasec_y_sg, nrow=2)
+
+
+#cat("Orchiectomy or Ochidectomy") 
+  #type
+cat(round((sum(screen$D_946504570==770550588, na.rm=T)/sum(screen$D_624179836_D_532603425==1, na.rm=T))*100, digits=2), "% Had One Testicle Removed")
+cat(round((sum(screen$D_946504570==970716952, na.rm=T)/sum(screen$D_624179836_D_532603425==1, na.rm=T))*100, digits=2), "% Had Both Testicles Removed")
+cat(round((sum(screen$D_946504570==535003378, na.rm=T)/sum(screen$D_624179836_D_532603425==1, na.rm=T))*100, digits=2), "% Had Neither of These Orchiectomy or Ochidectomy Types")
+  #age/year
+orch_a_sg=boxp_funct(D_275770221_D_206625031,"Age at Orchiectomy Surgery","Age") 
+orch_y_sg=boxp_funct(D_275770221_D_261863326,"Year of Orchiectomy Surgery","Year")
+grid.arrange(orch_a_sg, orch_y_sg, nrow=2)
+
+
+#cat("Prostatectomy") 
+  #type
+cat(round((sum(screen$D_107060069==524029283, na.rm=T)/sum(screen$D_624179836_D_733236542==1, na.rm=T))*100, digits=2), "% Had Part of Prostate Removed")
+cat(round((sum(screen$D_107060069==500023550, na.rm=T)/sum(screen$D_624179836_D_733236542==1, na.rm=T))*100, digits=2), "% Had Whole Prostate Removed")
+cat(round((sum(screen$D_107060069==535003378, na.rm=T)/sum(screen$D_624179836_D_733236542==1, na.rm=T))*100, digits=2), "% Had Neither of These Prostatectomy Types")
+  #age/year
+prost_a_sg=boxp_funct(D_882152987_D_206625031,"Age at Prostatectomy Surgery","Age") 
+prost_y_sg=boxp_funct(D_882152987_D_261863326,"Year of Tubal Prostatectomy Surgery","Year") 
+grid.arrange(prost_a_sg, prost_y_sg, nrow=2)
+
+
+#	Penis removed (penectomy) 
+penis_a_sg=boxp_funct(D_527057404_D_206625031,"Age at Tubal Penectomy Surgery","Age") 
+penis_y_sg=boxp_funct(D_527057404_D_261863326,"Year of Tubal Penectomy Surgery","Year")
+grid.arrange(penis_a_sg, penis_y_sg, nrow=2)
+
+
+```
+
+
+```{r MHGroup9Diagn_Cont, warning=FALSE, echo=FALSE, message=FALSE}
+
+#cat("Hysterectomy") 
+hyst_a_sg=boxp_funct(D_150352141_D_206625031,"Age at Hysterectomy","Age") 
+hyst_y_sg=boxp_funct(D_150352141_D_261863326,"Year of Hysterectomy","Year")
+grid.arrange(hyst_a_sg, hyst_y_sg, nrow=2)
+
+
+#cat("Tubal Ligation")  
+tublig_a_sg=boxp_funct(D_122887481_D_206625031,"Age at Tubal Ligation Surgery","Age") 
+tublig_y_sg=boxp_funct(D_122887481_D_261863326,"Year of Tubal Ligation Surgery","Year")
+grid.arrange(tublig_a_sg, tublig_y_sg, nrow=2)
+
+
+#cat("Oophorectomy")
+  #type
+cat(round((sum(module1$D_378892977==333647143, na.rm=T)/sum(module1$D_624179836_D_630100221==1, na.rm=T))*100, digits=2), "% Had One Ovary Removed")
+cat(round((sum(module1$D_378892977==109972911, na.rm=T)/sum(module1$D_624179836_D_630100221==1, na.rm=T))*100, digits=2), "% Had Both Ovaries Removed")
+cat(round((sum(module1$D_378892977==535003378, na.rm=T)/sum(module1$D_624179836_D_630100221==1, na.rm=T))*100, digits=2), "% Had Neither of These Oophorectomy Types")
+  #age/year of surgery
+ooph_a_sg=boxp_funct(D_534007917_D_206625031,"Age at Tubal Oophorectomy","Age") 
+ooph_y_sg=boxp_funct(D_534007917_D_261863326,"Year of Tubal Oophorectomy","Year")
+grid.arrange(ooph_a_sg, ooph_y_sg, nrow=2)
+
+
+#cat("Salpingectomy") 
+  #type
+cat(round((sum(module1$D_224791140==448068764, na.rm=T)/sum(module1$D_624179836_D_692881833==1, na.rm=T))*100, digits=2), "% Had One Fallopian Tube Removed")
+cat(round((sum(module1$D_224791140==537173119, na.rm=T)/sum(module1$D_624179836_D_692881833==1, na.rm=T))*100, digits=2), "% Had Both Fallopian Tubes Removed")
+cat(round((sum(module1$D_224791140==535003378, na.rm=T)/sum(module1$D_624179836_D_692881833==1, na.rm=T))*100, digits=2), "% Had Neither of These Salpingectomy Types")
+  #age/year
+salp_a_sg=boxp_funct(D_752636038_D_206625031,"Age at Tubal Salpingectomy","Age") 
+salp_y_sg=boxp_funct(D_752636038_D_261863326,"Year of Tubal Salpingectomy","Year")
+grid.arrange(salp_a_sg, salp_y_sg, nrow=2)
+
+
+#	Vasectomy 
+vasec_a_sg=boxp_funct(D_518750011_D_206625031,"Age at Tubal Vasectomy","Age") 
+vasec_y_sg=boxp_funct(D_518750011_D_261863326,"Year of Tubal Vasectomy","Year")
+grid.arrange(vasec_a_sg, vasec_y_sg, nrow=2)
+
+
+#cat("Orchiectomy or Ochidectomy") 
+  #type
+cat(round((sum(module1$D_946504570==770550588, na.rm=T)/sum(module1$D_624179836_D_532603425==1, na.rm=T))*100, digits=2), "% Had One Testicle Removed")
+cat(round((sum(module1$D_946504570==970716952, na.rm=T)/sum(module1$D_624179836_D_532603425==1, na.rm=T))*100, digits=2), "% Had Both Testicles Removed")
+cat(round((sum(module1$D_946504570==535003378, na.rm=T)/sum(module1$D_624179836_D_532603425==1, na.rm=T))*100, digits=2), "% Had Neither of These Orchiectomy or Ochidectomy Types")
+  #age/year
+orch_a_sg=boxp_funct(D_275770221_D_206625031,"Age at Orchiectomy Surgery","Age") 
+orch_y_sg=boxp_funct(D_275770221_D_261863326,"Year of Orchiectomy Surgery","Year")
+grid.arrange(orch_a_sg, orch_y_sg, nrow=2)
+
+
+#cat("Prostatectomy") 
+  #type
+cat(round((sum(module1$D_107060069==524029283, na.rm=T)/sum(module1$D_624179836_D_733236542==1, na.rm=T))*100, digits=2), "% Had Part of Prostate Removed")
+cat(round((sum(module1$D_107060069==500023550, na.rm=T)/sum(module1$D_624179836_D_733236542==1, na.rm=T))*100, digits=2), "% Had Whole Prostate Removed")
+cat(round((sum(module1$D_107060069==535003378, na.rm=T)/sum(module1$D_624179836_D_733236542==1, na.rm=T))*100, digits=2), "% Had Neither of These Prostatectomy Types")
+  #age/year
+prost_a_sg=boxp_funct(D_882152987_D_206625031,"Age at Prostatectomy Surgery","Age") 
+prost_y_sg=boxp_funct(D_882152987_D_261863326,"Year of Tubal Prostatectomy Surgery","Year") 
+grid.arrange(prost_a_sg, prost_y_sg, nrow=2)
+
+
+#	Penis removed (penectomy) 
+penis_a_sg=boxp_funct(D_527057404_D_206625031,"Age at Tubal Penectomy Surgery","Age") 
+penis_y_sg=boxp_funct(D_527057404_D_261863326,"Year of Tubal Penectomy Surgery","Year")
+grid.arrange(penis_a_sg, penis_y_sg, nrow=2)
+
+
+```
+
+
+
+
+
+
+

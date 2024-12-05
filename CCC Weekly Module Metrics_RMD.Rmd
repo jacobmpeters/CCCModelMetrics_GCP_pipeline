@@ -182,6 +182,16 @@ all_data <- all_data %>%  mutate(Site = case_when(d_827220437==472940358 ~ "Bayl
                                                         (d_878865966=="353358909" | d_684635302=="353358909" | 
                                                            d_167958071=="353358909") ~ "Completed any baseline sample, did not complete baseline survey",
                                                         TRUE ~ "Completed neither survey or sample(s)"),
+                                 provided4 =case_when(d_311580100==353358909 ~ "Full SSN",
+                                                     d_914639140==353358909 ~ "Partial SSN",
+                                                     TRUE ~ "No SSN"),
+                                 ssn_started=case_when(d_126331570==615768760 ~ "Started",
+                                                       d_126331570==231311385 ~ "Submitted",
+                                                       TRUE ~ "Not Started"),
+                                 CES_status = case_when(d_956490759==972455046	~ "Not Started",
+                                                        d_956490759==615768760	~ "Started",
+                                                        d_956490759==231311385	~ "Submitted",
+                                                        TRUE ~ "Not Eligible"),
                                  m1_comp_mins = as.numeric(difftime(as.POSIXct(ymd_hms(d_517311251)), as.POSIXct(ymd_hms(d_205553981)), units="hours"))*60,
                                  m2_comp_mins = as.numeric(difftime(as.POSIXct(ymd_hms(d_832139544)), as.POSIXct(ymd_hms(d_541836531)), units="hours"))*60,
                                  m3_comp_mins = as.numeric(difftime(as.POSIXct(ymd_hms(d_770257102)), as.POSIXct(ymd_hms(d_386488297)), units="hours"))*60,
@@ -191,8 +201,75 @@ all_data$Site <- factor(all_data$Site, levels=c("Baylor Scott and White Health",
 all_data$BL_comp <- factor(all_data$BL_comp, levels=c("All", "2 or 3 Sections", "BOH Only", "None"))
 all_data$completion <- factor(all_data$completion, levels=c("Completed both survey and sample(s)", "Completed all baseline survey modules 1-4, no baseline samples", 
                                                   "Completed any baseline sample, did not complete baseline survey","Completed neither survey or sample(s)"))
+all_data$process <- factor(all_data$process, levels=c("None", "BOH Section only", "BOH and MRE Sections", "BOH and SAS Sections",  "BOH and LAW Sections", 
+                                                      "BOH, MRE, and SAS Sections", "BOH, SAS, and LAW Sections", "BOH, MRE, and LAW Sections"))
+all_data$provided4<- factor(all_data$provided4,levels=c("Full SSN", "Partial SSN", "No SSN"))
 
 ```
+
+
+```{r Functions, include=FALSE}
+
+create_tbl_cross1 <- function(data,row_var, colm_var, row_or_col_pct, row_name, column_name){
+cross__table <- data %>%  
+  tbl_cross(
+    row = !!sym(row_var),
+    col = !!sym(colm_var),
+    digits=c(0,2),
+    percent = row_or_col_pct,
+    label=list(!!sym(row_var) ~ row_name,
+               !!sym(colm_var) ~ column_name),
+    missing="ifany",
+    margin_text="Total") 
+
+#Ops doesn't like the grouped by variables on a different line the column labels
+cross_table_df <- as.data.frame(cross__table)[-1, ]
+  
+}
+
+
+
+create_tbl_cross2 <- function(data, row_var, colm_var, row_or_col_pct, row_name, column_name, margin_text) {
+  cross__table <- data %>%
+    tbl_cross(
+      row = !!sym(row_var),
+      col = !!sym(colm_var),
+      label = list(!!sym(row_var) ~ row_name,
+                   !!sym(colm_var) ~ column_name),
+      percent = row_or_col_pct,
+      digits = c(0, 2),
+      margin_text = margin_text
+    )
+  
+  # Check if table_body exists and has data
+  if (!is.null(cross__table[["table_body"]]) && nrow(cross__table[["table_body"]]) > 0) {
+    # Need only the total column to be a column percentage
+    cross__table[["table_body"]]$stat_0 <- sapply(strsplit(cross__table[["table_body"]]$stat_0, " "), "[", 1)
+    
+    cross__table_df <- as.data.frame(cross__table)[2:nrow(as.data.frame(cross__table)), ]
+    colnames(cross__table_df)[1] <- row_name
+    
+    # Ensure 'Total Verified Participants' exists before modifying
+    if ("Total Verified Participants" %in% colnames(cross__table_df)) {
+      cross__table_df$`Total Verified Participants` <- as.numeric(gsub(",", "", cross__table_df$`Total Verified Participants`))
+      
+      total_participants <- cross__table_df$`Total Verified Participants`
+      percentages <- round((total_participants / total_participants[length(total_participants)]) * 100, digits = 2)
+      
+      cross__table_df$`Total Verified Participants` <- paste0(format(total_participants, big.mark = ","), " (", percentages, "%)")
+    }
+    
+    colnames(cross__table_df)[ncol(cross__table_df)] <- "Total Verified \n Participants"
+    return(cross__table_df)
+  } else {
+    warning("The cross table is empty or missing table_body.")
+    return(data.frame()) # Return an empty data frame if table_body is missing
+  }
+}
+
+
+```
+
 
 
 \newpage
@@ -209,24 +286,13 @@ MRE= Medications, Reproductive Health, Exercise, and Sleep (Module 2)
 SAS= Smoking, Alcohol, and Sun Exposure (Module 3)
 ```{r newTable1, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
-
-comp_by_site <- all_data  %>% select(Site, BSL_compl) %>% 
-  tbl_cross(col =BSL_compl,
-                  row = Site, 
-                   percent = "row",
-                   digits= c(0,1),
-                   label= c(Site~ "Site", BSL_compl ~ " "),
-                   missing="ifany",
-                   missing_text="0 ( 0 %)") 
-
-comp_by_site_totals <- as.data.frame(comp_by_site)
-comp_by_site_totals <- comp_by_site_totals[-1, ]
+comp_by_site_totals <- create_tbl_cross1(all_data,"Site", "BSL_compl", "row", "Site", " ")
 
 total_rows <- nrow(comp_by_site_totals)
 knitr::kable(comp_by_site_totals , 
              caption='Table 1. Completion of Initial Surveys by Site', 
              row.names=FALSE,align=c("l","c","c","c"),
-             col.names=c("", "All Completed", "One or More Not Completed", "Total"),
+             col.names=c("Site", "All Completed", "One or More Not Completed", "Total"),
              booktabs = TRUE) %>%  
   add_indent(seq(1, total_rows - 1))  %>% 
   kable_styling(latex_options = c("scale_down","hold_position")) # %>%  column_spec(3:4, width = "4cm")
@@ -239,23 +305,8 @@ knitr::kable(comp_by_site_totals ,
  \newpage
  
 ```{r Table2, echo=FALSE, warning=FALSE, message=FALSE}
-#Make the automated table
 
-all_srvy_comp <- all_data  %>% select(process, Recruit_Type) %>% 
-  tbl_cross(  col =Recruit_Type,
-                  row = process, 
-                   percent = "column",
-                   digits= c(0,1),
-                   label= c(process~ "Sections Submitted", Recruit_Type ~ " "),
-                   missing="ifany",
-                   missing_text="0 ( 0 %)") 
-
-all_srvy_comp_totals <- as.data.frame(all_srvy_comp)
-all_srvy_comp_totals <- all_srvy_comp_totals[-1, ]
-all_srvy_comp_totals <- all_srvy_comp_totals[c(9,5, 2:4,6:8, 1,10), ]
-
-
-
+all_srvy_comp_totals <- create_tbl_cross1(all_data,"process", "Recruit_Type", "column", "Sections Submitted", " ")
 
 
 overall_surveys <- knitr::kable(all_srvy_comp_totals ,
@@ -369,7 +420,7 @@ names(Table4a1)[1] <- "Recruit Type"
 knitr::kable(Table4a1,format.args = list(big.mark = ","),
              caption='Table 1.4.a. Time (in hours) from Verification to BOH Submission \n Stratified by Active and Passive Recruits', 
              row.names=FALSE, align=c("l","c","c","c","c","c","c","c"),digits=2, booktabs = TRUE)%>% 
-  kable_styling(latex_options = c("scale_down")) 
+  kable_styling(latex_options = "scale_down", full_width = FALSE, font_size=8) 
 
 
 knitr::kable(Table4a2,format.args = list(big.mark = ","),
@@ -607,31 +658,7 @@ knitr::kable(Numb5_table,
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, results='eval'}
 
 
-CES_by_Sex <- all_data %>% 
-  select(sex, BL_comp) %>% dplyr::arrange(sex,BL_comp) %>% 
-  tbl_cross(
-  row = sex,
-  col = BL_comp,
-  label = list(BL_comp ~ "Baseline Survey \n Completion",sex~"Sex"),
-  percent = "row",
-  digits=c(0,2),
-  margin_text="Total Verified Participants") 
-
-#Need only the total column to be a column percentage
-CES_by_Sex[["table_body"]]$stat_0 <- sapply(strsplit(CES_by_Sex[["table_body"]]$stat_0," "),"[",1)
-
-CES_by_Sex_df <- as.data.frame(CES_by_Sex)[2:5,]
-colnames(CES_by_Sex_df)[1] <- "Sex"
-
-CES_by_Sex_df$`Total Verified Participants` <- as.numeric(gsub(",", "", CES_by_Sex_df$`Total Verified Participants`))
-
-total_participants <- CES_by_Sex_df$`Total Verified Participants`
-percentages <- round((total_participants / total_participants[length(total_participants)]) * 100, digits = 2)
-
-
-CES_by_Sex_df$`Total Verified Participants` <- paste0(format(total_participants, big.mark = ","), " (", percentages, "%)")
-
-colnames(CES_by_Sex_df)[6] <- "Total Verified \n Participants"
+CES_by_Sex_df <- create_tbl_cross2(all_data, "sex", "BL_comp", "row", "Sex", "Baseline Survey \n Completion", "Total Verified Participants")
 
 knitr::kable(CES_by_Sex_df, 
              caption='Table 1.9. Initial Survey Completion Rate by Site Defined Sex \n Among Verified Participants',
@@ -645,36 +672,7 @@ knitr::kable(CES_by_Sex_df,
 
 
 
-
-
-
-
-CES_by_Age <- all_data %>% 
-  select(age, BL_comp) %>% dplyr::arrange(age,BL_comp) %>% 
-  tbl_cross(
-  row = age,
-  col = BL_comp,
-  label = list(BL_comp ~ "Baseline Survey \n Completion",age~"Age"),
-  percent = "row",
-  digits=c(0,2),
-  margin_text="Total Verified Participants") 
-
-
-#Need only the total column to be a column percentage
-CES_by_Age[["table_body"]]$stat_0 <- sapply(strsplit(CES_by_Age[["table_body"]]$stat_0," "),"[",1)
-
-CES_by_Age_df <- as.data.frame(CES_by_Age)[2:11,]
-colnames(CES_by_Age_df)[1] <- "Age"
-
-CES_by_Age_df$`Total Verified Participants` <- as.numeric(gsub(",", "", CES_by_Age_df$`Total Verified Participants`))
-
-total_participants <- CES_by_Age_df$`Total Verified Participants`
-percentages <- round((total_participants / total_participants[length(total_participants)]) * 100, digits = 2)
-
-
-CES_by_Age_df$`Total Verified Participants` <- paste0(format(total_participants, big.mark = ","), " (", percentages, "%)")
-
-colnames(CES_by_Age_df)[6] <- "Total Verified \n Participants"
+CES_by_Age_df <- create_tbl_cross2(all_data, "age", "BL_comp", "row", "Age", "Baseline Survey \n Completion", "Total Verified Participants")
 
 knitr::kable(CES_by_Age_df, 
              caption="Table 1.10. Initial Survey Completion Rate by Site Defined Age \n Among Verified Participants",
@@ -688,33 +686,7 @@ knitr::kable(CES_by_Age_df,
 
 
 
-
-
-CES_by_Race <- all_data %>% 
-  select(race, BL_comp) %>% dplyr::arrange(race,BL_comp) %>% 
-  tbl_cross(
-  row = race,
-  col = BL_comp,
-  label = list(BL_comp ~ "Baseline Survey \n Completion",race~"Race"),
-  percent = "row",
-  digits=c(0,2),
-  margin_text="Total Verified Participants") 
-
-#Need only the total column to be a column percentage
-CES_by_Race[["table_body"]]$stat_0 <- sapply(strsplit(CES_by_Race[["table_body"]]$stat_0," "),"[",1)
-
-CES_by_Race_df <- as.data.frame(CES_by_Race)[2:5,]
-colnames(CES_by_Race_df)[1] <- "Race"
-
-CES_by_Race_df$`Total Verified Participants` <- as.numeric(gsub(",", "", CES_by_Race_df$`Total Verified Participants`))
-
-total_participants <- CES_by_Race_df$`Total Verified Participants`
-percentages <- round((total_participants / total_participants[length(total_participants)]) * 100, digits = 2)
-
-
-CES_by_Race_df$`Total Verified Participants` <- paste0(format(total_participants, big.mark = ","), " (", percentages, "%)")
-
-colnames(CES_by_Race_df)[6] <- "Total Verified \n Participants"
+CES_by_Race_df <- create_tbl_cross2(all_data, "race", "BL_comp", "row", "Race", "Baseline Survey \n Completion", "Total Verified Participants")
 
 knitr::kable(CES_by_Race_df, 
              caption="Table 1.11. Initial Survey Completion Rate by Site Defined Race \n Among Verified Participants",
@@ -728,17 +700,6 @@ knitr::kable(CES_by_Race_df,
 
 ```
 
-```{r Knit_CES_BySex_ByAge_ByRace, echo=FALSE, warning=FALSE, message=FALSE, results='eval'}
-
-# add_footnote(all_sex, "Note: Sex defined as the de-identified sex data reported by sites at time of invitation.", 
-#              notation="none")
-# 
-# add_footnote(all_Age, "Note: Age defined as the de-identified age data reported by sites at time of invitation, not current age at time of survey completion.", 
-#              notation="none")
-# 
-# add_footnote(all_Race, "Note: Race defined as the de-identified race data reported by sites at time of invitation.", 
-#              notation="none")
-```
 
 
 
@@ -748,55 +709,13 @@ knitr::kable(CES_by_Race_df,
 ```{r SSN, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
 
-ssn_surv = all_data %>%  mutate(provided4 =case_when(d_311580100==353358909 ~ "Full SSN",
-                                                     d_914639140==353358909 ~ "Partial SSN",
-                                                     TRUE ~ "No SSN"))
-ssn_surv$provided4<- factor(ssn_surv$provided4,levels=c("Full SSN", "Partial SSN", "No SSN"))
-
-ssn_surv = ssn_surv %>% mutate(started=case_when(d_126331570==615768760 ~ "Started",
-                           d_126331570==231311385 ~ "Submitted",
-                           TRUE ~ "Not Started"))
-
-
-
- 
-ssn_surv_table <- ssn_surv %>% 
-  tbl_cross(
-    row = started,
-    col =provided4,
-    digits=c(0,1),
-    percent = "row",
-    label=list(started="Submission Status",
-                provided4 = "Portion of SSN Given"),
-    missing="ifany",
-    margin_text="Total Verified")  
-
-ssn_surv_table[["table_body"]]$stat_0 <- sapply(strsplit(ssn_surv_table[["table_body"]]$stat_0," "),"[",1)
-
-ssn_surv_table <- as.data.frame(ssn_surv_table)[2:5,]
-colnames(ssn_surv_table)[1] <- "Submission Status"
-
-ssn_surv_table$`Total Verified` <- as.numeric(gsub(",", "", ssn_surv_table$`Total Verified`))
-
-total_participants <- ssn_surv_table$`Total Verified`
-percentages <- round((total_participants / total_participants[4]) * 100, digits = 2)
-
-
-ssn_surv_table$`Total Verified` <- paste0(format(total_participants, big.mark = ","), " (", percentages, "%)")
+ssn_surv_table <- create_tbl_cross2(all_data, "ssn_started", "provided4", "row", "Submission Status", "Portion of SSN Given", "Total Verified Participants")
 
 knitr::kable(ssn_surv_table, 
              caption='Table 2.1 Portion of SSN Given by Submission Status of SSN Survey Among Verified Participants',
              row.names=FALSE, align=c("l","c","c","c","c"), booktabs = TRUE) %>%
     kable_styling(latex_options = "scale_down") %>%  
     add_indent(seq(1, nrow(ssn_surv_table) - 1)) #%>%  landscape()
-
-
-# # ssn_surv %>%
-# #   #bold_labels() %>%
-#   #italicize_levels() %>%
-#   modify_header(stat_0 = "Total Verified") %>%
-#   modify_caption("Table 3.1 Portion of SSN Given by Submission Status of SSN Survey \n Among Verified Participants") %>%
-#   as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
 
 ```
 
@@ -896,31 +815,12 @@ QOL_comp_elg_before %>% kable_styling(latex_options = c("scale_down","hold_posit
 ```{r Table12s, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
 ###### ALL ########
-QOL_comp_BL <- all_data %>%  filter(qolcomplt!="Not Eligible") %>%  
-  mutate(qolcomplt = factor(qolcomplt, levels=c("Not Started", "Started", "Submitted"))) %>% 
-  select(completion, qolcomplt) %>% dplyr::arrange(completion,qolcomplt) %>% tbl_cross(
-  row = completion,
-  col = qolcomplt,
-  label = list(qolcomplt ~ "Survey Completion",completion~"Completion"),
-  percent = "row",
-  digits=c(0,2),
-  margin_text="Total QOL Eligible Participants") 
+QOL_comp_BL_all <- all_data %>%  filter(qolcomplt!="Not Eligible") 
 
-#Need only the total column to be a column percentage
-QOL_comp_BL[["table_body"]]$stat_0 <- sapply(strsplit(QOL_comp_BL[["table_body"]]$stat_0," "),"[",1)
-
-QOL_comp_BL <- as.data.frame(QOL_comp_BL)[2:6,]
-colnames(QOL_comp_BL)[1] <- "Survey Completion"
-
-QOL_comp_BL$`Total QOL Eligible Participants` <- as.numeric(gsub(",", "", QOL_comp_BL$`Total QOL Eligible Participants`))
-
-total_participants <- QOL_comp_BL$`Total QOL Eligible Participants`
-percentages <- round((total_participants / total_participants[5]) * 100, digits = 2)
-
-
-QOL_comp_BL$`Total QOL Eligible Participants` <- paste0(format(total_participants, big.mark = ","), " (", percentages, "%)")
-
+QOL_comp_BL <- create_tbl_cross2(QOL_comp_BL_all, "completion", "qolcomplt", "row", "Completion", "QOL Completion", "Total QOL Eligible Participants")
 colnames(QOL_comp_BL)[5] <- "Total QOL Eligible \n Participants"
+
+
 knitr::kable(QOL_comp_BL, 
              caption='Table 3.2. Completion of 3-Month Quality of Life Survey by Baseline Data Completeness',
              row.names=FALSE, align=c("l","c","c","c","c"), booktabs = TRUE) %>%
@@ -932,31 +832,12 @@ knitr::kable(QOL_comp_BL,
 
 ###### On or After 12/1/23 ########
 
-QOL_comp_BL_after <- all_data %>% filter(as.Date(d_914594314) >= "2023-12-01" & qolcomplt!="Not Eligible") %>% 
-  mutate(qolcomplt = factor(qolcomplt, levels=c("Not Started", "Started", "Submitted"))) %>% 
-  select(completion, qolcomplt) %>% dplyr::arrange(completion,qolcomplt) %>% tbl_cross(
-  row = completion,
-  col = qolcomplt,
-  label = list(qolcomplt ~ "Survey Completion",completion~"Completion"),
-  percent = "row",
-  digits=c(0,2),
-  margin_text="Total QOL Eligible Participants")
+QOL_comp_after <- all_data %>% filter(as.Date(d_914594314) >= "2023-12-01" & qolcomplt!="Not Eligible")  
 
-#Need only the total column to be a column percentage
-QOL_comp_BL_after[["table_body"]]$stat_0 <- sapply(strsplit(QOL_comp_BL_after[["table_body"]]$stat_0," "),"[",1)
-
-QOL_comp_BL_after <- as.data.frame(QOL_comp_BL_after)[2:6,]
-colnames(QOL_comp_BL_after)[1] <- "Survey Completion"
-
-QOL_comp_BL_after$`Total QOL Eligible Participants` <- as.numeric(gsub(",", "", QOL_comp_BL_after$`Total QOL Eligible Participants`))
-
-total_participants <- QOL_comp_BL_after$`Total QOL Eligible Participants`
-percentages <- round((total_participants / total_participants[5]) * 100, digits = 2)
-
-
-QOL_comp_BL_after$`Total QOL Eligible Participants` <- paste0(format(total_participants, big.mark = ","), " (", percentages, "%)")
+QOL_comp_BL_after <- create_tbl_cross2(QOL_comp_after, "completion", "qolcomplt", "row", "Completion", "QOL Completion", "Total QOL Eligible Participants")
 
 colnames(QOL_comp_BL_after)[5] <- "Total QOL Eligible \n Participants"
+
 knitr::kable(QOL_comp_BL_after, 
              caption='Table 3.2.a. Completion of 3-Month Quality of Life Survey by Baseline Data Completeness among Eligible Participants Verified on or after December 1, 2023',
              row.names=FALSE, align=c("l","c","c","c","c"), booktabs = TRUE) %>%
@@ -967,29 +848,9 @@ knitr::kable(QOL_comp_BL_after,
 
 ###### Before 12/1/23 ########
 
-QOL_comp_BL_before <- all_data %>% filter(as.Date(d_914594314) < "2023-12-01" & qolcomplt!="Not Eligible") %>% 
-  mutate(qolcomplt = factor(qolcomplt, levels=c("Not Started", "Started", "Submitted"))) %>% 
-  select(completion, qolcomplt) %>% dplyr::arrange(completion,qolcomplt) %>% tbl_cross(
-  row = completion,
-  col = qolcomplt,
-  label = list(qolcomplt ~ "Survey Completion",completion~"Completion"),
-  percent = "row",
-  digits=c(0,2),
-  margin_text="Total QOL Eligible Participants")
+QOL_comp_after <- all_data %>% filter(as.Date(d_914594314) < "2023-12-01" & qolcomplt!="Not Eligible")  
 
-#Need only the total column to be a column percentage
-QOL_comp_BL_before[["table_body"]]$stat_0 <- sapply(strsplit(QOL_comp_BL_before[["table_body"]]$stat_0," "),"[",1)
-
-QOL_comp_BL_before <- as.data.frame(QOL_comp_BL_before)[2:6,]
-colnames(QOL_comp_BL_before)[1] <- "Survey Completion"
-
-QOL_comp_BL_before$`Total QOL Eligible Participants` <- as.numeric(gsub(",", "", QOL_comp_BL_before$`Total QOL Eligible Participants`))
-
-total_participants <- QOL_comp_BL_before$`Total QOL Eligible Participants`
-percentages <- round((total_participants / total_participants[5]) * 100, digits = 2)
-
-
-QOL_comp_BL_before$`Total QOL Eligible Participants` <- paste0(format(total_participants, big.mark = ","), " (", percentages, "%)")
+QOL_comp_BL_before <- create_tbl_cross2(QOL_comp_after, "completion", "qolcomplt", "row", "Completion", "QOL Completion", "Total QOL Eligible Participants")
 
 colnames(QOL_comp_BL_before)[5] <- "Total QOL Eligible \n Participants"
 knitr::kable(QOL_comp_BL_before, 
@@ -1088,79 +949,66 @@ for (i in 1: length(cnames)){
   recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
 }
 
+
+#### Handling participants that somehow completed both Mod1 version 1 and Mod1 version 2
 sql_M1_1 <- bq_project_query(project, query="SELECT Connect_ID, D_384191091_D_384191091_D_583826374, D_384191091_D_384191091_D_636411467, D_384191091_D_384191091_D_458435048, D_384191091_D_384191091_D_706998638, D_384191091_D_384191091_D_973565052, D_384191091_D_384191091_D_586825330, D_384191091_D_384191091_D_412790539, D_384191091_D_384191091_D_807835037,D_384191091_D_747350323,D_384191091_D_384191091_D_746038746 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
 sql_M1_2 <- bq_project_query(project, query="SELECT Connect_ID, D_384191091_D_384191091_D_583826374 ,D_384191091_D_384191091_D_636411467, D_384191091_D_384191091_D_458435048, D_384191091_D_384191091_D_706998638, D_384191091_D_384191091_D_973565052, D_384191091_D_384191091_D_586825330,D_384191091_D_384191091_D_412790539,D_384191091_D_384191091_D_807835037,D_384191091_D_747350323,D_384191091_D_384191091_D_746038746 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
 
 
-M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64",n_max = Inf) #1436 #1436 vars: 1507 01112023 
-M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64",n_max = Inf) #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
+M1_V1 <- bq_table_download(sql_M1_1, bigint = "integer64")
+M1_V2 <- bq_table_download(sql_M1_2, bigint = "integer64")
 
-mod1_v1 <- M1_V1
-cnames <- names(M1_V1)
-###to check variables and convert to numeric
-for (i in 1: length(cnames)){
-  varname <- cnames[i]
-  var<-pull(mod1_v1,varname)
-  mod1_v1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
-}
-mod1_v2 <- M1_V2
-cnames <- names(M1_V2)
-###to check variables and convert to numeric
-for (i in 1: length(cnames)){
-  varname <- cnames[i]
-  var<-pull(mod1_v2,varname)
-  mod1_v2[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
-}
+# Select matching column names
+M1_V1_vars <- colnames(M1_V1)
+M1_V2_vars <- colnames(M1_V2)
+common_vars <- intersect(M1_V1_vars, M1_V2_vars)
 
-M1_V1.var <- colnames(M1_V1)
-M1_V2.var <- colnames(M1_V2)
-var.matched <- M1_V1.var[which(M1_V1.var %in% M1_V2.var)]
-length(var.matched)  #1275 #1278 vars 01112023 #1348 vars 05022023
+# Subset to common columns
+M1_V1_common <- M1_V1[, common_vars]
+M1_V2_common <- M1_V2[, common_vars]
 
-V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched] #232 #229 01112023 #159 05022023
-V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched] #253 #253 01112023 #545 05022023
-
-length(M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID])
-#[1] 59 with the completion of two versions of Module1 
-#[1] 62 with completing both versions of M1 ###double checked 03/28/2023
-#68 double checked 05/02/2023
-
-common.IDs <- M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID]
-M1_V1_common <- mod1_v1[,var.matched]
-
-M1_V2_common <- mod1_v2[,var.matched]
+# Add version indicator
 M1_V1_common$version <- 1
 M1_V2_common$version <- 2
 
-##to check the completion of M1 among these duplicates
-partM1_dups <- recr_m1[which(recr_m1$Connect_ID %in% common.IDs),]
-table(partM1_dups$d_949302066)
+# Identify columns with mismatched types
+mismatched_cols <- names(M1_V1_common)[sapply(names(M1_V1_common), function(col) {
+  class(M1_V1_common[[col]]) != class(M1_V2_common[[col]])
+})]
 
-M1_common  <- rbind(M1_V1_common, M1_V2_common) #including 136 duplicates (version 1 and version 2) from 68 participants 05022023
-#M1_response <- matrix(data=NA, nrow=118, ncol=967)
+# Convert mismatched columns to character for consistency
+M1_V1_common <- M1_V1_common %>%
+  mutate(across(all_of(mismatched_cols), as.character))
+M1_V2_common <- M1_V2_common %>%
+  mutate(across(all_of(mismatched_cols), as.character))
 
-m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)] #230 vars 03282023 #160 vars 05/02/2023
-m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] #255 vars 03282023 #546 vars 05/02/2023
-m1_v1_only$version <- 1
-m1_v2_only$version <- 2
-#for (i in 1:length)
-##to check the completion in each version
-length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #1364 03282023 # 1370 05022023
-length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #4870 03282023 # 5731 05022023
+# Combine both versions for participants who completed both
+M1_common <- bind_rows(M1_V1_common, M1_V2_common) %>%
+  arrange(Connect_ID, desc(version))
 
-#library(janitor)
+# For columns unique to each version
+V1_only_vars <- setdiff(M1_V1_vars, common_vars)
+V2_only_vars <- setdiff(M1_V2_vars, common_vars)
 
-m1_common <- rbind(M1_V1_common,M1_V2_common)
-m1_common_v1 <- base::merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
-m1_combined_v1v2 <- base::merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
-m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] #7289 including duplicates 05022023
+# Subset each version for unique columns and add version indicator
+m1_v1_only <- M1_V1[, c("Connect_ID", V1_only_vars)] %>%
+  mutate(version = 1)
+m1_v2_only <- M1_V2[, c("Connect_ID", V2_only_vars)] %>%
+  mutate(version = 2)
 
-m1_complete <- m1_complete %>% arrange(desc(version)) 
+# Combine the unique and common data
+m1_common_v1 <- left_join(M1_common, m1_v1_only, by = c("Connect_ID", "version"))
+m1_combined_v1v2 <- left_join(m1_common_v1, m1_v2_only, by = c("Connect_ID", "version"))
 
+# Filter for complete cases where specific completion criteria are met
+m1_complete <- m1_combined_v1v2 %>%
+  filter(Connect_ID %in% recr_m1$Connect_ID[recr_m1$d_949302066 == 231311385]) %>%
+  arrange(desc(version))
 
-m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),] 
-table(m1_complete_nodup$version)
+# Remove duplicates, keeping only the most recent version for each Connect_ID
+m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),]
 
+m1_complete_nodup$Connect_ID <- as.numeric(m1_complete_nodup$Connect_ID)
 
 
 
@@ -1264,20 +1112,13 @@ Comp_by_race <- promis %>% filter(qolcomplt!="Not Eligible") %>%
   digits=c(0,2),
   margin_text="Total QOL Eligible Participants") 
 
-#Comp_by_race[["table_body"]]$stat_0 <- sapply(strsplit(Comp_by_race[["table_body"]]$stat_0," "),"[",1)
 
 Comp_by_race <- Comp_by_race %>%
-  #bold_labels() %>%
-  #italicize_levels() %>% 
   modify_header(stat_0 = "Total QOL Eligible \n Participants") %>%
   modify_caption("Table 3.5. 3-Month Quality of Life Survey Completion Rate by Race \n Among Eligible Participants") %>%
   as_kable_extra(escape = FALSE, addtl_fmt = TRUE) %>% kable_styling(latex_options = c("scale_down","hold_position"))
 
 reduced <- all_data %>% filter(d_949302066 != 231311385 & qolcomplt!="Not Eligible") # Those who are eligible for PROMIS but didn't complete mod1 yet
-#dim(reduced)[[1]] 
-
-# Comp_by_race %>% kable_styling(latex_options = c("scale_down","hold_position")) %>% 
-#   footnote(general = paste0('In order to determine race, Module 1 must first be completed. There are ', dim(reduced)[[1]] , ' QOL eligible participants that have either not started or not finished Module 1.'),general_title = "Note: ", footnote_as_chunk = T)
 
 add_footnote(Comp_by_race, paste0('Note: In order to determine race, Module 1 must first be completed. There are ', dim(reduced)[[1]] , ' QOL eligible participants that have either not started or not finished Module 1.'),
              notation="none")
@@ -1333,17 +1174,13 @@ Comp_by_sex_race <- promis %>% filter(qolcomplt!="Not Eligible") %>%
   digits=c(0,2),
   margin_text="Total QOL Eligible Participants") 
 
-#Comp_by_sex_race[["table_body"]]$stat_0 <- sapply(strsplit(Comp_by_sex_race[["table_body"]]$stat_0," "),"[",1)
 
 Comp_by_sex_race <- Comp_by_sex_race %>%
-  #bold_labels() %>%
-  #italicize_levels() %>% 
   modify_header(stat_0 = "Total QOL Eligible \n Participants") %>%
   modify_caption("Table 3.6. 3-Month Quality of Life Survey Completion Rate by Sex and Race \n Among Eligible Participants") %>%
   as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
 
 reduced <- all_data %>% filter(d_949302066 != 231311385 & qolcomplt!="Not Eligible") # Those who are eligible for PROMIS but didn't complete mod1 yet
-#dim(reduced)[[1]] 
 
 Comp_by_sex_race %>% kable_styling(latex_options = c("scale_down","hold_position")) %>% 
   footnote(general = paste0('In order to determine race, Module 1 must first be completed. There are ', dim(reduced)[[1]] , ' QOL eligible participants that have either not started or not finished Module 1.'),general_title = "Note: ", footnote_as_chunk = T)
@@ -1376,7 +1213,6 @@ Comp_by_Demographic <- all_data_long %>%
   mutate(qolcomplt = factor(qolcomplt, levels = c("Not Started", "Started", "Submitted")),
          Demographic_Group = factor(Demographic_Group, levels=c("White Women","Black Men","Women Under 45","Women Over 45","Men Under 45","Men Over 45"))) %>%
   select(Demographic_Group, qolcomplt) %>%
-  #arrange(Demographic_Group, qolcomplt) %>%
   tbl_cross(
     row = Demographic_Group,
     col = qolcomplt,
@@ -1498,30 +1334,10 @@ qol_ver<- all_data %>%  filter(qolcomplt != "Not Eligible") %>%
                               as.Date(d_914594314) < "2023-07-01" ~ "6 Months - 1 Year",
                               as.Date(d_914594314) < "2024-01-01" ~ "3 Months - 6 Months",
                               as.Date(d_914594314) >= "2023-01-01" ~ "At 3 Months"),
-         ver_surv = factor(ver_surv, levels=c("More than 1 Year","6 Months - 1 Year","3 Months - 6 Months","At 3 Months"))) %>% 
-    tbl_cross(
-      row = ver_surv,
-      col = qolcomplt,
-      label = list(qolcomplt ~ "Survey Completion",ver_surv~"Time from Verification to QOL Survey Release"),
-      percent = "row",
-      digits=c(0,2),
-      margin_text="Total QOL Eligible Participants")
+         ver_surv = factor(ver_surv, levels=c("More than 1 Year","6 Months - 1 Year","3 Months - 6 Months","At 3 Months")))
 
 
-#Need only the total column to be a column percentage
-qol_ver[["table_body"]]$stat_0 <- sapply(strsplit(qol_ver[["table_body"]]$stat_0," "),"[",1)
-
-qol_ver_df <- as.data.frame(qol_ver)[2:6,]
-colnames(qol_ver_df)[1] <- "Time from Verification to QOL Survey Release"
-
-qol_ver_df$`Total QOL Eligible Participants` <- as.numeric(gsub(",", "", qol_ver_df$`Total QOL Eligible Participants`))
-
-total_participants <- qol_ver_df$`Total QOL Eligible Participants`
-percentages <- round((total_participants / total_participants[length(total_participants)]) * 100, digits = 2)
-
-
-qol_ver_df$`Total QOL Eligible Participants` <- paste0(format(total_participants, big.mark = ","), " (", percentages, "%)")
-
+qol_ver_df <- create_tbl_cross2(qol_ver, "ver_surv", "qolcomplt", "row", "Time from Verification to QOL Survey Release", "Survey Completion", "Total QOL Eligible Participants")
 
 colnames(qol_ver_df)[5] <- "Total QOL Eligible \n Participants"
 knitr::kable(qol_ver_df, 
@@ -1587,10 +1403,6 @@ knitr::kable(BL_QOL_table,
 # Connect Experience Survey
 ```{r CES, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
-all_data <- all_data %>% mutate(CES_status = case_when(d_956490759==972455046	~ "Not Started",
-                                                       d_956490759==615768760	~ "Started",
-                                                       d_956490759==231311385	~ "Submitted",
-                                                       TRUE ~ "Not Eligible"))
 
 
 CES_comp <- all_data %>% filter(CES_status!="Not Eligible") %>% 
@@ -1626,31 +1438,10 @@ CES_comp %>% kable_styling(latex_options = c("scale_down","hold_position"))
 CES_comp_BL <- all_data %>%  filter(CES_status!="Not Eligible") %>%  
   mutate(CES_status = factor(CES_status, levels=c("Not Started", "Started", "Submitted")),
          completion = factor(completion, levels=c("Completed both survey and sample(s)","Completed all baseline survey modules 1-4, no baseline samples", 
-                                                  "Completed any baseline sample, did not complete baseline survey","Completed neither survey or sample(s)"))) %>% 
-  select(completion, CES_status) %>% dplyr::arrange(completion,CES_status) %>% tbl_cross(
-  row = completion,
-  col = CES_status,
-  label = list(CES_status ~ "Survey Completion",completion~"Completion"),
-  percent = "row",
-  digits=c(0,2),
-  margin_text="Total CES Eligible Participants") 
+                                                  "Completed any baseline sample, did not complete baseline survey","Completed neither survey or sample(s)")))
 
 
-
-#Need only the total column to be a column percentage
-CES_comp_BL[["table_body"]]$stat_0 <- sapply(strsplit(CES_comp_BL[["table_body"]]$stat_0," "),"[",1)
-
-CES_com_df <- as.data.frame(CES_comp_BL)[2:6,]
-colnames(CES_com_df)[1] <- "Completion"
-
-CES_com_df$`Total CES Eligible Participants` <- as.numeric(gsub(",", "", CES_com_df$`Total CES Eligible Participants`))
-
-total_participants <- CES_com_df$`Total CES Eligible Participants`
-percentages <- round((total_participants / total_participants[5]) * 100, digits = 2)
-
-
-CES_com_df$`Total CES Eligible Participants` <- paste0(format(total_participants, big.mark = ","), " (", percentages, "%)")
-
+CES_com_df <- create_tbl_cross2(CES_comp_BL, "completion", "CES_status", "row", "Completion", "Survey Completion", "Total CES Eligible Participants")
 
 colnames(CES_com_df)[5] <- "Total CES Eligible \n Participants"
 
@@ -1668,7 +1459,7 @@ knitr::kable(CES_com_df,
 ```{r CES_Start_Stop, echo=FALSE, warning=FALSE, message=FALSE}
 
 
-CES_time <- all_data %>% filter(d_956490759 == 231311385) %>%
+CES_time <- all_data %>% filter(CES_status=="Submitted") %>%
   mutate(comp_tm_CES = as.numeric(difftime(as.POSIXct(ymd_hms(d_199471989)), as.POSIXct(ymd_hms(d_263355177)), units="mins")),
          start_stop_time = case_when(comp_tm_CES<5 ~ "Under 5 Minutes",
                                 comp_tm_CES<10 ~ "5-10 Minutes",
@@ -1717,7 +1508,7 @@ knitr::kable(CES_TM_table,
 
 
 ces_notif_time<- all_data %>%  
-  filter(d_956490759 == 231311385) %>%
+  filter(CES_status=="Submitted") %>%
   mutate(notification_time = "2024-09-30",
          time = as.numeric(difftime(as.Date(d_199471989), as.Date(notification_time), units="days")))
 
