@@ -161,7 +161,10 @@ order by rca.Connect_ID asc"
 multiple_occ_table <- bq_project_query(project, multiple_occ)
 mult_occ <- bq_table_download(multiple_occ_table, bigint = "integer64")
 
-write.csv(mult_occ,paste0('Multiple_RCA_Cancer_Occurences_', Sys.Date(), '.csv'), row.names = F,na="")
+currentDate <- Sys.Date()
+boxfolder <- 236420612811
+
+write.csv(mult_occ,glue("Multiple_RCA_Cancer_Occurences_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
 
 
 
