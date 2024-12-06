@@ -34,6 +34,11 @@ RUN apt-get update \
 # RUN Rscript -e 'tinytex::install_tinytex()'
 RUN Rscript -e 'tinytex::install_tinytex(repository = "illinois")'
 
+# Preinstall the LaTeX packages used by Rmarkdown and other PDF libraries
+RUN Rscript -e 'tinytex::tlmgr_install(c("multirow", "ulem"))'
+# Alternatively, using tlmgr directly:
+# RUN tlmgr install --repository=https://mirror.ctan.org/systems/texlive/tlnet multirow
+
 # Install R libraries
 RUN install2.r --error plumber bigrquery dplyr googleCloudStorageR gargle \
                tools epiDisplay lubridate tidyverse knitr gtsummary tidyr \
@@ -71,6 +76,12 @@ COPY ["./3 Month Quality of Life Survey Summary Statistics.Rmd" , "./3 Month Qua
 COPY ["./Notifications QC.Rmd", "./Notifications QC.Rmd"]
 COPY ["./Data Destruction CSV Output.R", "./Data Destruction CSV Output.R"]
 COPY ["./PROMIS Completion vs Notifications.Rmd", "PROMIS Completion vs Notifications.Rmd"]
+COPY ["./RCA Metrics.Rmd", "RCA Metrics.Rmd"]
+COPY ["./RCA Custom QC.Rmd", "RCA Custom QC.Rmd"]
+COPY ["./Module_2_Custom_QC.Rmd", "Module_2_Custom_QC.Rmd"]
+COPY ["./Module_3_Custom_QC.Rmd", "Module_3_Custom_QC.Rmd"]
+
+
 
 # Run R code
 ENTRYPOINT ["R", "-e","pr <- plumber::plumb('ccc_module_metrics_api.R'); pr$run(host='0.0.0.0', port=as.numeric(Sys.getenv('PORT')))"]
