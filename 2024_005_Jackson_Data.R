@@ -249,6 +249,7 @@ sj_data <- sj_data %>%  mutate(Race= case_when(BOH_status=="Not Started" ~ "NA",
                                                               D_555481393_D_555481393=="832978839"	 ~ "Mostly Straight", 
                                                               D_555481393_D_555481393=="854349138" ~ "Pansexual",
                                                               TRUE ~ "Skipped this Question"))
+sj_data$Sexual_Orientation_Text <- ifelse(!is.na(sj_data$D_555481393_D_979809707), sj_data$D_555481393_D_979809707, "NA")
 
 
 
@@ -257,7 +258,7 @@ sj_data <- sj_data %>%  mutate(Race= case_when(BOH_status=="Not Started" ~ "NA",
 
 ############### CSV file
 
-sj_data_csv <- sj_data %>%  select(Connect_ID, BL_Module_Completion_Status, BOH_status, Race, Ethnicity, Gender, Sex, Sexual_Orientation)
+sj_data_csv <- sj_data %>%  dplyr::select(Connect_ID, BL_Module_Completion_Status, BOH_status, Race, Ethnicity, Gender, Sex, Sexual_Orientation, Sexual_Orientation_Text)
 write.csv(sj_data_csv,paste0('2024_005_Jackson_Study_Data_HP_', Sys.Date(), '.csv'), row.names = F,na="")
 
 
