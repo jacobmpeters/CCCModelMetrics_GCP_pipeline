@@ -34,6 +34,11 @@ RUN apt-get update \
 # RUN Rscript -e 'tinytex::install_tinytex()'
 RUN Rscript -e 'tinytex::install_tinytex(repository = "illinois")'
 
+# Preinstall the LaTeX packages used by Rmarkdown and other PDF libraries
+RUN Rscript -e 'tinytex::tlmgr_install(c("multirow", "ulem"))'
+# Alternatively, using tlmgr directly:
+# RUN tlmgr install --repository=https://mirror.ctan.org/systems/texlive/tlnet multirow
+
 # Install R libraries
 RUN install2.r --error plumber bigrquery dplyr googleCloudStorageR gargle \
                tools epiDisplay lubridate tidyverse knitr gtsummary tidyr \
