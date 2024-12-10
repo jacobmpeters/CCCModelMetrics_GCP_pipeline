@@ -231,7 +231,7 @@ sj_data <- sj_data %>%  mutate(Race= case_when(BOH_status=="Not Started" ~ "NA",
                                                  D_289664241_D_289664241==873138103 ~ "Transgender Woman",
                                                  D_289664241_D_289664241==805712793 ~ "Genderqueer",
                                                  D_289664241_D_289664241==486192236 ~ "Non-binary",
-                                                 D_289664241_D_289664241==807835037 ~ "Other",
+                                                 D_289664241_D_289664241==807835037 | !is.na(D_289664241_D_918409306) ~ "Other",
                                                  D_289664241_D_289664241==746038746 ~ "Prefer Not to Answer",
                                                  TRUE ~ "Skipped this Question"),
                                Sex=case_when(BOH_status=="Not Started" ~ "NA",
@@ -248,8 +248,12 @@ sj_data <- sj_data %>%  mutate(Race= case_when(BOH_status=="Not Started" ~ "NA",
                                                               D_555481393_D_555481393=="727200870" ~ "Asexual", 
                                                               D_555481393_D_555481393=="832978839"	 ~ "Mostly Straight", 
                                                               D_555481393_D_555481393=="854349138" ~ "Pansexual",
+                                                              D_555481393_D_555481393=="410008111" ~ "Two-Spirit",
+                                                              D_555481393_D_555481393=="831942158" ~ "Questioning",
+                                                              D_555481393_D_555481393=="807835037" | !is.na(D_555481393_D_979809707) ~ "Other",
                                                               TRUE ~ "Skipped this Question"))
 sj_data$Sexual_Orientation_Text <- ifelse(!is.na(sj_data$D_555481393_D_979809707), sj_data$D_555481393_D_979809707, "NA")
+sj_data$Gender_Text <- ifelse(!is.na(sj_data$D_289664241_D_918409306), sj_data$D_289664241_D_918409306, "NA")
 
 
 
@@ -258,7 +262,7 @@ sj_data$Sexual_Orientation_Text <- ifelse(!is.na(sj_data$D_555481393_D_979809707
 
 ############### CSV file
 
-sj_data_csv <- sj_data %>%  dplyr::select(Connect_ID, BL_Module_Completion_Status, BOH_status, Race, Ethnicity, Gender, Sex, Sexual_Orientation, Sexual_Orientation_Text)
+sj_data_csv <- sj_data %>%  dplyr::select(Connect_ID, BL_Module_Completion_Status, BOH_status, Race, Ethnicity, Gender, Gender_Text, Sex, Sexual_Orientation, Sexual_Orientation_Text)
 write.csv(sj_data_csv,paste0('2024_005_Jackson_Study_Data_HP_', Sys.Date(), '.csv'), row.names = F,na="")
 
 
