@@ -1,0 +1,1315 @@
+---
+title: "Recruitment Analysis Model"
+author: "Kelsey Sanchez"
+date: 'Data Extracted and Report Ran: `r Sys.Date()`'
+header-includes:  
+    \usepackage{placeins}
+
+
+output:
+  pdf_document:
+    extra_dependencies: ["float"]
+---
+
+
+
+The exclusion criteria of these participants are that Baseline Module 1 has been completed, they have consented, are active participants, and were verified before March 2nd, 2024 resulting in an analytic cohort of 20,325 participants
+
+```{r libraries, include=FALSE}
+
+
+#rm(list = ls())
+library(bigrquery)
+library(foreach)
+library(stringr)
+#library(plyr)
+#library(expss) ###to add labels
+library(epiDisplay) ##recommended applied here crosstable, tab1
+library(gmodels) ##recommended
+library(magrittr)
+library(arsenal)
+library(gtsummary)
+library(rio)
+library(knitr)
+library(kableExtra)
+library(ggplot2)
+library(gridExtra)
+library(scales)
+#library(gt)
+#install(tinytex)
+library(tinytex)
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(reshape)  ###to work on transition from long to wide or wide to long data
+library(listr) ###to work on a list of vector, files or..
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(stringr) ###to work on patterns, charaters
+library(janitor)
+
+
+options(tinytex.verbose = TRUE)
+
+bq_auth()
+
+
+```
+
+
+```{r BQ_Data_Pull, include=FALSE}
+## Pull in both versions of Mod1, merge together, and merge in demogrpahic variables from participants table
+
+dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
+dd <- dplyr::bind_rows(dictionary,.id="CID")
+dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
+dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name')
+
+dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
+dd$CID <- rownames(dd)
+#https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
+devtools::install_github("tidyverse/reprex")
+
+project <- "nih-nci-dceg-connect-prod-6d04"
+billing <- "nih-nci-dceg-connect-prod-6d04" ##project and billing should be consistent
+##517311251 Date/time Status of Completion of Background and Overall Health                         SrvBOH_TmComplete_v1r0
+##949302066 Flag for Baseline Module Background and Overall Health                        SrvBOH_BaseStatus_v1r0
+recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
+                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935' and d_949302066 ='231311385'")
+recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
+cnames <- names(recr_m1)
+# Check that it doesn't match any non-number
+numbers_only <- function(x) !grepl("\\D", x)
+# to check variables in recr_noinact_wl1
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(recr_m1,varname)
+  recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+sql_M1_1 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
+sql_M1_2 <- bq_project_query(project, query="SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
+
+
+M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64") #1436 #1436 vars: 1507 01112023 
+M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64") #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
+
+mod1_v1 <- M1_V1
+cnames <- names(M1_V1)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v1,varname)
+  mod1_v1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+mod1_v2 <- M1_V2
+cnames <- names(M1_V2)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v2,varname)
+  mod1_v2[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+M1_V1.var <- colnames(M1_V1)
+M1_V2.var <- colnames(M1_V2)
+var.matched <- M1_V1.var[which(M1_V1.var %in% M1_V2.var)]
+length(var.matched)  #1275 #1278 vars 01112023 #1348 vars 05022023
+
+V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched] #232 #229 01112023 #159 05022023
+V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched] #253 #253 01112023 #545 05022023
+
+length(M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID])
+#[1] 59 with the completion of two versions of Module1 
+#[1] 62 with completing both versions of M1 ###double checked 03/28/2023
+#68 double checked 05/02/2023
+
+common.IDs <- M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID]
+M1_V1_common <- mod1_v1[,var.matched]
+
+
+M1_V2_common <- mod1_v2[,var.matched]
+M1_V1_common$version <- 1
+M1_V2_common$version <- 2
+
+##to check the completion of M1 among these duplicates
+partM1_dups <- recr_m1[which(recr_m1$Connect_ID %in% common.IDs),]
+table(partM1_dups$d_949302066)
+
+M1_common  <- rbind(M1_V1_common, M1_V2_common) #including 136 duplicates (version 1 and version 2) from 68 participants 05022023
+#M1_response <- matrix(data=NA, nrow=118, ncol=967)
+
+m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)] #230 vars 03282023 #160 vars 05/02/2023
+m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] #255 vars 03282023 #546 vars 05/02/2023
+m1_v1_only$version <- 1
+m1_v2_only$version <- 2
+#for (i in 1:length)
+##to check the completion in each version
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #1364 03282023 # 1370 05022023
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #4870 03282023 # 5731 05022023
+
+#library(janitor)
+
+m1_common <- rbind(M1_V1_common,M1_V2_common)
+m1_common_v1 <- base::merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
+m1_combined_v1v2 <- base::merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
+m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] #7289 including duplicates 05022023
+
+m1_complete <- m1_complete %>% arrange(desc(version)) 
+
+
+m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),] 
+table(m1_complete_nodup$version)
+
+
+
+
+
+demo <- "SELECT 
+Connect_ID, token,
+d_827220437, state_d_706256705, state_d_934298480, d_142654897_d_177402915, d_142654897_d_196856782, d_142654897_d_206879104, d_142654897_d_241590841, d_142654897_d_285130077, d_142654897_d_326825649, d_142654897_d_461488577, d_142654897_d_462314689, d_142654897_d_520301146, d_142654897_d_549687190, d_142654897_d_607081902, d_142654897_d_639721694, d_142654897_d_642287621, d_142654897_d_684726272, d_142654897_d_791389099, d_142654897_d_819377306, d_142654897_d_829269606, d_142654897_d_942255248, d_142654897_d_967372009, d_335767902, d_914594314, state_d_849518448, state_d_706256705, d_949302066,
+d_512820379
+ FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where d_919254129= '353358909' and d_821247024='197316935'"
+demo_table <- bq_project_query(project, demo)
+site_demographics <- bq_table_download(demo_table, bigint = "integer64")
+
+site_demographics$Connect_ID <- as.numeric(site_demographics$Connect_ID) ###need to convert type- m1... is double and demo is character
+
+proposal= left_join(m1_complete_nodup, site_demographics, by="Connect_ID") 
+dim(proposal)
+```
+
+
+```{r Data_Prep, include=FALSE}
+# Creating and labeling the demogrpahics 
+
+
+#Race
+multi_race=0    
+for (i in 1:length(proposal$Connect_ID)){
+  AI = ifelse((
+    proposal$D_384191091_D_384191091_D_583826374[[i]] == 1 &
+      (
+        proposal$D_384191091_D_384191091_D_636411467[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_458435048[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_706998638[[i]] ==
+          1 | proposal$D_384191091_D_384191091_D_973565052[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_586825330[[i]] ==
+          1 | proposal$D_384191091_D_384191091_D_412790539[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_807835037[[i]] ==
+          1
+      )
+  ), 1, 0)
+  As = ifelse((
+    proposal$D_384191091_D_384191091_D_636411467[[i]] == 1 &
+      (
+        proposal$D_384191091_D_384191091_D_583826374[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_458435048[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_706998638[[i]] ==
+          1 | proposal$D_384191091_D_384191091_D_973565052[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_586825330[[i]] ==
+          1 | proposal$D_384191091_D_384191091_D_412790539[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_807835037[[i]] ==
+          1
+      )
+  ), 1, 0)
+  Bl = ifelse((
+    proposal$D_384191091_D_384191091_D_458435048[[i]] == 1 &
+      (
+        proposal$D_384191091_D_384191091_D_583826374[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_636411467[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_706998638[[i]] ==
+          1 | proposal$D_384191091_D_384191091_D_973565052[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_586825330[[i]] ==
+          1 | proposal$D_384191091_D_384191091_D_412790539[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_807835037[[i]] ==
+          1
+      )
+  ), 1, 0)
+  Hs = ifelse((
+    proposal$D_384191091_D_384191091_D_706998638[[i]] == 1 &
+      (
+        proposal$D_384191091_D_384191091_D_583826374[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_636411467[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_458435048[[i]] ==
+          1 | proposal$D_384191091_D_384191091_D_973565052[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_586825330[[i]] ==
+          1 | proposal$D_384191091_D_384191091_D_412790539[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_807835037[[i]] ==
+          1
+      )
+  ), 1, 0)
+  Me = ifelse((
+    proposal$D_384191091_D_384191091_D_973565052[[i]] == 1 &
+      (
+        proposal$D_384191091_D_384191091_D_583826374[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_636411467[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_458435048[[i]] ==
+          1 | proposal$D_384191091_D_384191091_D_706998638[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_586825330[[i]] ==
+          1 | proposal$D_384191091_D_384191091_D_412790539[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_807835037[[i]] ==
+          1
+      )
+  ), 1, 0)
+  Hw = ifelse((
+    proposal$D_384191091_D_384191091_D_586825330[[i]] == 1 &
+      (
+        proposal$D_384191091_D_384191091_D_583826374[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_636411467[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_458435048[[i]] ==
+          1 | proposal$D_384191091_D_384191091_D_706998638[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_973565052[[i]] ==
+          1 | proposal$D_384191091_D_384191091_D_412790539[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_807835037[[i]] ==
+          1
+      )
+  ), 1, 0)
+  Wh = ifelse((
+    proposal$D_384191091_D_384191091_D_412790539[[i]] == 1 &
+      (
+        proposal$D_384191091_D_384191091_D_583826374[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_636411467[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_458435048[[i]] ==
+          1 | proposal$D_384191091_D_384191091_D_706998638[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_586825330[[i]] ==
+          1 | proposal$D_384191091_D_384191091_D_973565052[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_807835037[[i]] ==
+          1
+      )
+  ), 1, 0)
+  Ot = ifelse((
+    proposal$D_384191091_D_384191091_D_807835037[[i]] == 1 &
+      (
+        proposal$D_384191091_D_384191091_D_583826374[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_636411467[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_458435048[[i]] ==
+          1 | proposal$D_384191091_D_384191091_D_706998638[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_586825330[[i]] ==
+          1 | proposal$D_384191091_D_384191091_D_973565052[[i]] == 1 |
+          proposal$D_384191091_D_384191091_D_412790539[[i]] ==
+          1
+      )
+  ), 1, 0)
+  multi_race = multi_race + sum(AI + As + Bl + Hs + Me + Hw + Wh + Ot, na.rm =T)
+  
+}
+
+
+
+proposal$multi_racial <- c(rep(1, times=multi_race), rep(0, times=(dim(proposal)[1]- multi_race)))
+
+
+proposal= proposal %>%  mutate(Race= case_when(multi_racial==1 ~ "Multi-Racial",
+                                               D_384191091_D_384191091_D_583826374==1 ~ "American Indian or Native American",
+                                               D_384191091_D_384191091_D_636411467==1 ~ "Asian or Asian American",
+                                               D_384191091_D_384191091_D_458435048==1  ~ "Black, African, or African American",
+                                               D_384191091_D_384191091_D_706998638==1 ~ "Hispanic, Latino, or Spanish",
+                                               #D_384191091_D_384191091_D_973565052==1 ~ "Middle Eastern or North African",
+                                               D_384191091_D_384191091_D_586825330==1 | D_384191091_D_384191091_D_973565052==1  ~ "Paicifc Islander/Middle Eastern",
+                                               D_384191091_D_384191091_D_412790539==1 ~ "White",
+                                               #D_384191091_D_384191091_D_807835037==1 | !is.na(D_384191091_D_747350323)) ~ "Other",
+                                               #D_384191091_D_384191091_D_746038746==1 ~ "Prefer Not to Answer",
+                                               TRUE  ~ "Unknown"),
+                               Income= case_when(D_759004335==209571450 ~ "35,000-49,000",
+                                                 D_759004335==212249150 ~ "50,000-74,000",
+                                                 D_759004335==374508062 ~ "0-9,000",
+                                                 #D_759004335==530094502 ~ "Error- Unlisted Response Selected", 
+                                                 D_759004335==742032816 ~ "200,000+", 
+                                                 D_759004335==745561936 ~ "25,000-34,000",
+                                                 #D_759004335==746038746 ~ "Prefer not to Answer",
+                                                 D_759004335==777814771 ~ "75,000-99,000", 
+                                                 D_759004335==913602274 ~ "150,000-199,000", 
+                                                 D_759004335==922395188 ~ "100,000-149,000",
+                                                 D_759004335==976555124 ~ "10,000-24,000",
+                                                 #D_759004335==178420302 ~ "Unknown",
+                                                 TRUE ~ "Prefer Not to Answer or Unknown"),
+                               Education= case_when(D_367803647_D_367803647==935502060 |D_367803647_D_367803647==978204320 |
+                                                      D_367803647_D_367803647==404564707 ~ "High School or Less/High School",
+                                                    D_367803647_D_367803647==432193665 | D_367803647_D_367803647==890756124 | 
+                                                      D_367803647_D_367803647==766964355 ~ "Some College/Trade School/ Associate's",
+                                                    D_367803647_D_367803647==875342283 ~ "Bachelor's Degree",
+                                                    D_367803647_D_367803647==598242454 ~ "Advanced Degree",
+                                                    #D_367803647_D_367803647==807835037 ~ "Other",
+                                                    TRUE ~ "Unknown"),
+                               Sex = case_when(D_407056417 == 536341288 ~ "Female",
+                                               D_407056417 == 654207589 ~ "Male",
+                                               #D_407056417 == 576796184 ~ "Intersex or Other", #group too small
+                                               TRUE ~ "Unknown"),
+                               Age = case_when(state_d_934298480 == 713781738 | state_d_934298480 == 631272782 |
+                                                 state_d_934298480 == 124276120 ~ "30-45", #30-40 group too small
+                                               state_d_934298480 == 450985724 ~ "46-50",
+                                               state_d_934298480 == 363147933 ~ "51-55",
+                                               state_d_934298480 == 636706443 ~ "56-60",
+                                               state_d_934298480 == 771230670 | state_d_934298480 == 722846087 ~ "61-70"),
+                               Site= case_when(d_827220437 == 531629870 ~ "HealthPartners", 
+                                               d_827220437 ==548392715 ~ "Henry Ford Health System", 
+                                               d_827220437 == 125001209 ~ "Kaiser Permanente Colorado",
+                                               d_827220437 == 327912200 ~ "Kaiser Permanente Georgia",
+                                               d_827220437 == 300267574 ~ "Kaiser Permanente Hawaii",
+                                               d_827220437 == 452412599 ~ "Kaiser Permanente Northwest",
+                                               d_827220437 == 303349821 ~ "Marshfield Clinic Health System",
+                                               d_827220437 == 657167265 ~ "Sanford Health", 
+                                               d_827220437 == 809703864 ~ "University of Chicago Medicine",
+                                               d_827220437 == 517700004 | d_827220437 == 13 ~ "National Cancer Institute",
+                                               TRUE ~ "Unknown"),
+                               Recruit = case_when(d_512820379==486306141 ~ "Active",
+                                                   TRUE ~ "Passive")) %>%  filter(Sex!="Unknown" & Race!="Unknown" & !is.na(Age))
+
+##Decided we know the most about recruiting older, higher educated, hihger income, white, women. So use that as the references
+
+proposal$Age <- factor(proposal$Age, levels=c("30-45", "46-50", "51-55", "56-60", "61-70"))
+proposal$Age <- relevel(proposal$Age, ref=5) 
+
+#proposal$Race <- as.factor(proposal[,'Race'])
+#proposal$Race <- relevel(proposal$Race, ref=7)
+proposal$Race <- factor(proposal$Race, levels=c("White", "American Indian or Native American", "Asian or Asian American", 
+                                                "Black, African, or African American", "Hispanic, Latino, or Spanish", 
+                                                "Paicifc Islander/Middle Eastern", "Multi-Racial"))
+
+proposal$Sex <- as.factor(proposal[,'Sex']) 
+
+proposal$Income <- factor(proposal$Income, levels=c("200,000+","0-9,000","10,000-24,000","25,000-34,000","35,000-49,000","50,000-74,000","75,000-99,000","100,000-149,000",
+                                                                  "150,000-199,000","Prefer Not to Answer or Unknown"))
+
+proposal$Education <- factor(proposal$Education, levels=c("Advanced Degree","High School or Less/High School",
+                                                          "Some College/Trade School/ Associate's","Bachelor's Degree", "Unknown"))
+
+
+#Dates refer to verification date
+proposal_aleah <- proposal %>%  filter( as.Date(d_914594314) < "2024-03-02" & d_512820379==486306141)
+
+
+#digital includes:  Connect Web, IHCS Web, Email/Text Invite, Patient Portal, Social Media Post, IHCS Newsletter, Video
+#traditional includes: Mailed Letter, Phone Invite, Dr/Staff, Connect Staff at IHCS, Connect in News, Local News/TV/Radio, Family/Friend, Another Participant, Poster at IHCS, Table at Event, Recorded Message
+# For the those who selected “other”, see if those people selected a traditional and/or digital option. If they did select one of those options, count them in the respective group. If the only option they selected is “other”, then we can drop the from the analysis.
+proposal_aleah <- proposal_aleah %>%  mutate(marketing = case_when(((d_142654897_d_461488577==353358909 | d_142654897_d_607081902==353358909 |
+                                                                       d_142654897_d_241590841==353358909 | d_142654897_d_206879104==353358909 |
+                                                                       d_142654897_d_642287621==353358909 | d_142654897_d_285130077==353358909|
+                                                                       d_142654897_d_684726272==353358909) &
+                                                                      (d_142654897_d_942255248==353358909 | d_142654897_d_639721694==353358909 |
+                                                                         d_142654897_d_196856782==353358909 | d_142654897_d_177402915==353358909 |
+                                                                         d_142654897_d_791389099==353358909 | d_142654897_d_520301146==353358909|
+                                                                         d_142654897_d_549687190==353358909 | d_142654897_d_326825649==353358909 | 
+                                                                         d_142654897_d_819377306==353358909 | d_142654897_d_829269606==353358909 |
+                                                                         d_142654897_d_967372009==353358909)) ~ "Both",
+                                                                   (d_142654897_d_461488577==353358909 | d_142654897_d_607081902==353358909 |
+                                                                      d_142654897_d_241590841==353358909 | d_142654897_d_206879104==353358909 |
+                                                                      d_142654897_d_642287621==353358909 | d_142654897_d_285130077==353358909|
+                                                                      d_142654897_d_684726272==353358909)~ "Digital",
+                                                                   (d_142654897_d_942255248==353358909 | d_142654897_d_639721694==353358909 |
+                                                                      d_142654897_d_196856782==353358909 | d_142654897_d_177402915==353358909 |
+                                                                      d_142654897_d_791389099==353358909 | d_142654897_d_520301146==353358909|
+                                                                      d_142654897_d_549687190==353358909 | d_142654897_d_326825649==353358909 | 
+                                                                      d_142654897_d_819377306==353358909 | d_142654897_d_829269606==353358909 |
+                                                                      d_142654897_d_967372009==353358909)~ "Traditional",
+                                                                   TRUE ~ "Skipped")) %>%  filter(marketing!="Skipped")
+
+
+
+
+# 11577  digital
+# 12589  traditional
+# 2407 both
+
+
+
+
+proposal_aleah$marketing <- factor(proposal_aleah$marketing,levels=c("Digital","Traditional", "Both"))
+
+# Define your demographic variables
+demographics <- c("Age", "Race", "Sex", "Income", "Education", "Site")
+
+
+  #Remove 'both; for chi squared
+proposal_aleah2 <- proposal_aleah %>%  filter(marketing!="Both")
+proposal_aleah2$marketing <- factor(proposal_aleah2$marketing,levels=c("Digital","Traditional"))
+
+#create binomial for recruitment type, 0 for traditional and 1 for digital
+proposal_aleah2 <- proposal_aleah2 %>%  mutate(recruit=ifelse(marketing=="Digital",1,0))
+
+```
+
+
+
+
+```{r ChiSquared, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+
+## Step 0: 	Distribtuition of Demographics by Recruitment Method
+
+
+
+# Loop through each demographic
+for (demo in demographics) {
+
+  compare_all <- proposal_aleah %>%
+    tbl_cross(
+      row = !!sym(demo),
+      col = marketing,
+      label = list(marketing ~ "Recruitment Strategies", !!sym(demo) ~ demo),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total Consented Recruits"
+    )
+  
+compare_all <- compare_all %>%
+  #bold_labels() %>%
+  #italicize_levels() %>%
+  modify_header() %>%
+  modify_caption(paste0("Self-reported Recruitment Strategies Among Self-reported ", demo)) %>% ## used to be Table 8
+  as_kable_extra() %>% kable_styling(latex_options = "scale_down")
+
+
+chi <- chisq.test(table(proposal_aleah2[[demo]], proposal_aleah2$marketing))
+
+print(chi)
+
+footnote <- ifelse(chi$p.value < 0.05,
+                   paste0("With a p-value of < 0.05 we have evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."),
+                   paste0("With a p-value over 0.05, we have no evidence that there is a significance in the difference of digital marketing success and traditional marketing success by ", demo, "."))
+
+
+compare_all <- add_footnote(compare_all, footnote)
+
+print(compare_all)
+  
+}
+  
+
+```
+
+
+```{r newTable1, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+compare_Age <- proposal_aleah %>%
+    tbl_cross(
+      row = Age,
+      col = marketing,
+      label = list(marketing ~ "Recruitment Strategies", Age ~ "Age"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total Consented \n Recruits"
+    )
+
+compare_Race <- proposal_aleah %>%
+    tbl_cross(
+      row = Race,
+      col = marketing,
+      label = list(marketing ~ "Recruitment Strategies", Race ~ "Race"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total Consented \n Recruits"
+    )
+
+compare_Sex <- proposal_aleah %>%
+    tbl_cross(
+      row = Sex,
+      col = marketing,
+      label = list(marketing ~ "Recruitment Strategies", Sex ~ "Sex"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total Consented \n Recruits"
+    )
+
+compare_Income <- proposal_aleah %>%
+    tbl_cross(
+      row = Income,
+      col = marketing,
+      label = list(marketing ~ "Recruitment Strategies", Income ~ "Income"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total Consented \n Recruits"
+    )
+
+compare_Education <- proposal_aleah %>%
+    tbl_cross(
+      row = Education,
+      col = marketing,
+      label = list(marketing ~ "Recruitment Strategies", Education ~ "Education"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total Consented \n Recruits"
+    )
+
+compare_Site <- proposal_aleah %>%
+    tbl_cross(
+      row = Site,
+      col = marketing,
+      label = list(marketing ~ "Recruitment Strategies", Site ~ "Site"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total Consented \n Recruits"
+    )
+
+
+
+# df_Age <- as.data.frame(compare_Age)
+# df_Race <- as.data.frame(compare_Race)
+# df_Sex <- as.data.frame(compare_Sex)
+# df_Income <- as.data.frame(compare_Income)
+# df_Education <- as.data.frame(compare_Education)
+# df_Site <- as.data.frame(compare_Site)
+# 
+# 
+# 
+# # Add a demographic column to each data frame
+# df_Age <- df_Age %>% mutate(Demographic = "Age")
+# df_Race <- df_Race %>% mutate(Demographic = "Race")
+# df_Sex <- df_Sex %>% mutate(Demographic = "Sex")
+# df_Income <- df_Income %>% mutate(Demographic = "Income")
+# df_Education <- df_Education %>% mutate(Demographic = "Education")
+# df_Site <- df_Site %>% mutate(Demographic = "Site")
+# 
+# # Combine all data frames into one
+# combined_df <- bind_rows(df_Age, df_Race, df_Sex, df_Income, df_Education, df_Site)
+# 
+# # Adjust column names if needed
+# colnames(combined_df)[1] <- "Demographic_Category"
+# 
+# # Optional: Ensure the demographic column is the first column
+# combined_df <- combined_df %>%
+#   select(Demographic, everything())
+# 
+# combined_df[is.na(combined_df)] <- ""
+# 
+# # Print the combined data frame
+
+# Convert tbl_cross objects to data frames
+df_Age <- as.data.frame(compare_Age)
+df_Race <- as.data.frame(compare_Race)
+df_Sex <- as.data.frame(compare_Sex)
+df_Income <- as.data.frame(compare_Income)
+df_Education <- as.data.frame(compare_Education)
+df_Site <- as.data.frame(compare_Site)
+
+# Rename the blank column to 'Temp_Demographic'
+colnames(df_Age)[1] <- "Temp_Demographic"
+colnames(df_Race)[1] <- "Temp_Demographic"
+colnames(df_Sex)[1] <- "Temp_Demographic"
+colnames(df_Income)[1] <- "Temp_Demographic"
+colnames(df_Education)[1] <- "Temp_Demographic"
+colnames(df_Site)[1] <- "Temp_Demographic"
+
+# Add a demographic column to each data frame
+df_Age <- df_Age %>% mutate(Demographic = "Age") %>% select(Demographic, everything())
+df_Race <- df_Race %>% mutate(Demographic = "Race") %>% select(Demographic, everything())
+df_Sex <- df_Sex %>% mutate(Demographic = "Sex") %>% select(Demographic, everything())
+df_Income <- df_Income %>% mutate(Demographic = "Income") %>% select(Demographic, everything())
+df_Education <- df_Education %>% mutate(Demographic = "Education") %>% select(Demographic, everything())
+df_Site <- df_Site %>% mutate(Demographic = "Site") %>% select(Demographic, everything())
+
+# Combine all data frames into one
+combined_df <- bind_rows(df_Age, df_Race, df_Sex, df_Income, df_Education, df_Site)
+
+# Replace NA values with blank spaces
+combined_df[is.na(combined_df)] <- ""
+
+# Check the result
+combined_df <- combined_df[, c(2:6)]
+
+colnames(combined_df)[1] <- "Demographics"
+
+
+
+```
+
+
+## Table 1: How recruits learned about  the study among participants in the Connect for Cancer Prevention cohort
+
+```{r knitTable1, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+knitr::kable(combined_df , 
+             #caption='Table 1: How recruits learned about  the study among participants in the Connect for Cancer Prevention cohort', 
+             row.names=FALSE,align=c("l","c","c","c","c"),
+             #col.names=c("Demographics", "Digital","Traditional","Both","Total Consented \n Recruits"), #escape=F, #linebreak(
+             booktabs = TRUE) %>%  add_indent(c(2:6, 9:15, 18:19, 22:31, 34:38, 41:49))  %>% 
+  kable_styling(latex_options = "scale_down", font_size=6)
+  
+```
+
+\FloatBarrier
+
+```{r Intercept_Model, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+## Step 1: 	Intercept model of just recruitment
+
+# Step 1: 	Intercept model of just recruitment
+icp <- glm(recruit ~ 1, family=binomial (link=logit), data=proposal_aleah2)
+summary(icp)
+```
+
+
+```{r Single_Logistic_Model, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# Step 2 : Logistic models for each variable against recruitment. Make these variables factors and the likelihood ratio from the output
+#Age and income is binned so all are categorical not continuous. Rank age, income, and education. White needs to be the reference variable
+
+
+
+proposal_aleah2$Site <- as.factor(proposal_aleah2[,'Site']) 
+
+
+a <- glm(recruit ~ Age, family=binomial (link=logit), data=proposal_aleah2)
+summary(a)
+
+r <- glm(recruit ~ Race, family=binomial (link=logit), data=proposal_aleah2)
+summary(r)
+
+sx <- glm(recruit ~ Sex, family=binomial (link=logit), data=proposal_aleah2)
+summary(sx)
+
+i <- glm(recruit ~ Income, family=binomial (link=logit), data=proposal_aleah2)
+summary(i)
+
+e <- glm(recruit ~ Education, family=binomial (link=logit), data=proposal_aleah2)
+summary(e)
+
+st <- glm(recruit ~ Site, family=binomial (link=logit), data=proposal_aleah2)
+summary(st)
+
+
+
+```
+
+
+```{r Single_Logistic_ANOVA, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+## Step 3: Comapre each simple logistic regression model to the intercept model (ANOVA Test for Single Logistic Regression)
+
+
+library(lmtest)
+
+#lrtest(icp, a) 
+print("Race")
+lrtest(icp, r)
+# lrtest(icp, sx)
+# lrtest(icp, i) 
+# lrtest(icp, e)
+# lrtest(icp, st)
+```
+
+
+
+```{r Additive_Models, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# Step 4: Additive Models/Main Affect 
+
+#print("Age")
+#Age
+a_r <- glm(recruit ~ Age+Race, family=binomial (link=logit), data=proposal_aleah2)
+summary(a_r)
+
+a_sx <- glm(recruit ~ Age+Sex, family=binomial (link=logit), data=proposal_aleah2)
+#summary(a_sx)
+
+a_i <- glm(recruit ~ Age+Income, family=binomial (link=logit), data=proposal_aleah2)
+#summary(a_i)
+
+a_e<- glm(recruit ~ Age+Education, family=binomial (link=logit), data=proposal_aleah2)
+#summary(a_e)
+
+a_st<- glm(recruit ~ Age+Site, family=binomial (link=logit), data=proposal_aleah2)
+#summary(a_st)
+
+
+#print("Race")
+#Race
+#summary(a_r) #same as Race+Age
+
+r_sx <- glm(recruit ~ Race+Sex, family=binomial (link=logit), data=proposal_aleah2)
+summary(r_sx)
+
+r_i <- glm(recruit ~ Race+Income, family=binomial (link=logit), data=proposal_aleah2)
+summary(r_i)
+
+r_e<- glm(recruit ~ Race+Education, family=binomial (link=logit), data=proposal_aleah2)
+summary(r_e)
+
+r_st<- glm(recruit ~ Race+Site, family=binomial (link=logit), data=proposal_aleah2)
+summary(r_st)
+
+
+
+#print("Sex")
+#Sex
+#summary(a_sx) #same as Sex+Age
+
+#summary(r_sx) #same as Sex+Race
+
+sx_i <- glm(recruit ~ Sex+Income, family=binomial (link=logit), data=proposal_aleah2)
+#summary(sx_i)
+
+sx_e<- glm(recruit ~ Sex+Education, family=binomial (link=logit), data=proposal_aleah2)
+#summary(sx_e)
+
+sx_st<- glm(recruit ~ Sex+Site, family=binomial (link=logit), data=proposal_aleah2)
+#summary(sx_st)
+
+
+#print("Income")
+#Income
+#summary(a_i) #same as Income+Age
+
+#summary(r_i) #same as Income+Race
+
+#summary(sx_i) #same as Income+Sex
+
+i_e<- glm(recruit ~ Income+Education, family=binomial (link=logit), data=proposal_aleah2)
+#summary(i_e)
+
+i_st<- glm(recruit ~ Income+Site, family=binomial (link=logit), data=proposal_aleah2)
+#summary(i_st)
+
+
+#print("Education")
+#Education
+#summary(a_e) #same as Education+Age
+
+#summary(r_e) #same as eductation+Race
+
+#summary(sx_e) #same as Education+Sex
+
+#summary(i_e) # same as Education +Income
+
+e_st<- glm(recruit ~ Education+Site, family=binomial (link=logit), data=proposal_aleah2)
+#summary(e_st)
+
+
+#print("Site")
+#Site
+# summary(a_st) #same as Site+Age
+
+# summary(r_st) #same as Site +Race
+ 
+# summary(sx_st) #same as Site +Sex
+ 
+# summary(e_st) # same as Site+Education
+ 
+# summary(i_st) #same as Site+Income
+
+
+all <- glm(recruit ~ Age+Race+Sex+Income+Education+Site, family=binomial (link=logit), data=proposal_aleah2)
+summary(all)
+
+```
+
+
+```{r Additive_ANOVA, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+
+###  ANOVA Test for Additive Models/Main Affect 
+
+#Age
+lrtest(a, a_r)
+# lrtest(a, a_sx)
+# lrtest(a, a_i)
+# lrtest(a,a_e)
+# lrtest(a,a_st)
+
+
+#Race
+lrtest(r, a_r)
+lrtest(r, r_sx)
+lrtest(r, r_i)
+lrtest(r, r_e)
+lrtest(r, r_st)
+
+
+
+# #Sex
+# lrtest(sx, a_sx)
+# lrtest(sx, r_sx)
+# lrtest(sx, sx_i)
+# lrtest(sx, sx_e)
+# lrtest(sx, sx_st)
+# 
+# 
+# #Income
+# lrtest(i, a_i)
+# lrtest(i, r_i)
+# lrtest(i, sx_i)
+# lrtest(i, i_e)
+# lrtest(i, i_st)
+
+
+# #Education
+# lrtest(e, a_e)
+# lrtest(e, r_e)
+# lrtest(e, sx_e)
+# lrtest(e, i_e)
+# lrtest(e, e_st)
+# 
+# #Site
+# lrtest(st, a_st)
+# lrtest(st, r_st)
+# lrtest(st, sx_st)
+# lrtest(st, e_st)
+# lrtest(st, i_st)
+
+
+```
+
+
+
+```{r Interaction_Models, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+
+#Step 5: Interaction Models 
+
+#print("Age")
+##Age
+a.r <- glm(recruit ~ Age*Race, family=binomial (link=logit), data=proposal_aleah2)
+#summary(a.r)
+
+a.sx <- glm(recruit ~ Age*Sex, family=binomial (link=logit), data=proposal_aleah2)
+#summary(a.sx)
+
+a.i <- glm(recruit ~ Age*Income, family=binomial (link=logit), data=proposal_aleah2)
+#summary(a.i)
+
+a.e<- glm(recruit ~ Age*Education, family=binomial (link=logit), data=proposal_aleah2)
+#summary(a.e)
+
+a.st<- glm(recruit ~ Age*Site, family=binomial (link=logit), data=proposal_aleah2)
+#summary(a.st)
+
+
+#print("Race")
+##Race
+#summary(a.r) #same as Race*Age
+
+r.sx <- glm(recruit ~ Race*Sex, family=binomial (link=logit), data=proposal_aleah2)
+#summary(r.sx)
+
+r.i <- glm(recruit ~ Race*Income, family=binomial (link=logit), data=proposal_aleah2)
+#summary(r.i)
+
+r.e<- glm(recruit ~ Race*Education, family=binomial (link=logit), data=proposal_aleah2)
+summary(r.e)
+
+r.st<- glm(recruit ~ Race*Site, family=binomial (link=logit), data=proposal_aleah2)
+#summary(r.st)
+
+
+#print("Sex")
+##Sex
+#summary(a.sx) #same as Sex*Age
+
+#summary(r.sx) #same as Sex*Race
+
+sx.i <- glm(recruit ~ Sex*Income, family=binomial (link=logit), data=proposal_aleah2)
+#summary(sx.i)
+
+sx.e<- glm(recruit ~ Sex*Education, family=binomial (link=logit), data=proposal_aleah2)
+#summary(sx.e)
+
+sx.st<- glm(recruit ~ Sex*Site, family=binomial (link=logit), data=proposal_aleah2)
+#summary(sx.st)
+
+
+#print("Income")
+##Income
+#summary(a.i) #same as Income*Age
+
+#summary(r.i) #same as Income*Race
+
+#summary(sx.i) #same as Income*Sex
+
+i.e<- glm(recruit ~ Income*Education, family=binomial (link=logit), data=proposal_aleah2)
+#summary(i.e)
+
+i.st<- glm(recruit ~ Income*Site, family=binomial (link=logit), data=proposal_aleah2)
+#summary(i.st)
+
+
+#print("Education")
+##Education
+#summary(a.e) #same as Education*Age
+
+#summary(r.e) #same as eductation*Race
+
+#summary(sx.e) #same as Education*Sex
+
+#summary(i.e) # same as Education *Income
+
+e.st<- glm(recruit ~ Education*Site, family=binomial (link=logit), data=proposal_aleah2)
+#summary(e.st)
+
+
+
+#print("Site")
+##Site
+#summary(a.st) #same as Site+Age
+
+#summary(r.st) #same as Site +Race
+
+#summary(sx.st) #same as Site +Sex
+
+#summary(e.st) # same as Site+Education
+
+#summary(i.st) #same as Site+Income
+
+
+```
+
+
+
+
+
+```{r Interaction_ANOVA, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+###  ANOVA Test for Interaction Models
+
+
+lrtest(a.r,icp) 
+# lrtest(a.sx,icp) 
+# lrtest(a.e,icp)
+# lrtest(a.i,icp)
+# lrtest(a.st,icp)
+
+lrtest(r.sx,icp)
+lrtest(r.e,icp)
+lrtest(r.i,icp)
+lrtest(r.st,icp)
+
+# lrtest(sx.i,icp) 
+# lrtest(sx.e,icp)
+# lrtest(sx.st,icp)
+# 
+# lrtest(i.e,icp)
+# lrtest(i.st,icp) 
+# 
+# lrtest(e.st,icp) 
+
+```
+
+
+
+
+```{r Pairwise_ANOVA, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+## Step 6: Do ANOVA test for all significant additive variables, then for pairwise interactions.
+
+
+library(emmeans)
+main_add<- glm(recruit ~ Age + Race + Sex , family=binomial (link=logit), data=proposal_aleah2)
+#joint_tests(main_add) #all significant
+all_add<- glm(recruit ~ Age + Race + Sex + Education + Income, family=binomial (link=logit), data=proposal_aleah2) # all variables-- too large, fails. Retried removing Site
+joint_tests(all_add, rg.limit = 60000) #all significant 
+
+joint_tests(a.r) #only age and race 
+joint_tests(r.sx)#only race and sex
+joint_tests(r.e) #ALL
+joint_tests(r.i)#race and income
+
+# joint_tests(a.sx) #ALL
+# joint_tests(a.e)#only age and education
+# joint_tests(a.i)#only age and income
+# joint_tests(sx.i) #only sex and income
+# joint_tests(sx.e)#only sex and education
+# joint_tests(i.e)#only income and education
+
+
+#Site is not relevant just yet for this current analysis
+#joint_tests(r.st) #counfounded
+#joint_tests(a.st)#all
+#joint_tests(sx.st) #only sex
+#joint_tests(e.st) #ed and site
+#joint_tests(i.st)#all
+
+```
+
+\newpage
+## Odds Ratios and Confidence Intervals of Additive Models
+```{r ORs_Race, echo=FALSE, message=FALSE, warning=FALSE}
+
+## Step 7: Odds Ratios of Significant Variables. Decided to exclude Site for the time being
+
+### Race on its own
+
+
+race__alone <- round(exp(cbind(Odds_Ratio = coef(r), confint(r))), digits=2)
+race__alone <- as.data.frame(race__alone)
+race__alone <- race__alone %>% mutate(CI= paste0("(", race__alone$`2.5 %`, ",", race__alone$`97.5 %`, ")"))
+kable(race__alone[, c(1,4)], caption="Race Alone", format = "latex", booktabs = TRUE) %>%  
+  kable_styling(latex_options = "hold_position")
+
+```
+
+
+
+```{r ORs_Add_AR, echo=FALSE, message=FALSE, warning=FALSE}
+#age:race, age:sex, race:sex, race:income, sex:education, income:education, age+ed?, age+income?, sex+income?
+
+
+age_race <- round(exp(cbind(Odds_Ratio = coef(a_r), confint(a_r))), digits=2)
+age_race <- as.data.frame(age_race)
+age_race <- age_race %>% mutate(CI= paste0("(", age_race$`2.5 %`, ",", age_race$`97.5 %`, ")"))
+kable(age_race[, c(1,4)], caption="Age+Race", format = "latex", booktabs = TRUE) %>%  
+  kable_styling(latex_options = "hold_position")
+
+```
+
+
+
+```{r ORs_Add_RSX, echo=FALSE, message=FALSE, warning=FALSE}
+#age:race, age:sex, race:sex, race:income, sex:education, income:education, age+ed?, age+income?, sex+income?
+
+
+race_sex <- round(exp(cbind(Odds_Ratio = coef(r_sx), confint(r_sx))), digits=2)
+race_sex <- as.data.frame(race_sex)
+race_sex <- race_sex %>% mutate(CI= paste0("(", race_sex$`2.5 %`, ",", race_sex$`97.5 %`, ")"))
+kable(race_sex[, c(1,4)], caption="Race+Sex", format = "latex", booktabs = TRUE) %>%  
+  kable_styling(latex_options = "hold_position")
+
+```
+
+
+```{r ORs_Add_RI, echo=FALSE, message=FALSE, warning=FALSE}
+#age:race, age:sex, race:sex, race:income, sex:education, income:education, age+ed?, age+income?, sex+income?
+
+
+race_income <- round(exp(cbind(Odds_Ratio = coef(r_i), confint(r_i))), digits=2)
+race_income <- as.data.frame(race_income)
+race_income <- race_income %>% mutate(CI= paste0("(", race_income$`2.5 %`, ",", race_income$`97.5 %`, ")"))
+kable(race_income[, c(1,4)], caption="Race+Income", format = "latex", booktabs = TRUE) %>%  
+  kable_styling(latex_options = "hold_position")
+
+
+```
+
+
+```{r ORs_Add_RE, echo=FALSE, message=FALSE, warning=FALSE}
+#age:race, age:sex, race:sex, race:education, sex:education, education:education, age+ed?, age+education?, sex+education?
+
+
+race_education <- round(exp(cbind(Odds_Ratio = coef(r_e), confint(r_e))), digits=2)
+race_education <- as.data.frame(race_education)
+race_education <- race_education %>% mutate(CI= paste0("(", race_education$`2.5 %`, ",", race_education$`97.5 %`, ")"))
+kable(race_education[, c(1,4)], caption="Race+Education", format = "latex", booktabs = TRUE) %>%  
+  kable_styling(latex_options = "hold_position")
+
+
+```
+
+
+```{r ORs_Add_RSt, echo=FALSE, message=FALSE, warning=FALSE}
+#age:race, age:sex, race:sex, race:site, sex:education, site:education, age+ed?, age+site?, sex+site?
+
+
+race_site <- round(exp(cbind(Odds_Ratio = coef(r_st), confint(r_st))), digits=2)
+race_site <- as.data.frame(race_site)
+race_site <- race_site %>% mutate(CI= paste0("(", race_site$`2.5 %`, ",", race_site$`97.5 %`, ")"))
+kable(race_site[, c(1,4)], caption="Race+Site", format = "latex", booktabs = TRUE) %>%  
+  kable_styling(latex_options = "hold_position")
+
+
+```
+
+```{r full_additive_model, echo=FALSE, message=FALSE, warning=FALSE}
+
+
+full_add_model <- round(exp(cbind(Odds_Ratio = coef(all), confint(all))), digits=2)
+full_add_model <- as.data.frame(full_add_model)
+full_add_model <- full_add_model %>% mutate(CI= paste0("(", full_add_model$`2.5 %`, ",", full_add_model$`97.5 %`, ")"))
+kable(full_add_model[, c(1,4)], caption="Race+Age+Sex+Income+Education+Site", format = "latex", booktabs = TRUE) %>%  
+  kable_styling(latex_options = "hold_position")
+
+
+```
+
+
+\newpage
+\FloatBarrier
+\newpage
+## Odds Ratios and Confidence Intervals of Race by Site
+```{r ORs_RacebySite, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+
+HP <- proposal_aleah2 %>%  filter(Site=="HealthPartners")
+HF <- proposal_aleah2 %>%  filter(Site=="Henry Ford Health System")
+MF <- proposal_aleah2 %>%  filter(Site=="Marshfield Clinic Health System")
+SF <- proposal_aleah2 %>%  filter(Site=="Sanford Health")
+UC <- proposal_aleah2 %>%  filter(Site=="University of Chicago Medicine")
+KPCO <- proposal_aleah2 %>%  filter(Site=="Kaiser Permanente Colorado")
+KPGA <- proposal_aleah2 %>%  filter(Site=="Kaiser Permanente Georgia")
+KPHI <- proposal_aleah2 %>%  filter(Site=="Kaiser Permanente Hawaii")
+KPNW <- proposal_aleah2 %>%  filter(Site=="Kaiser Permanente Northwest")
+
+
+
+rHP <- glm(recruit ~ Race, family=binomial (link=logit), data=HP)
+rHF <- glm(recruit ~ Race, family=binomial (link=logit), data=HF)
+rMF <- glm(recruit ~ Race, family=binomial (link=logit), data=MF)
+rSF <- glm(recruit ~ Race, family=binomial (link=logit), data=SF)
+rUC <- glm(recruit ~ Race, family=binomial (link=logit), data=UC)
+rKPCO <- glm(recruit ~ Race, family=binomial (link=logit), data=KPCO)
+rKPGA <- glm(recruit ~ Race, family=binomial (link=logit), data=KPGA)
+rKPHI <- glm(recruit ~ Race, family=binomial (link=logit), data=KPHI)
+rKPNW <- glm(recruit ~ Race, family=binomial (link=logit), data=KPNW)
+
+
+race__HP <- round(exp(cbind(Odds_Ratio = coef(rHP), confint(rHP))), digits=2)
+race__HP <- as.data.frame(race__HP)
+race__HP <- race__HP %>% mutate(CI= paste0("(", race__HP$`2.5 %`, ",", race__HP$`97.5 %`, ")"))
+kable(race__HP[, c(1,4)], caption="Race: Healthpartners", format = "latex", booktabs = TRUE) %>%  
+  kable_styling(latex_options = "hold_position")
+
+race__HF <- round(exp(cbind(Odds_Ratio = coef(rHF), confint(rHF))), digits=2)
+race__HF <- as.data.frame(race__HF)
+race__HF <- race__HF %>% mutate(CI= paste0("(", race__HF$`2.5 %`, ",", race__HF$`97.5 %`, ")"))
+kable(race__HF[, c(1,4)], caption="Race:Henry Ford Health", format = "latex", booktabs = TRUE) %>%  
+  kable_styling(latex_options = "hold_position")
+
+
+race__MF <- round(exp(cbind(Odds_Ratio = coef(rMF), confint(rMF))), digits=2)
+race__MF <- as.data.frame(race__MF)
+race__MF <- race__MF %>% mutate(CI= paste0("(", race__MF$`2.5 %`, ",", race__MF$`97.5 %`, ")"))
+kable(race__MF[, c(1,4)], caption="Race:Marshfield Clinic Health System", format = "latex", booktabs = TRUE) %>%  
+  kable_styling(latex_options = "hold_position")
+
+race__SF <- round(exp(cbind(Odds_Ratio = coef(rSF), confint(rSF))), digits=2)
+race__SF <- as.data.frame(race__SF)
+race__SF <- race__SF %>% mutate(CI= paste0("(", race__SF$`2.5 %`, ",", race__SF$`97.5 %`, ")"))
+kable(race__SF[, c(1,4)], caption="Race: Sanford Health", format = "latex", booktabs = TRUE) %>%  
+  kable_styling(latex_options = "hold_position")
+
+race__UC <- round(exp(cbind(Odds_Ratio = coef(rUC), confint(rUC))), digits=2)
+race__UC <- as.data.frame(race__UC)
+race__UC <- race__UC %>% mutate(CI= paste0("(", race__UC$`2.5 %`, ",", race__UC$`97.5 %`, ")"))
+kable(race__UC[, c(1,4)], caption="Race: University of Chicago Medicine", format = "latex", booktabs = TRUE) %>%  
+  kable_styling(latex_options = "hold_position")
+
+race__KPCO <- round(exp(cbind(Odds_Ratio = coef(rKPCO), confint(rKPCO))), digits=2)
+race__KPCO <- as.data.frame(race__KPCO)
+race__KPCO <- race__KPCO %>% mutate(CI= paste0("(", race__KPCO$`2.5 %`, ",", race__KPCO$`97.5 %`, ")"))
+kable(race__KPCO[, c(1,4)], caption="Race: Kaiser Permanente Colorado", format = "latex", booktabs = TRUE) %>%  
+  kable_styling(latex_options = "hold_position")
+
+race__KPGA <- round(exp(cbind(Odds_Ratio = coef(rKPGA), confint(rKPGA))), digits=2)
+race__KPGA <- as.data.frame(race__KPGA)
+race__KPGA <- race__KPGA %>% mutate(CI= paste0("(", race__KPGA$`2.5 %`, ",", race__KPGA$`97.5 %`, ")"))
+kable(race__KPGA[, c(1,4)], caption="Race Alone: Kaiser Permanente Georgia", format = "latex", booktabs = TRUE) %>%  
+  kable_styling(latex_options = "hold_position")
+
+race__KPHI <- round(exp(cbind(Odds_Ratio = coef(rKPHI), confint(rKPHI))), digits=2)
+race__KPHI <- as.data.frame(race__KPHI)
+race__KPHI <- race__KPHI %>% mutate(CI= paste0("(", race__KPHI$`2.5 %`, ",", race__KPHI$`97.5 %`, ")"))
+kable(race__KPHI[, c(1,4)], caption="Race Alone: Kaiser Permanente Hawaii", format = "latex", booktabs = TRUE) %>%  
+  kable_styling(latex_options = "hold_position")
+
+race__KPNW <- round(exp(cbind(Odds_Ratio = coef(rKPNW), confint(rKPNW))), digits=2)
+race__KPNW <- as.data.frame(race__KPNW)
+race__KPNW <- race__KPNW %>% mutate(CI= paste0("(", race__KPNW$`2.5 %`, ",", race__KPNW$`97.5 %`, ")"))
+kable(race__KPNW[, c(1,4)], caption="Race Alone: Kaiser Permanente Northwest", format = "latex", booktabs = TRUE) %>%  
+  kable_styling(latex_options = "hold_position")
+
+```
+
+
+
+
+
+```{r ORs_Additive_AI, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+
+print("Age+Income")
+age_income <- round(exp(cbind(Odds_Ratio = coef(a_i), confint(a_i))), digits=2)
+age_income <- as.data.frame(age_income)
+age_income <- age_income %>% mutate(CI= paste0("(", age_income$`2.5 %`, ",", age_income$`97.5 %`, ")"))
+age_income[, c(1,4)]
+
+```
+
+
+
+```{r ORs_Additive_AE, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+
+print("Age+Education")
+age_edu <- round(exp(cbind(Odds_Ratio = coef(a_e), confint(a_e))), digits=2)
+age_edu <- as.data.frame(age_edu)
+age_edu <- age_edu %>% mutate(CI= paste0("(", age_edu$`2.5 %`, ",", age_edu$`97.5 %`, ")"))
+age_edu[, c(1,4)]
+
+
+```
+
+
+```{r ORs_Additive_SXI, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+print("Sex+Income")
+sex_income <- round(exp(cbind(Odds_Ratio = coef(sx_i), confint(sx_i))), digits=2)
+sex_income <- as.data.frame(sex_income)
+sex_income <- sex_income %>% mutate(CI= paste0("(", sex_income$`2.5 %`, ",", sex_income$`97.5 %`, ")"))
+sex_income[, c(1,4)]
+
+```
+
+
+
+```{r ORs_Add_SXE, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+print("Sex+Education")
+sex_edu <- round(exp(cbind(Odds_Ratio = coef(sx_e), confint(sx_e))), digits=2)
+sex_edu <- as.data.frame(sex_edu)
+sex_edu <- sex_edu %>% mutate(CI= paste0("(", sex_edu$`2.5 %`, ",", sex_edu$`97.5 %`, ")"))
+sex_edu[, c(1,4)]
+
+```
+
+
+
+```{r ORs_Add_IE, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+print("Income+Education")
+income_edu <- round(exp(cbind(Odds_Ratio = coef(i_e), confint(i_e))), digits=2)
+income_edu <- as.data.frame(income_edu)
+income_edu <- income_edu %>% mutate(CI= paste0("(", income_edu$`2.5 %`, ",", income_edu$`97.5 %`, ")"))
+income_edu[, c(1,4)]
+
+
+```
+
+
+```{r Interaction, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# 
+# library(readxl)
+# 
+# # Set the file path
+# file_path <- "Race_Edu_Interaction.xlsx"
+# 
+# # Read the Excel file
+# df <- read_excel(file_path)
+# 
+# # Create and style the kable table
+# kable(df, format = "html") %>% 
+#   kable_styling(full_width = TRUE, position = "center")
+
+```
+
+
+```{r ORs_Int_RE, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+race.edu <- round(exp(cbind(Odds_Ratio = coef(r.e), confint(r.e))), digits=2)
+race.edu <- as.data.frame(race.edu)
+race.edu <- race.edu %>% mutate(CI= paste0("(", race.edu$`2.5 %`, ",", race.edu$`97.5 %`, ")"))
+race..edu <- race.edu[, c(1,4)]
+kable(race..edu, caption="Race:Education", colnames= c(" ", "OR", "CI"), format = "latex", booktabs = TRUE) %>%  
+  kable_styling(latex_options = "hold_position") %>%  row_spec(1:nrow(race..edu), font_size = 4)
+
+
+```
+
+
+```{r ORs_Int_ASx, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+print("Age:Sex")
+age.sex <- round(exp(cbind(Odds_Ratio = coef(a.sx), confint(a.sx))), digits=2)
+age.sex <- as.data.frame(age.sex)
+age.sex <- age.sex %>% mutate(CI= paste0("(", age.sex$`2.5 %`, ",", age.sex$`97.5 %`, ")"))
+age.sex[, c(1,4)]
+
+
+```
+
