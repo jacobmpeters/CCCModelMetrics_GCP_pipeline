@@ -6426,6 +6426,35 @@ cat("Don't know number of people in household:", as.numeric(sum(table(module1$D_
 
 
 #ALTADDRESS1/ALTADDRESS2/ALTCONTACT1/ALTCONTACT2 won't list for PII reasons
+
+altADD= data_tib_m1 %>%  mutate(Contact= case_when(!is.na(D_857915436_D_907038282) | !is.na(D_857915436_D_970839481) | 
+                                                     !is.na(D_857915436_D_379!is.na(D_857915436_899229) | !is.na(D_857915436_D_728926441) | 
+                                                              !is.na(D_857915436_D_284580415))~"Gave Alternative Address Component(s)",
+                                                           TRUE~"Skipped Alternative Address Question"))
+
+dt_altADD_summary <- altADD %>% dplyr::group_by(Contact) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Contact, n, percentage)
+
+
+dt_altADD_summary %>%  gt::gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("ALTADDRESS1: Alternative Address")) %>% 
+  cols_label(n= md("**N**"),Contact = md("**Answer**"), percentage = md("**%**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Contact,
+    )
+  ) 
+
+
+
+
   altcont1= data_tib_m1 %>%  mutate(Contact= case_when(!is.na(D_986275155_D_661719912) & !is.na(D_986275155_D_801653230)~"Gave Full Name",
                                                            (!is.na(D_986275155_D_661719912)| !is.na(D_986275155_D_801653230))~"Gave First or Last Name Only",
                                                            TRUE~"Skipped Alternative Contact Question"))
