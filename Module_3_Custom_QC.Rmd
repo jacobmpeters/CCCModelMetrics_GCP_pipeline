@@ -363,6 +363,10 @@ if (nrow(error_set6) == 0) {
 
 ```{r, include=FALSE}
 
+## all of the 9B variables' logic were changed in October of 2022. Any errors past that point would be what needs to be identified
+
+
+
 qc_funct_9b <- function(PRODUCT1_CID, PRODUCT4_CID, PRODUCT5_CID, PRODUCT8C_CID, PRODUCT9B_CID){ 
   CID_SYM_P1 <- rlang::ensym(PRODUCT1_CID)
   CID_SYM_P4 <- rlang::ensym(PRODUCT4_CID)
@@ -371,7 +375,7 @@ qc_funct_9b <- function(PRODUCT1_CID, PRODUCT4_CID, PRODUCT5_CID, PRODUCT8C_CID,
   CID_SYM_P9B <- rlang::ensym(PRODUCT9B_CID)
 
   dt_prod9b <- data_tib_all3 %>%  select(Connect_ID, !!CID_SYM_P8C, !!CID_SYM_P4, !!CID_SYM_P5, !!CID_SYM_P1, !!CID_SYM_P9B, d_386488297)
-  gt_prod9b <- dt_prod9b %>% filter(!is.na(!!CID_SYM_P9B) & 
+  gt_prod9b <- dt_prod9b %>% filter(d_386488297> "2022-11-01" & !is.na(!!CID_SYM_P9B) & 
                                       (!!CID_SYM_P4== 804785430|
                                           ((!is.na(!!CID_SYM_P4) | !!CID_SYM_P4!=419415087) & !!CID_SYM_P5==484055234 & !!CID_SYM_P8C== 353358909) | 
                                           ((!is.na(!!CID_SYM_P4) |  !!CID_SYM_P4!=419415087) & !!CID_SYM_P5==802197176 & !!CID_SYM_P8C== 353358909))) %>% 
@@ -529,6 +533,7 @@ if (nrow(error_set17) == 0) {
 ## Only display ALCOHOL9 if (ALCOHOL2 = 3) AND (RESPONSE PROVIDED TO REGALCOHOL_AGE) AND (ALCOHOL5 = 1)
 ```{r, message=FALSE, warning=FALSE, echo=FALSE}
 
+
 error_set18 <- data_tib_all3 %>%  filter(!(D_429228540==132232896 & !is.na(D_556837046_D_141874857) & D_338467033==353358909) & # |
                                     #(D_338467033==104430631 & !is.na(D_480426504))) & 
                                   !is.na(D_254739443)) %>% 
@@ -542,10 +547,9 @@ error_set18 <- data_tib_all3 %>%  filter(!(D_429228540==132232896 & !is.na(D_556
 
 # Up to 1/14/2024, the display logic was: [DISPLAY ALCOHOL9 – ALCLIFE4H IF (ALCOHOL2=3 OR 2) AND IF RESPONSE PROVIDED TO THE FOLLOWING VARIABLES: (1) ALCOHOL4; ALCOHOL5; AND (2) IF SHOWN, ALCOHOL6. OTHERWISE GO TO SUN EXPOSURE SECTION].
 # The 01/21/2024 version has display logic: [DISPLAY ALCOHOL9 IF (ALCOHOL2= 3), (REGALCOHOL_AGE= #), AND ([ALCOHOL5= 1] OR [ALCOHOL5= 0 AND ALCOHOL6= #]) ELSE, GO TO INTROSE]
-# Sometime between 1/22/2024 – 6/25/2024, the display logic changed to: [DISPLAY ALCOHOL9 IF (ALCOHOL2= 3)), (REGALCOHOL_AGE= #), AND (ALCOHOL5= 1) ELSE, GO TO ALCLIFE1]
-# Currently, the code is as per [DISPLAY ALCOHOL9 IF (ALCOHOL2= 3)), (REGALCOHOL_AGE= #), AND (ALCOHOL5= 1) ELSE, GO TO ALCLIFE1]
+# On 6/7/24, the display logic changed to: [DISPLAY ALCOHOL9 IF (ALCOHOL2= 3)), (REGALCOHOL_AGE= #), AND (ALCOHOL5= 1) ELSE, GO TO ALCLIFE1]
                                                                       
-error_set18 <- error_set18 %>% filter(d_386488297 > "2024-06-25")                                                                      
+error_set18 <- error_set18 %>% filter(d_386488297 > "2024-06-07")                                                                      
                                                                       
                                                                       
 

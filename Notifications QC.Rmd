@@ -270,10 +270,10 @@ if (nrow(QOLSMS_invite) > 50) {
 
 
 \FloatBarrier
-## The same participant received multiple Baseline Research Biospecimen Survey reminders on the same day. Note, first contact attempt is sent at the time of the sample donation and the 2nd contact attempt is sent at 8pm that same day; for that reason we expect up to 2 contacts a day per participant. This table will identify any count higher than 2 per day.
+## The same participant received multiple Baseline Research Biospecimen Survey email reminders on the same day. Note, first contact attempt is sent at the time of the sample donation and the 2nd contact attempt is sent at 8pm that same day; for that reason we expect up to 2 contacts a day per participant. This table will identify any count higher than 2 per day.
 
 \FloatBarrier
-```{r RsBio, echo=FALSE, message=FALSE, warning=FALSE}
+```{r RsBio_email, echo=FALSE, message=FALSE, warning=FALSE}
 RsBio <- "SELECT DISTINCT p.Connect_ID, 
                 MAX(category) AS category,
                 DATE(notification_time) AS repeat_date, 
@@ -283,23 +283,60 @@ LEFT JOIN `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
 ON p.token = n.token
 WHERE category='Biospecimen Survey Reminder' OR category LIKE '%Baseline Research Biospecimen Survey Reminders%'
 AND DATE(notification_time) >= (CURRENT_DATE() - 7)
-#AND notificationType = 'email'
+AND notificationType = 'email'
 GROUP BY Connect_ID,repeat_date
 HAVING COUNT(*) > 2"
 
 RsBio_table <- bq_project_query(project, RsBio)
-Rs_BioSrvy_invite <- bq_table_download(RsBio_table, bigint = "integer64") #currently 32 people - all 2
+Rs_BioSrvy_email_invite <- bq_table_download(RsBio_table, bigint = "integer64") #currently 32 people - all 2
 
 
 
-if (nrow(Rs_BioSrvy_invite) > 50) {
-  cat("There are", nrow(Rs_BioSrvy_invite), "errors. This table has been made a csv and posted to Box, link in the report intro.")
-  write.csv(Rs_BioSrvy_invite,glue("{local_drive}Multiple_Rs_BioSrvy_invite_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+if (nrow(Rs_BioSrvy_email_invite) > 50) {
+  cat("There are", nrow(Rs_BioSrvy_email_invite), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(Rs_BioSrvy_email_invite,glue("{local_drive}Multiple_Rs_BioSrvy_email_invite_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
 } else {
-  if(nrow(Rs_BioSrvy_invite) == 0) {
+  if(nrow(Rs_BioSrvy_email_invite) == 0) {
   cat("No errors\n")
 } else {
-  knitr::kable(Rs_BioSrvy_invite) %>% kable_styling(latex_options = "scale_down")
+  knitr::kable(Rs_BioSrvy_email_invite) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+```
+
+
+\FloatBarrier
+## The same participant received multiple Baseline Research Biospecimen Survey sms reminders on the same day. Note, first contact attempt is sent at the time of the sample donation and the 2nd contact attempt is sent at 8pm that same day; for that reason we expect up to 2 contacts a day per participant. This table will identify any count higher than 2 per day.
+
+\FloatBarrier
+```{r RsBio_sms, echo=FALSE, message=FALSE, warning=FALSE}
+RsBio <- "SELECT DISTINCT p.Connect_ID, 
+                MAX(category) AS category,
+                DATE(notification_time) AS repeat_date, 
+                COUNT(*) AS num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+LEFT JOIN `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+ON p.token = n.token
+WHERE category='Biospecimen Survey Reminder' OR category LIKE '%Baseline Research Biospecimen Survey Reminders%'
+AND DATE(notification_time) >= (CURRENT_DATE() - 7)
+AND notificationType = 'sms'
+GROUP BY Connect_ID,repeat_date
+HAVING COUNT(*) > 2"
+
+RsBio_table <- bq_project_query(project, RsBio)
+Rs_BioSrvy_sms_invite <- bq_table_download(RsBio_table, bigint = "integer64") #currently 32 people - all 2
+
+
+
+if (nrow(Rs_BioSrvy_sms_invite) > 50) {
+  cat("There are", nrow(Rs_BioSrvy_sms_invite), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(Rs_BioSrvy_sms_invite,glue("{local_drive}Multiple_Rs_BioSrvy_sms_invite_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(Rs_BioSrvy_sms_invite) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(Rs_BioSrvy_sms_invite) %>% kable_styling(latex_options = "scale_down")
 }
 }
 
@@ -308,8 +345,8 @@ if (nrow(Rs_BioSrvy_invite) > 50) {
 
 
 \FloatBarrier
-## The same participant received multiple Baseline Clinical Biospecimen Survey reminders on the same day. Note, first contact attempt is sent at the time of the sample donation and the 2nd contact attempt is sent at 8pm that same day; for that reason we expect up to 2 contacts a day per participant. This table will identify any count higher than 2 per day.
-```{r ClBio, echo=FALSE, message=FALSE, warning=FALSE}
+## The same participant received multiple Baseline Clinical Biospecimen Survey email reminders on the same day. Note, first contact attempt is sent at the time of the sample donation and the 2nd contact attempt is sent at 8pm that same day; for that reason we expect up to 2 contacts a day per participant. This table will identify any count higher than 2 per day.
+```{r ClBio_email, echo=FALSE, message=FALSE, warning=FALSE}
 ClBio <- "SELECT DISTINCT p.Connect_ID, 
                 MAX(category) AS category,
                 DATE(notification_time) AS repeat_date, 
@@ -321,22 +358,60 @@ WHERE (category LIKE '%Baseline Clinical Biospecimen Survey%' OR
        category LIKE '%Baseline Clinical Blood and Urine Sample Survey Reminders%' OR
        category ='Baseline Clinical Blood and Urine Sample Survey Reminders')
 AND DATE(notification_time) >= (CURRENT_DATE() - 7)
-#AND notificationType = 'email'
+AND notificationType = 'email'
 GROUP BY Connect_ID,repeat_date
 HAVING COUNT(*) > 2"
 
 ClBio_table <- bq_project_query(project, ClBio)
-Clin_BioSrvy_invite <- bq_table_download(ClBio_table, bigint = "integer64")
+Clin_BioSrvy_invite_email <- bq_table_download(ClBio_table, bigint = "integer64")
 
 
-if (nrow(Clin_BioSrvy_invite) > 50) {
-  cat("There are", nrow(Clin_BioSrvy_invite), "errors. This table has been made a csv and posted to Box, link in the report intro.")
-  write.csv(Clin_BioSrvy_invite,glue("{local_drive}Multiple_Clin_BioSrvy_invite_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+if (nrow(Clin_BioSrvy_invite_email) > 50) {
+  cat("There are", nrow(Clin_BioSrvy_invite_email), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(Clin_BioSrvy_invite_email,glue("{local_drive}Multiple_Clin_BioSrvy_email_invite_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
 } else {
-  if(nrow(Clin_BioSrvy_invite) == 0) {
+  if(nrow(Clin_BioSrvy_invite_email) == 0) {
   cat("No errors\n")
 } else {
-  knitr::kable(Clin_BioSrvy_invite) %>% kable_styling(latex_options = "scale_down")
+  knitr::kable(Clin_BioSrvy_invite_email) %>% kable_styling(latex_options = "scale_down")
+}
+}
+
+```
+
+
+
+
+\FloatBarrier
+## The same participant received multiple Baseline Clinical Biospecimen Survey sms reminders on the same day. Note, first contact attempt is sent at the time of the sample donation and the 2nd contact attempt is sent at 8pm that same day; for that reason we expect up to 2 contacts a day per participant. This table will identify any count higher than 2 per day.
+```{r ClBio_sms, echo=FALSE, message=FALSE, warning=FALSE}
+ClBio <- "SELECT DISTINCT p.Connect_ID, 
+                MAX(category) AS category,
+                DATE(notification_time) AS repeat_date, 
+                COUNT(*) AS num_same_day_attempts
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` n
+LEFT JOIN `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` p
+ON p.token = n.token
+WHERE (category LIKE '%Baseline Clinical Biospecimen Survey%' OR 
+       category LIKE '%Baseline Clinical Blood and Urine Sample Survey Reminders%' OR
+       category ='Baseline Clinical Blood and Urine Sample Survey Reminders')
+AND DATE(notification_time) >= (CURRENT_DATE() - 7)
+AND notificationType = 'sms'
+GROUP BY Connect_ID,repeat_date
+HAVING COUNT(*) > 2"
+
+ClBio_table <- bq_project_query(project, ClBio)
+Clin_BioSrvy_invite_sms <- bq_table_download(ClBio_table, bigint = "integer64")
+
+
+if (nrow(Clin_BioSrvy_invite_sms) > 50) {
+  cat("There are", nrow(Clin_BioSrvy_invite_sms), "errors. This table has been made a csv and posted to Box, link in the report intro.")
+  write.csv(Clin_BioSrvy_invite_sms,glue("{local_drive}Multiple_Clin_BioSrvy_sms_invite_reminders_{currentDate}_boxfolder_{boxfolder}.csv"),row.names = F,na="")
+} else {
+  if(nrow(Clin_BioSrvy_invite_sms) == 0) {
+  cat("No errors\n")
+} else {
+  knitr::kable(Clin_BioSrvy_invite_sms) %>% kable_styling(latex_options = "scale_down")
 }
 }
 
