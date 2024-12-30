@@ -124,6 +124,7 @@ AllPossibleNotifications AS (
             'eNewsletter'
         ) and 
         category NOT LIKE '% PI Change' and category NOT LIKE 'Prev. Blocked %' and 
+        category NOT LIKE '% Year-end Thank-you Letter' and
         NOT (category = 'Verified, BL Survey Reminders' AND attempt = '2nd contact')
     UNION ALL
     SELECT 
