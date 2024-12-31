@@ -1511,7 +1511,10 @@ dt_home_addsum6 %>%  gt::gt(rowname_col = "row_lab") %>%
 ```{r MoveInOut, warning=FALSE, echo=FALSE, message=FALSE}
 
 #HOME1
-home1_inout= Mod4 %>%  mutate(Answer= case_when(is.na(D_590222838)~"Skipped Home 1 Move-In Year"))
+home1_inout= Mod4 %>%  mutate(Answer= case_when(is.na(D_590222838) & 
+                                                  !(is.na(D_121490150_D_255248624) & is.na(D_121490150_D_945532934) & is.na(D_121490150_D_469838242) &
+                                                      is.na(D_121490150_D_303500597) & is.na(D_121490150_D_195068098) & is.na(D_121490150_D_202784871) &
+                                                      is.na(D_121490150_D_831127170) ) ~"Skipped Home 1 Move-In Year"))
 
 dt_home1_inout_summary <- home1_inout %>% dplyr::group_by(Answer) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(Answer, n, percentage)
 dt_home1_inout_summary <- dt_home1_inout_summary[1,]
