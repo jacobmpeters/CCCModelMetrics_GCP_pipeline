@@ -442,3 +442,48 @@ if (nrow(pref_lang) == 0) {
 }
 
 ```
+
+
+\FloatBarrier
+## 12. If the Cancer Screening History flag is null, there should be no survey data.
+```{r survey_data_m1, echo=FALSE, warning=FALSE, message=FALSE}
+
+
+# csh_null_bq <- 
+# "SELECT Connect_ID,
+# CASE 
+#     WHEN d_827220437 = '125001209' THEN 'Kaiser Permanente Colorado'
+#     WHEN d_827220437 = '181769837' THEN 'Other'
+#     WHEN d_827220437 = '300267574' THEN 'Kaiser Permanente Hawaii'
+#     WHEN d_827220437 = '303349821' THEN 'Marshfield Clinic Health System'
+#     WHEN d_827220437 = '327912200' THEN 'Kaiser Permanente Georgia'
+#     WHEN d_827220437 = '452412599' THEN 'Kaiser Permanente Northwest'
+#     WHEN d_827220437 = '517700004' THEN 'National Cancer Institute'
+#     WHEN d_827220437 = '531629870' THEN 'HealthPartners'
+#     WHEN d_827220437 = '548392715' THEN 'Henry Ford Health System'
+#     WHEN d_827220437 = '657167265' THEN 'Sanford Health'
+#     WHEN d_827220437 = '809703864' THEN 'University of Chicago Medicine'
+#     ELSE NULL
+# END AS Site
+# FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
+# where d_176068627 is null and 
+# Connect_ID in (select Connect_ID from `nih-nci-dceg-connect-prod-6d04.FlatConnect.cancerScreeningHistorySurvey_JP` )
+# order by Site"
+# 
+# csh_null_bq_table <- bq_project_query(project, csh_null_bq)
+# csh_null <- bq_table_download(csh_null_bq_table, bigint = "integer64")
+# 
+# 
+# if (nrow(csh_null) == 0) {
+#   cat("No errors\n")
+# } else {
+#   knitr::kable(csh_null) %>%
+#     kable_styling(latex_options = "scale_down")
+# }
+
+
+```
+
+
+
+
