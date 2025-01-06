@@ -57,6 +57,13 @@ library(janitor)
 library(glue)
 
 
+#install.packages("sjPlot")
+library(sjPlot) # plotting summary of fifths correction
+#install.packages("logistf")
+library(logistf) #Firths correction
+library(broom)
+library(boot) ##Bootstrapping the confidence intervals
+
 options(tinytex.verbose = TRUE)
 
 bq_auth()
@@ -1113,7 +1120,7 @@ knitr::kable(combined_df_refused,
 
 
 
-```{r firths_correction}
+```{r firths_correction, echo=FALSE, include=FALSE}
 
 ## Need consent to be a binomial --> 0 or 1 not yes or no 
 letter_cont <- letter_cont %>%  mutate(bin_consent = ifelse(consent=="Yes", 1, 0))
@@ -1139,53 +1146,61 @@ letter_cont2$site <- relevel(letter_cont2$site, ref=1)
 
 
 
-#install.packages("logistf")
-library(logistf)
+
 
 ```
 
 
+## Additive model: Consent ~ Age + Race + Sex + Site + Letter
 
+\FloatBarrier
 ```{r Additive_Model, echo=FALSE, warning=FALSE, message=FALSE, results='asis' }
 
 additive <- glm(bin_consent ~ age+race+sex+site+letter, family=binomial (link=logit), data=letter_cont2)
-summary(additive)
+#summary(additive)
+knitr::kable(tidy(additive), caption = "Additive Model (GLM)")
+```
 
-
-
-
-
+\FloatBarrier
+```{r Additive_Model2, echo=FALSE, warning=FALSE, message=FALSE, results='asis' }
 
 additive2 <- logistf(bin_consent ~ age+race+sex+site+letter, data=letter_cont2)
 summary(additive2)
 
 
+############ Need to find a different way to print this. This does not play nicely with a pdf output
+
+
+# # Create a table
+# breakdown <- tab_model(additive2, title = "Additive Model (Firth Correction)")
+# 
+# # Extract the summary data from tab_model output (as a list)
+# model_summary <- breakdown$summary
+# 
+# # Convert the summary to a data frame
+# model_summary_df1 <- data.frame(
+#   Predictor = rownames(model_summary),  # Extract predictor names
+#   Estimate = model_summary[, 1],  # Coefficients
+#   `Std. Error` = model_summary[, 2],  # Standard Errors
+#   `z value` = model_summary[, 3],  # Z values
+#   `p value` = model_summary[, 4]   # P-values
+# )
+# 
+# # Now render this table with kable
+# knitr::kable(model_summary_df1, caption = "Additive Model (Firth Correction)")
+
+
 ```
 
 
-
-```{r Interaction_Model, echo=FALSE, warning=FALSE, message=FALSE, results='asis' }
-
-inter <- glm(bin_consent ~ age*letter + race*letter + sex*letter + site*letter, # + age*sex + age*race + age*site + race*site + race*age + race*sex + sex*site + sex*age, 
-             family=binomial (link=logit), data=letter_cont2)
-summary(inter)
-
-
-
-
-inter2 <- logistf(bin_consent ~ age*letter + race*letter + sex*letter + site*letter, # + age*sex + age*race + age*site + race*site + race*age + race*sex + sex*site + sex*age, 
-                  data=letter_cont2)
-summary(inter2)
-
-```
-
+\FloatBarrier
 
 ```{r OR_additive_model, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
 OR_additive <- round(exp(cbind(Odds_Ratio = coef(additive), confint(additive))), digits=2)
 OR_additive <- as.data.frame(OR_additive)
 OR_additive <- OR_additive %>% mutate(CI= paste0("(", OR_additive$`2.5 %`, ",", OR_additive$`97.5 %`, ")"))
-kable(OR_additive[, c(1,4)], caption="Age+Race+Sex+Site+Letter Logitsic", format = "latex", booktabs = TRUE) %>%  
+kable(OR_additive[, c(1,4)], caption="Additive Model Odds Ratios: Logitsic", format = "latex", booktabs = TRUE) %>%  
   kable_styling(latex_options = "hold_position")
 
 
@@ -1193,29 +1208,26 @@ kable(OR_additive[, c(1,4)], caption="Age+Race+Sex+Site+Letter Logitsic", format
 OR_additive2 <- round(exp(cbind(Odds_Ratio = coef(additive2), confint(additive2))), digits=2)
 OR_additive2 <- as.data.frame(OR_additive2)
 OR_additive2 <- OR_additive2 %>% mutate(CI= paste0("(", OR_additive2[,2], ",", OR_additive2[,3], ")"))
-kable(OR_additive2[, c(1,4)], caption="Age+Race+Sex+Site+Letter Firth's Correction", format = "latex", booktabs = TRUE) %>%  
+kable(OR_additive2[, c(1,4)], caption="Additive Model Odds Ratios: Firth's Correction", format = "latex", booktabs = TRUE) %>%  
   kable_styling(latex_options = "hold_position")
 
 
 ```
-
+\FloatBarrier
 
 ```{r Bootstrapping_Additive_CIs, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
-##Bootstrapping the confidence intervals
-library(boot)
 
-
-bootstrap <- boot(additive, corr.fun, R = 1000)
-boot.ci(boot.out = bootstrap, 
-        type = c("norm", "basic",
-                 "perc", "bca"))
-
-
-bootstrap2 <- boot(additive2, corr.fun, R = 1000)
-boot.ci(boot.out = bootstrap2, 
-        type = c("norm", "basic",
-                 "perc", "bca"))
+# bootstrap <- boot(additive, corr.fun, R = 1000)
+# boot.ci(boot.out = bootstrap, 
+#         type = c("norm", "basic",
+#                  "perc", "bca"))
+# 
+# 
+# bootstrap2 <- boot(additive2, corr.fun, R = 1000)
+# boot.ci(boot.out = bootstrap2, 
+#         type = c("norm", "basic",
+#                  "perc", "bca"))
 
 
 
@@ -1260,6 +1272,8 @@ OR_additive3 <- data.frame(
   mutate(CI = paste0("(", round(CI_Lower, 2), ",", round(CI_Upper, 2), ")"))
 
 print(OR_additive3)
+kable(OR_additive3[,c(1,4)], caption="Additive Model Odds Ratios: Bootstrapped", format = "latex", booktabs = TRUE, longtable = TRUE) %>%  
+   kable_styling(latex_options = c("repeat_header"))
 
 #### ESSSENTIALY THE EXACT SAME AS THE FIRST OR_ADDITIVE
 
@@ -1268,24 +1282,95 @@ print(OR_additive3)
 
 
 
+
+## Interaction model: Consent ~ Age*Letter + Race*Letter + Sex*Letter + Site*Letter
+
+\FloatBarrier
+
+```{r Interaction_Model, echo=FALSE, warning=FALSE, message=FALSE, results='asis' }
+
+inter <- glm(bin_consent ~ age*letter + race*letter + sex*letter + site*letter, # + age*sex + age*race + age*site + race*site + race*age + race*sex + sex*site + sex*age, 
+             family=binomial (link=logit), data=letter_cont2)
+#summary(inter)
+knitr::kable(tidy(inter), caption = "Interaction Model (GLM)")
+```
+\FloatBarrier
+
+```{r Interaction_Model2, echo=FALSE, warning=FALSE, message=FALSE, results='asis' }
+
+############ Need to find a different way to print this. This does not play nicely with a pdf output
+
+inter2 <- logistf(bin_consent ~ age*letter + race*letter + sex*letter + site*letter, # + age*sex + age*race + age*site + race*site + race*age + race*sex + sex*site + sex*age, 
+                  data=letter_cont2)
+summary(inter2)
+#tab_model(inter2, title = "Interactive Model (Firth Correction)")
+#knitr::kable(tidy(inter2), caption = "Interaction Model (Firth Correction)")   # can't tidy a logistf model 
+
+# # Extract the summary data from tab_model output (as a list)
+# model_summary <- try_this
+# 
+# # Convert the summary to a data frame
+# model_summary_df <- data.frame(
+#   Predictor = rownames(model_summary),  # Extract predictor names
+#   Estimate = model_summary[, 1],  # Coefficients
+#   `Std. Error` = model_summary[, 2],  # Standard Errors
+#   `z value` = model_summary[, 3],  # Z values
+#   `p value` = model_summary[, 4]   # P-values
+# )
+
+# Now render this table with kable
+#knitr::kable(model_summary_df, caption = "Interactive Model (Firth Correction)")
+  # kable_styling(bootstrap_options = c("striped", "hover", "responsive")) %>% 
+  # scroll_box(width = "100%", height = "500px")
+
+
+####### Having issues with this one 
+# # Convert the tidied table to a longtable
+# tidy_inter2 <- tidy_logistf(inter2)
+# 
+# kable(tidy_inter2, format = "latex", booktabs = TRUE, longtable = TRUE, caption = "Additive Model (Firth Correction)- Longtable") %>%
+#   kable_styling(latex_options = c("repeat_header"))
+
+
+# # Extract and format results
+# results <- data.frame(
+#   Term = names(inter2$coefficients),   # Variable names
+#   Estimate = inter2$coefficients,      # Coefficients
+#   Std_Error = inter2$se,               # Standard errors
+#   CI_Lower = inter2$ci.lower,          # Confidence interval lower bound
+#   CI_Upper = inter2$ci.upper,          # Confidence interval upper bound
+#   P_Value = inter2$prob                # P-values
+# )
+# 
+# # Display with kable
+# knitr::kable(results, caption = "Interaction Model (Firth Correction)", digits = 3)
+
+```
+
+
+\newpage
+\FloatBarrier
+
 ```{r OR_interaction_model, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
 OR_inter <- round(exp(cbind(Odds_Ratio = coef(inter), confint(inter))), digits=2)
 OR_inter <- as.data.frame(OR_inter)
 OR_inter <- OR_inter %>% mutate(CI= paste0("(", OR_inter$`2.5 %`, ",", OR_inter$`97.5 %`, ")"))
-kable(OR_inter[, c(1,4)], caption="age*letter + race*letter + sex*letter + site*letter Logitsic", format = "latex", booktabs = TRUE) %>%  
-  kable_styling(latex_options = "hold_position")
-
-
-
+kable(OR_inter[, c(1,4)], caption="Interactive Model Odds Ratios: Logitsic", format = "latex", booktabs = TRUE, longtable = TRUE) %>%  
+  kable_styling(latex_options = c("repeat_header"))
+```
+\newpage
+\FloatBarrier
+```{r OR_interaction_model2, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 OR_inter2 <- round(exp(cbind(Odds_Ratio = coef(inter2), confint(inter2))), digits=2)
 OR_inter2 <- as.data.frame(OR_inter2)
-OR_inter2 <- OR_inter2 %>% mutate(CI= paste0("(", OR_inter2$`2.5 %`, ",", OR_inter2$`97.5 %`, ")"))
-kable(OR_inter2[, c(1,4)], caption="age*letter + race*letter + sex*letter + site*letter Firth's Correction", format = "latex", booktabs = TRUE) %>%  
-  kable_styling(latex_options = "hold_position")
+OR_inter2 <- OR_inter2 %>% mutate(CI= paste0("(", OR_inter2[,2], ",", OR_inter2[,3], ")"))
+kable(OR_inter2[, c(1,4)], caption="Interactive Model Odds Ratios: Firth's Correction", format = "latex", booktabs = TRUE, longtable = TRUE) %>%  
+  kable_styling(latex_options = c("repeat_header"))
 
 ```
-
+\newpage
+\FloatBarrier
 
 ```{r Bootstrap_interaction_model_OR, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 # Function to compute odds ratios from a fitted model
@@ -1323,7 +1408,8 @@ OR_inter3 <- data.frame(
 ) %>%
   mutate(CI = paste0("(", round(CI_Lower, 2), ",", round(CI_Upper, 2), ")"))
 
-print(OR_inter3)
+kable(OR_inter3, caption="Interactive Model Odds Ratios: Bootstrapping", format = "latex", booktabs = TRUE, longtable = TRUE) %>%  
+  kable_styling(latex_options = c("repeat_header"))
 
 #### ESSSENTIALY THE EXACT SAME AS THE FIRST OR_ADDITIVE
 ```
