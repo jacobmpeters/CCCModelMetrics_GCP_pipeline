@@ -1165,14 +1165,14 @@ knitr::kable(tidy(additive), caption = "Additive Model (GLM)")
 ```{r Additive_Model2, echo=FALSE, warning=FALSE, message=FALSE, results='asis' }
 
 additive2 <- logistf(bin_consent ~ age+race+sex+site+letter, data=letter_cont2)
-summary(additive2)
+#summary(additive2)
 
 
 ############ Need to find a different way to print this. This does not play nicely with a pdf output
 
 
-# # Create a table
-# breakdown <- tab_model(additive2, title = "Additive Model (Firth Correction)")
+
+tab_model(additive2, title = "Additive Model (Firth Correction)")
 # 
 # # Extract the summary data from tab_model output (as a list)
 # model_summary <- breakdown$summary
@@ -1302,8 +1302,8 @@ knitr::kable(tidy(inter), caption = "Interaction Model (GLM)")
 
 inter2 <- logistf(bin_consent ~ age*letter + race*letter + sex*letter + site*letter, # + age*sex + age*race + age*site + race*site + race*age + race*sex + sex*site + sex*age, 
                   data=letter_cont2)
-summary(inter2)
-#tab_model(inter2, title = "Interactive Model (Firth Correction)")
+#summary(inter2)
+tab_model(inter2, title = "Interactive Model (Firth Correction)")
 #knitr::kable(tidy(inter2), caption = "Interaction Model (Firth Correction)")   # can't tidy a logistf model 
 
 # # Extract the summary data from tab_model output (as a list)
