@@ -954,6 +954,7 @@ if (nrow(start_ssn) == 0) {
 
 \FloatBarrier
 ## 38. If the Cancer Screening History flag is null, there should be no survey data.
+
 ```{r survey_data_m1, echo=FALSE, warning=FALSE, message=FALSE}
 
 
@@ -1125,3 +1126,4 @@ if (nrow(start_ssn) == 0) {
 <!-- } -->
 
 <!-- ``` -->
+
