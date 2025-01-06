@@ -1134,7 +1134,7 @@ table(letter_cont2$age) #even enough
 table(letter_cont2$race) #unknown has the least
 table(letter_cont2$sex) #even enough now
 table(letter_cont2$site) #MF is too small
-table(letter_cont2$letter) #even enough
+table(letter_cont2$letter) # letter x should be the reference because it's the control letter
 
 letter_cont2$race <- factor(letter_cont2$race, levels=c("White, Non-Hispanic", "Other", "Unknown"))
 letter_cont2$race <- relevel(letter_cont2$race, ref=1) 
@@ -1145,7 +1145,8 @@ letter_cont2$site <- relevel(letter_cont2$site, ref=1)
 
 
 
-
+letter_cont2$letter <- factor(letter_cont2$letter, levels=c("Variant X", "Variant A", "Variant B", "Variant C", "Variant D"))
+letter_cont2$letter <- relevel(letter_cont2$letter, ref=1)
 
 
 ```
