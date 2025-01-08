@@ -1,15 +1,26 @@
 ---
 title: "Letter Variant Next Steps"
 author: "Kelsey Sanchez"
-date: "`r Sys.Date()`"
-header-includes:  
-    \usepackage{placeins}
-
-
+date: 'Data Extracted and Report Ran: `r Sys.Date()`'
+header-includes: 
+  \usepackage[labelformat=empty]{caption} 
+  \usepackage{placeins} 
+  \usepackage{booktabs}
+  \usepackage{pdflscape}
+  \usepackage{float}
+  
 output:
   pdf_document:
+    latex_engine: xelatex
     extra_dependencies: ["float"]
+    toc: no
+    keep_tex: yes
+    fig_width: 7
+    fig_height: 5
+    fig_caption: yes
+    df_print: paged
 ---
+
 
 ```{r libraries, include=FALSE}
 
@@ -43,14 +54,30 @@ library(sqldf) ##sql
 library(lubridate) ###date time
 library(stringr) ###to work on patterns, charaters
 library(janitor)
+library(glue)
 
+
+#install.packages("sjPlot")
+library(sjPlot) # plotting summary of fifths correction
+#install.packages("logistf")
+library(logistf) #Firths correction
+library(broom)
+library(boot) ##Bootstrapping the confidence intervals
 
 options(tinytex.verbose = TRUE)
 
 bq_auth()
+dataset <- "FlatConnect"
+tier    <- "prod"
+project <- switch(tier,
+                  dev  = "nih-nci-dceg-connect-dev",
+                  stg  = "nih-nci-dceg-connect-stg-5519",
+                  prod = "nih-nci-dceg-connect-prod-6d04")
 
+billing <- project
 
 ```
+
 
 
 ```{r BQ_Data_Pull, include=FALSE}
@@ -59,7 +86,7 @@ demo <- "SELECT Connect_ID, token,
 d_827220437, state_d_253532712, state_d_934298480, state_d_684926335, state_d_849518448, state_d_119643471, 
 state_d_706256705, state_d_435027713, d_949302066, d_536735468, d_663265240, d_976570371, d_100767870, 
 d_878865966, d_684635302, d_167958071, state_d_811353546, d_230663853, d_558435199, d_919254129, d_699625233,
-state_d_158291096
+state_d_158291096, d_454445267
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
 where state_d_811353546 is not null"
 demo_table <- bq_project_query(project, demo)
@@ -113,16 +140,16 @@ letter_cont <- letter_cont %>%
                               TRUE ~ "Completed Neither"),
        collections = case_when((d_878865966=="353358909" | d_684635302=="353358909" | d_167958071=="353358909") ~ "Collected",
                                TRUE ~ "Not Collected"),
-       letter = case_when(state_d_811353546=="711757828" ~ "Join Connect today to help prevent cancer tomorrow",
-                          state_d_811353546=="943427992" ~ "Receive a $25 payment for participating",
-                          state_d_811353546=="648219696" ~ "Join to honor the memory of those lost to cancer",
-                          state_d_811353546=="798915634" ~ "Join others in your community who are changing the future of cancer prevention",
-                          state_d_811353546=="896010519" ~ "You can easily do most study tasks on your own"),
+       letter = case_when(state_d_811353546=="711757828" ~ "Variant X",
+                          state_d_811353546=="943427992" ~ "Variant A",
+                          state_d_811353546=="648219696" ~ "Variant B",
+                          state_d_811353546=="798915634" ~ "Variant C",
+                          state_d_811353546=="896010519" ~ "Variant D"),
        signed_in= case_when(d_230663853=="353358909" ~ "Yes",
                             TRUE ~ "No"),
        hippaa = case_when(d_558435199=="353358909" ~ "Yes",
                           TRUE ~ "No"),
-       consent= case_when(d_919254129=="353358909" ~ "Yes",
+       consent= case_when(d_919254129=="353358909" ~ "Yes", # & as.Date(d_454445267) < "2024-06-01" ~ "Yes",
                           TRUE ~ "No"),
        user_profile = case_when(d_699625233=="353358909" ~ "Yes",
                                 TRUE ~ "No"),
@@ -132,20 +159,117 @@ letter_cont <- letter_cont %>%
        
 ```
 
+\newpage
+```{r Primary_Analysis, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 
-
-```{r newTable1, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
-
-compare_Age <- letter_cont %>%
+compare_consent <- letter_cont %>%
     tbl_cross(
-      row = age,
-      col = letter,
-      label = list(letter ~ "Letter Variant", age ~ "Age"),
+      row = letter,
+      col = consent,
+      label = list(letter ~ "Letter Variant", consent ~ "Consented"),
       percent = "row",
       digits = c(0, 2),
       missing = "no",
       margin_text = "Total"
     ) %>% 
+  add_p()
+
+
+
+compare_signin <- letter_cont %>%
+    tbl_cross(
+      row = letter,
+      col = signed_in,
+      label = list(letter ~ "Letter Variant", signed_in ~ "Signed In"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+
+compare_up <- letter_cont %>%
+    tbl_cross(
+      row = letter,
+      col = user_profile,
+      label = list(letter ~ "Letter Variant", user_profile ~ "User Profile Completion"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+
+compare_biospecs <- letter_cont %>%
+    tbl_cross(
+      row = letter,
+      col = collections,
+      label = list(letter ~ "Letter Variant", collections ~ "Biospecimen Collections"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+compare_surveys <- letter_cont %>%
+    tbl_cross(
+      row = letter,
+      col = basesvcomplt,
+      label = list(letter ~ "Letter Variant", basesvcomplt ~ "Baseline Survey Completion"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+
+
+knitr::kable(compare_consent, 
+             caption='Significance of Primary Analysis: Significance of Consent by Letter Variant', 
+             row.names=FALSE,align=c("l","c","c","c","c","c","c","c"),
+             booktabs = TRUE)
+
+knitr::kable(compare_signin, 
+             caption='Significance of Primary Analysis: Significance of Sign-In by Letter Variant', 
+             row.names=FALSE,align=c("l","c","c","c","c","c","c","c"),
+             booktabs = TRUE)
+
+knitr::kable(compare_up, 
+             caption='Significance of Primary Analysis: Significance of User Profile Completion by Letter Variant', 
+             row.names=FALSE,align=c("l","c","c","c","c","c","c","c"),
+             booktabs = TRUE)
+
+knitr::kable(compare_biospecs, 
+             caption='Significance of Primary Analysis: Significance of Biospecimen Donation by Letter Variant', 
+             row.names=FALSE,align=c("l","c","c","c","c","c","c","c"),
+             booktabs = TRUE)
+
+knitr::kable(compare_surveys, 
+             caption='Significance of Primary Analysis: Significance of Baseline Module completion by Letter Variant', 
+             row.names=FALSE,align=c("l","c","c","c","c","c","c","c"),
+             booktabs = TRUE)
+
+```
+
+\newpage
+\FloatBarrier
+```{r newTable1, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+# Example usage of tbl_cross
+compare_Age <- letter_cont %>%
+    tbl_cross(
+      row = age,                      # Row variable
+      col = letter,                   # Column variable
+      label = list(letter ~ "Letter Variant", age ~ "Age"),  # Labels for the table
+      percent = "row",                # Show row percentages
+      digits = c(0, 2),               # Formatting for counts and percentages
+      missing = "no",                 # Exclude missing values from the table
+      margin_text = "Total"           # Label for margins
+    )  %>% 
   add_p()
 
 compare_Race <- letter_cont %>%
@@ -217,22 +341,28 @@ combined_df <- combined_df[, c(2:9)]
 
 colnames(combined_df)[1] <- "Total"
 
-
-
 ```
 
 
-# Table 1: Randomization of letter content by demographic factors, Connect for Cancer Prevention Study, eligible individuals invited X/XX/2024 to XXX/XX/2024
+
 
 ```{r knitTable1, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+
 knitr::kable(combined_df , 
-             #caption='Table 1: How recruits learned about  the study among participants in the Connect for Cancer Prevention cohort', 
+             caption='Table 1: Randomization of letter content by demographic factors, Connect for Cancer Prevention Study, \n eligible individuals invited X/XX/2024 to XXX/XX/2024', 
              row.names=FALSE,align=c("l","c","c","c","c","c","c","c"),
-             #col.names=c("Demographics", "Digital","Traditional","Both","Total Consented \n Recruits"), #escape=F, #linebreak(
              booktabs = TRUE) %>%  
   landscape() %>% 
-  add_indent(c(2:7, 9:12, 14:17, 19:24))  %>% 
-  kable_styling(latex_options = "scale_down", full_width= FALSE)
+  add_indent(c(2:7, 9:12, 14:17, 19:24))  %>% ## add indents 
+  kable_styling(latex_options = "scale_down", full_width= FALSE, font_size=8) %>% 
+  footnote( general = "Letter Variant X had the message: Join Connect today to help prevent cancer tomorrow.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant A had the message: Receive a 25 dollar payment for participating.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant B had the message: Join to honor the memory of those lost to cancer.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant C had the message: Join others in your community who are changing the future of cancer prevention.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant D had the message: You can easily do most study tasks on your own.", general_title = "", escape = FALSE)
+            
+
   
 ```
 
@@ -244,11 +374,11 @@ knitr::kable(combined_df ,
 cumm_counts <- letter_cont %>% 
   mutate('Step 1: MyConnect Account/ Signed In' = d_230663853 == '353358909',
          'Step 2: User Profile' = d_699625233 == '353358909',
-         'Step 3: Consent & HIPAA' = (d_919254129 == '353358909' & d_558435199=="353358909") ,
-          "Biospecimen Donation" = collections == "Collected", 
-         'Some Survey Modules' = (basesvcomplt=="BOH only" | basesvcomplt=="2 or 3 Sections"),
-         'All Survey Modules' = basesvcomplt=="All",
-         'Biospecimen Donation & All Survey Modules' =  completion=="Completed Survey and Sample(s)")
+         'Step 3: Consent and HIPAA' = (d_919254129 == '353358909' & d_558435199=="353358909") ,
+          "Step 4: Biospecimen Donation" = collections == "Collected", 
+         'Step 5: Some Survey Modules' = (basesvcomplt=="BOH only" | basesvcomplt=="2 or 3 Sections"),
+         'Step 6: All Survey Modules' = basesvcomplt=="All",
+         'Step 7: Biospecimen Donation and All Survey Modules' =  completion=="Completed Survey and Sample(s)")
 
 
 # Will need to create a separate total column, since total recruits will be much larger then the sums of these columns
@@ -260,16 +390,26 @@ total_participants_per_letter <- cumm_counts %>%
 
 # long format to count instances of each independently
 long_recr <- cumm_counts %>%
-  select(letter, 'Step 1: MyConnect Account/ Signed In', 'Step 2: User Profile', 'Step 3: Consent & HIPAA',"Biospecimen Donation", 
-         'Some Survey Modules','All Survey Modules','Biospecimen Donation & All Survey Modules') %>%
-  pivot_longer(cols = 'Step 1: MyConnect Account/ Signed In':'Biospecimen Donation & All Survey Modules', names_to = "cumm_workflow", values_to = "in_category") %>%
-  filter(in_category) %>%
-  select(-in_category)
+  dplyr::select(letter, 
+         'Step 1: MyConnect Account/ Signed In', 
+         'Step 2: User Profile', 
+         'Step 3: Consent and HIPAA',
+         "Step 4: Biospecimen Donation", 
+         'Step 5: Some Survey Modules',
+         'Step 6: All Survey Modules',
+         'Step 7: Biospecimen Donation and All Survey Modules') %>%
+  pivot_longer(
+    cols = starts_with("Step"),  # Adjust as needed to pivot the correct columns
+    names_to = "cumm_workflow", 
+    values_to = "in_category"
+  ) %>%
+  filter(!is.na(in_category) & in_category > 0)%>%
+  dplyr::select(-in_category)
 
 
 long_recr$cumm_workflow <- factor(long_recr$cumm_workflow, levels = c('Step 1: MyConnect Account/ Signed In', 'Step 2: User Profile', 
-                                                                      'Step 3: Consent & HIPAA',"Biospecimen Donation", 
-                                                                      'Some Survey Modules','All Survey Modules','Biospecimen Donation & All Survey Modules'))
+                                                                      'Step 3: Consent and HIPAA',"Step 4: Biospecimen Donation", 
+                                                                      'Step 5: Some Survey Modules','Step 6: All Survey Modules','Step 7: Biospecimen Donation and All Survey Modules'))
 
 
 
@@ -283,7 +423,7 @@ workflow2 <- long_recr %>%
     missing = "ifany",
     #missing_text = "Missing",
     margin_text = "Total Invited"
-  ) #%>%  add_p()
+  ) %>%  add_p()   ## All the 0's are causing a blank p-value
 
 workflow2[["table_body"]]$stat_1 <- sapply(strsplit(workflow2[["table_body"]]$stat_1," "),"[",1)
 workflow2[["table_body"]]$stat_2 <- sapply(strsplit(workflow2[["table_body"]]$stat_2," "),"[",1)
@@ -296,46 +436,74 @@ workflow2[["table_body"]]$stat_0 <- sapply(strsplit(workflow2[["table_body"]]$st
 
 
 
-workflow2_df <- as.data.frame(workflow2$table_body)[c(2:7), c(5:12)]
+workflow2_df <- as.data.frame(workflow2$table_body)[, c(6:13, 18)] #[c(2:7), c(5:12)]
 
 # Add back the total row
 workflow2_df <- workflow2_df %>%
   left_join(total_participants_per_letter, by = c("label" = "letter"))
+workflow2_df[nrow(workflow2_df), ncol(workflow2_df)] <- as.integer(sum(workflow2_df$n, na.rm = TRUE))
 
-workflow2_df[nrow( workflow2_df), ncol( workflow2_df)] <- sum( workflow2_df$n, na.rm = TRUE)
-
-
-colnames(workflow2_df) <- c('Letter', 'Step 1: MyConnect Account/ Signed In', 'Step 2: User Profile', 'Step 3: Consent & HIPAA',
-                            "Biospecimen Donation",'Some Survey Modules','All Survey Modules','Biospecimen Donation & All Survey Modules', "Total Invited")
-
+workflow2_df <- workflow2_df[, c(1:8,10,9)]
+colnames(workflow2_df) <- c('Letter', 'Step 1: MyConnect Account/ Signed In', 'Step 2: User Profile', 'Step 3: Consent and HIPAA',
+                            "Biospecimen Donation",'Some Survey Modules','All Survey Modules','Biospecimen Donation and All Survey Modules', "Total Invited", "p-value")
 
 
+# Set the first column of row 6 to "Total"
+workflow2_df[7, 1] <- "Total"
+
+# Replace NA values with blank spaces
+workflow2_df[is.na(workflow2_df)] <- ""
+
+
+# Round p-value 
+workflow2_df[1, 10] <- round(as.numeric(workflow2_df[1, 10]), digits=5)
+
+
+# Remove commas from the cells in row 6
+workflow2_df[7, 2:9] <- lapply(workflow2_df[7, 2:9], function(x) gsub(",", "", as.character(x)))
+
+# Ensure that columns 2 to 9 are integers
+workflow2_df[, 2:9] <- lapply(workflow2_df[, 2:9], as.integer)
+
+# Add row percentages
+workflow2_df = workflow2_df %>%
+  mutate(across(2:9, ~ {
+    percentage = as.integer(.x)/`Total Invited` *100
+    formatted_value = str_c(.x, " (", round(percentage, 2), "%)", sep = "")
+    formatted_value
+  }))
+
+
+#Remove NA values from the first row
+workflow2_df[1, ] <- lapply(workflow2_df[1, ], function(x) ifelse(is.na(x), "", x))
 ```
 
 
 
 
 
-# Table 2a: Completion of recruitment workflow steps and study activities by letter type, Connect for Cancer Prevention Study, eligible individuals invited X/XX/2024 to XXX/XX/2024
 
 ```{r knitTable2, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
-
-knitr::kable(workflow2 , 
-             #caption='Table 1. Completion of Initial Surveys by Site', 
+knitr::kable(workflow2_df, 
+             caption='Table 2a: Completion of recruitment workflow steps and study activities by letter type, Connect for Cancer Prevention Study, eligible individuals invited X/XX/2024 to XXX/XX/2024', 
              row.names=FALSE,align=c("l","c","c","c","c","c","c","c","c","c"),
              #col.names=c("Site", "All Completed", "One or More Not Completed", "Total"),
-             booktabs = TRUE) %>%  
-  add_indent(seq(1, nrow(workflow2) - 1))  %>% 
-  kable_styling(latex_options = c("scale_down","hold_position"))
+             booktabs = TRUE, escape = FALSE) %>%  
+  add_indent(seq(1, nrow(workflow2_df) - 1))  %>% ## add indents 
+  kable_styling(latex_options = "scale_down", full_width= FALSE, font_size=4) %>% 
+  footnote( general = "Letter Variant X had the message: Join Connect today to help prevent cancer tomorrow.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant A had the message: Receive a 25 dollar payment for participating.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant B had the message: Join to honor the memory of those lost to cancer.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant C had the message: Join others in your community who are changing the future of cancer prevention.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant D had the message: You can easily do most study tasks on your own.", general_title = "", escape = FALSE)  %>% 
+  landscape()
 
 ```
 
 
 
 \FloatBarrier
-
-# Table 2b: Connect enrollment milestones by message Among those who have Consented
 
 ```{r Table2b, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
@@ -349,16 +517,26 @@ Refusal_tables <- letter_cont %>%
       digits = c(0, 2),
       missing = "no",
       margin_text = "Total"
-    ) %>%  add_p()
+    ) %>% 
+  add_p() %>% 
+  as_tibble()
 
-Refusal_tables 
+
+#Remove NA values from p-value column
+Refusal_tables[is.na(Refusal_tables)] <- ""
 
 ## Doing this makes the other lines NA under the one p-value
-# knitr::kable(Refusal_tables, 
-#              row.names=FALSE,align=c("l","c","c","c","c","c","c","c","c"),
-#              booktabs = TRUE) %>%  
-#   landscape() %>% 
-#   kable_styling(latex_options = "scale_down", full_width= FALSE)
+knitr::kable(Refusal_tables, 
+             caption= 'Table 2b: Connect enrollment milestones by message Among those who have Consented',
+             row.names=FALSE,#align=c("l","c","c","c","c","c","c","c","c"),
+             booktabs = TRUE, escape = FALSE) %>%  
+  #landscape()  %>% ## add indents 
+  kable_styling(latex_options = "scale_down", full_width= FALSE) %>% 
+  footnote( general = "Letter Variant X had the message: Join Connect today to help prevent cancer tomorrow.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant A had the message: Receive a 25 dollar payment for participating.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant B had the message: Join to honor the memory of those lost to cancer.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant C had the message: Join others in your community who are changing the future of cancer prevention.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant D had the message: You can easily do most study tasks on your own.", general_title = "", escape = FALSE)
   
 ```
 
@@ -382,7 +560,7 @@ Refusal_tables
 
 const <- letter_cont %>%  filter(consent=="Yes")
 bio_comp <- letter_cont %>%  filter(collections=="Collected")
-survey_comp <- letter_cont %>%  filter(basesvcomplt="All")
+survey_comp <- letter_cont %>%  filter(basesvcomplt=="All")
 both_comp <- letter_cont %>%  filter(completion=="Completed Survey and Sample(s)")
 refused <- letter_cont %>%  filter(refusal=="Active Refusal")
 
@@ -459,10 +637,10 @@ colnames(df_Sex)[1] <- "Temp_Demographic"
 colnames(df_Site)[1] <- "Temp_Demographic"
 
 # Add a demographic column to each data frame
-df_Age <- df_Age %>% mutate(Demographic = "Age") %>% select(Demographic, everything())
-df_Race <- df_Race %>% mutate(Demographic = "Race") %>% select(Demographic, everything())
-df_Sex <- df_Sex %>% mutate(Demographic = "Sex") %>% select(Demographic, everything())
-df_Site <- df_Site %>% mutate(Demographic = "Site") %>% select(Demographic, everything())
+df_Age <- df_Age %>% mutate(Demographic = "Age") %>% dplyr::select(Demographic, everything())
+df_Race <- df_Race %>% mutate(Demographic = "Race") %>% dplyr::select(Demographic, everything())
+df_Sex <- df_Sex %>% mutate(Demographic = "Sex") %>% dplyr::select(Demographic, everything())
+df_Site <- df_Site %>% mutate(Demographic = "Site") %>% dplyr::select(Demographic, everything())
 
 # Combine all data frames into one
 combined_df_consented <- bind_rows(df_Site, df_Race, df_Sex, df_Age)
@@ -477,20 +655,460 @@ colnames(combined_df_consented)[1] <- "Total"
 
 #}
 
+```
 
+```{r Table1_Repeated_Biospecimen, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+### This same table as Table 1 needs to be repeated four times
+## 2. Of those who donated biospecimens
+
+
+## Can't get the looping right so I'll have to code this5 different times
+
+#dfs <- c(letter_cont, bio_comp, survey_comp, both_comp, refusal)
+
+#for (df in dfs){
+
+compare_Age <- bio_comp %>%
+    tbl_cross(
+      row = age,
+      col = letter,
+      label = list(letter ~ "Letter Variant", age ~ "Age"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+compare_Race <- bio_comp %>%
+    tbl_cross(
+      row = race,
+      col = letter,
+      label = list(letter ~ "Letter Variant", race ~ "Race"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+compare_Sex <- bio_comp %>%
+    tbl_cross(
+      row = sex,
+      col = letter,
+      label = list(letter ~ "Letter Variant", sex ~ "Sex"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+
+compare_Site <- bio_comp %>%
+    tbl_cross(
+      row = site,
+      col = letter,
+      label = list(letter ~ "Letter Variant", site ~ "Site"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+
+
+
+# Convert tbl_cross objects to data frames
+df_Age <- as.data.frame(compare_Age)
+df_Race <- as.data.frame(compare_Race)
+df_Sex <- as.data.frame(compare_Sex)
+df_Site <- as.data.frame(compare_Site)
+
+# Rename the blank column to 'Temp_Demographic'
+colnames(df_Age)[1] <- "Temp_Demographic"
+colnames(df_Race)[1] <- "Temp_Demographic"
+colnames(df_Sex)[1] <- "Temp_Demographic"
+colnames(df_Site)[1] <- "Temp_Demographic"
+
+# Add a demographic column to each data frame
+df_Age <- df_Age %>% mutate(Demographic = "Age") %>% dplyr::select(Demographic, everything())
+df_Race <- df_Race %>% mutate(Demographic = "Race") %>% dplyr::select(Demographic, everything())
+df_Sex <- df_Sex %>% mutate(Demographic = "Sex") %>% dplyr::select(Demographic, everything())
+df_Site <- df_Site %>% mutate(Demographic = "Site") %>% dplyr::select(Demographic, everything())
+
+# Combine all data frames into one
+combined_df_biocomp <- bind_rows(df_Site, df_Race, df_Sex, df_Age)
+
+# Replace NA values with blank spaces
+combined_df_biocomp[is.na(combined_df_biocomp)] <- ""
+
+# Check the result
+combined_df_biocomp <- combined_df_biocomp[, c(2:9)]
+
+colnames(combined_df_biocomp)[1] <- "Total"
+
+#}
 
 ```
 
-\FloatBarrier
-# Table 3a: Connect enrollment milestones by message Among those who have Consented
+```{r Table1_Repeated_Survey, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 
-```{r knitTable1, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
-knitr::kable(combined_df_consented, 
+### This same table as Table 1 needs to be repeated four times
+## 3. Of those who completed all surveys
+
+
+compare_Age <- survey_comp %>%
+    tbl_cross(
+      row = age,
+      col = letter,
+      label = list(letter ~ "Letter Variant", age ~ "Age"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+compare_Race <- survey_comp %>%
+    tbl_cross(
+      row = race,
+      col = letter,
+      label = list(letter ~ "Letter Variant", race ~ "Race"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+compare_Sex <- survey_comp %>%
+    tbl_cross(
+      row = sex,
+      col = letter,
+      label = list(letter ~ "Letter Variant", sex ~ "Sex"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+
+compare_Site <- survey_comp %>%
+    tbl_cross(
+      row = site,
+      col = letter,
+      label = list(letter ~ "Letter Variant", site ~ "Site"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+
+
+
+# Convert tbl_cross objects to data frames
+df_Age <- as.data.frame(compare_Age)
+df_Race <- as.data.frame(compare_Race)
+df_Sex <- as.data.frame(compare_Sex)
+df_Site <- as.data.frame(compare_Site)
+
+# Rename the blank column to 'Temp_Demographic'
+colnames(df_Age)[1] <- "Temp_Demographic"
+colnames(df_Race)[1] <- "Temp_Demographic"
+colnames(df_Sex)[1] <- "Temp_Demographic"
+colnames(df_Site)[1] <- "Temp_Demographic"
+
+# Add a demographic column to each data frame
+df_Age <- df_Age %>% mutate(Demographic = "Age") %>% dplyr::select(Demographic, everything())
+df_Race <- df_Race %>% mutate(Demographic = "Race") %>% dplyr::select(Demographic, everything())
+df_Sex <- df_Sex %>% mutate(Demographic = "Sex") %>% dplyr::select(Demographic, everything())
+df_Site <- df_Site %>% mutate(Demographic = "Site") %>% dplyr::select(Demographic, everything())
+
+# Combine all data frames into one
+combined_df_surveycomp <- bind_rows(df_Site, df_Race, df_Sex, df_Age)
+
+# Replace NA values with blank spaces
+combined_df_surveycomp[is.na(combined_df_surveycomp)] <- ""
+
+# Check the result
+combined_df_surveycomp <- combined_df_surveycomp[, c(2:9)]
+
+colnames(combined_df_surveycomp)[1] <- "Total"
+
+#}
+
+```
+
+
+
+```{r Table1_Repeated_Both, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+### This same table as Table 1 needs to be repeated four times
+## 4. Of those who completed biospecimens and surveys
+
+
+compare_Age <- both_comp %>%
+    tbl_cross(
+      row = age,
+      col = letter,
+      label = list(letter ~ "Letter Variant", age ~ "Age"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+compare_Race <- both_comp %>%
+    tbl_cross(
+      row = race,
+      col = letter,
+      label = list(letter ~ "Letter Variant", race ~ "Race"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+compare_Sex <- both_comp %>%
+    tbl_cross(
+      row = sex,
+      col = letter,
+      label = list(letter ~ "Letter Variant", sex ~ "Sex"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+
+compare_Site <- both_comp %>%
+    tbl_cross(
+      row = site,
+      col = letter,
+      label = list(letter ~ "Letter Variant", site ~ "Site"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+
+
+
+# Convert tbl_cross objects to data frames
+df_Age <- as.data.frame(compare_Age)
+df_Race <- as.data.frame(compare_Race)
+df_Sex <- as.data.frame(compare_Sex)
+df_Site <- as.data.frame(compare_Site)
+
+# Rename the blank column to 'Temp_Demographic'
+colnames(df_Age)[1] <- "Temp_Demographic"
+colnames(df_Race)[1] <- "Temp_Demographic"
+colnames(df_Sex)[1] <- "Temp_Demographic"
+colnames(df_Site)[1] <- "Temp_Demographic"
+
+# Add a demographic column to each data frame
+df_Age <- df_Age %>% mutate(Demographic = "Age") %>% dplyr::select(Demographic, everything())
+df_Race <- df_Race %>% mutate(Demographic = "Race") %>% dplyr::select(Demographic, everything())
+df_Sex <- df_Sex %>% mutate(Demographic = "Sex") %>% dplyr::select(Demographic, everything())
+df_Site <- df_Site %>% mutate(Demographic = "Site") %>% dplyr::select(Demographic, everything())
+
+# Combine all data frames into one
+combined_df_bothcomp <- bind_rows(df_Site, df_Race, df_Sex, df_Age)
+
+# Replace NA values with blank spaces
+combined_df_bothcomp[is.na(combined_df_bothcomp)] <- ""
+
+# Check the result
+combined_df_bothcomp <- combined_df_bothcomp[, c(2:9)]
+
+colnames(combined_df_bothcomp)[1] <- "Total"
+
+#}
+```
+
+```{r Table1_Repeated_Refusal, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+### This same table as Table 1 needs to be repeated four times
+## 5. Of those who opted out of Connect
+
+compare_Age <- refused %>%
+    tbl_cross(
+      row = age,
+      col = letter,
+      label = list(letter ~ "Letter Variant", age ~ "Age"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+compare_Race <- refused %>%
+    tbl_cross(
+      row = race,
+      col = letter,
+      label = list(letter ~ "Letter Variant", race ~ "Race"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+compare_Sex <- refused %>%
+    tbl_cross(
+      row = sex,
+      col = letter,
+      label = list(letter ~ "Letter Variant", sex ~ "Sex"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+
+compare_Site <- refused %>%
+    tbl_cross(
+      row = site,
+      col = letter,
+      label = list(letter ~ "Letter Variant", site ~ "Site"),
+      percent = "row",
+      digits = c(0, 2),
+      missing = "no",
+      margin_text = "Total"
+    ) %>% 
+  add_p()
+
+
+
+
+# Convert tbl_cross objects to data frames
+df_Age <- as.data.frame(compare_Age)
+df_Race <- as.data.frame(compare_Race)
+df_Sex <- as.data.frame(compare_Sex)
+df_Site <- as.data.frame(compare_Site)
+
+# Rename the blank column to 'Temp_Demographic'
+colnames(df_Age)[1] <- "Temp_Demographic"
+colnames(df_Race)[1] <- "Temp_Demographic"
+colnames(df_Sex)[1] <- "Temp_Demographic"
+colnames(df_Site)[1] <- "Temp_Demographic"
+
+# Add a demographic column to each data frame
+df_Age <- df_Age %>% mutate(Demographic = "Age") %>% dplyr::select(Demographic, everything())
+df_Race <- df_Race %>% mutate(Demographic = "Race") %>% dplyr::select(Demographic, everything())
+df_Sex <- df_Sex %>% mutate(Demographic = "Sex") %>% dplyr::select(Demographic, everything())
+df_Site <- df_Site %>% mutate(Demographic = "Site") %>% dplyr::select(Demographic, everything())
+
+# Combine all data frames into one
+combined_df_refused <- bind_rows(df_Site, df_Race, df_Sex, df_Age)
+
+# Replace NA values with blank spaces
+combined_df_refused[is.na(combined_df_refused)] <- ""
+
+# Check the result
+combined_df_refused <- combined_df_refused[, c(2:9)]
+
+colnames(combined_df_refused)[1] <- "Total"
+
+#}
+```
+
+\FloatBarrier
+
+```{r knitTable3.1, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+knitr::kable(combined_df_consented,
+             caption='Table 3.a: Connect enrollment milestones by message Among those who have Consented',
              row.names=FALSE,align=c("l","c","c","c","c","c","c","c"),
-             booktabs = TRUE) %>%  
+             booktabs = TRUE, escape = FALSE) %>%  
   landscape() %>% 
-  add_indent(c(2:7, 9:12, 14:17, 19:24))  %>% ## add indents 
-  kable_styling(latex_options = "scale_down", full_width= FALSE, font_size=6)
+  add_indent(c(2:7, 9:12, 14:16, 18:22))   %>% ## add indents 
+  kable_styling(latex_options = "scale_down", full_width= FALSE) %>% 
+  footnote( general = "Letter Variant X had the message: Join Connect today to help prevent cancer tomorrow.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant A had the message: Receive a 25 dollar payment for participating.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant B had the message: Join to honor the memory of those lost to cancer.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant C had the message: Join others in your community who are changing the future of cancer prevention.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant D had the message: You can easily do most study tasks on your own.", general_title = "", escape = FALSE)
+  
+```
+
+```{r knitTable3.2, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+knitr::kable(combined_df_biocomp, 
+             caption='Table 3.b: Connect enrollment milestones by message Among those who have donated biospecimens',
+             row.names=FALSE,align=c("l","c","c","c","c","c","c","c"),
+             booktabs = TRUE, escape = FALSE) %>%  
+  landscape() %>% 
+  add_indent(c(2:7, 9:12, 14:16, 18:22))  %>% ## add indents 
+  kable_styling(latex_options = "scale_down", full_width= FALSE) %>% 
+  footnote( general = "Letter Variant X had the message: Join Connect today to help prevent cancer tomorrow.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant A had the message: Receive a 25 dollar payment for participating.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant B had the message: Join to honor the memory of those lost to cancer.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant C had the message: Join others in your community who are changing the future of cancer prevention.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant D had the message: You can easily do most study tasks on your own.", general_title = "", escape = FALSE)
+  
+```
+
+
+```{r knitTable3.3, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+knitr::kable(combined_df_surveycomp, 
+             caption='Table 3.c: Connect enrollment milestones by message Among those who have completed all surveys',
+             row.names=FALSE,align=c("l","c","c","c","c","c","c","c"),
+             booktabs = TRUE, escape = FALSE) %>%  
+  landscape() %>% 
+  add_indent(c(2:7, 9:12, 14:16, 18:22))  %>% ## add indents 
+  kable_styling(latex_options = "scale_down", full_width= FALSE) %>% 
+  footnote( general = "Letter Variant X had the message: Join Connect today to help prevent cancer tomorrow.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant A had the message: Receive a 25 dollar payment for participating.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant B had the message: Join to honor the memory of those lost to cancer.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant C had the message: Join others in your community who are changing the future of cancer prevention.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant D had the message: You can easily do most study tasks on your own.", general_title = "", escape = FALSE)
+  
+```
+
+
+
+```{r knitTable3.4, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+knitr::kable(combined_df_bothcomp, 
+             caption='Table 3.d: Connect enrollment milestones by message Among those who have donated biospecimens and completed all surveys',
+             row.names=FALSE,align=c("l","c","c","c","c","c","c","c"),
+             booktabs = TRUE, escape = FALSE) %>%  
+  landscape() %>% 
+  add_indent(c(2:7, 9:12, 14:16, 18:22))  %>% ## add indents 
+  kable_styling(latex_options = "scale_down", full_width= FALSE) %>% 
+  footnote( general = "Letter Variant X had the message: Join Connect today to help prevent cancer tomorrow.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant A had the message: Receive a 25 dollar payment for participating.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant B had the message: Join to honor the memory of those lost to cancer.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant C had the message: Join others in your community who are changing the future of cancer prevention.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant D had the message: You can easily do most study tasks on your own.", general_title = "", escape = FALSE)
+
+```
+
+
+```{r knitTable3.5, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+knitr::kable(combined_df_refused, 
+             caption='Table 3.e: Connect enrollment milestones by message Among those who have Actively Refused',
+             row.names=FALSE,align=c("l","c","c","c","c","c","c","c"),
+             booktabs = TRUE, escape = FALSE) %>%  
+  landscape() %>% 
+  add_indent(c(2:7, 9:12, 14:16, 18:22))  %>% ## add indents 
+  kable_styling(latex_options = "scale_down", full_width= FALSE) %>% 
+  footnote( general = "Letter Variant X had the message: Join Connect today to help prevent cancer tomorrow.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant A had the message: Receive a 25 dollar payment for participating.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant B had the message: Join to honor the memory of those lost to cancer.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant C had the message: Join others in your community who are changing the future of cancer prevention.", general_title = "", escape = FALSE) %>% 
+  footnote( general = "Letter Variant D had the message: You can easily do most study tasks on your own.", general_title = "", escape = FALSE)
   
 ```
 
@@ -498,4 +1116,302 @@ knitr::kable(combined_df_consented,
 
 
 
+
+
+
+
+```{r firths_correction, echo=FALSE, include=FALSE}
+
+## Need consent to be a binomial --> 0 or 1 not yes or no 
+letter_cont <- letter_cont %>%  mutate(bin_consent = ifelse(consent=="Yes", 1, 0))
+
+## Only 2/31,000+ "unknown/other" sex, so removing
+letter_cont2 <- letter_cont %>% filter(sex!="Unknown/Other")
+
+
+## Need to factor age, race, sex, and site because of overly small counts in some categories
+table(letter_cont2$age) #even enough
+table(letter_cont2$race) #unknown has the least
+table(letter_cont2$sex) #even enough now
+table(letter_cont2$site) #MF is too small
+table(letter_cont2$letter) # letter x should be the reference because it's the control letter
+
+letter_cont2$race <- factor(letter_cont2$race, levels=c("White, Non-Hispanic", "Other", "Unknown"))
+letter_cont2$race <- relevel(letter_cont2$race, ref=1) 
+ 
+
+letter_cont2$site <- factor(letter_cont2$site, levels=c("HealthPartners", "Henry Ford Health System", "Marshfield Clinic Health System", "Sanford Health", "University of Chicago Medicine"))
+letter_cont2$site <- relevel(letter_cont2$site, ref=1) 
+
+
+
+letter_cont2$letter <- factor(letter_cont2$letter, levels=c("Variant X", "Variant A", "Variant B", "Variant C", "Variant D"))
+letter_cont2$letter <- relevel(letter_cont2$letter, ref=1)
+
+
+```
+
+
+## Additive model: Consent ~ Age + Race + Sex + Site + Letter
+
+\FloatBarrier
+```{r Additive_Model, echo=FALSE, warning=FALSE, message=FALSE, results='asis' }
+
+additive <- glm(bin_consent ~ age+race+sex+site+letter, family=binomial (link=logit), data=letter_cont2)
+#summary(additive)
+knitr::kable(tidy(additive), caption = "Additive Model (GLM)")
+```
+
+\FloatBarrier
+```{r Additive_Model2, echo=FALSE, warning=FALSE, message=FALSE, results='asis' }
+
+additive2 <- logistf(bin_consent ~ age+race+sex+site+letter, data=letter_cont2)
+#summary(additive2)
+
+
+############ Need to find a different way to print this. This does not play nicely with a pdf output
+
+
+
+tab_model(additive2, title = "Additive Model (Firth Correction)")
+# 
+# # Extract the summary data from tab_model output (as a list)
+# model_summary <- breakdown$summary
+# 
+# # Convert the summary to a data frame
+# model_summary_df1 <- data.frame(
+#   Predictor = rownames(model_summary),  # Extract predictor names
+#   Estimate = model_summary[, 1],  # Coefficients
+#   `Std. Error` = model_summary[, 2],  # Standard Errors
+#   `z value` = model_summary[, 3],  # Z values
+#   `p value` = model_summary[, 4]   # P-values
+# )
+# 
+# # Now render this table with kable
+# knitr::kable(model_summary_df1, caption = "Additive Model (Firth Correction)")
+
+
+```
+
+
+\FloatBarrier
+
+```{r OR_additive_model, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+OR_additive <- round(exp(cbind(Odds_Ratio = coef(additive), confint(additive))), digits=2)
+OR_additive <- as.data.frame(OR_additive)
+OR_additive <- OR_additive %>% mutate(CI= paste0("(", OR_additive$`2.5 %`, ",", OR_additive$`97.5 %`, ")"))
+kable(OR_additive[, c(1,4)], caption="Additive Model Odds Ratios: Logitsic", format = "latex", booktabs = TRUE) %>%  
+  kable_styling(latex_options = "hold_position")
+
+
+
+OR_additive2 <- round(exp(cbind(Odds_Ratio = coef(additive2), confint(additive2))), digits=2)
+OR_additive2 <- as.data.frame(OR_additive2)
+OR_additive2 <- OR_additive2 %>% mutate(CI= paste0("(", OR_additive2[,2], ",", OR_additive2[,3], ")"))
+kable(OR_additive2[, c(1,4)], caption="Additive Model Odds Ratios: Firth's Correction", format = "latex", booktabs = TRUE) %>%  
+  kable_styling(latex_options = "hold_position")
+
+
+```
+\FloatBarrier
+
+```{r Bootstrapping_Additive_CIs, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+
+# bootstrap <- boot(additive, corr.fun, R = 1000)
+# boot.ci(boot.out = bootstrap, 
+#         type = c("norm", "basic",
+#                  "perc", "bca"))
+# 
+# 
+# bootstrap2 <- boot(additive2, corr.fun, R = 1000)
+# boot.ci(boot.out = bootstrap2, 
+#         type = c("norm", "basic",
+#                  "perc", "bca"))
+
+
+
+
+
+
+# Function to compute odds ratios from a fitted model
+get_odds_ratios <- function(data, indices) {
+  # Resample data
+  boot_data <- data[indices, ]
+  
+  # Fit the model (replace 'additive_formula' with your model formula)
+  boot_model <- glm(bin_consent ~ age+race+sex+site+letter, family = binomial(link = "logit"), data = boot_data)
+  
+  # Extract coefficients and compute odds ratios
+  exp(coef(boot_model))
+}
+
+# Perform bootstrapping
+set.seed(123) # for reproducibility
+boot_results <- boot(
+  data = letter_cont2,
+  statistic = get_odds_ratios,
+  R = 1000 # Number of bootstrap samples
+)
+
+# Compute confidence intervals for each odds ratio
+bootstrap_cis <- boot.ci(
+  boot.out = boot_results,
+  type = "perc"
+)
+
+# Combine odds ratios and confidence intervals into a data frame
+odds_ratios <- colMeans(boot_results$t) # Mean of bootstrapped odds ratios
+cis <- apply(boot_results$t, 2, quantile, probs = c(0.025, 0.975))
+
+OR_additive3 <- data.frame(
+  Odds_Ratio = odds_ratios,
+  CI_Lower = cis[1, ],
+  CI_Upper = cis[2, ]
+) %>%
+  mutate(CI = paste0("(", round(CI_Lower, 2), ",", round(CI_Upper, 2), ")"))
+
+print(OR_additive3)
+kable(OR_additive3[,c(1,4)], caption="Additive Model Odds Ratios: Bootstrapped", format = "latex", booktabs = TRUE, longtable = TRUE) %>%  
+   kable_styling(latex_options = c("repeat_header"))
+
+#### ESSSENTIALY THE EXACT SAME AS THE FIRST OR_ADDITIVE
+
+```
+
+
+
+
+
+## Interaction model: Consent ~ Age*Letter + Race*Letter + Sex*Letter + Site*Letter
+
+\FloatBarrier
+
+```{r Interaction_Model, echo=FALSE, warning=FALSE, message=FALSE, results='asis' }
+
+inter <- glm(bin_consent ~ age*letter + race*letter + sex*letter + site*letter, # + age*sex + age*race + age*site + race*site + race*age + race*sex + sex*site + sex*age, 
+             family=binomial (link=logit), data=letter_cont2)
+#summary(inter)
+knitr::kable(tidy(inter), caption = "Interaction Model (GLM)")
+```
+\FloatBarrier
+
+```{r Interaction_Model2, echo=FALSE, warning=FALSE, message=FALSE, results='asis' }
+
+############ Need to find a different way to print this. This does not play nicely with a pdf output
+
+inter2 <- logistf(bin_consent ~ age*letter + race*letter + sex*letter + site*letter, # + age*sex + age*race + age*site + race*site + race*age + race*sex + sex*site + sex*age, 
+                  data=letter_cont2)
+#summary(inter2)
+tab_model(inter2, title = "Interactive Model (Firth Correction)")
+#knitr::kable(tidy(inter2), caption = "Interaction Model (Firth Correction)")   # can't tidy a logistf model 
+
+# # Extract the summary data from tab_model output (as a list)
+# model_summary <- try_this
+# 
+# # Convert the summary to a data frame
+# model_summary_df <- data.frame(
+#   Predictor = rownames(model_summary),  # Extract predictor names
+#   Estimate = model_summary[, 1],  # Coefficients
+#   `Std. Error` = model_summary[, 2],  # Standard Errors
+#   `z value` = model_summary[, 3],  # Z values
+#   `p value` = model_summary[, 4]   # P-values
+# )
+
+# Now render this table with kable
+#knitr::kable(model_summary_df, caption = "Interactive Model (Firth Correction)")
+  # kable_styling(bootstrap_options = c("striped", "hover", "responsive")) %>% 
+  # scroll_box(width = "100%", height = "500px")
+
+
+####### Having issues with this one 
+# # Convert the tidied table to a longtable
+# tidy_inter2 <- tidy_logistf(inter2)
+# 
+# kable(tidy_inter2, format = "latex", booktabs = TRUE, longtable = TRUE, caption = "Additive Model (Firth Correction)- Longtable") %>%
+#   kable_styling(latex_options = c("repeat_header"))
+
+
+# # Extract and format results
+# results <- data.frame(
+#   Term = names(inter2$coefficients),   # Variable names
+#   Estimate = inter2$coefficients,      # Coefficients
+#   Std_Error = inter2$se,               # Standard errors
+#   CI_Lower = inter2$ci.lower,          # Confidence interval lower bound
+#   CI_Upper = inter2$ci.upper,          # Confidence interval upper bound
+#   P_Value = inter2$prob                # P-values
+# )
+# 
+# # Display with kable
+# knitr::kable(results, caption = "Interaction Model (Firth Correction)", digits = 3)
+
+```
+
+
+\newpage
+\FloatBarrier
+
+```{r OR_interaction_model, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+OR_inter <- round(exp(cbind(Odds_Ratio = coef(inter), confint(inter))), digits=2)
+OR_inter <- as.data.frame(OR_inter)
+OR_inter <- OR_inter %>% mutate(CI= paste0("(", OR_inter$`2.5 %`, ",", OR_inter$`97.5 %`, ")"))
+kable(OR_inter[, c(1,4)], caption="Interactive Model Odds Ratios: Logitsic", format = "latex", booktabs = TRUE, longtable = TRUE) %>%  
+  kable_styling(latex_options = c("repeat_header"))
+```
+\newpage
+\FloatBarrier
+```{r OR_interaction_model2, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+OR_inter2 <- round(exp(cbind(Odds_Ratio = coef(inter2), confint(inter2))), digits=2)
+OR_inter2 <- as.data.frame(OR_inter2)
+OR_inter2 <- OR_inter2 %>% mutate(CI= paste0("(", OR_inter2[,2], ",", OR_inter2[,3], ")"))
+kable(OR_inter2[, c(1,4)], caption="Interactive Model Odds Ratios: Firth's Correction", format = "latex", booktabs = TRUE, longtable = TRUE) %>%  
+  kable_styling(latex_options = c("repeat_header"))
+
+```
+\newpage
+\FloatBarrier
+
+```{r Bootstrap_interaction_model_OR, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+# Function to compute odds ratios from a fitted model
+get_odds_ratios_inter <- function(data, indices) {
+  # Resample data
+  boot_data <- data[indices, ]
+  boot_model <- glm(bin_consent ~ age*letter + race*letter + sex*letter + site*letter, family = binomial(link = "logit"), data = boot_data)
+  
+  # Extract coefficients and compute odds ratios
+  exp(coef(boot_model))
+}
+
+# Perform bootstrapping
+set.seed(123) # for reproducibility
+boot_results <- boot(
+  data = letter_cont2,
+  statistic = get_odds_ratios_inter,
+  R = 1000 # Number of bootstrap samples
+)
+
+# Compute confidence intervals for each odds ratio
+bootstrap_cis <- boot.ci(
+  boot.out = boot_results,
+  type = "perc"
+)
+
+# Combine odds ratios and confidence intervals into a data frame
+odds_ratios <- colMeans(boot_results$t) # Mean of bootstrapped odds ratios
+cis <- apply(boot_results$t, 2, quantile, probs = c(0.025, 0.975))
+
+OR_inter3 <- data.frame(
+  Odds_Ratio = odds_ratios,
+  CI_Lower = cis[1, ],
+  CI_Upper = cis[2, ]
+) %>%
+  mutate(CI = paste0("(", round(CI_Lower, 2), ",", round(CI_Upper, 2), ")"))
+
+kable(OR_inter3, caption="Interactive Model Odds Ratios: Bootstrapping", format = "latex", booktabs = TRUE, longtable = TRUE) %>%  
+  kable_styling(latex_options = c("repeat_header"))
+
+#### ESSSENTIALY THE EXACT SAME AS THE FIRST OR_ADDITIVE
+```
 

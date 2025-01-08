@@ -12,6 +12,7 @@ library(sqldf)
 library(gt)
 library(gtsummary)
 library(tidyverse)
+library(glue)
 
 bq_auth()
 
