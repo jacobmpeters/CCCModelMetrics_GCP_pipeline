@@ -83,8 +83,8 @@ for (i in 1: length(cnames)){
 
 #### Handling participants that somehow completed both Mod1 version 1 and Mod1 version 2
 
-sql_M1_1 <- bq_project_query(project, query = "SELECT Connect_ID, D_407056417, D_750420077_D_108025529, D_750420077_D_434651539, D_750420077_D_505282171, D_750420077_D_578416151, D_750420077_D_846483618, D_289664241_D_289664241, D_613744428 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` WHERE Connect_ID IS NOT NULL")
-sql_M1_2 <- bq_project_query(project, query = "SELECT Connect_ID, D_407056417, D_750420077_D_108025529, D_750420077_D_434651539, D_750420077_D_505282171, D_750420077_D_578416151, D_750420077_D_582784267, D_750420077_D_700100953, D_750420077_D_751402477, D_750420077_D_846483618, D_289664241_D_918409306, D_613744428 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` WHERE Connect_ID IS NOT NULL")
+sql_M1_1 <- bq_project_query(project, query = "SELECT Connect_ID, D_407056417, D_890391968_D_108025529, D_890391968_D_434651539, D_890391968_D_505282171, D_890391968_D_578416151, D_890391968_D_846483618, D_289664241_D_289664241, D_613744428 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` WHERE Connect_ID IS NOT NULL")
+sql_M1_2 <- bq_project_query(project, query = "SELECT Connect_ID, D_407056417, D_890391968_D_108025529, D_890391968_D_434651539, D_890391968_D_505282171, D_890391968_D_578416151, D_890391968_D_582784267, D_890391968_D_700100953, D_890391968_D_751402477, D_890391968_D_846483618, D_289664241_D_918409306, D_613744428 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` WHERE Connect_ID IS NOT NULL")
 
 M1_V1 <- bq_table_download(sql_M1_1, bigint = "integer64")
 M1_V2 <- bq_table_download(sql_M1_2, bigint = "integer64")
@@ -177,18 +177,18 @@ screen= as_tibble(screening)
 ```{r functions, include=FALSE}
 
 dict <- list("353358909"="Yes", "104430631"="No",  "178420302"="Do not Know", 
-             "Yes, because of puberty or hormones already in my body",
-             "Yes, because of hormonal medication or device",
-             "Less than 1 year ago",
-             "More than 1 year ago, but less than 2 years ago",
-             "More than 2 years ago, but less than 5 years ago",
-             "More than 5 years ago, but less than 10 years ago",
-             "Over 10 years ago",
-             "Once",
-             "Twice",
-             "3 to 5 times",
-             "6 to 10 times",
-             "Over 10 time")
+             "145235510"="Yes, because of puberty or hormones already in my body",
+             "801218076"="Yes, because of hormonal medication or device",
+             "461386928"="Less than 1 year ago",
+             "729845236"="More than 1 year ago, but less than 2 years ago",
+             "669023414"="More than 2 years ago, but less than 5 years ago",
+             "786431761"="More than 5 years ago, but less than 10 years ago",
+             "640520411"="Over 10 years ago",
+             "236949684"="Once",
+             "506053626"="Twice",
+             "119809731"="3 to 5 times",
+             "282580702"="6 to 10 times",
+             "934779560"="Over 10 time")
 
 
 
@@ -319,15 +319,15 @@ boxp_funct <- function(CID,Title, Xlab) {
 
 which_sex2 <- screen %>%
   mutate(
-    Penis = if_else(D_750420077_D_582784267 == 1, 1, 0),
-    Testes = if_else(D_750420077_D_751402477 == 1, 1, 0),
-    `Prostate Gland` = if_else(D_750420077_D_700100953 == 1, 1, 0),
-    Vagina = if_else(D_750420077_D_846483618 == 1, 1, 0),
-    Cervix = if_else(D_750420077_D_505282171 == 1, 1, 0),
-    Uterus = if_else(D_750420077_D_578416151 == 1, 1, 0),
-    Ovaries = if_else(D_750420077_D_434651539 == 1, 1, 0),
-    `Fallopian Tubes` = if_else(D_750420077_D_108025529 == 1, 1, 0),
-    Skipped = if_else(rowSums(select(., starts_with("D_750420077_D_")) == 0 | is.na(select(., starts_with("D_750420077_D_")))) == ncol(select(., starts_with("D_750420077_D_"))), 1, 0)
+    Penis = if_else(D_890391968_D_582784267 == 1, 1, 0),
+    Testes = if_else(D_890391968_D_751402477 == 1, 1, 0),
+    `Prostate Gland` = if_else(D_890391968_D_700100953 == 1, 1, 0),
+    Vagina = if_else(D_890391968_D_846483618 == 1, 1, 0),
+    Cervix = if_else(D_890391968_D_505282171 == 1, 1, 0),
+    Uterus = if_else(D_890391968_D_578416151 == 1, 1, 0),
+    Ovaries = if_else(D_890391968_D_434651539 == 1, 1, 0),
+    `Fallopian Tubes` = if_else(D_890391968_D_108025529 == 1, 1, 0),
+    Skipped = if_else(rowSums(select(., starts_with("D_890391968_D_")) == 0 | is.na(select(., starts_with("D_890391968_D_")))) == ncol(select(., starts_with("D_890391968_D_"))), 1, 0)
   )
 
 
@@ -457,12 +457,11 @@ apdx_a_sg=boxp_funct(D_552788665_D_206625031,"Age at Thyroidectomy Surgery","Age
 apdx_y_sg=boxp_funct(D_552788665_D_261863326,"Year of Thyroidectomy Surgery","Year")
 grid.arrange(apdx_a_sg, apdx_y_sg, nrow=2)
 
-#Type of Kidney Surgery
-590891714	Which of these best describes the type of kidney removal surgery that you had
 
 #	Kidney(s) removed (appendectomy)
 apdx_a_sg=boxp_funct(D_216506024_D_206625031,"Age at Nephrectomy Surgery","Age") 
 apdx_y_sg=boxp_funct(D_216506024_D_261863326,"Year of Nephrectomy Surgery","Year")
+#  d_951847507	#type of kidney removal surgery that you had
 grid.arrange(apdx_a_sg, apdx_y_sg, nrow=2)
 
 
