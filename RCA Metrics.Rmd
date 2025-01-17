@@ -50,7 +50,7 @@ library(data.table)
 #library(scales)
 library(gt)
 library(stringr) 
-
+library(tidyr)
 
 bq_auth()
 
@@ -99,7 +99,7 @@ rca <- rca %>% mutate(Site = case_when(d_827220437==472940358 ~ "Baylor Scott an
                       awareness = case_when(d_844209241=="104430631" ~ "Alive",
                                        d_844209241=="646675764" ~ "Deceased",
                                        TRUE ~ "Unknown"),
-                      'Cancer Flag' = case_when(d_525972260 =="353358909" ~ "Cancer Occurrence",
+                      'Cancer Flag' = case_when(d_525972260 =="353358909" & d_793981056=="1"~ "Cancer Occurrence", #count only the first occurance for each participant (will be used on participant level table only)
                                                 TRUE ~ "No Cancer Occurrence"))
 
 
@@ -212,32 +212,40 @@ pivot_data[nrow(pivot_data)+1,] <- list("Total", paste0(sum(location_counts$Freq
 
 ```{r num_occ, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
-cancer_loc_grouped <- cancer_loc %>%  rowwise() %>%
-  mutate(cancer_site_count = sum(c_across(Anal:Unknown)), #) %>% 
-         canc_occ = paste("Participants with ", cancer_site_count, " Cancer Occurrences")) %>%
-  ungroup()
+## update with cancer occurance : d_793981056
+
+cancer_loc_occ <- cancer_loc %>% 
+  mutate(occs = case_when(d_793981056=="1" ~ "Participants with 1 Cancer Occurrence(s)",
+                          d_793981056=="2" ~ "Participants with 2 Cancer Occurrence(s)",
+                          d_793981056=="3" ~ "Participants with 3 Cancer Occurrence(s)",
+                          d_793981056=="4" ~ "Participants with 4 Cancer Occurrence(s)")) 
+
+cancer_loc_occs <- cancer_loc_occ %>% 
+  dplyr::group_by(occs) %>% 
+  dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% 
+  dplyr::ungroup()  %>%  
+  dplyr::select(occs, n, percentage) 
+  
 
 
-summary_table <- cancer_loc_grouped  %>%
-  group_by(canc_occ) %>%
-  summarise(participant_count = n()) %>%
-  arrange(canc_occ)
-
-summary_table$pct = paste0(summary_table$participant_count, " (", 
-                           summary_table$participant_count/sum(summary_table$participant_count)*100, "%)")
-
-summary_table[nrow(summary_table)+1,] <- list("Total", sum(summary_table$participant_count), paste0(sum(summary_table$participant_count), " (100%)"))
-
-summary_table %>% select(canc_occ, pct) %>% 
-  gt() %>% 
-  tab_header(title = md("Table 3. Number of Cancer Occurrences per Participant")) %>%
-  cols_label(canc_occ = md("**Number of Occurrence**"), 
-             pct = md("**Number of Participants**")) %>%
-  tab_options(stub.font.weight = "bold") %>%
-  tab_style(
-    style = list(cell_text(weight = "bold")),
-    locations = cells_body(columns = pct)
-  )
+  summary_row <- cancer_loc_occs %>%
+    summarize(n = sum(n), percentage = 100, 
+              occs = "Total")
+  
+  cancer_loc_grouped <- bind_rows(cancer_loc_occs, summary_row)
+  
+  
+  cancer_loc_grouped <- cancer_loc_grouped %>%  
+  mutate(pct=paste0(n, " (", round(percentage, digits=1), "%)")) %>% 
+  select(occs, pct) 
+  
+  
+  knitr::kable(cancer_loc_grouped, 
+               caption = "Table 3. Number of Cancer Occurrences per Participant", 
+               col.names = c("Number of Occurrence", "Number of Participants"), 
+               row.names = FALSE, align = c("l", "c"), digits = 1, booktabs = TRUE) %>%  
+    add_indent(seq(1, nrow(cancer_loc_grouped) - 1)) %>% 
+    kable_styling(latex_options = "scale_down")
   
 ```
 
@@ -305,7 +313,8 @@ ggplot(rca_date_counts, aes(x = as.Date(occ_date), y=cumsum(n))) +
 ```{r Occ_by_Verif, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
   
-occ_by_site <- rca  %>% 
+
+occ_by_site <- rca %>% 
     filter(!is.na(Site)) %>% select(Site, 'Cancer Flag') %>% 
   tbl_cross(col ='Cancer Flag',
             row = Site, 
@@ -325,108 +334,67 @@ occ_by_site %>%
 
 \FloatBarrier
 
-```{r Flags_by_Site, include=FALSE}
-
-all_sites_list <- rca %>% 
-  distinct(Site) %>% 
-  filter(!is.na(Site))  
+```{r Flags_by_Site, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
 
-site_counts <- rca %>% 
-  group_by(Site) %>% 
-  summarize(
-    canc_occ = sum(d_525972260 == 353358909, na.rm = TRUE),  
-    verified = sum(d_821247024 == 197316935, na.rm = TRUE)          
-  )
-
-
-all_sites <- all_sites_list %>% 
-  left_join(site_counts, by = "Site") %>% 
-  replace_na(list(canc_occ = 0, verified = 0))
-
-all_sites[11,] <- list("Total", sum(all_sites$canc_occ), sum(all_sites$verified))
-
-
-all_sites %>% 
-  gt() %>% 
-  tab_header(title = md("Table 5. Number of Verified Participants Diagnosed with Cancer \n as reported by Healthcare Site")) %>%
-  cols_label(canc_occ = md("**Cancer Flag**"), 
-             verified = md("**Total Verified Participants**")) %>%
-  tab_options(stub.font.weight = "bold") %>%
-  tab_style(
-    style = list(cell_text(weight = "bold")),
-    locations = cells_body(columns = verified)
-  )
-
-
-```
-
-
-
-
-
-
-\FloatBarrier
-
-```{r Num_Occ_by_Site, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
-
-Num_Occ_by_Site <- cancer_loc_grouped %>% 
-    filter(!is.na(Site)) %>% select(Site, cancer_site_count) %>% 
-  tbl_cross(col = cancer_site_count,
+occ_by_site <- cancer_loc_occ %>% 
+    filter(!is.na(Site)) %>% select(Site, d_793981056) %>% 
+  tbl_cross(col =d_793981056,
             row = Site, 
             percent = "row",
             digits= c(0,1),
-            label= c(Site~ "Site", cancer_site_count ~ "Number of Cancer Occurrences"),
+            label= c(Site~ "Site", d_793981056 ~ "Number of Cancer Occurences"),
             missing="ifany",
             #missing_text="0 ( 0 %)",
             margin_text="Total Verified Participants") 
 
-Num_Occ_by_Site %>%
+occ_by_site %>%
   modify_caption("Table 5. Number of Cancer Occurrences Among Verified Participants \n as Identified by RCA") %>%
   as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
 
 ```
 
-\FloatBarrier
-```{r Location_by_Verified, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
+
+```{r Location_by_Verified2, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
 unique_sites <- unique(cancer_loc$Site[!is.na(cancer_loc$Site)])
+table_list <- list()  
 
 for (i in 1:length(unique_sites)) {
-  current_site <- unique_sites[i]
-  verif_total <- sum(cancer_loc$d_821247024 == "197316935" & cancer_loc$Site == current_site, na.rm = TRUE)
 
-  loc_verification <- cancer_loc %>%
-    filter(d_525972260 == 353358909 & Site == current_site) %>%
-    select(Anal:Skipped) %>%
-    pivot_longer(cols = everything(), names_to = "Cancer_Site", values_to = "Selected") %>%
+
+  deduped_cancer_loc <- cancer_loc %>%
+    filter(Site == unique_sites[i]) %>%
+    pivot_longer(cols = Anal:Skipped, names_to = "Cancer_Site", values_to = "Selected") %>%
     filter(Selected == 1) %>%
-    group_by(Cancer_Site) %>%
-    summarise(Frequency = n()) 
+    distinct(Connect_ID, Cancer_Site)  # Remove those with multiple occurrences of the same cancer type
   
-  loc_verif <- loc_verification %>% 
-    ungroup() %>%
-    mutate(Percentage = 100 * round(Frequency / verif_total, digits = 2),
+  location_counts <- deduped_cancer_loc %>%
+    group_by(Cancer_Site) %>%
+    summarise(Frequency = n(), .groups = "drop")
+  
+  pivot_data <- location_counts %>%
+    mutate(Percentage = 100 * round(Frequency / sum(Frequency), digits = 2),
            Freq = formatC(Frequency, format = "f", big.mark = ",", digits = 0),
-           Occurrence = paste0(Freq, " (", Percentage, "%)")) %>%
+           Occurrence = paste0(Freq, " (", Percentage, "%)")) %>% 
     select(Cancer_Site, Occurrence)
   
-  loc_verif[nrow(loc_verif)+1,] <- list("Total Verified Participants", paste0(sum(loc_verification$Frequency), " (100%)"))
   
-  # Use as_latex() for PDF/LaTeX rendering
-  loc_verif %>%
-    gt() %>%
-    tab_header(title = md(paste0("Table ", i + 5, ". Verified Participants Diagnosed with Cancer by Primary Site", "\n", "by Healthcare Site ", current_site))) %>%
-    cols_label(Occurrence = md("**Total Participants with Cancer**"), 
-               Cancer_Site = md("**Cancer Site**")) %>%
-    tab_options(stub.font.weight = "bold") %>%
-    tab_style(
-      style = list(cell_text(weight = "bold")),
-      locations = cells_body(columns = Cancer_Site)
-    ) %>%
-    as_latex() %>%  # Ensure proper rendering in PDF output
-    cat()  # Output directly
+  pivot_data[nrow(pivot_data) + 1, ] <- list("Total", paste0(sum(location_counts$Frequency), " (100%)"))
+  
+ 
+  table_output <- pivot_data %>%
+    kable("latex", booktabs = TRUE, 
+          caption = paste("Table", 5 + i, ". Number of Cancer Occurrences by Cancer Site for", unique_sites[i]),
+          col.names = c("Cancer Site", "Total Participants with Cancer")) %>%
+    kable_styling(latex_options = c("hold_position", "repeat_header"))
+  
+  # Append the table to the list
+  table_list[[i]] <- table_output
+  
+  # Print the table for immediate output
+  cat(table_output, sep = "\n")
 }
 
 
@@ -436,69 +404,10 @@ for (i in 1:length(unique_sites)) {
 
 \FloatBarrier
 
- 
-```{r Live_Status, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
-
-# all_counts <- rca %>% 
-#   #filter(d_525972260==353358909) %>%  
-#   group_by(dead) %>%  tally()
-# 
-# all_counts_pts <- all_counts %>% 
-#   mutate(counts = paste0(all_counts$n, " (", round(all_counts$n/(sum(all_counts$n))*100, digits=1), "%)")) %>% 
-#   select(dead, counts)
-# 
-# all_counts_pts[(nrow(all_counts_pts)+1),] <- list("Total", paste0(sum(all_counts$n), " (100%)"))
-# 
-# 
-# total_rows <- nrow(all_counts_pts)
-# knitr::kable(all_counts_pts , 
-#              caption='Table 17. Vital Status of Participants with Cancer per Manual Chart Review \n at time of RCA Data Submission', 
-#              row.names=FALSE,align=c("l","c"),
-#              col.names=c("Vital Status", "Cancer Occurrences"),
-#              booktabs = TRUE) %>%  
-#   add_indent(seq(1, total_rows - 1))  %>% 
-#   kable_styling(latex_options = c("scale_down","hold_position")) 
-
-
-
-
-```
-
-
-
-```{r Aware_Status, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
-
-# all_counts <- rca %>% 
-#   #filter(d_525972260==353358909) %>%  
-#   group_by(awareness) %>%  tally()
-# 
-# all_counts_pts <- all_counts %>% 
-#   mutate(counts = paste0(all_counts$n, " (", round(all_counts$n/(sum(all_counts$n))*100, digits=1), "%)")) %>% 
-#   select(awareness, counts)
-# 
-# all_counts_pts[(nrow(all_counts_pts)+1),] <- list("Total", paste0(sum(all_counts$n), " (100%)"))
-# 
-# 
-# total_rows <- nrow(all_counts_pts)
-# knitr::kable(all_counts_pts , 
-#              caption='Table 18. Awareness Status of Participants with Cancer per Manual Chart Review \n at time of RCA Data Submission', 
-#              row.names=FALSE,align=c("l","c"),
-#              col.names=c("Vital Status", "Cancer Occurrences"),
-#              booktabs = TRUE) %>%  
-#   add_indent(seq(1, total_rows - 1))  %>% 
-#   kable_styling(latex_options = c("scale_down","hold_position")) 
-
-
-
-
-```
-
-
-
 ```{r Aware_vs_Dead, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
   
-aware_by_dead <- rca  %>% 
+aware_by_dead <- cancer_loc  %>% 
     select(dead, awareness) %>% 
   tbl_cross(col =awareness,
             row = dead, 
@@ -510,7 +419,7 @@ aware_by_dead <- rca  %>%
             margin_text="Total Verified Participants") 
 
 aware_by_dead %>%
-  modify_caption("Table 17. Number of Verified Participants Diagnosed with Cancer as Identified by RCA") %>%
+  modify_caption("Table 17. Vital Status and Awareness of Diagnosis among Cancer Occurrences Identified by RCA") %>%
   as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
 
 ```
