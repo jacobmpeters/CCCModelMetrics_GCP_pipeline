@@ -138,7 +138,7 @@ m1_complete_nodup$Connect_ID <- as.numeric(m1_complete_nodup$Connect_ID)
 
 
 ### Define requirements of the data: active or passive,  user profile done, consented, mod1 done, verified
-parts_SJ <- "SELECT Connect_ID, token, d_949302066, d_536735468, d_976570371, d_663265240, d_100767870
+parts_SJ <- "SELECT Connect_ID, token, d_949302066, d_536735468, d_976570371, d_663265240, d_100767870, d_517311251
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
 where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and d_821247024='197316935' and
 (d_919254129='353358909') and (d_699625233='353358909') and d_827220437='531629870'"
@@ -251,7 +251,8 @@ sj_data <- sj_data %>%  mutate(Race= case_when(BOH_status=="Not Started" ~ "NA",
                                                               D_555481393_D_555481393=="410008111" ~ "Two-Spirit",
                                                               D_555481393_D_555481393=="831942158" ~ "Questioning",
                                                               D_555481393_D_555481393=="807835037" | !is.na(D_555481393_D_979809707) ~ "Other",
-                                                              TRUE ~ "Skipped this Question"))
+                                                              TRUE ~ "Skipped this Question"),
+                              Module1_Completion_Date = as.Date(d_517311251))
 sj_data$Sexual_Orientation_Text <- ifelse(!is.na(sj_data$D_555481393_D_979809707), sj_data$D_555481393_D_979809707, "NA")
 sj_data$Gender_Text <- ifelse(!is.na(sj_data$D_289664241_D_918409306), sj_data$D_289664241_D_918409306, "NA")
 
@@ -260,9 +261,10 @@ sj_data$Gender_Text <- ifelse(!is.na(sj_data$D_289664241_D_918409306), sj_data$D
 
 
 
+
 ############### CSV file
 
-sj_data_csv <- sj_data %>%  dplyr::select(Connect_ID, BL_Module_Completion_Status, BOH_status, Race, Ethnicity, Gender, Gender_Text, Sex, Sexual_Orientation, Sexual_Orientation_Text)
+sj_data_csv <- sj_data %>%  dplyr::select(Connect_ID, BL_Module_Completion_Status, BOH_status, Module1_Completion_Date, Race, Ethnicity, Gender, Gender_Text, Sex, Sexual_Orientation, Sexual_Orientation_Text)
 write.csv(sj_data_csv,paste0('2024_005_Jackson_Study_Data_HP_', Sys.Date(), '.csv'), row.names = F,na="")
 
 
