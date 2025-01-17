@@ -1590,7 +1590,7 @@ knitr::kable(BL_CES_table,
 
 \newpage
 \FloatBarrier
-# Connect Screening History Survey
+# Cancer Screening History Survey
 
 ```{r CSH, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
@@ -1613,7 +1613,7 @@ CSH_comp <- CSH_comp %>%
   #bold_labels() %>%
   #italicize_levels() %>% 
   modify_header(stat_0 = "Total CSH Eligible \n Participants") %>%
-  modify_caption("Table 5.1. Completion of Connect Screening History Survey Among Eligible Participants") %>%
+  modify_caption("Table 5.1. Completion of Cancer Screening History Survey Among Eligible Participants") %>%
   as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
 
 
@@ -1637,7 +1637,7 @@ CSH_com_df <- create_tbl_cross2(CSH_comp_BL, "completion", "CSH_status", "row", 
 colnames(CSH_com_df)[5] <- "Total CSH Eligible \n Participants"
 
 knitr::kable(CSH_com_df, 
-             caption='Table 5.2. Completion of Connect Screening History Survey by Baseline Data Completeness',
+             caption='Table 5.2. Completion of Cancer Screening History Survey by Baseline Data Completeness',
              row.names=FALSE, align=c("l","c","c","c","c"), booktabs = TRUE) %>%
   kable_styling(latex_options = "scale_down") %>%  
   add_indent(seq(1, nrow(CSH_com_df) - 1)) %>%  landscape()
@@ -1682,7 +1682,7 @@ CSH_TM <- CSH_TM %>%
 
 
 knitr::kable(CSH_TM, 
-             caption = 'Table 5.3. Connect Screening History Survey Completion Time from Start to Submit \n Among Eligible Participants', 
+             caption = 'Table 5.3. Cancer Screening History Survey Completion Time from Start to Submit \n Among Eligible Participants', 
              booktabs=T, linesep = "", row.names=FALSE, align=c("l", "c")) %>% 
   add_indent(c(1:(nrow(CSH_TM)-1))) %>%  
   kable_styling(latex_options = "scale_down") #c("scale_down","hold_position"))
@@ -1727,7 +1727,7 @@ CSH_notif_table = trigger_time %>%
 
 
 knitr::kable(CSH_notif_table, 
-             caption = 'Table 5.4. Connect Screening History Survey Completion from Trigger to Submit for \n Verified Participants, in Days', 
+             caption = 'Table 5.4. Cancer Screening History Survey Completion from Trigger to Submit for \n Verified Participants, in Days', 
              row.names=FALSE, format.args = list(big.mark = ","), linesep = "", 
              booktabs = T, align=c("l", "c", "c", "c", "c", "c", "c", "c", "c")) %>% 
   kable_styling(latex_options = c("scale_down","hold_position")) 
