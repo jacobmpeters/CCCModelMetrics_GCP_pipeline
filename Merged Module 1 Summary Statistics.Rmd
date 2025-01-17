@@ -60,6 +60,7 @@ library(kableExtra)
 options(tinytex.verbose = TRUE)
 
 bq_auth()
+
 ```
 
 
@@ -160,7 +161,7 @@ m1_complete_nodup$Connect_ID <- as.numeric(m1_complete_nodup$Connect_ID)
 
 
 ### Define requirements of the data: active or passive,  user profile done, consented, mod1 done, verified
-parts <- "SELECT Connect_ID, token
+parts <- "SELECT Connect_ID, token, d_564964481,d_795827569, d_544150384
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
 where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and d_821247024='197316935' and
 (d_919254129='353358909') and (d_699625233='353358909') and (d_949302066='231311385')"
@@ -171,6 +172,7 @@ parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID) ###need to convert ty
 
 module1= left_join(parts_data, m1_complete_nodup, by="Connect_ID") 
 dim(module1)
+
 ```
 
 
@@ -342,8 +344,47 @@ child_logic_funct <- function(CID, Child_Num, Title){
 ## Age 
 ```{r Age, warning=FALSE, echo=FALSE, message=FALSE}
 
+### confirmation and correction of age is no longer asked on Module 1. Mia still wants age ranges listed on this report
+## Site reported age ranges do not update, so instead the age from DOB is derived below 
+#(existing DOB derivation variable was applied months after Mod1 was released and does not include everyone)
+
 ##Age Verification
-simple_funct(D_479353866,"AGECOR: Age Reported Correct")
+data_tib_m1$DOB <- paste0(str_sub(data_tib_m1$d_544150384, 1, 4), "-", data_tib_m1$d_564964481, "-", data_tib_m1$d_795827569) #some of the years have a weird symbol at the end 
+data_tib_m1$DOB <- as.Date(data_tib_m1$DOB) #, format='%y-%m-%d')
+currentDate <- as.Date(Sys.Date(), format='%y/%m/%d')
+
+
+data_tib_m1$AGEGRID <- time_length(difftime(currentDate, data_tib_m1$DOB), "years")
+
+data_tib_m1 <-data_tib_m1 %>% mutate(age = case_when(AGEGRID >29 & AGEGRID <35 ~ "30-34",
+                                                     AGEGRID <40 ~ "35-39",
+                                                     AGEGRID <46 ~ "40-45",
+                                                     AGEGRID <51 ~ "46-50",
+                                                     AGEGRID <56 ~ "51-55",
+                                                     AGEGRID <61 ~ "56-60",
+                                                     AGEGRID <66 ~ "61-65",
+                                                     AGEGRID <71 ~ "66-70",
+                                                     AGEGRID <75 ~ "71-75",
+                                                     TRUE ~ "Undertgoing Age Verification"))
+
+age_summary <- data_tib_m1 %>% group_by(age) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(age, n, percentage)
+
+age_summary %>%  gt::gt() %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md("Age Ranges of Participants")) %>% 
+  cols_label(n= md("**N**"), age = md("**Answer**"), percentage = md("**%**")) %>% 
+  grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = age,
+    )
+  ) 
 
 
 ```
@@ -376,12 +417,30 @@ simple_funct(D_783167257, "MARITAL: Marital Status")
 
 ## Race, and Ethnicity
 ```{r race, warning=FALSE, echo=FALSE, message=FALSE}
-all_races <- data_tib_m1[ , c("Connect_ID", "D_384191091_D_384191091_D_583826374", "D_384191091_D_384191091_D_636411467", "D_384191091_D_384191091_D_458435048",
-                                 "D_384191091_D_384191091_D_706998638", "D_384191091_D_384191091_D_973565052", "D_384191091_D_384191091_D_586825330",
-                                 "D_384191091_D_384191091_D_412790539", "D_384191091_D_384191091_D_807835037", "D_384191091_D_747350323", "D_384191091_D_384191091_D_746038746")] 
-
-
-
+# all_races <- c("D_384191091_D_384191091_D_178420302", "D_384191091_D_384191091_D_583826374", "D_384191091_D_384191091_D_636411467", "D_384191091_D_384191091_D_458435048",
+#                "D_384191091_D_384191091_D_706998638", "D_384191091_D_384191091_D_973565052", "D_384191091_D_384191091_D_586825330","D_384191091_D_384191091_D_412790539", 
+#                "D_384191091_D_384191091_D_807835037", "D_384191091_D_747350323", "D_384191091_D_384191091_D_746038746")
+# 
+# 
+# which_race <- module1 %>%
+#   rowwise() %>%
+#   mutate(
+#     num_race_responses = sum(c_across(all_of(all_races)) %>% as.numeric(), na.rm = TRUE),
+#     multi_racial = ifelse(num_race_responses > 1, 1, 0)
+#   ) %>%
+#   ungroup()
+# 
+# 
+# 
+# 
+# 
+# which_race <- module1 %>%
+#   group_by(Connect_ID) %>%
+#   mutate(
+#     num_race_responses = sum(all_of(all_races=="1"), na.rm = TRUE),
+#     multi_racial = ifelse(num_race_responses > 1, 1, 0)
+#   ) %>%
+#   ungroup()
 
 
 
@@ -390,51 +449,55 @@ all_races <- data_tib_m1[ , c("Connect_ID", "D_384191091_D_384191091_D_583826374
 
 multi_race=0    
 for (i in 1:length(module1$Connect_ID)){
-  AI=ifelse((module1$D_384191091_D_384191091_D_583826374[[i]]==1 & (module1$D_384191091_D_384191091_D_636411467[[i]]==1 | module1$D_384191091_D_384191091_D_458435048[[i]]==1|
-                                               module1$D_384191091_D_384191091_D_706998638[[i]]==1 | module1$D_384191091_D_384191091_D_973565052[[i]]==1 |
-                                               module1$D_384191091_D_384191091_D_586825330[[i]]==1 | module1$D_384191091_D_384191091_D_412790539[[i]]==1 |
-                                               module1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
-  As=ifelse((module1$D_384191091_D_384191091_D_636411467[[i]]==1 & (module1$D_384191091_D_384191091_D_583826374[[i]]==1 | module1$D_384191091_D_384191091_D_458435048[[i]]==1|
-                                                        module1$D_384191091_D_384191091_D_706998638[[i]]==1 | module1$D_384191091_D_384191091_D_973565052[[i]]==1 |
-                                                        module1$D_384191091_D_384191091_D_586825330[[i]]==1 | module1$D_384191091_D_384191091_D_412790539[[i]]==1 |
-                                                        module1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
-  Bl=ifelse((module1$D_384191091_D_384191091_D_458435048[[i]]==1 & (module1$D_384191091_D_384191091_D_583826374[[i]]==1 | module1$D_384191091_D_384191091_D_636411467[[i]]==1|
-                                                        module1$D_384191091_D_384191091_D_706998638[[i]]==1 | module1$D_384191091_D_384191091_D_973565052[[i]]==1 |
-                                                        module1$D_384191091_D_384191091_D_586825330[[i]]==1 | module1$D_384191091_D_384191091_D_412790539[[i]]==1 |
-                                                        module1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
-  Hs=ifelse((module1$D_384191091_D_384191091_D_706998638[[i]]==1 & (module1$D_384191091_D_384191091_D_583826374[[i]]==1 | module1$D_384191091_D_384191091_D_636411467[[i]]==1|
-                                                        module1$D_384191091_D_384191091_D_458435048[[i]]==1 | module1$D_384191091_D_384191091_D_973565052[[i]]==1 |
-                                                        module1$D_384191091_D_384191091_D_586825330[[i]]==1 | module1$D_384191091_D_384191091_D_412790539[[i]]==1 |
-                                                        module1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
-  Me=ifelse((module1$D_384191091_D_384191091_D_973565052[[i]]==1 & (module1$D_384191091_D_384191091_D_583826374[[i]]==1 | module1$D_384191091_D_384191091_D_636411467[[i]]==1|
-                                                        module1$D_384191091_D_384191091_D_458435048[[i]]==1 | module1$D_384191091_D_384191091_D_706998638[[i]]==1 |
-                                                        module1$D_384191091_D_384191091_D_586825330[[i]]==1 | module1$D_384191091_D_384191091_D_412790539[[i]]==1 |
-                                                        module1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
-  Hw=ifelse((module1$D_384191091_D_384191091_D_586825330[[i]]==1 & (module1$D_384191091_D_384191091_D_583826374[[i]]==1 | module1$D_384191091_D_384191091_D_636411467[[i]]==1|
-                                                        module1$D_384191091_D_384191091_D_458435048[[i]]==1 | module1$D_384191091_D_384191091_D_706998638[[i]]==1 |
-                                                        module1$D_384191091_D_384191091_D_973565052[[i]]==1 | module1$D_384191091_D_384191091_D_412790539[[i]]==1 |
-                                                        module1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
-  Wh=ifelse((module1$D_384191091_D_384191091_D_412790539[[i]]==1 & (module1$D_384191091_D_384191091_D_583826374[[i]]==1 | module1$D_384191091_D_384191091_D_636411467[[i]]==1|
-                                                        module1$D_384191091_D_384191091_D_458435048[[i]]==1 | module1$D_384191091_D_384191091_D_706998638[[i]]==1 |
-                                                        module1$D_384191091_D_384191091_D_586825330[[i]]==1 | module1$D_384191091_D_384191091_D_973565052[[i]]==1 |
-                                                        module1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
-  Ot=ifelse((module1$D_384191091_D_384191091_D_807835037[[i]]==1 & (module1$D_384191091_D_384191091_D_583826374[[i]]==1 | module1$D_384191091_D_384191091_D_636411467[[i]]==1|
-                                                        module1$D_384191091_D_384191091_D_458435048[[i]]==1 | module1$D_384191091_D_384191091_D_706998638[[i]]==1 |
-                                                        module1$D_384191091_D_384191091_D_586825330[[i]]==1 | module1$D_384191091_D_384191091_D_973565052[[i]]==1 |
-                                                        module1$D_384191091_D_384191091_D_412790539[[i]]==1)), 1, 0)
-  multi_race= multi_race + sum(AI+As+Bl+Hs+Me+Hw+Wh+Ot, na.rm=T)
+  AI=ifelse((module1$D_384191091_D_384191091_D_583826374[[i]]=='1' & (module1$D_384191091_D_384191091_D_636411467[[i]]=='1' | module1$D_384191091_D_384191091_D_458435048[[i]]=='1'|
+                                               module1$D_384191091_D_384191091_D_706998638[[i]]=='1' | module1$D_384191091_D_384191091_D_973565052[[i]]=='1' |
+                                               module1$D_384191091_D_384191091_D_586825330[[i]]=='1' | module1$D_384191091_D_384191091_D_412790539[[i]]=='1' |
+                                               module1$D_384191091_D_384191091_D_807835037[[i]]=='1' | module1$D_384191091_D_384191091_D_178420302[[i]]=='1')), 1, 0)
+  As=ifelse((module1$D_384191091_D_384191091_D_636411467[[i]]=='1' & (module1$D_384191091_D_384191091_D_583826374[[i]]=='1' | module1$D_384191091_D_384191091_D_458435048[[i]]=='1'|
+                                                        module1$D_384191091_D_384191091_D_706998638[[i]]=='1' | module1$D_384191091_D_384191091_D_973565052[[i]]=='1' |
+                                                        module1$D_384191091_D_384191091_D_586825330[[i]]=='1' | module1$D_384191091_D_384191091_D_412790539[[i]]=='1' |
+                                                        module1$D_384191091_D_384191091_D_807835037[[i]]=='1' | module1$D_384191091_D_384191091_D_178420302[[i]]=='1')), 1, 0)
+  Bl=ifelse((module1$D_384191091_D_384191091_D_458435048[[i]]=='1' & (module1$D_384191091_D_384191091_D_583826374[[i]]=='1' | module1$D_384191091_D_384191091_D_636411467[[i]]=='1'|
+                                                        module1$D_384191091_D_384191091_D_706998638[[i]]=='1' | module1$D_384191091_D_384191091_D_973565052[[i]]=='1' |
+                                                        module1$D_384191091_D_384191091_D_586825330[[i]]=='1' | module1$D_384191091_D_384191091_D_412790539[[i]]=='1' |
+                                                        module1$D_384191091_D_384191091_D_807835037[[i]]=='1' | module1$D_384191091_D_384191091_D_178420302[[i]]=='1')), 1, 0)
+  Hs=ifelse((module1$D_384191091_D_384191091_D_706998638[[i]]=='1' & (module1$D_384191091_D_384191091_D_583826374[[i]]=='1' | module1$D_384191091_D_384191091_D_636411467[[i]]=='1'|
+                                                        module1$D_384191091_D_384191091_D_458435048[[i]]=='1' | module1$D_384191091_D_384191091_D_973565052[[i]]=='1' |
+                                                        module1$D_384191091_D_384191091_D_586825330[[i]]=='1' | module1$D_384191091_D_384191091_D_412790539[[i]]=='1' |
+                                                        module1$D_384191091_D_384191091_D_807835037[[i]]=='1' | module1$D_384191091_D_384191091_D_178420302[[i]]=='1')), 1, 0)
+  Me=ifelse((module1$D_384191091_D_384191091_D_973565052[[i]]=='1' & (module1$D_384191091_D_384191091_D_583826374[[i]]=='1' | module1$D_384191091_D_384191091_D_636411467[[i]]=='1'|
+                                                        module1$D_384191091_D_384191091_D_458435048[[i]]=='1' | module1$D_384191091_D_384191091_D_706998638[[i]]=='1' |
+                                                        module1$D_384191091_D_384191091_D_586825330[[i]]=='1' | module1$D_384191091_D_384191091_D_412790539[[i]]=='1' |
+                                                        module1$D_384191091_D_384191091_D_807835037[[i]]=='1' | module1$D_384191091_D_384191091_D_178420302[[i]]=='1')), 1, 0)
+  Hw=ifelse((module1$D_384191091_D_384191091_D_586825330[[i]]=='1' & (module1$D_384191091_D_384191091_D_583826374[[i]]=='1' | module1$D_384191091_D_384191091_D_636411467[[i]]=='1'|
+                                                        module1$D_384191091_D_384191091_D_458435048[[i]]=='1' | module1$D_384191091_D_384191091_D_706998638[[i]]=='1' |
+                                                        module1$D_384191091_D_384191091_D_973565052[[i]]=='1' | module1$D_384191091_D_384191091_D_412790539[[i]]=='1' |
+                                                        module1$D_384191091_D_384191091_D_807835037[[i]]=='1' | module1$D_384191091_D_384191091_D_178420302[[i]]=='1')), 1, 0)
+  Wh=ifelse((module1$D_384191091_D_384191091_D_412790539[[i]]=='1' & (module1$D_384191091_D_384191091_D_583826374[[i]]=='1' | module1$D_384191091_D_384191091_D_636411467[[i]]=='1'|
+                                                        module1$D_384191091_D_384191091_D_458435048[[i]]=='1' | module1$D_384191091_D_384191091_D_706998638[[i]]=='1' |
+                                                        module1$D_384191091_D_384191091_D_586825330[[i]]=='1' | module1$D_384191091_D_384191091_D_973565052[[i]]=='1' |
+                                                        module1$D_384191091_D_384191091_D_807835037[[i]]=='1' | module1$D_384191091_D_384191091_D_178420302[[i]]=='1')), 1, 0)
+  Ot=ifelse((module1$D_384191091_D_384191091_D_807835037[[i]]=='1' & (module1$D_384191091_D_384191091_D_583826374[[i]]=='1' | module1$D_384191091_D_384191091_D_636411467[[i]]=='1'|
+                                                        module1$D_384191091_D_384191091_D_458435048[[i]]=='1' | module1$D_384191091_D_384191091_D_706998638[[i]]=='1' |
+                                                        module1$D_384191091_D_384191091_D_586825330[[i]]=='1' | module1$D_384191091_D_384191091_D_973565052[[i]]=='1' |
+                                                        module1$D_384191091_D_384191091_D_412790539[[i]]=='1' | module1$D_384191091_D_384191091_D_178420302[[i]]=='1')), 1, 0)
+  Uk=ifelse((module1$D_384191091_D_384191091_D_178420302[[i]]=='1' & (module1$D_384191091_D_384191091_D_583826374[[i]]=='1' | module1$D_384191091_D_384191091_D_458435048[[i]]=='1'|
+                                                        module1$D_384191091_D_384191091_D_706998638[[i]]=='1' | module1$D_384191091_D_384191091_D_973565052[[i]]=='1' |
+                                                        module1$D_384191091_D_384191091_D_586825330[[i]]=='1' | module1$D_384191091_D_384191091_D_412790539[[i]]=='1' |
+                                                        module1$D_384191091_D_384191091_D_807835037[[i]]=='1' | module1$D_384191091_D_384191091_D_636411467[[i]]=='1')), 1, 0)
+  multi_race= multi_race + sum(AI+As+Bl+Hs+Me+Hw+Wh+Ot+Uk, na.rm=T)
 
 }
 
   
 
-data_tib_m1$multi_racial <- c(rep(1, times=multi_race), rep(0, times=(dim(data_tib_m1)[1]- multi_race)))
+module1$multi_racial <- c(rep(1, times=multi_race), rep(0, times=(dim(module1)[1]- multi_race)))
 
 
 
 ## RACE
 
-which_race= data_tib_m1 %>%  mutate(race= case_when(multi_racial==1 ~ "Multi-Racial",
+which_race= module1 %>%  mutate(race= case_when(multi_racial==1 ~ "Multi-Racial",
                                                      D_384191091_D_384191091_D_583826374==1 ~ "American Indian or Native American",
                                                      D_384191091_D_384191091_D_636411467==1 ~ "Asian/Asian American",
                                                      D_384191091_D_384191091_D_458435048==1 ~ "Black, African American, or African",
@@ -444,6 +507,7 @@ which_race= data_tib_m1 %>%  mutate(race= case_when(multi_racial==1 ~ "Multi-Rac
                                                      D_384191091_D_384191091_D_412790539==1 ~ "White",
                                                      (D_384191091_D_384191091_D_807835037==1 | !is.na(D_384191091_D_747350323)) ~ "Other",
                                                      D_384191091_D_384191091_D_746038746==1 ~ "Prefer Not to Answer",
+                                                    D_384191091_D_384191091_D_178420302==1 ~ "Unknown",
                                                      TRUE  ~ "Skipped this question "))
 
 dt_all_races_summary <- which_race  %>% dplyr::group_by(race) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup()  %>%  dplyr::select(race, n, percentage)
@@ -452,11 +516,6 @@ dt_all_races_summary %>%  gt::gt(rowname_col = "row_lab") %>%
   fmt_number(columns = "percentage", decimals = 2) %>% 
   tab_header(title = md("Race/Ethnicity of Participants Who Completed BOH Section of First Survey")) %>% 
   cols_label(n= md("**N**"), race = md("**Answer**"), percentage = md("**%**")) %>% 
-  # summary_rows( groups=F,
-  #   column = c(n,percentage),
-  #   fns= list(
-  #     Sum= ~sum(.)
-  #   ), decimals=0) %>%
   grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
   tab_options(
       stub.font.weight = "bold"
@@ -468,40 +527,40 @@ dt_all_races_summary %>%  gt::gt(rowname_col = "row_lab") %>%
     locations = cells_body(
       columns = race,
     )
-  ) #
+  ) 
+
 ```
 
 ```{r RacePieChart, include=FALSE}
 
 library(RColorBrewer)
 library(ggrepel)
-display.brewer.all(colorblindFriendly = TRUE) 
-mycolors <- c("#FDBE19" ,"#9A9DA3","#CC7D15","#797D83","#DAB384","#8BAAC7","#3C989E","#F8D991","#164C71","#2973A5","#309EBD")
+display.brewer.all(colorblindFriendly = TRUE)
+mycolors <- c("#FDBE19" ,"#9A9DA3","#CC7D15","#797D83","#DAB384","#8BAAC7","#3C989E","#F8D991","#164C71","#2973A5", "#BBD5D7","#309EBD")
 names(mycolors) <- levels(dt_all_races_summary$race)
-##this is the best plot I can make
 
-dt_all_races_summary$pct <- paste0(round(as.numeric((dt_all_races_summary$percentage)), digits=2), "%") 
+dt_all_races_summary$pct <- paste0(round(as.numeric((dt_all_races_summary$percentage)), digits=2), "%")
 
   race_M1plot <- dt_all_races_summary %>%
-  mutate(csum = rev(cumsum(rev(n))), 
+  mutate(csum = rev(cumsum(rev(n))),
          pos = n/2 + lead(csum, 1),
          pos = if_else(is.na(pos), n/2, pos),
-         percentage = n/sum(n)) %>% 
-  ggplot(aes(x = "", y = n, fill = fct_inorder(race))) + 
+         percentage = n/sum(n)) %>%
+  ggplot(aes(x = "", y = n, fill = fct_inorder(race))) +
   scale_fill_manual(values = mycolors,name = "Race Ethnicity") +
   scale_colour_manual(values= mycolors) +
   labs(x = "", y = "", title = "Race/Ethnicity of Participants Who Completed BOH Section of First Survey",
-       fill = "race_ethnic") +   
+       fill = "race_ethnic") +
   geom_col(width = 3.5, color = 1) +
   geom_label_repel(aes(y = pos,
-                       label = pct, 
+                       label = pct,
                        fill = race),
                    size = 3,color="white",
                    nudge_x = 3,
                    show.legend = FALSE) +
   labs(  fill = "Subtype" ) +
-  coord_polar(theta = "y") +   theme_void() 
-  
+  coord_polar(theta = "y") +   theme_void()
+
   race_M1plot   #if pie chart is needed again
 
 ```
@@ -1391,6 +1450,8 @@ cat("Number of White, Straight, Married, Female Participants", round(((dim(WMF)[
 # Section 2: Medical History 
 ## Cancer 
 ```{r SkinCancer, warning=FALSE, echo=FALSE, message=FALSE}
+
+
 simple_funct(D_537153788, "SKINCANC: Diagnosed with Non-Melanoma Skin Cancer")
 
 
