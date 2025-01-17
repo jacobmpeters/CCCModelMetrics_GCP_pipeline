@@ -45,116 +45,16 @@ bq_auth()
 
 ```{r BQ Pull, include=FALSE}
 
-## Grab module 1 variables first 
-
-
-#Data Dictionary for column names
-dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
-dd <- dplyr::bind_rows(dictionary,.id="CID")
-dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
-dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name')
-dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
-dd$CID <- rownames(dd)
-#https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
-devtools::install_github("tidyverse/reprex")
-
-
-
-
-
-## BQ Pull from the participants table just to use for versioning
 project <- "nih-nci-dceg-connect-prod-6d04"
-billing <- "nih-nci-dceg-connect-prod-6d04" 
-recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
-                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935' and d_949302066 ='231311385'")
-recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
-cnames <- names(recr_m1)
-# Check that it doesn't match any non-number
-numbers_only <- function(x) !grepl("\\D", x)
-# to check variables in recr_noinact_wl1
-for (i in 1: length(cnames)){
-  varname <- cnames[i]
-  var<-pull(recr_m1,varname)
-  recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
-}
-
-
-
-
-#### Handling participants that somehow completed both Mod1 version 1 and Mod1 version 2
-
-sql_M1_1 <- bq_project_query(project, query = "SELECT Connect_ID, D_407056417, D_890391968_D_108025529, D_890391968_D_434651539, D_890391968_D_505282171, D_890391968_D_578416151, D_890391968_D_846483618, D_289664241_D_289664241, D_613744428 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` WHERE Connect_ID IS NOT NULL")
-sql_M1_2 <- bq_project_query(project, query = "SELECT Connect_ID, D_407056417, D_890391968_D_108025529, D_890391968_D_434651539, D_890391968_D_505282171, D_890391968_D_578416151, D_890391968_D_582784267, D_890391968_D_700100953, D_890391968_D_751402477, D_890391968_D_846483618, D_289664241_D_918409306, D_613744428 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` WHERE Connect_ID IS NOT NULL")
-
-M1_V1 <- bq_table_download(sql_M1_1, bigint = "integer64")
-M1_V2 <- bq_table_download(sql_M1_2, bigint = "integer64")
-
-# Select matching column names
-M1_V1_vars <- colnames(M1_V1)
-M1_V2_vars <- colnames(M1_V2)
-common_vars <- intersect(M1_V1_vars, M1_V2_vars)
-
-# Subset to common columns
-M1_V1_common <- M1_V1[, common_vars]
-M1_V2_common <- M1_V2[, common_vars]
-
-# Add version indicator
-M1_V1_common$version <- 1
-M1_V2_common$version <- 2
-
-# Identify columns with mismatched types
-mismatched_cols <- names(M1_V1_common)[sapply(names(M1_V1_common), function(col) {
-  class(M1_V1_common[[col]]) != class(M1_V2_common[[col]])
-})]
-
-# Convert mismatched columns to character for consistency
-M1_V1_common <- M1_V1_common %>%
-  mutate(across(all_of(mismatched_cols), as.character))
-M1_V2_common <- M1_V2_common %>%
-  mutate(across(all_of(mismatched_cols), as.character))
-
-# Combine both versions for participants who completed both
-M1_common <- bind_rows(M1_V1_common, M1_V2_common) %>%
-  arrange(Connect_ID, desc(version))
-
-# For columns unique to each version
-V1_only_vars <- setdiff(M1_V1_vars, common_vars)
-V2_only_vars <- setdiff(M1_V2_vars, common_vars)
-
-# Subset each version for unique columns and add version indicator
-m1_v1_only <- M1_V1[, c("Connect_ID", V1_only_vars)] %>%
-  mutate(version = 1)
-m1_v2_only <- M1_V2[, c("Connect_ID", V2_only_vars)] %>%
-  mutate(version = 2)
-
-# Combine the unique and common data
-m1_common_v1 <- left_join(M1_common, m1_v1_only, by = c("Connect_ID", "version"))
-m1_combined_v1v2 <- left_join(m1_common_v1, m1_v2_only, by = c("Connect_ID", "version"))
-
-# Filter for complete cases where specific completion criteria are met
-m1_complete <- m1_combined_v1v2 %>%
-  filter(Connect_ID %in% recr_m1$Connect_ID[recr_m1$d_949302066 == 231311385]) %>%
-  arrange(desc(version))
-
-# Remove duplicates, keeping only the most recent version for each Connect_ID
-m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),]
-
-m1_complete_nodup$Connect_ID <- as.numeric(m1_complete_nodup$Connect_ID)
-
-
-
-
-
-
-
 
 
 pt_pull <- "SELECT Connect_ID,  d_827220437, d_987563196, d_821247024
-FROM `nih-nci-dceg-connect-stg-5519.FlatConnect.participants_JP` 
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
 where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and d_821247024='197316935' and 
 (d_919254129='353358909') and (d_699625233='353358909') and 
-(d_949302066='231311385')"  
-CSH_pull <- "SELECT * FROM `nih-nci-dceg-connect-stg-5519.FlatConnect.cancerOccurrence_JP` 
+(d_176068627='231311385')"  
+
+CSH_pull <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.cancerScreeningHistorySurvey_JP` 
 where Connect_ID is not null" 
 
 
@@ -186,14 +86,19 @@ dict <- list("353358909"="Yes", "104430631"="No",  "178420302"="Do not Know",
              "640520411"="Over 10 years ago",
              "236949684"="Once",
              "506053626"="Twice",
+             "462661976"="3 or more times",
              "119809731"="3 to 5 times",
              "282580702"="6 to 10 times",
-             "934779560"="Over 10 time")
+             "934779560"="Over 10 time",
+             "441766026"="2D Mammogram/Conventional Digital Mammography", "510907305"="3D Mammogram/Digital Breast Tomosynthesis",
+             "113771607" = "Surgery to Remove One Kidney",
+             "668256654" = "Surgery to Remove Both Kidneys", 
+             "535003378"="None of the Above")
 
 
 
 #GT table for questions asked to all (no skip logic)
-simple_funct2 <- function(CID, Title){  
+simple_funct <- function(CID, Title){  
   CID_SYM <- rlang::ensym(CID)
   dt_select <- screen %>%  select(Connect_ID, !!CID_SYM)
   gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
@@ -218,7 +123,7 @@ simple_funct2 <- function(CID, Title){
 
 
 #GT table with one filter/skip logic
-one_logic_funct2 <- function(CID, CID_prev, Prev_Answer, Title){  
+one_logic_funct <- function(CID, CID_prev, Prev_Answer, Title){  
   CID_SYM <- rlang::ensym(CID)
   CID_SYM_P <- rlang::ensym(CID_prev)
   dt_select <- screen %>%  filter(!!CID_SYM_P == Prev_Answer) %>%  select(Connect_ID, !!CID_SYM) 
@@ -244,7 +149,7 @@ one_logic_funct2 <- function(CID, CID_prev, Prev_Answer, Title){
 
 
 #GT table with two filter/skip logics
-two_skip_funct2 <- function(CID, Title, CID_prev, Prev_Answer1, Prev_Answer2){  
+two_logic_funct <- function(CID, CID_prev, Prev_Answer1, Prev_Answer2,  Title){  
   CID_SYM <- rlang::ensym(CID)
   CID_SYM_P <- rlang::ensym(CID_prev)
   dt_select <- screen %>%  filter(!!CID_SYM_P == Prev_Answer1 | !!CID_SYM_P == Prev_Answer2) %>%  select(Connect_ID, !!CID_SYM) 
@@ -271,10 +176,67 @@ two_skip_funct2 <- function(CID, Title, CID_prev, Prev_Answer1, Prev_Answer2){
 
 
 #GT table with three filter/skip logics
-three_skip_funct2 <- function(CID, Title, CID_prev, Prev_Answer1, Prev_Answer2, Prev_Answer3){  
+three_logic_funct <- function(CID, CID_prev, Prev_Answer1, Prev_Answer2, Prev_Answer3,  Title){  
   CID_SYM <- rlang::ensym(CID)
   CID_SYM_P <- rlang::ensym(CID_prev)
   dt_select <- screen %>%  filter(!!CID_SYM_P == Prev_Answer1 | !!CID_SYM_P == Prev_Answer2| !!CID_SYM_P == Prev_Answer3) %>%  
+    select(Connect_ID, !!CID_SYM) 
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**N**"),  answer = md("**Answer**"), percentage = md("**%**")) %>% 
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) 
+}
+
+
+
+#GT table with four filter/skip logics
+four_logic_funct <- function(CID, CID_prev, Prev_Answer1, Prev_Answer2, Prev_Answer3, Prev_Answer4,  Title){  
+  CID_SYM <- rlang::ensym(CID)
+  CID_SYM_P <- rlang::ensym(CID_prev)
+  dt_select <- screen %>%  filter(!!CID_SYM_P == Prev_Answer1 | !!CID_SYM_P == Prev_Answer2| !!CID_SYM_P == Prev_Answer3| !!CID_SYM_P == Prev_Answer4) %>%  
+    select(Connect_ID, !!CID_SYM) 
+  gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
+  
+  gt_yn %>%  gt::gt(rowname_col = "row_lab")  %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  tab_header(title = md(Title)) %>% 
+  cols_label(n= md("**N**"),  answer = md("**Answer**"), percentage = md("**%**")) %>% 
+    grand_summary_rows(columns=c(n, percentage),fns = ~sum(.,na.rm = T))|>
+  tab_options(
+      stub.font.weight = "bold"
+    ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = answer,
+    )
+  ) 
+}
+
+
+
+
+#GT table with five filter/skip logics
+five_logic_funct <- function(CID, CID_prev, Prev_Answer1, Prev_Answer2, Prev_Answer3, Prev_Answer4, Prev_Answer5,  Title){  
+  CID_SYM <- rlang::ensym(CID)
+  CID_SYM_P <- rlang::ensym(CID_prev)
+  dt_select <- screen %>%  filter(!!CID_SYM_P == Prev_Answer1 | !!CID_SYM_P == Prev_Answer2| !!CID_SYM_P == Prev_Answer3| !!CID_SYM_P == Prev_Answer4| !!CID_SYM_P == Prev_Answer5) %>%  
     select(Connect_ID, !!CID_SYM) 
   gt_yn <- dt_select  %>% dplyr::group_by(!!CID_SYM) %>% dplyr::summarize(n=n(), percentage=100*n/nrow(.)) %>% dplyr::ungroup() %>% dplyr::mutate(answer=recode(!!CID_SYM, !!!dict)) %>% replace_na(list(answer="Skipped this Question")) %>%  dplyr::select(answer, n, percentage)
   
@@ -315,7 +277,7 @@ boxp_funct <- function(CID,Title, Xlab) {
 
 
 
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+```{r Sex, warning=FALSE, echo=FALSE, message=FALSE}
 
 which_sex2 <- screen %>%
   mutate(
@@ -335,16 +297,17 @@ pivot_sex <- which_sex2 %>%
   select(`Penis`:Skipped) %>%
   pivot_longer(cols = everything(), names_to = "Body_Parts", values_to = "Selected") %>%
   filter(Selected == 1) %>%
-  group_by(Surgery) %>%
+  group_by(Body_Parts) %>%
   summarise(Frequency = n()) %>%
   ungroup() %>%
-  mutate(Percentage = 100 * Frequency / sum(Frequency))
+  mutate(Percentage = 100 * Frequency / sum(Frequency)) %>% 
+  arrange(desc(Frequency))
 
 dt_sex <- pivot_sex %>%
   gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>% 
   fmt_number(column = "Frequency", decimals=0, use_seps = TRUE) %>%
-  tab_header(title = md("MHGROUP9: Surgeries Had")) %>%
+  tab_header(title = md("Body Parts Born With")) %>%
   cols_label(Frequency = md("**N**"), 
              Percentage = md("**%**"), 
              Body_Parts = md("**Answer**")) %>%
@@ -365,8 +328,16 @@ dt_sex
 ```
 
 
+```{r BRSTTISS, warning=FALSE, echo=FALSE, message=FALSE}
 
-## MH GROUP9
+screen$D_413039729 <- factor(screen$D_413039729, levels=c(104430631,145235510,801218076,178420302, "Skipped this Question"))
+simple_funct(D_413039729, "Had Breasts or Breast Tissue Growth")
+
+```
+
+
+\newpage
+# MH GROUP9
 ```{r MhGroup9, warning=FALSE, echo=FALSE, message=FALSE}
 
 
@@ -375,25 +346,25 @@ knitr::opts_chunk$set(dev = "png", fig.path = "")
 
 mhgroup9 <- screen %>%
   mutate(
-    `Tonsillectomy` = if_else(D_624179836_D_797189152 == 1, 1, 0),
-    Cholecystectomy = if_else(D_624179836_D_633546100 == 1, 1, 0),
-    Appendectomy = if_else(D_624179836_D_866002271 == 1, 1, 0),
-    Splenectomy = if_else(D_624179836_D_209101810 == 1, 1, 0),
-    Thyroidectomy = if_else(D_624179836_D_413734739 == 1, 1, 0),
-    Nephrectomy = if_else(D_624179836_D_215525943 == 1, 1, 0),
-    Liposuction = if_else(D_624179836_D_118789503 == 1, 1, 0),
-    `Gastric Bypass` = if_else(D_624179836_D_715563991 == 1, 1, 0),
-    `Breast Surgery` = if_else(D_624179836_D_533491176 == 1, 1, 0),
-    Hysterectomy = if_else(D_624179836_D_220755749 == 1, 1, 0),
-    `Tubal Ligation` = if_else(D_624179836_D_465318416 == 1, 1, 0),
-    Oophorectomy = if_else(D_624179836_D_630100221 == 1, 1, 0),
-    Salpingectomy = if_else(D_624179836_D_692881833 == 1, 1, 0),
-    Vasectomy = if_else(D_624179836_D_654450030 == 1, 1, 0),
-    `Orchiectomy or Orchidectomy` = if_else(D_624179836_D_532603425 == 1, 1, 0),
-    Prostatectomy = if_else(D_624179836_D_733236542 == 1, 1, 0),
-    Penectomy = if_else(D_624179836_D_961987554 == 1, 1, 0),
-    None = if_else(D_624179836_D_535003378 == 1, 1, 0),
-    Skipped = if_else(rowSums(select(., starts_with("D_624179836_D_")) == 0 | is.na(select(., starts_with("D_624179836_D_")))) == ncol(select(., starts_with("D_624179836_D_"))), 1, 0)
+    `Tonsillectomy` = if_else(D_729984625_D_797189152 == 1, 1, 0),
+    Cholecystectomy = if_else(D_729984625_D_633546100 == 1, 1, 0),
+    Appendectomy = if_else(D_729984625_D_866002271 == 1, 1, 0),
+    Splenectomy = if_else(D_729984625_D_209101810 == 1, 1, 0),
+    Thyroidectomy = if_else(D_729984625_D_413734739 == 1, 1, 0),
+    Nephrectomy = if_else(D_729984625_D_215525943 == 1, 1, 0),
+    Liposuction = if_else(D_729984625_D_118789503 == 1, 1, 0),
+    `Gastric Bypass` = if_else(D_729984625_D_715563991 == 1, 1, 0),
+    `Breast Surgery` = if_else(D_729984625_D_533491176 == 1, 1, 0),
+    Hysterectomy = if_else(D_729984625_D_220755749 == 1, 1, 0),
+    `Tubal Ligation` = if_else(D_729984625_D_465318416 == 1, 1, 0),
+    Oophorectomy = if_else(D_729984625_D_630100221 == 1, 1, 0),
+    Salpingectomy = if_else(D_729984625_D_692881833 == 1, 1, 0),
+    Vasectomy = if_else(D_729984625_D_654450030 == 1, 1, 0),
+    `Orchiectomy or Orchidectomy` = if_else(D_729984625_D_532603425 == 1, 1, 0),
+    Prostatectomy = if_else(D_729984625_D_733236542 == 1, 1, 0),
+    Penectomy = if_else(D_729984625_D_961987554 == 1, 1, 0),
+    None = if_else(D_729984625_D_535003378 == 1, 1, 0),
+    Skipped = if_else(rowSums(select(., starts_with("D_729984625_D_")) == 0 | is.na(select(., starts_with("D_729984625_D_")))) == ncol(select(., starts_with("D_729984625_D_"))), 1, 0)
   )
 
 pivot_data9 <- mhgroup9 %>%
@@ -403,13 +374,14 @@ pivot_data9 <- mhgroup9 %>%
   group_by(Surgery) %>%
   summarise(Frequency = n()) %>%
   ungroup() %>%
-  mutate(Percentage = 100 * Frequency / sum(Frequency))
+  mutate(Percentage = 100 * Frequency / sum(Frequency)) %>% 
+  arrange(desc(Frequency))
 
 dt_mgr9 <- pivot_data9 %>%
   gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>% 
   fmt_number(column = "Frequency", decimals=0, use_seps = TRUE) %>%
-  tab_header(title = md("MHGROUP9: Surgeries Had")) %>%
+  tab_header(title = md("MHGROUP9: Surgeries")) %>%
   cols_label(Frequency = md("**N**"), 
              Percentage = md("**%**"), 
              Surgery = md("**Answer**")) %>%
@@ -431,93 +403,93 @@ dt_mgr9
 
 ```{r MHGroup9Diagn, warning=FALSE, echo=FALSE, message=FALSE}
 #	Tonsils removed (tonsillectomy)
-tonsil_a_sg=boxp_funct(D_367884741_D_206625031,"Age at Tonisllectomy Surgery","Age") 
-tonsil_y_sg=boxp_funct(D_367884741_D_261863326,"Year of Tonisllectomy Surgery","Year")
+tonsil_a_sg=boxp_funct(D_675055475_D_623218391,"Age at Tonisllectomy Surgery","Age") 
+tonsil_y_sg=boxp_funct(D_675055475_D_802622485,"Year of Tonisllectomy Surgery","Year")
 grid.arrange(tonsil_a_sg, tonsil_y_sg, nrow=2)
 
 
 #	Gallbladder removed (cholecystectomy)
-gall_a_sg=boxp_funct(D_178353079_D_206625031,"Age at Cholecystectomy Surgery","Age") 
-gall_y_sg=boxp_funct(D_178353079_D_261863326,"Year of Cholecystectomy Surgery","Year")
+gall_a_sg=boxp_funct(D_250003172_D_623218391,"Age at Cholecystectomy Surgery","Age") 
+gall_y_sg=boxp_funct(D_250003172_D_802622485,"Year of Cholecystectomy Surgery","Year")
 grid.arrange(gall_a_sg, gall_y_sg, nrow=2)
 
 
 #	Appendix removed (appendectomy)
-apdx_a_sg=boxp_funct(D_550075233_D_206625031,"Age at Appendectomy Surgery","Age") 
-apdx_y_sg=boxp_funct(D_550075233_D_261863326,"Year of Appendectomy Surgery","Year")
+apdx_a_sg=boxp_funct(D_341080024_D_623218391,"Age at Appendectomy Surgery","Age") 
+apdx_y_sg=boxp_funct(D_341080024_D_802622485,"Year of Appendectomy Surgery","Year")
 grid.arrange(apdx_a_sg, apdx_y_sg, nrow=2)
 
 #	Spleen removed (Splenectomy)
-apdx_a_sg=boxp_funct(D_927516732_D_206625031,"Age at Splenectomy Surgery","Age") 
-apdx_y_sg=boxp_funct(D_927516732_D_261863326,"Year of Splenectomy Surgery","Year")
-grid.arrange(apdx_a_sg, apdx_y_sg, nrow=2)
+spln_a_sg=boxp_funct(D_841573821_D_623218391,"Age at Splenectomy Surgery","Age") 
+spln_y_sg=boxp_funct(D_841573821_D_802622485,"Year of Splenectomy Surgery","Year")
+grid.arrange(spln_a_sg, spln_y_sg, nrow=2)
 
 #	Throid removed (Thyroidectomy)
-apdx_a_sg=boxp_funct(D_552788665_D_206625031,"Age at Thyroidectomy Surgery","Age") 
-apdx_y_sg=boxp_funct(D_552788665_D_261863326,"Year of Thyroidectomy Surgery","Year")
-grid.arrange(apdx_a_sg, apdx_y_sg, nrow=2)
+thyr_a_sg=boxp_funct(D_976626196_D_623218391,"Age at Thyroidectomy Surgery","Age") 
+thyr_y_sg=boxp_funct(D_976626196_D_802622485,"Year of Thyroidectomy Surgery","Year")
+grid.arrange(thyr_a_sg, thyr_y_sg, nrow=2)
 
 
-#	Kidney(s) removed (appendectomy)
-apdx_a_sg=boxp_funct(D_216506024_D_206625031,"Age at Nephrectomy Surgery","Age") 
-apdx_y_sg=boxp_funct(D_216506024_D_261863326,"Year of Nephrectomy Surgery","Year")
-#  d_951847507	#type of kidney removal surgery that you had
-grid.arrange(apdx_a_sg, apdx_y_sg, nrow=2)
+#	Kidney(s) removed (nephrectomy)
+neph_a_sg=boxp_funct(D_998519118_D_623218391,"Age at Nephrectomy Surgery","Age") 
+neph_y_sg=boxp_funct(D_998519118_D_802622485,"Year of Nephrectomy Surgery","Year")
+#neph_type <- one_logic_funct(D_951847507, D_729984625_D_215525943, 1, "Type of Kidney Removal Surgery")
+cat(round((sum(screen$D_951847507==113771607, na.rm=T)/sum(screen$D_729984625_D_215525943==1, na.rm=T))*100, digits=2), "% Had Surgery to Remove One Kidney")
+cat(round((sum(screen$D_951847507==668256654, na.rm=T)/sum(screen$D_729984625_D_215525943==1, na.rm=T))*100, digits=2), "% Had Surgery to Remove Both Kidneys")
+cat(round((sum(screen$D_951847507==535003378, na.rm=T)/sum(screen$D_729984625_D_215525943==1, na.rm=T))*100, digits=2), "% Had Neither of These Nephrectomy Types")
+grid.arrange(neph_a_sg, neph_y_sg, nrow=2)
 
 
 #	Liposuction
-lipo_a_sg=boxp_funct(D_860920332_D_206625031,"Age at Liposuction Surgery","Age") 
-lipo_y_sg=boxp_funct(D_860920332_D_261863326,"Year of Liposuction Surgery","Year")
+lipo_a_sg=boxp_funct(D_645149364_D_623218391,"Age at Liposuction Surgery","Age") 
+lipo_y_sg=boxp_funct(D_645149364_D_802622485,"Year of Liposuction Surgery","Year")
 grid.arrange(lipo_a_sg, lipo_y_sg, nrow=2)
 
 
 #	Bariatric surgery (lap band, gastric bypass)
-bar_sg_a_sg=boxp_funct(D_986613440_D_206625031,"Age at Gastric Bypass Surgery","Age")
-bar_sg_y_sg=boxp_funct(D_986613440_D_261863326,"Year of Gastric Bypass Surgery","Year")
+bar_sg_a_sg=boxp_funct(D_839555631_D_623218391,"Age at Gastric Bypass Surgery","Age")
+bar_sg_y_sg=boxp_funct(D_839555631_D_802622485,"Year of Gastric Bypass Surgery","Year")
 grid.arrange(bar_sg_a_sg, bar_sg_y_sg, nrow=2)
 
 ```
 
+\newpage
 
-
-```{r BreastSurgery, include=FALSE}
+```{r BreastSurgery, warning=FALSE, echo=FALSE, message=FALSE}
 
   #type of breast surgery
-br_surg= screen  %>% filter(D_624179836_D_533491176==1) %>%  
+br_surg= screen  %>% filter(D_729984625_D_533491176==1) %>%  
   mutate(
-    `Breast Implants` = if_else(D_517307064_D_517307064_D_752953170 == 1, 1, 0),
-    `Mastopexy` = if_else(D_517307064_D_517307064_D_325506683 == 1, 1, 0),
-    `Breast Implants` = if_else(D_517307064_D_517307064_D_752953170 == 1, 1, 0),
-    #Mastectomy = if_else(D_517307064_D_517307064_D_325506683 == 1 | D_517307064_D_517307064_D_256196714 == 1, 1, 0),
-    `Breast Reconstruction` = if_else(D_517307064_D_517307064_D_335563082 == 1, 1, 0),
-    `Breast Reduction` = if_else(D_517307064_D_517307064_D_955881350 == 1, 1, 0),
-    `Partial Mastectomy` = if_else(D_517307064_D_517307064_D_492902023 == 1, 1, 0),
-    `Mastectomy` = if_else(D_517307064_D_517307064_D_256196714 == 1, 1, 0),
-    `Double Mastectomy` = if_else(D_517307064_D_517307064_D_802859122 == 1, 1, 0),
-    Abscess = if_else(D_517307064_D_517307064_D_520432394 == 1, 1, 0),
-    `Removal of Lactiferous` = if_else(D_517307064_D_517307064_D_667901971 == 1, 1, 0),
-    Other = if_else(D_517307064_D_517307064_D_807835037 == 1 | !is.na(D_517307064_D_942347130), 1, 0),
-    None = if_else(D_517307064_D_517307064_D_535003378 == 1, 1, 0),
-    Skipped = if_else(rowSums(select(., starts_with("D_517307064_D_517307064_")) == 0 | is.na(select(., starts_with("D_517307064_D_517307064_")))) == ncol(select(., starts_with("D_517307064_D_517307064_"))), 1, 0)
+    `Breast Implants` = if_else(D_506456253_D_506456253_D_752953170 == 1, 1, 0),
+    `Mastopexy` = if_else(D_506456253_D_506456253_D_325506683 == 1, 1, 0),
+    `Breast Reconstruction` = if_else(D_506456253_D_506456253_D_335563082 == 1, 1, 0),
+    `Breast Reduction` = if_else(D_506456253_D_506456253_D_955881350 == 1, 1, 0),
+    `Partial Mastectomy` = if_else(D_506456253_D_506456253_D_492902023 == 1, 1, 0),
+    `Mastectomy` = if_else(D_506456253_D_506456253_D_256196714 == 1, 1, 0),
+    `Double Mastectomy` = if_else(D_506456253_D_506456253_D_802859122 == 1, 1, 0),
+    Abscess = if_else(D_506456253_D_506456253_D_520432394 == 1, 1, 0),
+    `Removal of Lactiferous` = if_else(D_506456253_D_506456253_D_667901971 == 1, 1, 0),
+    Other = if_else(D_506456253_D_506456253_D_807835037 == 1 | !is.na(D_506456253_D_942347130), 1, 0),
+    None = if_else(D_506456253_D_506456253_D_535003378 == 1, 1, 0),
+    Skipped = if_else(rowSums(select(., starts_with("D_506456253_D_506456253_")) == 0 | is.na(select(., starts_with("D_506456253_D_506456253_")))) == ncol(select(., starts_with("D_506456253_D_506456253_"))), 1, 0)
   )
 
 
-
-
 pivot_breast <- br_surg %>%
-  select(`Tonsillectomy`:Skipped) %>%
+  select(`Breast Implants`:Skipped) %>%
   pivot_longer(cols = everything(), names_to = "Surgery", values_to = "Selected") %>%
   filter(Selected == 1) %>%
   group_by(Surgery) %>%
   summarise(Frequency = n()) %>%
   ungroup() %>%
-  mutate(Percentage = 100 * Frequency / sum(Frequency))
+  mutate(Percentage = 100 * Frequency / sum(Frequency)) %>% 
+  arrange(desc(Frequency))
 
 dt_breast <- pivot_breast %>%
   gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>% 
   fmt_number(column = "Frequency", decimals=0, use_seps = TRUE) %>%
-  tab_header(title = md("MHGROUP9: Surgeries Had")) %>%
+  tab_header(title = md("Breast Surgeries")) %>%
   cols_label(Frequency = md("**N**"), 
              Percentage = md("**%**"), 
              Surgery = md("**Answer**")) %>%
@@ -529,11 +501,7 @@ dt_breast <- pivot_breast %>%
   tab_footnote(
     footnote = "As this is a select all question, participants may select multiple responses.",
     locations = cells_column_labels(columns = Percentage)
-  ) %>%
-  tab_footnote(
-    footnote = md("As this is a select all question, participants may select multiple responses."),
-    locations = cells_column_labels(columns = Surgery)
-  )
+  ) 
 
 dt_breast
 
@@ -542,122 +510,129 @@ dt_breast
 
 ```{r BreastSurgYear, warning=FALSE, echo=FALSE, message=FALSE}
 #cat("Breast Implants")
-implant_a_sg=boxp_funct(D_477690298_D_623218391,"Age at Breats Implants Surgery","Age")
-implant_y_sg=boxp_funct(D_477690298_D_802622485,"Year of Breats Implants Surgery","Year")
+implant_a_sg=boxp_funct(D_439760665_D_623218391,"Age at Breats Implants Surgery","Age")
+implant_y_sg=boxp_funct(D_439760665_D_802622485,"Year of Breats Implants Surgery","Year")
 grid.arrange(implant_a_sg, implant_y_sg, nrow=2)
 
 
 #cat("Mastopexy")
-mastop_a_sg=boxp_funct(D_176453768_D_623218391,"Age at Mastopexy Surgery","Age")
-mastop_y_sg=boxp_funct(D_176453768_D_802622485,"Year of Mastopexy Surgery","Year")
+mastop_a_sg=boxp_funct(D_950690103_D_623218391,"Age at Mastopexy Surgery","Age")
+mastop_y_sg=boxp_funct(D_950690103_D_802622485,"Year of Mastopexy Surgery","Year")
 grid.arrange(mastop_a_sg, mastop_y_sg, nrow=2)
 
 
 #cat("Breast Reconstruction")
-recon_a_sg=boxp_funct(D_145786416_D_623218391,"Age at Breast Reconstruction Surgery","Age")
-recon_y_sg=boxp_funct(D_145786416_D_802622485,"Year of Breast Reconstruction Surgery","Year") 
+recon_a_sg=boxp_funct(D_975268706_D_623218391,"Age at Breast Reconstruction Surgery","Age")
+recon_y_sg=boxp_funct(D_975268706_D_802622485,"Year of Breast Reconstruction Surgery","Year") 
 grid.arrange(recon_a_sg, recon_y_sg, nrow=2)
 
 #cat("Breast Reduction")
-reduct_a_sg=boxp_funct(D_287605131_D_623218391,"Age at Breast Reduction Surgery","Age")
-reduct_y_sg=boxp_funct(D_287605131_D_802622485,"Year of Breast Reduction Surgery","Year")
+reduct_a_sg=boxp_funct(D_277890744_D_623218391,"Age at Breast Reduction Surgery","Age")
+reduct_y_sg=boxp_funct(D_277890744_D_802622485,"Year of Breast Reduction Surgery","Year")
 grid.arrange(reduct_a_sg, reduct_y_sg, nrow=2)
 
 #cat("Partial Mastectomy")
-prtms_a_sg=boxp_funct(D_701157499_D_623218391,"Age at Partial Mastectomy Surgery","Age")
-prtms_y_sg=boxp_funct(D_701157499_D_802622485,"Year of Partial Mastectomy Surgery","Year")
+prtms_a_sg=boxp_funct(D_936444833_D_623218391,"Age at Partial Mastectomy Surgery","Age")
+prtms_y_sg=boxp_funct(D_936444833_D_802622485,"Year of Partial Mastectomy Surgery","Year")
 grid.arrange(prtms_a_sg, prtms_y_sg, nrow=2)
 
 #cat("Mastectomy")
-mastec_a_sg=boxp_funct(D_428639167_D_623218391,"Age at Mastectomy Surgery","Age") 
-mastec_y_sg=boxp_funct(D_428639167_D_802622485,"Year of Mastectomy Surgery","Year") 
+mastec_a_sg=boxp_funct(D_758881441_D_623218391,"Age at Mastectomy Surgery","Age") 
+mastec_y_sg=boxp_funct(D_758881441_D_802622485,"Year of Mastectomy Surgery","Year") 
 grid.arrange(mastec_a_sg, mastec_y_sg, nrow=2)
 
+#BREASTSUR6A
+#screen$D_765772509 <- factor(screen$D_765772509, levels = c(308633554, 967156738, 535003378))
+#one_logic_funct(D_765772509, D_506456253_D_802859122, 1, "Type of Breast Removal Surgery")
+cat(round((sum(screen$D_765772509==308633554, na.rm=T)/sum(screen$D_506456253_D_802859122==1, na.rm=T))*100, digits=2), "% Had Both Breasts Removed During One Surgery")
+cat(round((sum(screen$D_765772509==967156738, na.rm=T)/sum(screen$D_506456253_D_802859122==1, na.rm=T))*100, digits=2), "% Had Both Breasta Removed, Each During a Separate Surgery")
+cat(round((sum(screen$D_765772509==535003378, na.rm=T)/sum(screen$D_506456253_D_802859122==1, na.rm=T))*100, digits=2), "% Had Neither of These Mastectomy Types")
+
 #cat("Double Mastectomy")
-dbmas_a_sg=boxp_funct(D_282355641_D_623218391,"Age at Double Mastectomy Surgery","Age")
-dbmas_y_sg=boxp_funct(D_282355641_D_802622485,"Year of Double Mastectomy Surgery","Year")
+dbmas_a_sg=boxp_funct(D_250353250_D_623218391,"Age at Double Mastectomy Surgery","Age")
+dbmas_y_sg=boxp_funct(D_250353250_D_802622485,"Year of Double Mastectomy Surgery","Year")
 grid.arrange(dbmas_a_sg, dbmas_y_sg, nrow=2)
 
 #cat("Breast Abscess")
-abscess_a_sg=boxp_funct(D_539301647_D_623218391,"Age at Breast Abscess Surgery","Age") 
-abscess_y_sg=boxp_funct(D_539301647_D_802622485,"Year of Breast Abscess Surgery","Year") 
+abscess_a_sg=boxp_funct(D_166524009_D_623218391,"Age at Breast Abscess Surgery","Age") 
+abscess_y_sg=boxp_funct(D_166524009_D_802622485,"Year of Breast Abscess Surgery","Year") 
 grid.arrange(abscess_a_sg, abscess_y_sg, nrow=2)
 
 #cat("Lactiferous Surgery")
-lact_a_sg=boxp_funct(D_579225381_D_623218391,"Age at Removal of Lactiferous Surgery","Age")
-lact_y_sg=boxp_funct(D_579225381_D_802622485,"Year of Removal of Lactiferous Surgery","Year")
+lact_a_sg=boxp_funct(D_367942006_D_623218391,"Age at Removal of Lactiferous Surgery","Age")
+lact_y_sg=boxp_funct(D_367942006_D_802622485,"Year of Removal of Lactiferous Surgery","Year")
 grid.arrange(lact_a_sg, lact_y_sg, nrow=2)
 
 #cat("Other Breast Surgery")
-othb_a_sg=boxp_funct(D_891214661_D_623218391,"Age at Other Breast Surgery","Age")
-othb_y_sg=boxp_funct(D_891214661_D_802622485,"Year of Other Breast Surgery","Year")
+othb_a_sg=boxp_funct(D_907385951_D_623218391,"Age at Other Breast Surgery","Age")
+othb_y_sg=boxp_funct(D_907385951_D_802622485,"Year of Other Breast Surgery","Year")
 grid.arrange(othb_a_sg, othb_y_sg, nrow=2)
 
 #cat("Hysterectomy") 
-hyst_a_sg=boxp_funct(D_150352141_D_206625031,"Age at Hysterectomy","Age") 
-hyst_y_sg=boxp_funct(D_150352141_D_261863326,"Year of Hysterectomy","Year")
+hyst_a_sg=boxp_funct(D_350184001_D_623218391,"Age at Hysterectomy","Age") 
+hyst_y_sg=boxp_funct(D_350184001_D_802622485,"Year of Hysterectomy","Year")
 grid.arrange(hyst_a_sg, hyst_y_sg, nrow=2)
 
 
 #cat("Tubal Ligation")  
-tublig_a_sg=boxp_funct(D_122887481_D_206625031,"Age at Tubal Ligation Surgery","Age") 
-tublig_y_sg=boxp_funct(D_122887481_D_261863326,"Year of Tubal Ligation Surgery","Year")
+tublig_a_sg=boxp_funct(D_522645663_D_623218391,"Age at Tubal Ligation Surgery","Age") 
+tublig_y_sg=boxp_funct(D_522645663_D_802622485,"Year of Tubal Ligation Surgery","Year")
 grid.arrange(tublig_a_sg, tublig_y_sg, nrow=2)
 
 
 #cat("Oophorectomy")
   #type
-cat(round((sum(screen$D_378892977==333647143, na.rm=T)/sum(screen$D_624179836_D_630100221==1, na.rm=T))*100, digits=2), "% Had One Ovary Removed")
-cat(round((sum(screen$D_378892977==109972911, na.rm=T)/sum(screen$D_624179836_D_630100221==1, na.rm=T))*100, digits=2), "% Had Both Ovaries Removed")
-cat(round((sum(screen$D_378892977==535003378, na.rm=T)/sum(screen$D_624179836_D_630100221==1, na.rm=T))*100, digits=2), "% Had Neither of These Oophorectomy Types")
+cat(round((sum(screen$D_590067228==333647143, na.rm=T)/sum(screen$D_729984625_D_630100221==1, na.rm=T))*100, digits=2), "% Had One Ovary Removed")
+cat(round((sum(screen$D_590067228==109972911, na.rm=T)/sum(screen$D_729984625_D_630100221==1, na.rm=T))*100, digits=2), "% Had Both Ovaries Removed")
+cat(round((sum(screen$D_590067228==535003378, na.rm=T)/sum(screen$D_729984625_D_630100221==1, na.rm=T))*100, digits=2), "% Had Neither of These Oophorectomy Types")
   #age/year of surgery
-ooph_a_sg=boxp_funct(D_534007917_D_206625031,"Age at Tubal Oophorectomy","Age") 
-ooph_y_sg=boxp_funct(D_534007917_D_261863326,"Year of Tubal Oophorectomy","Year")
+ooph_a_sg=boxp_funct(D_787505819_D_623218391,"Age at Tubal Oophorectomy","Age") 
+ooph_y_sg=boxp_funct(D_787505819_D_802622485,"Year of Tubal Oophorectomy","Year")
 grid.arrange(ooph_a_sg, ooph_y_sg, nrow=2)
 
 
 #cat("Salpingectomy") 
   #type
-cat(round((sum(screen$D_224791140==448068764, na.rm=T)/sum(screen$D_624179836_D_692881833==1, na.rm=T))*100, digits=2), "% Had One Fallopian Tube Removed")
-cat(round((sum(screen$D_224791140==537173119, na.rm=T)/sum(screen$D_624179836_D_692881833==1, na.rm=T))*100, digits=2), "% Had Both Fallopian Tubes Removed")
-cat(round((sum(screen$D_224791140==535003378, na.rm=T)/sum(screen$D_624179836_D_692881833==1, na.rm=T))*100, digits=2), "% Had Neither of These Salpingectomy Types")
+cat(round((sum(screen$D_860839849==448068764, na.rm=T)/sum(screen$D_729984625_D_692881833==1, na.rm=T))*100, digits=2), "% Had One Fallopian Tube Removed")
+cat(round((sum(screen$D_860839849==537173119, na.rm=T)/sum(screen$D_729984625_D_692881833==1, na.rm=T))*100, digits=2), "% Had Both Fallopian Tubes Removed")
+cat(round((sum(screen$D_860839849==535003378, na.rm=T)/sum(screen$D_729984625_D_692881833==1, na.rm=T))*100, digits=2), "% Had Neither of These Salpingectomy Types")
   #age/year
-salp_a_sg=boxp_funct(D_752636038_D_206625031,"Age at Tubal Salpingectomy","Age") 
-salp_y_sg=boxp_funct(D_752636038_D_261863326,"Year of Tubal Salpingectomy","Year")
+salp_a_sg=boxp_funct(D_949587133_D_623218391,"Age at Tubal Salpingectomy","Age") 
+salp_y_sg=boxp_funct(D_949587133_D_802622485,"Year of Tubal Salpingectomy","Year")
 grid.arrange(salp_a_sg, salp_y_sg, nrow=2)
 
 
 #	Vasectomy 
-vasec_a_sg=boxp_funct(D_518750011_D_206625031,"Age at Tubal Vasectomy","Age") 
-vasec_y_sg=boxp_funct(D_518750011_D_261863326,"Year of Tubal Vasectomy","Year")
+vasec_a_sg=boxp_funct(D_671670265_D_623218391,"Age at Tubal Vasectomy","Age") 
+vasec_y_sg=boxp_funct(D_671670265_D_802622485,"Year of Tubal Vasectomy","Year")
 grid.arrange(vasec_a_sg, vasec_y_sg, nrow=2)
 
 
 #cat("Orchiectomy or Ochidectomy") 
   #type
-cat(round((sum(screen$D_946504570==770550588, na.rm=T)/sum(screen$D_624179836_D_532603425==1, na.rm=T))*100, digits=2), "% Had One Testicle Removed")
-cat(round((sum(screen$D_946504570==970716952, na.rm=T)/sum(screen$D_624179836_D_532603425==1, na.rm=T))*100, digits=2), "% Had Both Testicles Removed")
-cat(round((sum(screen$D_946504570==535003378, na.rm=T)/sum(screen$D_624179836_D_532603425==1, na.rm=T))*100, digits=2), "% Had Neither of These Orchiectomy or Ochidectomy Types")
+cat(round((sum(screen$D_429157727==770550588, na.rm=T)/sum(screen$D_729984625_D_532603425==1, na.rm=T))*100, digits=2), "% Had One Testicle Removed")
+cat(round((sum(screen$D_429157727==970716952, na.rm=T)/sum(screen$D_729984625_D_532603425==1, na.rm=T))*100, digits=2), "% Had Both Testicles Removed")
+cat(round((sum(screen$D_9429157727==535003378, na.rm=T)/sum(screen$D_729984625_D_532603425==1, na.rm=T))*100, digits=2), "% Had Neither of These Orchiectomy or Ochidectomy Types")
   #age/year
-orch_a_sg=boxp_funct(D_275770221_D_206625031,"Age at Orchiectomy Surgery","Age") 
-orch_y_sg=boxp_funct(D_275770221_D_261863326,"Year of Orchiectomy Surgery","Year")
+orch_a_sg=boxp_funct(D_314345103_D_623218391,"Age at Orchiectomy Surgery","Age") 
+orch_y_sg=boxp_funct(D_314345103_D_802622485,"Year of Orchiectomy Surgery","Year")
 grid.arrange(orch_a_sg, orch_y_sg, nrow=2)
 
 
 #cat("Prostatectomy") 
   #type
-cat(round((sum(screen$D_107060069==524029283, na.rm=T)/sum(screen$D_624179836_D_733236542==1, na.rm=T))*100, digits=2), "% Had Part of Prostate Removed")
-cat(round((sum(screen$D_107060069==500023550, na.rm=T)/sum(screen$D_624179836_D_733236542==1, na.rm=T))*100, digits=2), "% Had Whole Prostate Removed")
-cat(round((sum(screen$D_107060069==535003378, na.rm=T)/sum(screen$D_624179836_D_733236542==1, na.rm=T))*100, digits=2), "% Had Neither of These Prostatectomy Types")
+cat(round((sum(screen$D_292314539==524029283, na.rm=T)/sum(screen$D_729984625_D_733236542==1, na.rm=T))*100, digits=2), "% Had Part of Prostate Removed")
+cat(round((sum(screen$D_292314539==500023550, na.rm=T)/sum(screen$D_729984625_D_733236542==1, na.rm=T))*100, digits=2), "% Had Whole Prostate Removed")
+cat(round((sum(screen$D_292314539==535003378, na.rm=T)/sum(screen$D_729984625_D_733236542==1, na.rm=T))*100, digits=2), "% Had Neither of These Prostatectomy Types")
   #age/year
-prost_a_sg=boxp_funct(D_882152987_D_206625031,"Age at Prostatectomy Surgery","Age") 
-prost_y_sg=boxp_funct(D_882152987_D_261863326,"Year of Tubal Prostatectomy Surgery","Year") 
+prost_a_sg=boxp_funct(D_343990595_D_623218391,"Age at Prostatectomy Surgery","Age") 
+prost_y_sg=boxp_funct(D_343990595_D_802622485,"Year of Tubal Prostatectomy Surgery","Year") 
 grid.arrange(prost_a_sg, prost_y_sg, nrow=2)
 
 
 #	Penis removed (penectomy) 
-penis_a_sg=boxp_funct(D_527057404_D_206625031,"Age at Tubal Penectomy Surgery","Age") 
-penis_y_sg=boxp_funct(D_527057404_D_261863326,"Year of Tubal Penectomy Surgery","Year")
+penis_a_sg=boxp_funct(D_203366781_D_623218391,"Age at Tubal Penectomy Surgery","Age") 
+penis_y_sg=boxp_funct(D_203366781_D_802622485,"Year of Tubal Penectomy Surgery","Year")
 grid.arrange(penis_a_sg, penis_y_sg, nrow=2)
 
 
@@ -667,71 +642,668 @@ grid.arrange(penis_a_sg, penis_y_sg, nrow=2)
 ```{r MHGroup9Diagn_Cont, warning=FALSE, echo=FALSE, message=FALSE}
 
 #cat("Hysterectomy") 
-hyst_a_sg=boxp_funct(D_150352141_D_206625031,"Age at Hysterectomy","Age") 
-hyst_y_sg=boxp_funct(D_150352141_D_261863326,"Year of Hysterectomy","Year")
+hyst_a_sg=boxp_funct(D_350184001_D_623218391,"Age at Hysterectomy","Age") 
+hyst_y_sg=boxp_funct(D_350184001_D_802622485,"Year of Hysterectomy","Year")
 grid.arrange(hyst_a_sg, hyst_y_sg, nrow=2)
 
 
 #cat("Tubal Ligation")  
-tublig_a_sg=boxp_funct(D_122887481_D_206625031,"Age at Tubal Ligation Surgery","Age") 
-tublig_y_sg=boxp_funct(D_122887481_D_261863326,"Year of Tubal Ligation Surgery","Year")
+tublig_a_sg=boxp_funct(D_522645663_D_623218391,"Age at Tubal Ligation Surgery","Age") 
+tublig_y_sg=boxp_funct(D_522645663_D_802622485,"Year of Tubal Ligation Surgery","Year")
 grid.arrange(tublig_a_sg, tublig_y_sg, nrow=2)
 
 
 #cat("Oophorectomy")
   #type
-cat(round((sum(module1$D_378892977==333647143, na.rm=T)/sum(module1$D_624179836_D_630100221==1, na.rm=T))*100, digits=2), "% Had One Ovary Removed")
-cat(round((sum(module1$D_378892977==109972911, na.rm=T)/sum(module1$D_624179836_D_630100221==1, na.rm=T))*100, digits=2), "% Had Both Ovaries Removed")
-cat(round((sum(module1$D_378892977==535003378, na.rm=T)/sum(module1$D_624179836_D_630100221==1, na.rm=T))*100, digits=2), "% Had Neither of These Oophorectomy Types")
+cat(round((sum(screen$D_590067228==333647143, na.rm=T)/sum(screen$D_729984625_D_630100221==1, na.rm=T))*100, digits=2), "% Had One Ovary Removed")
+cat(round((sum(screen$D_590067228==109972911, na.rm=T)/sum(screen$D_729984625_D_630100221==1, na.rm=T))*100, digits=2), "% Had Both Ovaries Removed")
+cat(round((sum(screen$D_590067228==535003378, na.rm=T)/sum(screen$D_729984625_D_630100221==1, na.rm=T))*100, digits=2), "% Had Neither of These Oophorectomy Types")
   #age/year of surgery
-ooph_a_sg=boxp_funct(D_534007917_D_206625031,"Age at Tubal Oophorectomy","Age") 
-ooph_y_sg=boxp_funct(D_534007917_D_261863326,"Year of Tubal Oophorectomy","Year")
+ooph_a_sg=boxp_funct(D_787505819_D_623218391,"Age at Tubal Oophorectomy","Age") 
+ooph_y_sg=boxp_funct(D_787505819_D_802622485,"Year of Tubal Oophorectomy","Year")
 grid.arrange(ooph_a_sg, ooph_y_sg, nrow=2)
 
 
 #cat("Salpingectomy") 
   #type
-cat(round((sum(module1$D_224791140==448068764, na.rm=T)/sum(module1$D_624179836_D_692881833==1, na.rm=T))*100, digits=2), "% Had One Fallopian Tube Removed")
-cat(round((sum(module1$D_224791140==537173119, na.rm=T)/sum(module1$D_624179836_D_692881833==1, na.rm=T))*100, digits=2), "% Had Both Fallopian Tubes Removed")
-cat(round((sum(module1$D_224791140==535003378, na.rm=T)/sum(module1$D_624179836_D_692881833==1, na.rm=T))*100, digits=2), "% Had Neither of These Salpingectomy Types")
+cat(round((sum(screen$D_860839849==448068764, na.rm=T)/sum(screen$D_729984625_D_692881833==1, na.rm=T))*100, digits=2), "% Had One Fallopian Tube Removed")
+cat(round((sum(screen$D_860839849==537173119, na.rm=T)/sum(screen$D_729984625_D_692881833==1, na.rm=T))*100, digits=2), "% Had Both Fallopian Tubes Removed")
+cat(round((sum(screen$D_860839849==535003378, na.rm=T)/sum(screen$D_729984625_D_692881833==1, na.rm=T))*100, digits=2), "% Had Neither of These Salpingectomy Types")
   #age/year
-salp_a_sg=boxp_funct(D_752636038_D_206625031,"Age at Tubal Salpingectomy","Age") 
-salp_y_sg=boxp_funct(D_752636038_D_261863326,"Year of Tubal Salpingectomy","Year")
+salp_a_sg=boxp_funct(D_949587133_D_623218391,"Age at Tubal Salpingectomy","Age") 
+salp_y_sg=boxp_funct(D_949587133_D_802622485,"Year of Tubal Salpingectomy","Year")
 grid.arrange(salp_a_sg, salp_y_sg, nrow=2)
 
 
 #	Vasectomy 
-vasec_a_sg=boxp_funct(D_518750011_D_206625031,"Age at Tubal Vasectomy","Age") 
-vasec_y_sg=boxp_funct(D_518750011_D_261863326,"Year of Tubal Vasectomy","Year")
+vasec_a_sg=boxp_funct(D_671670265_D_623218391,"Age at Tubal Vasectomy","Age") 
+vasec_y_sg=boxp_funct(D_671670265_D_802622485,"Year of Tubal Vasectomy","Year")
 grid.arrange(vasec_a_sg, vasec_y_sg, nrow=2)
 
 
 #cat("Orchiectomy or Ochidectomy") 
   #type
-cat(round((sum(module1$D_946504570==770550588, na.rm=T)/sum(module1$D_624179836_D_532603425==1, na.rm=T))*100, digits=2), "% Had One Testicle Removed")
-cat(round((sum(module1$D_946504570==970716952, na.rm=T)/sum(module1$D_624179836_D_532603425==1, na.rm=T))*100, digits=2), "% Had Both Testicles Removed")
-cat(round((sum(module1$D_946504570==535003378, na.rm=T)/sum(module1$D_624179836_D_532603425==1, na.rm=T))*100, digits=2), "% Had Neither of These Orchiectomy or Ochidectomy Types")
+cat(round((sum(screen$D_429157727==770550588, na.rm=T)/sum(screen$D_729984625_D_532603425==1, na.rm=T))*100, digits=2), "% Had One Testicle Removed")
+cat(round((sum(screen$D_429157727==970716952, na.rm=T)/sum(screen$D_729984625_D_532603425==1, na.rm=T))*100, digits=2), "% Had Both Testicles Removed")
+cat(round((sum(screen$D_429157727==535003378, na.rm=T)/sum(screen$D_729984625_D_532603425==1, na.rm=T))*100, digits=2), "% Had Neither of These Orchiectomy or Ochidectomy Types")
   #age/year
-orch_a_sg=boxp_funct(D_275770221_D_206625031,"Age at Orchiectomy Surgery","Age") 
-orch_y_sg=boxp_funct(D_275770221_D_261863326,"Year of Orchiectomy Surgery","Year")
+orch_a_sg=boxp_funct(D_314345103_D_623218391,"Age at Orchiectomy Surgery","Age") 
+orch_y_sg=boxp_funct(D_314345103_D_802622485,"Year of Orchiectomy Surgery","Year")
 grid.arrange(orch_a_sg, orch_y_sg, nrow=2)
 
 
 #cat("Prostatectomy") 
   #type
-cat(round((sum(module1$D_107060069==524029283, na.rm=T)/sum(module1$D_624179836_D_733236542==1, na.rm=T))*100, digits=2), "% Had Part of Prostate Removed")
-cat(round((sum(module1$D_107060069==500023550, na.rm=T)/sum(module1$D_624179836_D_733236542==1, na.rm=T))*100, digits=2), "% Had Whole Prostate Removed")
-cat(round((sum(module1$D_107060069==535003378, na.rm=T)/sum(module1$D_624179836_D_733236542==1, na.rm=T))*100, digits=2), "% Had Neither of These Prostatectomy Types")
+cat(round((sum(screen$D_292314539==524029283, na.rm=T)/sum(screen$D_729984625_D_733236542==1, na.rm=T))*100, digits=2), "% Had Part of Prostate Removed")
+cat(round((sum(screen$D_292314539==500023550, na.rm=T)/sum(screen$D_729984625_D_733236542==1, na.rm=T))*100, digits=2), "% Had Whole Prostate Removed")
+cat(round((sum(screen$D_292314539==535003378, na.rm=T)/sum(screen$D_729984625_D_733236542==1, na.rm=T))*100, digits=2), "% Had Neither of These Prostatectomy Types")
   #age/year
-prost_a_sg=boxp_funct(D_882152987_D_206625031,"Age at Prostatectomy Surgery","Age") 
-prost_y_sg=boxp_funct(D_882152987_D_261863326,"Year of Tubal Prostatectomy Surgery","Year") 
+prost_a_sg=boxp_funct(D_343990595_D_623218391,"Age at Prostatectomy Surgery","Age") 
+prost_y_sg=boxp_funct(D_343990595_D_802622485,"Year of Tubal Prostatectomy Surgery","Year") 
 grid.arrange(prost_a_sg, prost_y_sg, nrow=2)
 
 
 #	Penis removed (penectomy) 
-penis_a_sg=boxp_funct(D_527057404_D_206625031,"Age at Tubal Penectomy Surgery","Age") 
-penis_y_sg=boxp_funct(D_527057404_D_261863326,"Year of Tubal Penectomy Surgery","Year")
+penis_a_sg=boxp_funct(D_203366781_D_623218391,"Age at Tubal Penectomy Surgery","Age") 
+penis_y_sg=boxp_funct(D_203366781_D_802622485,"Year of Tubal Penectomy Surgery","Year")
 grid.arrange(penis_a_sg, penis_y_sg, nrow=2)
+
+
+```
+
+
+\newpage
+# Oral Cancer Screening
+
+```{r ORSCREEN, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+#ORSCREEN
+screen$D_802157786 <- factor(screen$D_802157786, levels=c(353358909, 104430631, 178420302, "Skipped this Question"))
+simple_funct(D_802157786, "Ever Screened for Oral Cancer")
+
+#ORSCREEN1
+screen$D_852697610 <- factor(screen$D_852697610, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_852697610, D_802157786, "353358909", "Timeframe of First Oral Cancer Screening")
+
+#ORSCREEN2
+screen$D_860253133 <- factor(screen$D_860253133, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_860253133, D_802157786, "353358909", "Number of Oral Cancer Screenings")
+
+#ORSCREEN3
+screen$D_682440005 <- factor(screen$D_682440005, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_682440005, D_860253133, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last Oral Cancer Screening")
+
+#ORSCREEN4
+screen$D_339142996 <- factor(screen$D_339142996, levels=c(353358909, 104430631, 178420302, "Skipped this Question"))
+one_logic_funct(D_339142996, D_802157786, "353358909", "Oral Biospy Completed")
+
+#ORSCREEN5
+screen$D_375662706 <- factor(screen$D_375662706, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_375662706, D_339142996, "353358909", "Timeframe of First Oral Cancer Biospy")
+
+#ORSCREEN6
+screen$D_859197222 <- factor(screen$D_859197222, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_859197222, D_339142996, "353358909", "Number of Oral Cancer Biospies")
+
+#ORSCREEN7
+screen$D_529358901 <- factor(screen$D_529358901, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_529358901, D_859197222, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last Oral Cancer Biopsy")
+
+```
+
+
+\newpage
+# Colon and Rectal Cancer Screening
+
+```{r COLREC, warning=FALSE, echo=FALSE, message=FALSE}
+
+#COLSCREEN
+col_grid= screen  %>% 
+  mutate(
+    `Colonoscopy` = if_else(D_365148290_D_203210013 == 1, 1, 0),
+    `CT Colonoscopy` = if_else(D_365148290_D_219088015 == 1, 1, 0),
+    `Sigmoidoscopy` = if_else(D_365148290_D_283265038 == 1, 1, 0),
+    `Proctoscopy` = if_else(D_365148290_D_691148901 == 1, 1, 0),
+    `Stool (Fecal) Test` = if_else(D_365148290_D_928432579 == 1, 1, 0),
+    None = if_else(D_365148290_D_535003378 == 1, 1, 0),
+    Skipped = if_else(rowSums(select(., starts_with("D_365148290_")) == 0 | is.na(select(., starts_with("D_365148290_")))) == ncol(select(., starts_with("D_365148290_"))), 1, 0)
+  )
+
+
+pivot_col <- col_grid %>%
+  select(`Colonoscopy`:Skipped) %>%
+  pivot_longer(cols = everything(), names_to = "Procedures", values_to = "Selected") %>%
+  filter(Selected == 1) %>%
+  group_by(Procedures) %>%
+  summarise(Frequency = n()) %>%
+  ungroup() %>%
+  mutate(Percentage = 100 * Frequency / sum(Frequency)) %>% 
+  arrange(desc(Frequency))
+
+pivot_col %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>% 
+  fmt_number(column = "Frequency", decimals=0, use_seps = TRUE) %>%
+  tab_header(title = md("Tests or Procedures for Colorectal Cancer")) %>%
+  cols_label(Frequency = md("**N**"), 
+             Percentage = md("**%**"), 
+             Procedures = md("**Answer**")) %>%
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Procedures)
+  ) 
+
+
+### Colonoscopy
+
+#COL1
+screen$D_988661374 <- factor(screen$D_988661374, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_988661374, D_365148290_D_203210013, "1", "Timeframe of First Colonoscopy")
+
+#COL2
+screen$D_619830872 <- factor(screen$D_619830872, levels=c(236949684, 506053626, 462661976, 178420302, "Skipped this Question"))
+one_logic_funct(D_619830872, D_365148290_D_203210013, "1", "Number of Colonoscopies")
+
+#COL3
+screen$D_226488112 <- factor(screen$D_226488112, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+three_logic_funct(D_226488112, D_619830872, "506053626","462661976","178420302", "Timeframe of Last Colonoscopy")
+
+
+
+### CT Colonoscopy
+
+#CTCOL1
+screen$D_884856351 <- factor(screen$D_884856351, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_884856351, D_365148290_D_219088015, "1", "Timeframe of First CT Colonoscopy")
+
+#CTCOL2
+screen$D_900561740 <- factor(screen$D_900561740, levels=c(236949684, 506053626, 462661976, 178420302, "Skipped this Question"))
+one_logic_funct(D_900561740, D_365148290_D_219088015, "1", "Number of CT Colonoscopies")
+
+#CTCOL3
+screen$D_729390410 <- factor(screen$D_729390410, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+three_logic_funct(D_729390410, D_900561740, "506053626","462661976","178420302", "Timeframe of Last CT Colonoscopy")
+
+
+
+
+### Sigmoidoscopy
+
+#SIG1
+screen$D_869938650 <- factor(screen$D_869938650, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_869938650, D_365148290_D_283265038, "1", "Timeframe of First Sigmoidoscopy")
+
+#SIG2
+screen$D_541338917 <- factor(screen$D_541338917, levels=c(236949684, 506053626, 462661976, 178420302, "Skipped this Question"))
+one_logic_funct(D_541338917, D_365148290_D_283265038, "1", "Number of Sigmoidoscopies")
+
+#SIG3
+screen$D_833553697 <- factor(screen$D_833553697, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+three_logic_funct(D_833553697, D_541338917, "506053626","462661976","178420302", "Timeframe of Last Sigmoidoscopy")
+
+
+
+
+### Proctoscopy
+
+#PROCT1
+screen$D_689280509 <- factor(screen$D_689280509, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_689280509, D_365148290_D_691148901, "1", "Timeframe of First Proctoscopy")
+
+#PROCT2
+screen$D_108417657 <- factor(screen$D_108417657, levels=c(236949684, 506053626, 462661976, 178420302, "Skipped this Question"))
+one_logic_funct(D_108417657, D_365148290_D_691148901, "1", "Number of Proctoscopies")
+
+#PROCT3
+screen$D_822995885 <- factor(screen$D_822995885, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+three_logic_funct(D_822995885, D_108417657, "506053626","462661976","178420302", "Timeframe of Last Proctoscopy")
+
+
+
+
+### Stool (fecal) test
+
+#STOOL1
+screen$D_677043723 <- factor(screen$D_677043723, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_677043723, D_365148290_D_928432579, "1", "Timeframe of First Fecal Test")
+
+#STOOL2
+screen$D_960218176 <- factor(screen$D_960218176, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_960218176, D_365148290_D_928432579, "1", "Number of Fecal Tests")
+
+#STOOL3
+screen$D_806961194 <- factor(screen$D_806961194, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_806961194, D_960218176, "506053626","119809731"," 282580702", "934779560","178420302", "Timeframe of Last Fecal Test")
+
+```
+
+
+
+\newpage
+# Anal Cancer Screening
+
+```{r ANALSCREEN, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+#ANALSCREEN
+screen$D_129025755 <- factor(screen$D_129025755, levels=c(353358909, 104430631, 178420302, "Skipped this Question"))
+simple_funct(D_129025755, "Ever Screened for Anal Cancer")
+
+#ANALSCREEN1
+screen$D_702922820 <- factor(screen$D_702922820, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_702922820, D_129025755, "353358909", "Timeframe of First Anal Cancer Screening")
+
+#ANALSCREEN2
+screen$D_236655642 <- factor(screen$D_236655642, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_236655642, D_129025755, "353358909", "Number of Anal Cancer Screenings")
+
+#ANALSCREEN3
+screen$D_581174597 <- factor(screen$D_581174597, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_581174597, D_236655642, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last Anal Cancer Screening")
+
+```
+
+
+
+\newpage
+# Lung Cancer Screening
+
+```{r LUNGCT, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+#LUNGCT
+screen$D_524918714 <- factor(screen$D_524918714, levels=c(353358909, 104430631, 178420302, "Skipped this Question"))
+simple_funct(D_524918714, "Ever Screened for Lung Cancer")
+
+#LUNGCT1
+screen$D_584375130 <- factor(screen$D_584375130, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_584375130, D_524918714, "353358909", "Timeframe of First Lung Cancer Screening")
+
+#LUNGCT2
+screen$D_221189280 <- factor(screen$D_221189280, levels=c(236949684, 506053626, 462661976,  178420302, "Skipped this Question"))
+one_logic_funct(D_221189280, D_524918714, "353358909", "Number of Lung Cancer Screenings")
+
+#LUNGCT3
+screen$D_737402324 <- factor(screen$D_737402324, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+three_logic_funct(D_737402324, D_221189280, "506053626","462661976","178420302", "Timeframe of Last Lung Cancer Screening")
+
+```
+
+
+
+\newpage
+# Skin Cancer Screening
+
+```{r SkinSCREEN, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+#SkinSCREEN
+screen$D_552399966 <- factor(screen$D_552399966, levels=c(353358909, 104430631, 178420302, "Skipped this Question"))
+simple_funct(D_552399966, "Ever Screened for Skin Cancer")
+
+#SkinSCREEN1
+skscr1= screen  %>% filter(D_552399966==353358909) %>%  
+  mutate(
+    `Spot Screen` = if_else(D_124071431_D_160709137 == 1, 1, 0),
+    `Part Screen` = if_else(D_124071431_D_547567441 == 1, 1, 0),
+    `Full Screen` = if_else(D_124071431_D_956827502 == 1, 1, 0),
+    Unknown = if_else(D_124071431_D_178420302 == 1, 1, 0),
+    Skipped = if_else(rowSums(select(., starts_with("D_124071431_")) == 0 ) == ncol(select(., starts_with("D_124071431_"))), 1, 0)
+  )
+
+
+pivot_skin <- skscr1 %>%
+  select(`Spot Screen`:Skipped) %>%
+  pivot_longer(cols = everything(), names_to = "Surgery", values_to = "Selected") %>%
+  filter(Selected == 1) %>%
+  group_by(Surgery) %>%
+  summarise(Frequency = n()) %>%
+  ungroup() %>%
+  mutate(Percentage = 100 * Frequency / sum(Frequency)) %>% 
+  arrange(desc(Frequency))
+
+pivot_skin %>%
+  gt() %>%
+  fmt_number(columns = "Percentage", decimals = 2) %>% 
+  fmt_number(column = "Frequency", decimals=0, use_seps = TRUE) %>%
+  tab_header(title = md("Portion of Skin Screened")) %>%
+  cols_label(Frequency = md("**N**"), 
+             Percentage = md("**%**"), 
+             Surgery = md("**Answer**")) %>%
+  tab_options(stub.font.weight = "bold") %>%
+  tab_style(
+    style = list(cell_text(weight = "bold")),
+    locations = cells_body(columns = Surgery)
+  )
+
+
+
+#SkinSCREEN2
+screen$D_113343940 <- factor(screen$D_113343940, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_113343940, D_124071431_D_956827502, "1", "Timeframe of Full Body Skin Examination")
+
+#SkinSCREEN3
+screen$D_925516907 <- factor(screen$D_925516907, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_925516907, D_124071431_D_956827502, "1", "Number of Full Body Skin Examinations")
+
+#SkinSCREEN4
+screen$D_506482920 <- factor(screen$D_506482920, levels=c(506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+five_logic_funct(D_506482920, D_925516907, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last Skin Cancer Screening")
+
+```
+
+
+
+\newpage
+# Upper Endoscopy Screening
+
+```{r UPENDO, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+#UPENDO
+screen$D_991871399 <- factor(screen$D_991871399, levels=c(353358909, 104430631, 178420302, "Skipped this Question"))
+simple_funct(D_991871399, "Ever Had an Upper Endoscopy")
+
+#UPENDO1
+screen$D_761831751 <- factor(screen$D_761831751, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_761831751, D_991871399, "353358909", "Timeframe of First Upper Endoscopy")
+
+#UPENDO2
+screen$D_588828383 <- factor(screen$D_588828383, levels=c(236949684, 506053626, 462661976, 178420302, "Skipped this Question"))
+one_logic_funct(D_588828383, D_991871399, "353358909", "Number of Upper Endoscopies")
+
+#UPENDO3
+screen$D_485867936 <- factor(screen$D_485867936, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+three_logic_funct(D_485867936, D_588828383, "506053626","462661976","178420302", "Timeframe of Last Upper Endoscopy")
+
+```
+
+
+
+\newpage
+# Prostate Cancer Screening
+
+```{r PROSCREEN, warning=FALSE, echo=FALSE, message=FALSE}
+
+##PROSCREEN
+prost_grid= screen  %>% filter(D_890391968_D_700100953 == 1) %>% 
+mutate(
+    `Rectal Exam` = if_else(D_465056475_D_312250694 == 1, 1, 0),
+    `PSA Blood Test` = if_else(D_465056475_D_255054078 == 1, 1, 0),
+    `Prostate Biopsy` = if_else(D_465056475_D_492921091 == 1, 1, 0),
+    None = if_else(D_465056475_D_535003378 == 1, 1, 0),
+    Skipped = if_else(rowSums(select(., starts_with("D_465056475_")) == 0 | is.na(select(., starts_with("D_465056475_")))) == ncol(select(., starts_with("D_465056475_"))), 1, 0)
+)
+
+
+pivot_prost <- prost_grid %>%
+    select(`Rectal Exam`:Skipped) %>%
+    pivot_longer(cols = everything(), names_to = "Procedures", values_to = "Selected") %>%
+    filter(Selected == 1) %>%
+    group_by(Procedures) %>%
+    summarise(Frequency = n()) %>%
+    ungroup() %>%
+    mutate(Percentage = 100 * Frequency / sum(Frequency)) %>% 
+  arrange(desc(Frequency))
+
+pivot_prost %>%
+    gt() %>%
+    fmt_number(columns = "Percentage", decimals = 2) %>% 
+    fmt_number(column = "Frequency", decimals=0, use_seps = TRUE) %>%
+    tab_header(title = md("Tests or Procedures for Prostate Cancer")) %>%
+    cols_label(Frequency = md("**N**"), 
+               Percentage = md("**%**"), 
+               Procedures = md("**Answer**")) %>%
+    tab_options(stub.font.weight = "bold") %>%
+    tab_style(
+        style = list(cell_text(weight = "bold")),
+        locations = cells_body(columns = Procedures)
+    ) 
+
+
+### Rectal Exam
+
+#RECTEX1
+screen$D_718137053 <- factor(screen$D_718137053, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_718137053, D_465056475_D_312250694, "1", "Timeframe of First Rectal Exam of Prostate")
+
+#RECTEX2
+screen$D_199704727 <- factor(screen$D_199704727, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_199704727, D_465056475_D_312250694, "1", "Number of Rectal Exams")
+
+#RECTEX3
+screen$D_621714179 <- factor(screen$D_621714179, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_621714179, D_199704727, "506053626","119809731", "282580702", "934779560","178420302", "Timeframe of Last Rectal Exam of Prostate")
+
+
+
+### PSA Blood Test
+
+#PSA1
+screen$D_772645761 <- factor(screen$D_772645761, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_772645761, D_465056475_D_255054078, "1", "Timeframe of First PSA Blood Test")
+
+#PSA2
+screen$D_650508014 <- factor(screen$D_650508014, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_650508014, D_465056475_D_255054078, "1", "Number of PSA Blood Tests")
+
+#PSA3
+screen$D_903059223 <- factor(screen$D_903059223, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_903059223, D_650508014, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last PSA Blood Test")
+
+
+
+
+### Sigmoidoscopy
+
+#PROBIOP1
+screen$D_214352460 <- factor(screen$D_214352460, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_214352460, D_465056475_D_492921091, "1", "Timeframe of First Sigmoidoscopy")
+
+#PROBIOP2
+screen$D_770939852 <- factor(screen$D_770939852, levels=c(236949684, 506053626, 462661976, 178420302, "Skipped this Question"))
+one_logic_funct(D_770939852, D_465056475_D_492921091, "1", "Number of Sigmoidoscopies")
+
+#PROBIOP3
+screen$D_423202492 <- factor(screen$D_423202492, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+three_logic_funct(D_423202492, D_770939852, "506053626","462661976","178420302", "Timeframe of Last Sigmoidoscopy")
+
+
+
+```
+
+
+
+
+\newpage
+# Breast Cancer Screening
+
+```{r BRSTSCREEN, warning=FALSE, echo=FALSE, message=FALSE}
+
+##BRSTSCREEN
+br_scr_grid= screen  %>% filter(D_413039729==145235510 | D_413039729==801218076) %>% 
+mutate(
+    `Mammogram` = if_else(D_961267001_D_577887061 == 1, 1, 0),
+    `Breast MRI` = if_else(D_961267001_D_419571068 == 1, 1, 0),
+    `Breast Ultrasound` = if_else(D_961267001_D_726183532 == 1, 1, 0),
+    `Breast Biopsy` = if_else(D_961267001_D_898042848 == 1, 1, 0),
+    None = if_else(D_961267001_D_535003378 == 1, 1, 0),
+    Skipped = if_else(rowSums(select(., starts_with("D_961267001_")) == 0 | is.na(select(., starts_with("D_961267001_")))) == ncol(select(., starts_with("D_961267001_"))), 1, 0)
+)
+
+
+pivot_br_scr <- br_scr_grid %>%
+    select(`Mammogram`:Skipped) %>%
+    pivot_longer(cols = everything(), names_to = "Procedures", values_to = "Selected") %>%
+    filter(Selected == 1) %>%
+    group_by(Procedures) %>%
+    summarise(Frequency = n()) %>%
+    ungroup() %>%
+    mutate(Percentage = 100 * Frequency / sum(Frequency)) %>% 
+  arrange(desc(Frequency))
+
+pivot_br_scr %>%
+    gt() %>%
+    fmt_number(columns = "Percentage", decimals = 2) %>% 
+    fmt_number(column = "Frequency", decimals=0, use_seps = TRUE) %>%
+    tab_header(title = md("Tests or Procedures for Breast Cancer")) %>%
+    cols_label(Frequency = md("**N**"), 
+               Percentage = md("**%**"), 
+               Procedures = md("**Answer**")) %>%
+    tab_options(stub.font.weight = "bold") %>%
+    tab_style(
+        style = list(cell_text(weight = "bold")),
+        locations = cells_body(columns = Procedures)
+    ) 
+
+
+### Mammogram
+
+#MAMMO1
+screen$D_745742553 <- factor(screen$D_745742553, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_745742553, D_961267001_D_577887061, "1", "Timeframe of First Mammogram")
+
+#MAMMO2
+screen$D_111580947 <- factor(screen$D_111580947, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_111580947, D_961267001_D_577887061, "1", "Number of Mammograms")
+
+#MAMMO3
+screen$D_709088568 <- factor(screen$D_709088568, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_709088568, D_111580947, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last Mammogram")
+
+#MAMMO4
+five_logic_funct(D_372457715, D_111580947, "506053626","119809731","282580702","934779560","178420302", "Type at Last Mammogram")
+
+
+
+### Breast MRI
+
+#BRSTMRI1
+screen$D_315184598 <- factor(screen$D_315184598, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_315184598, D_961267001_D_419571068, "1", "Timeframe of First Breast MRI")
+
+#BRSTMRI2
+screen$D_560107274 <- factor(screen$D_560107274, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_560107274, D_961267001_D_419571068, "1", "Number of Breast MRIs")
+
+#BRSTMRI3
+screen$D_569358384 <- factor(screen$D_569358384, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_569358384, D_560107274, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last Breast MRI")
+
+
+
+### Breast Ultrasound
+
+#BRSTULTRA1
+screen$D_305769587 <- factor(screen$D_305769587, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_305769587, D_961267001_D_726183532, "1", "Timeframe of First Breast Ultrasound")
+
+#BRSTULTRA2
+screen$D_434993234 <- factor(screen$D_434993234, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_434993234, D_961267001_D_726183532, "1", "Number of Breast Ultrasounds")
+
+#BRSTULTRA3
+screen$D_846067697 <- factor(screen$D_846067697, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_846067697, D_434993234, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last Breast Ultrasound")
+
+
+
+
+
+### Breast Biopsy
+
+#BRSTBIOP1
+screen$D_861488320 <- factor(screen$D_861488320, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_861488320, D_961267001_D_898042848, "1", "Timeframe of First Breast Biopsy")
+
+#BRSTBIOP2
+screen$D_891793989 <- factor(screen$D_891793989, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_891793989, D_961267001_D_898042848, "1", "Number of Breast Biopsies")
+
+#BRSTBIOP3
+screen$D_811848389 <- factor(screen$D_811848389, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_811848389, D_891793989, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last Breast Biopsy")
+
+
+
+```
+
+
+
+
+\newpage
+# Ovarian Cancer Screening
+
+```{r OVSCREEN, warning=FALSE, echo=FALSE, message=FALSE}
+
+##OVSCREEN
+OV_grid= screen  %>% filter(D_890391968_D_434651539==1) %>% 
+mutate(
+    `Blood Test` = if_else(D_957875649_D_903156464 == 1, 1, 0),
+    `Transvaginal Ultrasound` = if_else(D_957875649_D_474921307 == 1, 1, 0),
+    None = if_else(D_957875649_D_535003378 == 1, 1, 0),
+    Skipped = if_else(rowSums(select(., starts_with("D_957875649_")) == 0 | is.na(select(., starts_with("D_957875649_")))) == ncol(select(., starts_with("D_957875649_"))), 1, 0)
+)
+
+
+pivot_OV <- OV_grid %>%
+    select(`Blood Test`:Skipped) %>%
+    pivot_longer(cols = everything(), names_to = "Procedures", values_to = "Selected") %>%
+    filter(Selected == 1) %>%
+    group_by(Procedures) %>%
+    summarise(Frequency = n()) %>%
+    ungroup() %>%
+    mutate(Percentage = 100 * Frequency / sum(Frequency)) %>% 
+  arrange(desc(Frequency))
+
+pivot_OV %>%
+    gt() %>%
+    fmt_number(columns = "Percentage", decimals = 2) %>% 
+    fmt_number(column = "Frequency", decimals=0, use_seps = TRUE) %>%
+    tab_header(title = md("Tests or Procedures for Ovarian Cancer")) %>%
+    cols_label(Frequency = md("**N**"), 
+               Percentage = md("**%**"), 
+               Procedures = md("**Answer**")) %>%
+    tab_options(stub.font.weight = "bold") %>%
+    tab_style(
+        style = list(cell_text(weight = "bold")),
+        locations = cells_body(columns = Procedures)
+    ) 
+
+
+### Blood Test
+
+#BLDOV1
+screen$D_406370140 <- factor(screen$D_406370140, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_406370140, D_957875649_D_903156464, "1", "Timeframe of First Blood Test")
+
+#BLDOV2
+screen$D_951078002 <- factor(screen$D_951078002, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_951078002, D_957875649_D_903156464, "1", "Number of Blood Tests")
+
+#BLDOV3
+screen$D_631089527 <- factor(screen$D_631089527, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_631089527, D_951078002, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last Blood Test")
+
+
+
+
+### Transvaginal Ultrasound
+
+#OTVULTRA1
+screen$D_475018570 <- factor(screen$D_475018570, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_475018570, D_957875649_D_474921307, "1", "Timeframe of First Transvaginal Ultrasound")
+
+#OTVULTRA2
+screen$D_227617345 <- factor(screen$D_227617345, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_227617345, D_957875649_D_474921307, "1", "Number of Transvaginal Ultrasounds")
+
+#OTVULTRA3
+screen$D_274709835 <- factor(screen$D_274709835, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_274709835, D_227617345, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last Transvaginal Ultrasound")
+
 
 
 ```
@@ -740,5 +1312,295 @@ grid.arrange(penis_a_sg, penis_y_sg, nrow=2)
 
 
 
+
+\newpage
+# Cervical Cancer Screening
+
+```{r CERVSCREEN, warning=FALSE, echo=FALSE, message=FALSE}
+
+##CERVSCREEN
+CERV_grid= screen  %>% filter(D_890391968_D_505282171==1) %>%
+mutate(
+    `HrHPV Test` = if_else(D_229764995_D_405616098 == 1, 1, 0),
+    `Pap Test` = if_else(D_229764995_D_646114392 == 1, 1, 0),
+    `Unknown Test` = if_else(D_229764995_D_673135412 == 1, 1, 0),
+    None = if_else(D_229764995_D_535003378 == 1, 1, 0),
+    Skipped = if_else(rowSums(select(., starts_with("D_229764995_")) == 0 | is.na(select(., starts_with("D_229764995_")))) == ncol(select(., starts_with("D_229764995_"))), 1, 0)
+)
+
+
+pivot_CERV <- CERV_grid %>%
+    select(`HrHPV Test`:Skipped) %>%
+    pivot_longer(cols = everything(), names_to = "Procedures", values_to = "Selected") %>%
+    filter(Selected == 1) %>%
+    group_by(Procedures) %>%
+    summarise(Frequency = n()) %>%
+    ungroup() %>%
+    mutate(Percentage = 100 * Frequency / sum(Frequency)) %>% 
+  arrange(desc(Frequency))
+
+pivot_CERV %>%
+    gt() %>%
+    fmt_number(columns = "Percentage", decimals = 2) %>% 
+    fmt_number(column = "Frequency", decimals=0, use_seps = TRUE) %>%
+    tab_header(title = md("Tests or Procedures for Ovarian Cancer")) %>%
+    cols_label(Frequency = md("**N**"), 
+               Percentage = md("**%**"), 
+               Procedures = md("**Answer**")) %>%
+    tab_options(stub.font.weight = "bold") %>%
+    tab_style(
+        style = list(cell_text(weight = "bold")),
+        locations = cells_body(columns = Procedures)
+    ) 
+
+
+### HrHPV Test
+
+#CHRHPV1
+screen$D_934385625 <- factor(screen$D_934385625, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_934385625, D_229764995_D_405616098, "1", "Timeframe of First HrHPV Test")
+
+#CHRHPV2
+screen$D_393386163 <- factor(screen$D_393386163, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_393386163, D_229764995_D_405616098, "1", "Number of HrHPV Tests")
+
+#CHRHPV3
+screen$D_856699079 <- factor(screen$D_856699079, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_856699079, D_393386163, "506053626","119809731", "282580702", "934779560","178420302", "Timeframe of Last HrHPV Test")
+
+
+
+
+### Pap Test
+
+#CPAP1
+screen$D_723960145 <- factor(screen$D_723960145, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_723960145, D_229764995_D_646114392, "1", "Timeframe of First Pap Test")
+
+#CPAP2
+screen$D_353889236 <- factor(screen$D_353889236, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_353889236, D_229764995_D_646114392, "1", "Number of Pap Tests")
+
+#CPAP3
+screen$D_242001363 <- factor(screen$D_242001363, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_242001363, D_353889236, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last Pap Test")
+
+
+
+
+### Unknown Test
+
+#CERVIDK1
+screen$D_623413449 <- factor(screen$D_623413449, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_623413449, D_229764995_D_673135412, "1", "Timeframe of First Unknown Test")
+
+#CERVIDK2
+screen$D_153215425 <- factor(screen$D_153215425, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_153215425, D_229764995_D_673135412, "1", "Number of Unknown Tests")
+
+#CERVIDK3
+screen$D_115504049 <- factor(screen$D_115504049, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_115504049, D_153215425, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last Unknown Test")
+
+
+
+```
+
+
+
+
+
+\newpage
+# Endometrial Cancer Screening
+
+```{r ENDOSCREEN, warning=FALSE, echo=FALSE, message=FALSE}
+
+##ENDOSCREEN
+ENDO_grid= screen  %>% filter(D_890391968_D_578416151==1) %>%
+mutate(
+    `Transvaginal Ultrasound` = if_else(D_356470898_D_687879041 == 1, 1, 0),
+    `Hysteroscopy` = if_else(D_356470898_D_531274737 == 1, 1, 0),
+    `Endometrial Biopsy` = if_else(D_356470898_D_650022485 == 1, 1, 0),
+    `Dilation and Curettage` = if_else(D_356470898_D_891052313 == 1, 1, 0),
+    None = if_else(D_356470898_D_535003378 == 1, 1, 0),
+    Skipped = if_else(rowSums(select(., starts_with("D_356470898_")) == 0 | is.na(select(., starts_with("D_356470898_")))) == ncol(select(., starts_with("D_356470898_"))), 1, 0)
+)
+
+
+pivot_ENDO <- ENDO_grid %>%
+    select(`Transvaginal Ultrasound`:Skipped) %>%
+    pivot_longer(cols = everything(), names_to = "Procedures", values_to = "Selected") %>%
+    filter(Selected == 1) %>%
+    group_by(Procedures) %>%
+    summarise(Frequency = n()) %>%
+    ungroup() %>%
+    mutate(Percentage = 100 * Frequency / sum(Frequency)) %>% 
+  arrange(desc(Frequency))
+
+pivot_ENDO %>%
+    gt() %>%
+    fmt_number(columns = "Percentage", decimals = 2) %>% 
+    fmt_number(column = "Frequency", decimals=0, use_seps = TRUE) %>%
+    tab_header(title = md("Tests or Procedures for Endometrial Cancer")) %>%
+    cols_label(Frequency = md("**N**"), 
+               Percentage = md("**%**"), 
+               Procedures = md("**Answer**")) %>%
+    tab_options(stub.font.weight = "bold") %>%
+    tab_style(
+        style = list(cell_text(weight = "bold")),
+        locations = cells_body(columns = Procedures)
+    ) 
+
+
+### Transvaginal Ultrasound
+
+#ETVULTRA1
+screen$D_947994136 <- factor(screen$D_947994136, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_947994136, D_356470898_D_687879041, "1", "Timeframe of First Transvaginal Ultrasound")
+
+#ETVULTRA2
+screen$D_898341670 <- factor(screen$D_898341670, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_898341670, D_356470898_D_687879041, "1", "Number of Transvaginal Ultrasounds")
+
+#ETVULTRA3
+screen$D_913107034 <- factor(screen$D_913107034, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_913107034, D_898341670, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last Transvaginal Ultrasound")
+
+
+
+
+### Hysteroscopy
+
+#HYSTERO1
+screen$D_655198446 <- factor(screen$D_655198446, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_655198446, D_356470898_D_531274737, "1", "Timeframe of First Hysteroscopy")
+
+#HYSTERO2
+screen$D_809308794 <- factor(screen$D_809308794, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_809308794, D_356470898_D_531274737, "1", "Number of Hysteroscopies")
+
+#HYSTERO3
+screen$D_766549014 <- factor(screen$D_766549014, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_766549014, D_809308794, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last Hysteroscopy")
+
+
+
+
+### Endometrial Biopsy
+
+#ENDOBIOP1
+screen$D_496588916 <- factor(screen$D_496588916, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_496588916, D_356470898_D_650022485, "1", "Timeframe of First Endometrial Biopsy")
+
+#ENDOBIOP2
+screen$D_104842019 <- factor(screen$D_104842019, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_104842019, D_356470898_D_650022485, "1", "Number of Endometrial Biopsies")
+
+#ENDOBIOP3
+screen$D_315199788 <- factor(screen$D_315199788, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_315199788, D_104842019, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last Endometrial Biopsy")
+
+
+
+
+### Dilation and Curettage
+
+#DILCUR1
+screen$D_249853484 <- factor(screen$D_249853484, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_249853484, D_356470898_D_891052313, "1", "Timeframe of First Dilation and Curettage")
+
+#DILCUR2
+screen$D_391300412 <- factor(screen$D_391300412, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_391300412, D_356470898_D_891052313, "1", "Number of Dilation and Curettages")
+
+#DILCUR3
+screen$D_808990505 <- factor(screen$D_808990505, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_808990505, D_391300412, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last Dilation and Curettage")
+
+
+
+
+```
+
+
+
+
+
+
+
+\newpage
+# Multi-Cancer Screening
+
+```{r MULTISCREEN, warning=FALSE, echo=FALSE, message=FALSE}
+
+##ENDOSCREEN
+MULTI_grid= screen  %>% 
+mutate(
+    `MCED Test` = if_else(D_219076879_D_875157431 == 1, 1, 0),
+    `Full body MRI or CT` = if_else(D_219076879_D_309925717 == 1, 1, 0),
+    None = if_else(D_219076879_D_535003378 == 1, 1, 0),
+    Skipped = if_else(rowSums(select(., starts_with("D_219076879_")) == 0 | is.na(select(., starts_with("D_219076879_")))) == ncol(select(., starts_with("D_219076879_"))), 1, 0)
+)
+
+
+pivot_MULTI <- MULTI_grid %>%
+    select(`MCED Test`:Skipped) %>%
+    pivot_longer(cols = everything(), names_to = "Procedures", values_to = "Selected") %>%
+    filter(Selected == 1) %>%
+    group_by(Procedures) %>%
+    summarise(Frequency = n()) %>%
+    ungroup() %>%
+    mutate(Percentage = 100 * Frequency / sum(Frequency)) %>% 
+  arrange(desc(Frequency))
+
+pivot_MULTI %>%
+    gt() %>%
+    fmt_number(columns = "Percentage", decimals = 2) %>% 
+    fmt_number(column = "Frequency", decimals=0, use_seps = TRUE) %>%
+    tab_header(title = md("Tests or Procedures for Multiple Cancer Types")) %>%
+    cols_label(Frequency = md("**N**"), 
+               Percentage = md("**%**"), 
+               Procedures = md("**Answer**")) %>%
+    tab_options(stub.font.weight = "bold") %>%
+    tab_style(
+        style = list(cell_text(weight = "bold")),
+        locations = cells_body(columns = Procedures)
+    ) 
+
+
+### MCED Test
+
+#MCED1
+screen$D_822790675 <- factor(screen$D_822790675, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_822790675, D_219076879_D_875157431, "1", "Timeframe of First MCED Test")
+
+#MCED2
+screen$D_459223565 <- factor(screen$D_459223565, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_459223565, D_219076879_D_875157431, "1", "Number of MCED Tests")
+
+#MCED3
+screen$D_397748152 <- factor(screen$D_397748152, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_397748152, D_459223565, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last MCED Test")
+
+
+
+
+### Full body MRI or CT
+
+#FBODMRI1
+screen$D_553034408 <- factor(screen$D_553034408, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+one_logic_funct(D_553034408, D_219076879_D_309925717, "1", "Timeframe of First Full body MRI or CT")
+
+#FBODMRI2
+screen$D_698242759 <- factor(screen$D_698242759, levels=c(236949684, 506053626, 119809731, 282580702, 934779560, 178420302, "Skipped this Question"))
+one_logic_funct(D_698242759, D_219076879_D_309925717, "1", "Number of Full body MRI or CT Scans")
+
+#FBODMRI3
+screen$D_695772621 <- factor(screen$D_695772621, levels=c(461386928, 729845236, 669023414, 786431761, 640520411, 178420302, "Skipped this Question"))
+five_logic_funct(D_695772621, D_698242759, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last Full body MRI or CT")
+
+
+
+```
 
 
