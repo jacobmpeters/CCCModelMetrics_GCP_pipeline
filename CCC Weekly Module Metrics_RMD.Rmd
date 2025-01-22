@@ -1590,7 +1590,9 @@ knitr::kable(BL_CES_table,
 
 \newpage
 \FloatBarrier
+
 # Cancer Screening History Survey
+
 
 ```{r CSH, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
@@ -1613,6 +1615,7 @@ CSH_comp <- CSH_comp %>%
   #bold_labels() %>%
   #italicize_levels() %>% 
   modify_header(stat_0 = "Total CSH Eligible \n Participants") %>%
+
   modify_caption("Table 5.1. Completion of Cancer Screening History Survey Among Eligible Participants") %>%
   as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
 
