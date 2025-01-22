@@ -69,7 +69,7 @@ bq_auth()
 
 
 ```{r BQPull, include=FALSE}
-knitr::opts_chunk$set(dev = "png", fig.path = "", comment = NA)
+knitr::opts_chunk$set(dev = "png",  comment = NA)
 
 #knitr::opts_chunk$set(comment = NA)
 
