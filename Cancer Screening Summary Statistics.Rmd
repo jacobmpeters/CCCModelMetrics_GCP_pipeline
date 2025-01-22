@@ -2,7 +2,22 @@
 title: "Cancer Screening Summary Statistics"
 author: "Kelsey Sanchez"
 date: "`r Sys.Date()`"
-output: pdf_document
+header-includes: 
+  \usepackage[labelformat=empty]{caption} 
+  \usepackage{placeins} 
+  \usepackage{booktabs}
+  \usepackage{pdflscape}
+  
+output:
+  pdf_document:
+    latex_engine: xelatex
+    extra_dependencies: ["float"]
+    toc: yes
+    keep_tex: yes
+    fig_width: 7
+    fig_height: 5
+    fig_caption: yes
+    df_print: paged
 ---
 
 
@@ -91,8 +106,12 @@ dict <- list("353358909"="Yes", "104430631"="No",  "178420302"="Do not Know",
              "282580702"="6 to 10 times",
              "934779560"="Over 10 time",
              "441766026"="2D Mammogram/Conventional Digital Mammography", "510907305"="3D Mammogram/Digital Breast Tomosynthesis",
-             "113771607" = "Surgery to Remove One Kidney",
-             "668256654" = "Surgery to Remove Both Kidneys", 
+             "113771607" = "Surgery to Remove One Kidney","668256654" = "Surgery to Remove Both Kidneys", 
+             "308633554"="Both Breasts Removed During One Surgery", "967156738"="Both Breasts Removed, Each During a Separate Surgery",
+             "333647143"= "One Ovary Removed",'109972911'="Both Ovaries Removed",
+             "448068764"="One Fallopian Tube Removed","537173119"="Both Fallopian Tubes Removed",
+             "770550588"="One Testicle Removed","970716952"="Both Testicles Removed",
+             "524029283"="Part of Prostate Removed","500023550"="Whole Prostate Removed",
              "535003378"="None of the Above")
 
 
@@ -275,7 +294,7 @@ boxp_funct <- function(CID,Title, Xlab) {
 
 ```
 
-
+\newpage
 
 ```{r Sex, warning=FALSE, echo=FALSE, message=FALSE}
 
@@ -340,8 +359,6 @@ simple_funct(D_413039729, "Had Breasts or Breast Tissue Growth")
 # MH GROUP9
 ```{r MhGroup9, warning=FALSE, echo=FALSE, message=FALSE}
 
-
-knitr::opts_chunk$set(dev = "png", fig.path = "")
 
 
 mhgroup9 <- screen %>%
@@ -428,15 +445,14 @@ grid.arrange(spln_a_sg, spln_y_sg, nrow=2)
 thyr_a_sg=boxp_funct(D_976626196_D_623218391,"Age at Thyroidectomy Surgery","Age") 
 thyr_y_sg=boxp_funct(D_976626196_D_802622485,"Year of Thyroidectomy Surgery","Year")
 grid.arrange(thyr_a_sg, thyr_y_sg, nrow=2)
-
-
+```
+\FloatBarrier
+\newpage
+```{r MHGroup9Diagn2, warning=FALSE, echo=FALSE, message=FALSE}
 #	Kidney(s) removed (nephrectomy)
 neph_a_sg=boxp_funct(D_998519118_D_623218391,"Age at Nephrectomy Surgery","Age") 
 neph_y_sg=boxp_funct(D_998519118_D_802622485,"Year of Nephrectomy Surgery","Year")
-#neph_type <- one_logic_funct(D_951847507, D_729984625_D_215525943, 1, "Type of Kidney Removal Surgery")
-cat(round((sum(screen$D_951847507==113771607, na.rm=T)/sum(screen$D_729984625_D_215525943==1, na.rm=T))*100, digits=2), "% Had Surgery to Remove One Kidney")
-cat(round((sum(screen$D_951847507==668256654, na.rm=T)/sum(screen$D_729984625_D_215525943==1, na.rm=T))*100, digits=2), "% Had Surgery to Remove Both Kidneys")
-cat(round((sum(screen$D_951847507==535003378, na.rm=T)/sum(screen$D_729984625_D_215525943==1, na.rm=T))*100, digits=2), "% Had Neither of These Nephrectomy Types")
+one_logic_funct(D_951847507, D_729984625_D_215525943, 1, "Type of Kidney Removal Surgery")
 grid.arrange(neph_a_sg, neph_y_sg, nrow=2)
 
 
@@ -540,13 +556,14 @@ grid.arrange(prtms_a_sg, prtms_y_sg, nrow=2)
 mastec_a_sg=boxp_funct(D_758881441_D_623218391,"Age at Mastectomy Surgery","Age") 
 mastec_y_sg=boxp_funct(D_758881441_D_802622485,"Year of Mastectomy Surgery","Year") 
 grid.arrange(mastec_a_sg, mastec_y_sg, nrow=2)
-
+```
+\FloatBarrier
+\newpage
+```{r BreastSurgYear2, warning=FALSE, echo=FALSE, message=FALSE}
 #BREASTSUR6A
-#screen$D_765772509 <- factor(screen$D_765772509, levels = c(308633554, 967156738, 535003378))
-#one_logic_funct(D_765772509, D_506456253_D_802859122, 1, "Type of Breast Removal Surgery")
-cat(round((sum(screen$D_765772509==308633554, na.rm=T)/sum(screen$D_506456253_D_802859122==1, na.rm=T))*100, digits=2), "% Had Both Breasts Removed During One Surgery")
-cat(round((sum(screen$D_765772509==967156738, na.rm=T)/sum(screen$D_506456253_D_802859122==1, na.rm=T))*100, digits=2), "% Had Both Breasta Removed, Each During a Separate Surgery")
-cat(round((sum(screen$D_765772509==535003378, na.rm=T)/sum(screen$D_506456253_D_802859122==1, na.rm=T))*100, digits=2), "% Had Neither of These Mastectomy Types")
+screen$D_765772509 <- factor(screen$D_765772509, levels = c(308633554, 967156738, 535003378))
+one_logic_funct(D_765772509, D_506456253_D_506456253_D_802859122, 1, "Type of Breast Removal Surgery")
+
 
 #cat("Double Mastectomy")
 dbmas_a_sg=boxp_funct(D_250353250_D_623218391,"Age at Double Mastectomy Surgery","Age")
@@ -568,73 +585,6 @@ othb_a_sg=boxp_funct(D_907385951_D_623218391,"Age at Other Breast Surgery","Age"
 othb_y_sg=boxp_funct(D_907385951_D_802622485,"Year of Other Breast Surgery","Year")
 grid.arrange(othb_a_sg, othb_y_sg, nrow=2)
 
-#cat("Hysterectomy") 
-hyst_a_sg=boxp_funct(D_350184001_D_623218391,"Age at Hysterectomy","Age") 
-hyst_y_sg=boxp_funct(D_350184001_D_802622485,"Year of Hysterectomy","Year")
-grid.arrange(hyst_a_sg, hyst_y_sg, nrow=2)
-
-
-#cat("Tubal Ligation")  
-tublig_a_sg=boxp_funct(D_522645663_D_623218391,"Age at Tubal Ligation Surgery","Age") 
-tublig_y_sg=boxp_funct(D_522645663_D_802622485,"Year of Tubal Ligation Surgery","Year")
-grid.arrange(tublig_a_sg, tublig_y_sg, nrow=2)
-
-
-#cat("Oophorectomy")
-  #type
-cat(round((sum(screen$D_590067228==333647143, na.rm=T)/sum(screen$D_729984625_D_630100221==1, na.rm=T))*100, digits=2), "% Had One Ovary Removed")
-cat(round((sum(screen$D_590067228==109972911, na.rm=T)/sum(screen$D_729984625_D_630100221==1, na.rm=T))*100, digits=2), "% Had Both Ovaries Removed")
-cat(round((sum(screen$D_590067228==535003378, na.rm=T)/sum(screen$D_729984625_D_630100221==1, na.rm=T))*100, digits=2), "% Had Neither of These Oophorectomy Types")
-  #age/year of surgery
-ooph_a_sg=boxp_funct(D_787505819_D_623218391,"Age at Tubal Oophorectomy","Age") 
-ooph_y_sg=boxp_funct(D_787505819_D_802622485,"Year of Tubal Oophorectomy","Year")
-grid.arrange(ooph_a_sg, ooph_y_sg, nrow=2)
-
-
-#cat("Salpingectomy") 
-  #type
-cat(round((sum(screen$D_860839849==448068764, na.rm=T)/sum(screen$D_729984625_D_692881833==1, na.rm=T))*100, digits=2), "% Had One Fallopian Tube Removed")
-cat(round((sum(screen$D_860839849==537173119, na.rm=T)/sum(screen$D_729984625_D_692881833==1, na.rm=T))*100, digits=2), "% Had Both Fallopian Tubes Removed")
-cat(round((sum(screen$D_860839849==535003378, na.rm=T)/sum(screen$D_729984625_D_692881833==1, na.rm=T))*100, digits=2), "% Had Neither of These Salpingectomy Types")
-  #age/year
-salp_a_sg=boxp_funct(D_949587133_D_623218391,"Age at Tubal Salpingectomy","Age") 
-salp_y_sg=boxp_funct(D_949587133_D_802622485,"Year of Tubal Salpingectomy","Year")
-grid.arrange(salp_a_sg, salp_y_sg, nrow=2)
-
-
-#	Vasectomy 
-vasec_a_sg=boxp_funct(D_671670265_D_623218391,"Age at Tubal Vasectomy","Age") 
-vasec_y_sg=boxp_funct(D_671670265_D_802622485,"Year of Tubal Vasectomy","Year")
-grid.arrange(vasec_a_sg, vasec_y_sg, nrow=2)
-
-
-#cat("Orchiectomy or Ochidectomy") 
-  #type
-cat(round((sum(screen$D_429157727==770550588, na.rm=T)/sum(screen$D_729984625_D_532603425==1, na.rm=T))*100, digits=2), "% Had One Testicle Removed")
-cat(round((sum(screen$D_429157727==970716952, na.rm=T)/sum(screen$D_729984625_D_532603425==1, na.rm=T))*100, digits=2), "% Had Both Testicles Removed")
-cat(round((sum(screen$D_9429157727==535003378, na.rm=T)/sum(screen$D_729984625_D_532603425==1, na.rm=T))*100, digits=2), "% Had Neither of These Orchiectomy or Ochidectomy Types")
-  #age/year
-orch_a_sg=boxp_funct(D_314345103_D_623218391,"Age at Orchiectomy Surgery","Age") 
-orch_y_sg=boxp_funct(D_314345103_D_802622485,"Year of Orchiectomy Surgery","Year")
-grid.arrange(orch_a_sg, orch_y_sg, nrow=2)
-
-
-#cat("Prostatectomy") 
-  #type
-cat(round((sum(screen$D_292314539==524029283, na.rm=T)/sum(screen$D_729984625_D_733236542==1, na.rm=T))*100, digits=2), "% Had Part of Prostate Removed")
-cat(round((sum(screen$D_292314539==500023550, na.rm=T)/sum(screen$D_729984625_D_733236542==1, na.rm=T))*100, digits=2), "% Had Whole Prostate Removed")
-cat(round((sum(screen$D_292314539==535003378, na.rm=T)/sum(screen$D_729984625_D_733236542==1, na.rm=T))*100, digits=2), "% Had Neither of These Prostatectomy Types")
-  #age/year
-prost_a_sg=boxp_funct(D_343990595_D_623218391,"Age at Prostatectomy Surgery","Age") 
-prost_y_sg=boxp_funct(D_343990595_D_802622485,"Year of Tubal Prostatectomy Surgery","Year") 
-grid.arrange(prost_a_sg, prost_y_sg, nrow=2)
-
-
-#	Penis removed (penectomy) 
-penis_a_sg=boxp_funct(D_203366781_D_623218391,"Age at Tubal Penectomy Surgery","Age") 
-penis_y_sg=boxp_funct(D_203366781_D_802622485,"Year of Tubal Penectomy Surgery","Year")
-grid.arrange(penis_a_sg, penis_y_sg, nrow=2)
-
 
 ```
 
@@ -651,24 +601,30 @@ grid.arrange(hyst_a_sg, hyst_y_sg, nrow=2)
 tublig_a_sg=boxp_funct(D_522645663_D_623218391,"Age at Tubal Ligation Surgery","Age") 
 tublig_y_sg=boxp_funct(D_522645663_D_802622485,"Year of Tubal Ligation Surgery","Year")
 grid.arrange(tublig_a_sg, tublig_y_sg, nrow=2)
-
+```
+\FloatBarrier
+\newpage
+```{r MHGroup9Diagn_Cont2, warning=FALSE, echo=FALSE, message=FALSE}
 
 #cat("Oophorectomy")
   #type
-cat(round((sum(screen$D_590067228==333647143, na.rm=T)/sum(screen$D_729984625_D_630100221==1, na.rm=T))*100, digits=2), "% Had One Ovary Removed")
-cat(round((sum(screen$D_590067228==109972911, na.rm=T)/sum(screen$D_729984625_D_630100221==1, na.rm=T))*100, digits=2), "% Had Both Ovaries Removed")
-cat(round((sum(screen$D_590067228==535003378, na.rm=T)/sum(screen$D_729984625_D_630100221==1, na.rm=T))*100, digits=2), "% Had Neither of These Oophorectomy Types")
+#screen$D_590067228 <- factor(screen$D_590067228, levels = c(333647143, 109972911, 535003378))
+one_logic_funct(D_590067228, D_729984625_D_630100221, 1, "Type of Oophorectomy")
+
   #age/year of surgery
 ooph_a_sg=boxp_funct(D_787505819_D_623218391,"Age at Tubal Oophorectomy","Age") 
 ooph_y_sg=boxp_funct(D_787505819_D_802622485,"Year of Tubal Oophorectomy","Year")
 grid.arrange(ooph_a_sg, ooph_y_sg, nrow=2)
-
+```
+\FloatBarrier
+\newpage
+```{r MHGroup9Diagn_Cont3, warning=FALSE, echo=FALSE, message=FALSE}
 
 #cat("Salpingectomy") 
   #type
-cat(round((sum(screen$D_860839849==448068764, na.rm=T)/sum(screen$D_729984625_D_692881833==1, na.rm=T))*100, digits=2), "% Had One Fallopian Tube Removed")
-cat(round((sum(screen$D_860839849==537173119, na.rm=T)/sum(screen$D_729984625_D_692881833==1, na.rm=T))*100, digits=2), "% Had Both Fallopian Tubes Removed")
-cat(round((sum(screen$D_860839849==535003378, na.rm=T)/sum(screen$D_729984625_D_692881833==1, na.rm=T))*100, digits=2), "% Had Neither of These Salpingectomy Types")
+screen$D_860839849 <- factor(screen$D_860839849, levels = c(448068764, 537173119, 535003378))
+one_logic_funct(D_860839849, D_729984625_D_692881833, 1, "Type of Salpingectomy")
+
   #age/year
 salp_a_sg=boxp_funct(D_949587133_D_623218391,"Age at Tubal Salpingectomy","Age") 
 salp_y_sg=boxp_funct(D_949587133_D_802622485,"Year of Tubal Salpingectomy","Year")
@@ -680,23 +636,29 @@ vasec_a_sg=boxp_funct(D_671670265_D_623218391,"Age at Tubal Vasectomy","Age")
 vasec_y_sg=boxp_funct(D_671670265_D_802622485,"Year of Tubal Vasectomy","Year")
 grid.arrange(vasec_a_sg, vasec_y_sg, nrow=2)
 
-
+```
+\FloatBarrier
+\newpage
+```{r MHGroup9Diagn_Cont4, warning=FALSE, echo=FALSE, message=FALSE}
 #cat("Orchiectomy or Ochidectomy") 
   #type
-cat(round((sum(screen$D_429157727==770550588, na.rm=T)/sum(screen$D_729984625_D_532603425==1, na.rm=T))*100, digits=2), "% Had One Testicle Removed")
-cat(round((sum(screen$D_429157727==970716952, na.rm=T)/sum(screen$D_729984625_D_532603425==1, na.rm=T))*100, digits=2), "% Had Both Testicles Removed")
-cat(round((sum(screen$D_429157727==535003378, na.rm=T)/sum(screen$D_729984625_D_532603425==1, na.rm=T))*100, digits=2), "% Had Neither of These Orchiectomy or Ochidectomy Types")
+screen$D_429157727 <- factor(screen$D_429157727, levels = c(770550588, 970716952, 535003378))
+one_logic_funct(D_429157727, D_729984625_D_532603425, 1, "Type of Orchiectomy or Ochidectomy")
+
   #age/year
 orch_a_sg=boxp_funct(D_314345103_D_623218391,"Age at Orchiectomy Surgery","Age") 
 orch_y_sg=boxp_funct(D_314345103_D_802622485,"Year of Orchiectomy Surgery","Year")
 grid.arrange(orch_a_sg, orch_y_sg, nrow=2)
 
-
+```
+\FloatBarrier
+\newpage
+```{r MHGroup9Diagn_Cont5, warning=FALSE, echo=FALSE, message=FALSE}
 #cat("Prostatectomy") 
   #type
-cat(round((sum(screen$D_292314539==524029283, na.rm=T)/sum(screen$D_729984625_D_733236542==1, na.rm=T))*100, digits=2), "% Had Part of Prostate Removed")
-cat(round((sum(screen$D_292314539==500023550, na.rm=T)/sum(screen$D_729984625_D_733236542==1, na.rm=T))*100, digits=2), "% Had Whole Prostate Removed")
-cat(round((sum(screen$D_292314539==535003378, na.rm=T)/sum(screen$D_729984625_D_733236542==1, na.rm=T))*100, digits=2), "% Had Neither of These Prostatectomy Types")
+screen$D_292314539 <- factor(screen$D_292314539, levels = c(524029283, 500023550, 535003378))
+one_logic_funct(D_292314539, D_729984625_D_733236542, 1, "Type of Prostatectomy")
+
   #age/year
 prost_a_sg=boxp_funct(D_343990595_D_623218391,"Age at Prostatectomy Surgery","Age") 
 prost_y_sg=boxp_funct(D_343990595_D_802622485,"Year of Tubal Prostatectomy Surgery","Year") 
