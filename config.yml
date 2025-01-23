@@ -147,7 +147,7 @@ rca_metrics:
   r_file_name: "RCA Metrics.Rmd"
   report_file_name: "RCA_Metrics.pdf"
   box_folders:
-    - "251314285484"
+    - "301667614883"
   gcp_info:
     cloud_scheduler: ccc-rca-metrics
     frequency: "00 14 * * 1" 
