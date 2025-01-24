@@ -353,15 +353,15 @@ if (nrow(smmet0) == 0) {
 ## 7. If HdWd_Activepart_v1r0 = yes" AND HdWd_HIPAArevoked_v1r0 = "no" And HdWd_WdConsent_v1r0 = "no" AND HdWd_Deceased_v1r0 = "no" AND HdWd_Destroydata_v1r0 = "no", then SMMet_PartStatus_v1r0= "Refused All Future Activities"
 ```{r SMMet_PartStatus2, echo=FALSE, warning=FALSE, message=FALSE}
 
-smmet2 <- partsbq %>%  filter( d_906417725==353358909 & d_773707518==104430631 & d_747006172==104430631 & d_831041022==104430631 & d_987563196==104430631 & d_912301837!=458508122) %>% 
-    select(Site, Connect_ID, d_912301837) 
+smmet2 <- partsbq %>%  filter( d_906417725==353358909 & d_773707518==104430631 & d_747006172==104430631 & d_831041022==104430631 & d_987563196==104430631 & d_912301837!=458508122) 
+     
 
 
 if (nrow(smmet2) == 0) {
   cat("No errors\n")
 } else {
   
-  smmet2 <- smmet2 %>%  sort_by(Site)
+  smmet2 <- smmet2 %>%  select(Site, Connect_ID, d_912301837) %>% sort_by(Site)
 
   colnames(smmet2) <- c("Site", "Connect ID", "SMMet_PartStatus_v1r0")
   
