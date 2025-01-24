@@ -120,14 +120,13 @@ incentive2 <- base_vars %>%  filter(d_949302066 == '231311385' & d_536735468 == 
 
 
 
-incentive2 <- incentive2  %>% select(Site, Connect_ID, d_130371375_d_266600170_d_731498909, d_130371375_d_266600170_d_222373868, d_130371375_d_266600170_d_787567527)  %>%  sort_by(Site)
-
-
-colnames(incentive2) <- c("Site", "Connect ID", "SMPaym_PaymEligBL", "SMPaym_NORCPaymEligBL", "SMPaym_TmPaymEligBL")
-
 if (nrow(incentive2) == 0) {
   cat("No errors\n")
 } else {
+  
+  incentive2 <- incentive2  %>% select(Site, Connect_ID, d_130371375_d_266600170_d_731498909, d_130371375_d_266600170_d_222373868, d_130371375_d_266600170_d_787567527)  %>%  sort_by(Site)
+  colnames(incentive2) <- c("Site", "Connect ID", "SMPaym_PaymEligBL", "SMPaym_NORCPaymEligBL", "SMPaym_TmPaymEligBL")
+  
   knitr::kable(incentive2) %>%
     kable_styling(latex_options = "scale_down")
 }
@@ -179,20 +178,24 @@ mens <-
     )
   )
 
-#d_112151599=='353358909' & (d_253883960=='231311385' | d_265193023 =='231311385') & 
-mens_elg <- mens %>%  filter(is.na(d_289750687) & (d_764863765>=as.Date("2022-12-09") | d_222161762>=as.Date("2022-12-09"))) %>%  select(Site, Connect_ID, d_289750687)  %>%  sort_by(Site)
+can_no_longer_contact <- list("6673328645", "1156167603", "5950274173", "1674063031", "5460895468", "9586303599", 
+                              "2009345083", "8140966374", "4038472238", "3379215871", "6592021474", "1721018129", 
+                              "3023733685", "5085319740", "8682077118", "1441310478", "4177949257", "6384048173", 
+                              "1186358664", "2510716583", "1782585066")
 
-can_no_longer_contact <- list("6673328645", "1156167603", "5950274173", "1674063031", "5460895468", "9586303599", "2009345083", "8140966374", "4038472238", "3379215871", "6592021474", "1721018129", "3023733685", "5085319740", "8682077118", "1441310478", "4177949257", "6384048173", "1186358664", "2510716583", "1782585066")
-
-mens_elg <- mens_elg %>%  filter(!(Connect_ID %in% can_no_longer_contact))
-
-colnames(mens_elg) <- c("Site", "Connect ID", "SrvMC_MenstSrvElig_v1r0")
-#knitr::kable(mens_elg) 
+mens_elg <- mens %>%  filter(is.na(d_289750687) & (d_764863765>=as.Date("2022-12-09") | d_222161762>=as.Date("2022-12-09")) & 
+                               !(Connect_ID %in% can_no_longer_contact)) 
+ 
 
 
 if (nrow(mens_elg) == 0) {
   cat("No errors\n")
 } else {
+  
+  mens_elg <- mens_elg %>%  select(Site, Connect_ID, d_289750687)  %>%  sort_by(Site) 
+  
+  colnames(mens_elg) <- c("Site", "Connect ID", "SrvMC_MenstSrvElig_v1r0")
+  
   knitr::kable(mens_elg) %>%
     kable_styling(latex_options = "scale_down")
 }
@@ -259,15 +262,18 @@ if (nrow(MC_not_elg) == 0) {
 ##  4. If HDPaym_PaymChosenBL_v2r0 = "cash" and SMPaym_PaymEligBL_v1r0=yes, then HDPaym_CaseNumberBL_v1r0 should not be populated. Or conversely, if SMPaym_PaymEligBL_v1r0=yes"and HDPaym_CaseNumberBL_v1r0 is populated, then HDPaym_PaymChosenBL_v2r0 should not be "cash".
 ```{r Cash_NO_NORC, echo=FALSE, warning=FALSE, message=FALSE}
 
-cash_NORC <- base_vars %>%  filter(d_130371375_d_266600170_d_731498909==353358909 & d_130371375_d_266600170_d_945795905=="cash" & !is.na(d_130371375_d_266600170_d_320023644)) %>% 
-  select(Site, Connect_ID, d_130371375_d_266600170_d_945795905, d_130371375_d_266600170_d_320023644) %>%  sort_by(Site)
+cash_NORC <- base_vars %>%  filter(d_130371375_d_266600170_d_731498909==353358909 & d_130371375_d_266600170_d_945795905=="cash" & !is.na(d_130371375_d_266600170_d_320023644))
 
-colnames(cash_NORC) <- c("Site", "Connect ID", "HDPaym_PaymChosenBL", "HDPaym_CaseNumberBL")
+
 
 
 if (nrow(cash_NORC) == 0) {
   cat("No errors\n")
 } else {
+  cash_NORC <- cash_NORC %>%  select(Site, Connect_ID, d_130371375_d_266600170_d_945795905, d_130371375_d_266600170_d_320023644) %>%  sort_by(Site)
+
+  colnames(cash_NORC) <- c("Site", "Connect ID", "HDPaym_PaymChosenBL", "HDPaym_CaseNumberBL")
+
   knitr::kable(cash_NORC) %>%
     kable_styling(latex_options = "scale_down")
 }
@@ -304,7 +310,10 @@ if (nrow(bday) == 0) {
 ## 6. If HdRef_Basesrv_v1r0 = "no" AND HdRef_Baseblood_v1r0 = "no" AND HdRef_Baseurine_v1r0 and HdRef_Basesaliva_v1r0 = "no" AND HdRef_Allsrv_v1r0 = "no" AND HdRef_Allsample_v1r0 = "no" AND HdRef_BlSpecSrv_v1r0 = "no" AND HdWd_WdConsent_v1r0 = "no" AND HdWd_Activepart_v1r0 = "no" AND HdWd_HIPAArevoked_v1r0 = "no" AND HdWd_Destroydata_v1r0 = "no" AND HdWd_Deceased_v1r0 = "no", then SMMet_PartStatus_v1r0= "No Refusal"
 ```{r SMMet_PartStatus0, echo=FALSE, warning=FALSE, message=FALSE}
 
-smmet0 <- partsbq %>%  filter(d_685002411_d_994064239==104430631 & d_685002411_d_194410742==104430631 & d_685002411_d_949501163==104430631 & d_685002411_d_277479354==104430631 & d_685002411_d_867203506==104430631 & d_685002411_d_352996056==104430631 & d_685002411_d_217367618==104430631 & d_747006172==104430631 & d_906417725==104430631 & d_773707518==104430631 & d_831041022==104430631 & d_987563196==104430631 & 
+smmet0 <- partsbq %>%  filter(d_685002411_d_994064239==104430631 & d_685002411_d_194410742==104430631 & d_685002411_d_949501163==104430631 & 
+                                d_685002411_d_277479354==104430631 & d_685002411_d_867203506==104430631 & d_685002411_d_352996056==104430631 & 
+                                d_685002411_d_217367618==104430631 & d_747006172==104430631 & d_906417725==104430631 & d_773707518==104430631 & 
+                                d_831041022==104430631 & d_987563196==104430631 & 
                                 d_912301837!=208325815) %>% 
     select(Site, Connect_ID, d_912301837) %>%  sort_by(Site)
 
