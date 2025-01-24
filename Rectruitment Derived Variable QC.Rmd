@@ -316,17 +316,14 @@ if (nrow(bday) == 0) {
 smmet0 <- partsbq %>%  filter(d_685002411_d_994064239==104430631 & d_685002411_d_194410742==104430631 & d_685002411_d_949501163==104430631 & 
                                 d_685002411_d_277479354==104430631 & d_685002411_d_867203506==104430631 & d_685002411_d_352996056==104430631 & 
                                 d_685002411_d_217367618==104430631 & d_747006172==104430631 & d_906417725==104430631 & d_773707518==104430631 & 
-                                d_831041022==104430631 & d_987563196==104430631 & 
-                                d_912301837!=208325815) 
+                                d_831041022==104430631 & d_987563196==104430631 & d_912301837!=208325815) %>% 
+  select(Site, Connect_ID, d_912301837) %>%  sort_by(Site)
 
+colnames(smmet0) <- c("Site", "Connect ID", "SMMet_PartStatus_v1r0")
 
 if (nrow(smmet0) == 0) {
   cat("No errors\n")
 } else {
-    
-  smmet0 <- smmet0 %>% select(Site, Connect_ID, d_912301837) %>%  sort_by(Site)
-
-  colnames(smmet0) <- c("Site", "Connect ID", "SMMet_PartStatus_v1r0")
     
   knitr::kable(smmet0) %>%
     kable_styling(latex_options = "scale_down")
