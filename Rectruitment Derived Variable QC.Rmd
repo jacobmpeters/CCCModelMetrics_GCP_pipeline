@@ -297,7 +297,7 @@ if (nrow(bday) == 0) {
   cat("No errors\n")
 } else {
 
-  bday < bday %>% select(Site, Connect_ID, d_371067537, d_544150384, d_564964481, d_795827569) %>%  sort_by(Site)
+  bday <- bday %>% select(Site, Connect_ID, d_371067537, d_544150384, d_564964481, d_795827569) %>%  sort_by(Site)
 
   colnames(bday) <- c("Site", "Connect ID", "RcrtUP_DOB", "RcrtUP_YOB", "RcrtUP_MOB", "RcrtUP_BD")
 
