@@ -160,3 +160,12 @@ rca_qc_metrics:
   gcp_info:
     cloud_scheduler: ccc-rca-qc-metrics
     frequency: "30 14 * * 1"
+    
+csh_metrics:
+  r_file_name: "Cancer Screening Summary Statistics.Rmd"
+  report_file_name: "Cancer_Screening_History_Metrics.pdf"
+  box_folders:
+    - "251314285484"
+  gcp_info:
+    cloud_scheduler: ccc-cancer-screening-history-metrics
+    frequency: "30 14 * * 1"
