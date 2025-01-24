@@ -48,9 +48,9 @@ library(data.table)
 #library(arsenal)
 #library(rio)
 #library(scales)
-library(gt)
 library(stringr) 
 library(tidyr)
+library(gt)
 
 bq_auth()
 
@@ -189,7 +189,7 @@ pivot_data <- location_counts %>%
 pivot_data[nrow(pivot_data)+1,] <- list("Total", paste0(sum(location_counts$Frequency), " (100%)"))
 
  pivot_data %>%
-  gt() %>% 
+  gt::gt() %>% 
   tab_header(title = md("Table 2. Number of Cancer Occurrences by Cancer Site")) %>%
   cols_label(Occurrence = md("**Occurrence**"), 
              Cancer_Site = md("**Cancer Site**")) %>%

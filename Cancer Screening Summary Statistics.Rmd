@@ -7,11 +7,11 @@ header-includes:
   \usepackage{placeins} 
   \usepackage{booktabs}
   \usepackage{pdflscape}
+  \usepackage{float}
   
 output:
   pdf_document:
     latex_engine: xelatex
-    extra_dependencies: ["float"]
     toc: yes
     keep_tex: yes
     fig_width: 7
@@ -20,7 +20,7 @@ output:
     df_print: paged
 ---
 
-
+\extrafloats{100}
 ```{r libraries, include=FALSE}
 
 library(bigrquery)
