@@ -606,7 +606,7 @@ mds_summary <- mds_long %>%
 
 
 mds_summary %>%
-  gt() %>%
+  gt::gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>%
   fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
   tab_header(title = md("PAINREL1: Pain Relievers Used 4x a Month for 6+ Months")) %>%
@@ -752,7 +752,7 @@ bby_asp_summary <- bby_asp_long %>%
 
 
 bby_asp_summary %>%
-  gt() %>%
+  gt::gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>%
   fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
   tab_header(title = md("PAINREL7_1: Reasons for Taking Baby Aspirin")) %>%
@@ -898,7 +898,7 @@ reg_asp_summary <- reg_asp_long %>%
 
 
 reg_asp_summary %>%
-  gt() %>%
+  gt::gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>%
   fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
   tab_header(title = md("PAINREL7_2: Reasons for taking regular aspirin regularly")) %>%
@@ -1004,7 +1004,7 @@ ibu_summary <- ibu_long %>%
 
 
 ibu_summary %>%
-  gt() %>%
+  gt::gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>%
   fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
   tab_header(title = md("PAINREL7_3: Reasons for taking ibuprofen regularly")) %>%
@@ -1111,7 +1111,7 @@ acet_summary <- acet_long %>%
 
 
 acet_summary %>%
-  gt() %>%
+  gt::gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>%
   fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
   tab_header(title = md("PAINREL7_4: Reasons for taking Acetaminophen regularly")) %>%
@@ -1222,7 +1222,7 @@ napx_summary <- napx_long %>%
 
 
 napx_summary %>%
-  gt() %>%
+  gt::gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>%
   fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
   tab_header(title = md("PAINREL7_5: Reasons for taking Naproxen regularly")) %>%
@@ -1330,7 +1330,7 @@ cbx_summary <- cbx_long %>%
 
 
 cbx_summary %>%
-  gt() %>%
+  gt::gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>%
   fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
   tab_header(title = md("PAINREL7_6: Reasons for taking Celebrex regularly")) %>%
@@ -1441,7 +1441,7 @@ opd_summary <- opd_long %>%
 
 
 opd_summary %>%
-  gt() %>%
+  gt::gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>%
   fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
   tab_header(title = md("PAINREL7_7: Reasons for taking Opioids regularly")) %>%
@@ -2601,7 +2601,7 @@ preg_iss_summary <- preg_iss_long %>%
 
 
 preg_iss_summary %>%
-  gt() %>%
+  gt::gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>%
   fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
   tab_header(title = md("FERT4: Issue preventing pregnancy")) %>%
@@ -2686,7 +2686,7 @@ fert_med_summary <- fert_med_long %>%
 
 
 fert_med_summary %>%
-  gt() %>%
+  gt::gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>%
   fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
   tab_header(title = md("FERT6: Used these fertility medications")) %>%
@@ -3006,7 +3006,7 @@ est_med_summary <- est_med_long %>%
 
 
 est_med_summary %>%
-  gt() %>%
+  gt::gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>%
   fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
   tab_header(title = md("ESTROHOR: Ever used these hormone medications")) %>%
@@ -3514,7 +3514,7 @@ test_med_summary <- test_med_long %>%
 
 
 test_med_summary %>%
-  gt() %>%
+  gt::gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>%
   fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
   tab_header(title = md("TESTTHER2: Testosterone Medication Forms")) %>%
@@ -3955,7 +3955,7 @@ dt_exercise_summary <- ex_long %>%
 
 
 dt_exercise_summary %>%
-  gt() %>%
+  gt::gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>%
   fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
   tab_header(title = md("EXEREC1: Done any of these Exercises or Recreational Activities in the Past Year")) %>%
@@ -4905,7 +4905,7 @@ dtLAWN1_summary <- chore_long %>%
 
 
 dtLAWN1_summary %>%
-  gt() %>%
+  gt::gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>%
   fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
   tab_header(title = md("LAWN1: Lawn, Garden, and Home Repair Activities")) %>%
@@ -5463,7 +5463,7 @@ slp_cond_summary <- slp_cond_long %>%
 
 
 slp_cond_summary %>%
-  gt() %>%
+  gt::gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>%
   fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
   tab_header(title = md("SLPROB1: Diagnosed with Conditions")) %>%
@@ -5529,7 +5529,7 @@ slp_tmnt_summary <- slp_tmnt_long %>%
 
 
 slp_tmnt_summary %>%
-  gt() %>%
+  gt::gt() %>%
   fmt_number(columns = "Percentage", decimals = 2) %>%
   fmt_number(columns = "Frequency", use_seps = TRUE, decimals = 0) %>%
   tab_header(title = md("SLPROB2: Treatments Used for Sleep Apnea")) %>%
