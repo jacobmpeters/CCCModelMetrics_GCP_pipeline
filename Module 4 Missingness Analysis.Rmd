@@ -2,7 +2,9 @@
 title: "Module 4 Missingness Analysis"
 author: "Kelsey Dowling"
 date: "`r Sys.Date()`"
-output: pdf_document
+output:
+  pdf_document:
+    latex_engine: xelatex
 ---
 
 This report gives the distribution of all Module 4 missing responses using the skip logic from Qx:https://nih.app.box.com/file/923661036132?s=o816d6804w154fqf5y161ii7ngvcezqg for those that completed this survey.
