@@ -1,0 +1,490 @@
+---
+title: "PROMIS Backlog Duplicates"
+author: "Kelsey Sanchez"
+date: 'Data Extracted and Report Ran: `r Sys.Date()`'
+header-includes: 
+  \usepackage[labelformat=empty]{caption} 
+  \usepackage{placeins} 
+  \usepackage{booktabs}
+  \usepackage{pdflscape}
+  
+output:
+  pdf_document:
+    latex_engine: xelatex
+    extra_dependencies: ["float"]
+    toc: no
+    keep_tex: yes
+    fig_width: 7
+    fig_height: 5
+    fig_caption: yes
+    df_print: paged
+---
+
+
+```{r libraries, include=FALSE, warning=FALSE}
+
+#old.packages()
+#update.packages("tinytex")
+
+
+library(bigrquery)
+library(dplyr)
+library(gmodels)
+library(epiDisplay)
+library(lubridate)
+library(tidyverse)
+library(knitr)
+#install_tinytex()
+#library(tinytex)
+#library(vtable)
+library(kableExtra)
+library(gtsummary)
+
+
+bq_auth()
+
+```
+
+
+```{r BQPull, include=FALSE}
+knitr::opts_chunk$set(dev = "png", fig.path = "", comment = NA)
+
+
+#Crosswalks from Sites
+Dup_All_Sites <- read.csv("~/GitHub/ccc_module_metrics_gcp_pipeline/Dup_Crosswalk_All_Sites.csv")
+#https://nih.app.box.com/file/1648745247869
+
+
+
+project = "nih-nci-dceg-connect-prod-6d04"
+
+Connect_ID_list <- paste0("'", 
+                          c(Dup_All_Sites$Verified_Connect_ID, 
+                            Dup_All_Sites$Duplicate_Connect_ID), 
+                          "'", collapse = ",")
+
+queryreccc <- paste0("SELECT  token,Connect_ID, d_827220437, d_914594314, d_821247024, state_d_148197146, d_335767902, d_995036844,
+d_949302066, d_517311251, d_536735468, d_832139544, d_976570371, d_770257102, d_663265240, d_264644252, d_320303124, d_843688458
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IN (", Connect_ID_list, ")") 
+
+rec_table_cc <- bq_project_query(project, queryreccc)
+data_c <- bq_table_download(rec_table_cc, bigint = "integer64")
+dups_qol= as_tibble(data_c)
+
+
+colnames(dups_qol) <- c("token", "Connect_ID", "Site", "verif_date", "verif_status", "dup_status", "sigin_time", "method",
+                        "BOH_status", "BOH_time", "MRE_status", "MRE_time", "SAS_status", "SAS_time", "LAW_status", "LAW_time",
+                        "QOL_status", "QOL_time")
+
+
+
+```
+
+```{r ID_matches, include=FALSE}
+
+
+## Need a common participant identifier for each Connect_ID with an original and duplicate account. PT_label was created in the excel file for just that
+
+
+dups_qol$Connect_ID <- as.numeric(dups_qol$Connect_ID) 
+#Dup_All_Sites$Verified_Connect_ID <- as.character(Dup_All_Sites$Verified_Connect_ID)
+#Dup_All_Sites$Duplicate_Connect_ID <- as.character(Dup_All_Sites$Duplicate_Connect_ID)
+
+
+dups_qol_combined <- dups_qol %>%
+  left_join(Dup_All_Sites %>% 
+              select(Verified_Connect_ID, PT_label), 
+            by = c("Connect_ID" = "Verified_Connect_ID")) %>%
+  rename(PT_label_verified = PT_label)
+
+ # Second join: match dups_qol$Connect_ID with Dup_All_Sites$Duplicate_Connect_ID
+ dups_qol_combined <- dups_qol_combined %>%
+   left_join(Dup_All_Sites %>%
+               select(Duplicate_Connect_ID, PT_label),
+             by = c("Connect_ID" = "Duplicate_Connect_ID")) %>%
+   rename(PT_label_duplicate = PT_label)
+
+ # Combine the two PT_label columns into a single PT_label column
+ dups_qol_combined <- dups_qol_combined %>%
+   mutate(PT_label = coalesce(PT_label_verified, PT_label_duplicate))
+
+ # Drop intermediate columns if no longer needed
+ dups_qol_combined <- dups_qol_combined %>%
+   select(-PT_label_verified, -PT_label_duplicate)
+
+# View the result
+#head(dups_qol_combined)
+
+
+dups_qol_combined <- dups_qol_combined %>%  mutate(dup_status = case_when(dup_status=="654558118" ~ "Duplicate Account",
+                                                        is.na(dup_status) ~ "Original Account"),
+                                 verif_status = case_when(verif_status=="875007964"	~ "Not yet verified",
+                                                          verif_status=="197316935"	~ "Verified",
+                                                          verif_status=="219863910"	~ "Cannot be verified",
+                                                          verif_status=="922622075"	~ "Duplicate",
+                                                          verif_status=="160161595"	~ "Outreach timed out"),
+                                 method=case_when(method=="phone" ~ "Phone",
+                                                  method=="password" ~ "Password",
+                                                  method=="passwordAndPhone" ~ "Phone and Password",
+                                                  method=="google.com" ~ "Email"),
+                                 QOL_status= case_when(QOL_status=="972455046" ~ "Not Started",
+                                                       QOL_status=="615768760" ~ "Started",
+                                                       QOL_status=="231311385" ~ "Submitted",
+                                                       is.na(QOL_status) ~ "Missing Flags"))
+
+
+```
+
+
+\newpage
+\FloatBarrier
+```{r Freq_Method, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+
+method_by_acct_type <- dups_qol_combined  %>%
+  group_by(PT_label) %>%
+  select(dup_status, method) %>% 
+  tbl_cross(col = dup_status,
+            row = method, 
+            percent = "column",
+            digits= c(0,1),
+            label= c(method ~ "Sign-in Method", dup_status ~ " "),
+            missing="ifany",
+            missing_text="0 ( 0 %)") 
+
+
+method_by_acct_type %>%
+  modify_header() %>%
+  modify_caption("Table 1.1. Frequency of Sign-in Method by Account Type") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE) 
+
+
+```
+
+\FloatBarrier
+
+```{r Freq_Consistent_Method, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+
+method_comparison <- dups_qol_combined %>%
+  group_by(PT_label) %>%
+  mutate(
+    original_method = method[dup_status == "Original Account"],
+    duplicate_method = method[dup_status == "Duplicate Account"]
+  ) %>%
+  ungroup() %>%  # Ungroup to perform operations across all rows
+  mutate(methods_count = case_when(
+    original_method == "Phone" & duplicate_method == "Phone" ~ "Original and Duplicate Account = Phone",
+    original_method == "Password" & duplicate_method == "Password" ~ "Original and Duplicate Account = Password",
+    original_method == "Phone and Password" & duplicate_method == "Phone and Password" ~ "Original and Duplicate Account = Phone and Password",
+    original_method == "Phone" & duplicate_method == "Password" ~ "Original Account = Phone, Duplicate Account = Password",
+    original_method == "Phone" & duplicate_method == "Phone and Password" ~ "Original Account = Phone, Duplicate Account = Phone and Password",
+    original_method == "Password" & duplicate_method == "Phone" ~ "Original Account = Password, Duplicate Account = Phone",
+    original_method == "Password" & duplicate_method == "Phone and Password" ~ "Original Account = Password, Duplicate Account = Phone and Password",
+    original_method == "Phone and Password" & duplicate_method == "Phone" ~ "Original Account = Phone and Password, Duplicate Account = Phone",
+    original_method == "Phone and Password" & duplicate_method == "Password" ~ "Original Account = Phone and Password, Duplicate Account = Password",
+    TRUE ~ "Other"  
+  )) %>%
+  arrange(PT_label)
+
+
+method_summary <- method_comparison %>%
+  group_by(methods_count) %>%
+  summarize(
+    Frequency = n()/2,
+    Percentage = round((Frequency / nrow(method_comparison)) * 100, digits=2)*2
+  ) %>%
+  arrange(desc(Frequency)) %>% 
+  ungroup %>% 
+  bind_rows(
+    method_comparison %>% 
+      summarize(
+        methods_count="Total",
+        Frequency = n()/2,
+        Percentage = round((Frequency / nrow(method_comparison)) * 100, digits=2)*2
+  )
+  )
+
+colnames(method_summary)[1] <- "Methods"
+
+knitr::kable(method_summary, 
+             caption='Table 1.2. Participant Level Consistency of Sign-in Method', 
+             row.names=FALSE,align=c("l","c","c"),
+             booktabs = TRUE) %>%  
+  add_indent(seq(1, nrow(method_summary) - 1))  %>% 
+  kable_styling(latex_options = "scale_down")
+
+
+
+
+
+```
+\FloatBarrier
+
+```{r Signin_Time, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+SI_time <- dups_qol_combined %>%
+  group_by(PT_label) %>%
+  mutate(
+    original_time = as.Date(verif_date[dup_status == "Original Account"]),
+    duplicate_time = as.Date(verif_date[dup_status == "Duplicate Account"]),
+    SI_time_diff = difftime(duplicate_time, original_time, units = "days"),  
+    time = as.numeric(SI_time_diff)/30.44)  %>% #average number of days per month
+  arrange(PT_label)
+
+
+SI_time_comparison <- SI_time %>% 
+  ungroup() %>%  
+  summarize(N=n()/2,
+            Min = round(min(time), digits=2),
+            Q1 = round(quantile(time, 0.25), digits=2),
+            Median = round(median(time), digits=2),
+            Mean = round(mean(time), digits=2),
+            SD=round(sd(time), digits=2),
+            Q3 = round(quantile(time, 0.75), digits=2),
+            #Pct.90 = quantile(time, 0.90),
+            Max = round(max(time), digits=2))
+
+knitr::kable(SI_time_comparison, 
+             caption='Table 2.1. Time Difference from Original Account Verification to Duplicate Account Verification in Months', 
+             row.names=FALSE,align=c("l","c","c","c","c","c","c"),
+             booktabs = TRUE) %>%  
+  kable_styling(latex_options = "scale_down")
+
+
+```
+\FloatBarrier
+
+```{r Last_Survey_Time, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+
+Last_Survey_table <- dups_qol_combined %>%
+  group_by(PT_label) %>%
+  mutate(original_SItime = as.Date(sigin_time[dup_status == "Original Account"]),
+         duplicate_SItime = as.Date(sigin_time[dup_status == "Duplicate Account"]),
+         last_srvy_time = as.Date(pmax(BOH_time, MRE_time, SAS_time, LAW_time)),
+         Srvy_Dup_time_diff = difftime(duplicate_SItime, last_srvy_time, units = "days"), 
+         time = as.numeric(Srvy_Dup_time_diff)/ 30.44,#30.44 is the average number of days per month 
+         verification_date = as.Date(verif_date), #for next plot
+         verif_dup_time = difftime(verification_date, duplicate_SItime, units = "days"), #for next plot) 
+         months = as.numeric(verif_dup_time)/ 30.44) #for next plot
+
+Last_Survey_table_counts <- Last_Survey_table %>%  
+  filter(dup_status=="Original Account") %>% 
+  #group_by(Connect_ID) %>% 
+  mutate(time_frame = case_when(is.na(last_srvy_time) ~ "No Baseline Module Completed",
+                                last_srvy_time > duplicate_SItime ~ "Most Recent Baseline Module Completed After Duplicate Account Creation",
+                                last_srvy_time < duplicate_SItime ~ "Most Recent Baseline Module Completed Before Duplicate Account Creation",
+                                last_srvy_time == duplicate_SItime ~ "Most Recent Baseline Module Completed the Same Day as Duplicate Account Creation"),
+         time_frame=factor(time_frame, levels=c("No Baseline Module Completed",
+                                                "Most Recent Baseline Module Completed Before Duplicate Account Creation",
+                                                "Most Recent Baseline Module Completed the Same Day as Duplicate Account Creation",
+                                                "Most Recent Baseline Module Completed After Duplicate Account Creation"))) #%>% ungroup
+
+BL_time <- Last_Survey_table_counts[, c(1:18, 20:28)] # drop PT_label
+BL_summary <- BL_time %>%
+  group_by(time_frame) %>%
+  summarize(
+    Frequency = n(),
+    Percentage = round((Frequency / nrow(BL_time)) * 100, digits=2)
+  ) %>%
+  arrange(desc(Frequency)) %>% 
+  ungroup %>% 
+  bind_rows(
+    BL_time %>% 
+      summarize(
+        time_frame="Total",
+        Frequency = n(),
+        Percentage = round((Frequency / nrow(BL_time)) * 100, digits=2)
+  )
+  )
+
+colnames(BL_summary)[1] <- "Timeframe"
+
+knitr::kable(BL_summary, 
+             caption='Table 2.2. Timeframe of Most Recent Baseline Survey Module Completed relative to Duplicate Account Creation', 
+             row.names=FALSE,align=c("l","c","c"),
+             booktabs = TRUE) %>%  
+  add_indent(seq(1, nrow(BL_summary) - 1))  %>% 
+  kable_styling(latex_options = "scale_down")
+
+
+
+
+
+
+
+
+Last_Survey <- Last_Survey_table %>% 
+  filter(!is.na(time) & last_srvy_time < duplicate_SItime) %>%
+  arrange(PT_label) %>% 
+  ungroup() %>%  
+  summarize('N'=n(),
+            Min = round(min(time), digits=2),
+            Q1 = round(quantile(time, 0.25), digits=2),
+            Median = round(median(time), digits=2),
+            Mean = round(mean(time), digits=2),
+            SD=round(sd(time), digits=2),
+            Q3 = round(quantile(time, 0.75), digits=2),
+            #Pct.90 = quantile(time, 0.90),
+            Max = round(max(time), digits=2))
+
+knitr::kable(Last_Survey, 
+             caption='Table 2.3. Time from Last Baseline Survey Completion to Duplicate Account Sign-In in Months', 
+             row.names=FALSE,align=c("l","c","c","c","c","c","c"),
+             booktabs = TRUE) %>%  
+  kable_styling(latex_options = "scale_down")
+
+```
+
+\FloatBarrier
+
+```{r No_Duplicates, echo=FALSE, warning=FALSE, message=FALSE}
+
+
+#Comparable table to previous, among those verified prior to 12/1/23, with PROMIS Completed and not in the duplicate list 
+
+sql_no_dup <- paste0("SELECT  token,Connect_ID, d_827220437, d_914594314, d_821247024, state_d_148197146, d_335767902, d_995036844,
+d_949302066, d_517311251, d_536735468, d_832139544, d_976570371, d_770257102, d_663265240, d_264644252, d_320303124, d_843688458
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where DATE(d_914594314)<'2023-12-01' and d_320303124='231311385' and 
+d_821247024='197316935' and Connect_ID NOT IN (", Connect_ID_list, ")") 
+
+sql_no_dup_cc <- bq_project_query(project, sql_no_dup)
+no_dup <- bq_table_download(sql_no_dup_cc, bigint = "integer64")
+
+
+
+Last_Survey_No_Dup <- no_dup %>%
+  mutate(SItime = as.Date(d_335767902),
+         last_srvy_time = as.Date(pmax(d_517311251, d_832139544, d_770257102, d_264644252)),
+         Srvy_Dup_time_diff = difftime(last_srvy_time, SItime, units = "days"),  # Calculate difference between duplicate and original times
+    time = as.numeric(Srvy_Dup_time_diff)) %>% #30.44 is the average number of days per month 
+  filter(!is.na(time)) %>%
+  summarize(#'Number Consented'=n()/2,
+                   Min = round(min(time), digits=2),
+                   Q1 = round(quantile(time, 0.25), digits=2),
+                   Median = round(median(time), digits=2),
+                   Mean = round(mean(time), digits=2),
+                   SD=round(sd(time), digits=2),
+                   Q3 = round(quantile(time, 0.75), digits=2),
+                   #Pct.90 = quantile(time, 0.90),
+                   Max = round(max(time), digits=2))
+
+
+```
+
+```{r AddFootnote, eval=TRUE,echo=FALSE,warning=FALSE, message=FALSE, include=FALSE}
+
+Knit_No_Dup <- knitr::kable(Last_Survey_No_Dup, 
+                            caption = 'Table 2.4. Time Difference from Sign-In to Last Baseline Survey Completion in Days', 
+                            row.names = FALSE, align = c("l", "c", "c", "c", "c", "c", "c"),
+                            booktabs = TRUE) 
+add_footnote(Knit_No_Dup, "This table includes participants verified prior to 12/1/23, with PROMIS completed, and without duplicates.", notation = "none")
+
+# Knit_No_Dup_with_footnote <- add_footnote(Knit_No_Dup,
+#                                           "\\small {This table includes participants verified prior to 12/1/23, with PROMIS completed, and without duplicates.}",
+#                                           notation = "none")
+# 
+# Knit_No_Dup_with_footnote
+
+
+```
+
+
+
+\FloatBarrier
+
+```{r Figure, include=FALSE}
+
+Fig2 <- SI_time %>%  filter(time>=0 & verif_status=="Verified") %>% #verified so that we're not double counting people, as everyone has an original and duplicate account 
+  mutate(sigin_time = as.Date(sigin_time),
+         time = round(time, digits=1)) %>% 
+  select(sigin_time, time) %>% 
+  select(-PT_label) #somehow still being selected, need it removed for next step
+
+
+# Round sigin_time to the Monday of the week, so it lines up with x axis
+Fig2_aggregated <- Fig2 %>%
+  select(-PT_label) %>% 
+  mutate(week_start = floor_date(sigin_time, unit = "week")) %>%  # Round to start of the week (Monday)
+  group_by(week_start) %>%  # Group by week start
+  summarise(total_time = sum(time), .groups = 'drop')  # Summarize by total time
+
+# Plot the aggregated data
+ggplot(Fig2_aggregated, aes(x = week_start, y = total_time)) + 
+  geom_line() + 
+  geom_point(width = 0.2) +
+  scale_y_continuous(name = "Months Until Duplicate",  expand = c(0, 0)) + 
+  scale_x_date(name = "Sign-In Date", date_labels = "%y-%m-%d", 
+               date_breaks = "4 weeks", limits = c(as.Date("2021-12-13"), Sys.Date()), expand = c(0, 0))  +
+  ggtitle(label = "Time from Orinal Account Sign-In to Duplicate Account Creation") +
+  theme(panel.background = element_blank(),
+        legend.title = element_text(size = 7),
+        axis.line = element_line(size = 0.2),
+        axis.text.x = element_text(angle = 60, hjust = 1, size = 8, face = "bold"),                                                            
+        plot.title = element_text(hjust = 0.5, size = 12, face = "bold"))
+
+
+```
+
+\newpage
+
+
+\FloatBarrier
+
+```{r QOL_Comp, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+
+QOL_OG <- dups_qol_combined %>%
+  filter(dup_status == "Original Account") %>% 
+  mutate(QOL_comp = QOL_status)
+
+
+
+QOL_OG_summary <- QOL_OG %>%
+  group_by(QOL_status) %>%
+  summarize(
+    Frequency = n(),
+    Percentage = round((Frequency / nrow(QOL_OG)) * 100, digits=2)
+  ) %>%
+  arrange(desc(Frequency)) %>% 
+  ungroup %>% 
+  bind_rows(
+    QOL_OG %>% 
+      summarize(
+        QOL_status="Total",
+        Frequency = n(),
+        Percentage = round((Frequency / nrow(QOL_OG)) * 100, digits=2)
+  )
+  )
+
+colnames(QOL_OG_summary)[1] <- ""
+
+knitr::kable(QOL_OG_summary, 
+             caption='Table 3. PROMIS Survey Completion Status on Original Account', 
+             row.names=FALSE,align=c("l","c","c"),
+             booktabs = TRUE) %>%  
+  add_indent(seq(1, nrow(QOL_OG_summary) - 1))  %>% 
+  kable_styling(latex_options = "scale_down")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

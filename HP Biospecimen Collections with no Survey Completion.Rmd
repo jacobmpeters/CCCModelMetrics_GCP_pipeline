@@ -1,0 +1,367 @@
+---
+title: "HP Biospec No Surv Comp"
+author: "Kelsey Dowling"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+
+
+```{r library, include=FALSE}
+#d_949302066='231311385' & 
+#d_100767870='353358909' & d_878865966='353358909' & d_167958071='353358909' & d_684635302='353358909'
+
+library(bigrquery)
+library(foreach)
+library(stringr)
+library(gtsummary)
+library(rio)
+library(epiDisplay)
+library(kableExtra)
+
+
+library(ggplot2)
+library(gridExtra)
+library(scales)
+library(gt)
+library(tinytex)
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(reshape)  ###to work on transition from long to wide or wide to long data
+library(listr) ###to work on a list of vector, files or..
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(stringr)
+
+bq_auth()
+```
+
+
+```{r merge1, include=FALSE, warning=FALSE}
+project <- "nih-nci-dceg-connect-prod-6d04"
+
+partsHP <- "SELECT Connect_ID, token, d_949302066, d_536735468, d_976570371, d_663265240,   d_914594314
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP`
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (d_919254129='353358909') and 
+d_699625233='353358909' and d_827220437='531629870' and d_100767870='104430631' and (d_878865966='353358909' or d_167958071='353358909' or d_684635302='353358909')"
+
+specs <- "SELECT token, Connect_ID, d_678166505, d_556788178 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.biospecimen_JP`
+where Connect_ID is not null"
+
+
+notif <- "SELECT notificationSpecificationsID, category, attempt, token FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` 
+where token is not null"
+
+notif_table <- bq_project_query(project, notif)
+notif_data <- bq_table_download(notif_table, bigint = "integer64")
+
+specs_table <- bq_project_query(project, specs)
+specs_data <- bq_table_download(specs_table, bigint = "integer64")
+
+parts_tableHP <- bq_project_query(project, partsHP)
+parts_dataHP <- bq_table_download(parts_tableHP, bigint = "integer64")
+
+parts_dataHP$Connect_ID <- as.numeric(parts_dataHP$Connect_ID) 
+specs_data$Connect_ID <- as.numeric(specs_data$Connect_ID) 
+
+#HPs <-  left_join(parts_data, specs_data, by="Connect_ID") #%>% left_join(notif_data, by="token")
+HPs <-  left_join(parts_dataHP, specs_data, by="token") %>% left_join(notif_data, by="token")
+#HPs <-  left_join(parts_data, specs_data, by=c("token", "Connect_ID")) %>% left_join(notif_data, by="token")
+
+
+# HPs <-  left_join(parts_data, specs_data, by="token") %>% left_join(notif_data, by="token")
+# dim(HPs)
+# HPs <-  left_join(parts_data, notif_data,  by="token") %>% left_join(specs_data, by="token")
+# dim(HPs)
+# HPs <-  left_join(notif_data, parts_data, by="token") %>% left_join(specs_data,  by="token")
+# dim(HPs)
+# HPs <-  left_join(notif_data, specs_data, by="token") %>% left_join(parts_data,  by="token")
+# dim(HPs)
+# HPs <-  left_join(specs_data,parts_data, by="token") %>% left_join(notif_data,  by="token")
+# dim(HPs)
+# HPs <-  left_join(specs_data,notif_data,  by="token") %>% left_join(parts_data,  by="token")
+# dim(HPs)
+# 
+# HPs <-  merge(x=parts_data,y=specs_data, z= notif_data,
+#                      by.x=c("token"), 
+#                     by.z=c("token"), 
+#                      all.x=TRUE)
+
+dim(HPs)
+
+
+data_tib= as_tibble(HPs) #_before) #HAD TO MAKE A TIBBLE FOR GT() TABLE FUNCTION
+#head(data_tib)
+```
+
+
+
+```{r merge1, include=FALSE, warning=FALSE}
+project <- "nih-nci-dceg-connect-prod-6d04"
+
+partsHP <- "SELECT Connect_ID, token, d_949302066, d_536735468, d_976570371, d_663265240,   d_914594314
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP`
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and (d_919254129='353358909') and 
+d_699625233='353358909' and d_827220437='531629870' and d_100767870='104430631' and (d_878865966='353358909' or d_167958071='353358909' or d_684635302='353358909')"
+
+specs <- "SELECT token, Connect_ID, d_678166505, d_556788178 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.biospecimen_JP`
+where Connect_ID is not null"
+
+
+notif <- "SELECT notificationSpecificationsID, category, attempt, token FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` 
+where token is not null"
+
+notif_table <- bq_project_query(project, notif)
+notif_data <- bq_table_download(notif_table, bigint = "integer64")
+
+specs_table <- bq_project_query(project, specs)
+specs_data <- bq_table_download(specs_table, bigint = "integer64")
+
+parts_tableHP <- bq_project_query(project, partsHP)
+parts_dataHP <- bq_table_download(parts_tableHP, bigint = "integer64")
+
+parts_dataHP$Connect_ID <- as.numeric(parts_dataHP$Connect_ID) 
+specs_data$Connect_ID <- as.numeric(specs_data$Connect_ID) 
+
+#HPs <-  left_join(parts_data, specs_data, by="Connect_ID") #%>% left_join(notif_data, by="token")
+HPs <-  left_join(parts_dataHP, specs_data, by="token") %>% left_join(notif_data, by="token")
+#HPs <-  left_join(parts_data, specs_data, by=c("token", "Connect_ID")) %>% left_join(notif_data, by="token")
+
+
+# HPs <-  left_join(parts_data, specs_data, by="token") %>% left_join(notif_data, by="token")
+# dim(HPs)
+# HPs <-  left_join(parts_data, notif_data,  by="token") %>% left_join(specs_data, by="token")
+# dim(HPs)
+# HPs <-  left_join(notif_data, parts_data, by="token") %>% left_join(specs_data,  by="token")
+# dim(HPs)
+# HPs <-  left_join(notif_data, specs_data, by="token") %>% left_join(parts_data,  by="token")
+# dim(HPs)
+# HPs <-  left_join(specs_data,parts_data, by="token") %>% left_join(notif_data,  by="token")
+# dim(HPs)
+# HPs <-  left_join(specs_data,notif_data,  by="token") %>% left_join(parts_data,  by="token")
+# dim(HPs)
+# 
+# HPs <-  merge(x=parts_data,y=specs_data, z= notif_data,
+#                      by.x=c("token"), 
+#                     by.z=c("token"), 
+#                      all.x=TRUE)
+
+dim(HPs)
+
+
+data_tib= as_tibble(HPs) #_before) #HAD TO MAKE A TIBBLE FOR GT() TABLE FUNCTION
+#head(data_tib)
+```
+
+
+```{r Mods, warning=FALSE, include=FALSE}
+modules <- data_tib [,c("Connect_ID.x","d_949302066","d_536735468","d_976570371","d_663265240", "d_914594314")] 
+mods <- c("d_949302066","d_536735468","d_976570371","d_663265240")
+modules$modules <- 0
+modules$none <-0
+for(i in 1:length(mods)){
+  module <- modules[,mods[i]]
+  count <- ifelse((!is.na(module) & module ==231311385), 1, 0)
+  modules$modules <- count+modules$modules
+  count1 <- ifelse((!is.na(module) & module==972455046), 1, 0)
+  modules$none <- count1+modules$none
+}
+
+#table(modules$modules)
+
+#table(modules$none)
+
+#table(modules$modules,modules$d_949302066)
+#CrossTable(modules$d_949302066, modules$modules,digits=4, prop.t=FALSE, prop.r=TRUE, prop.c=TRUE) #prop.chisq=FALSE)
+
+#length(modules[which(modules$modules==3 & modules$d_663265240==231311385 & modules$d_536735468==231311385),])
+modules1 <- modules %>% mutate(process = case_when(d_949302066 == '231311385' & as.character(modules) == '1' ~ "MRE, SAS, LAW not submitted",
+                                                   d_536735468 == '231311385' & as.character(modules) == '1' ~ "BOH, SAS, LAW not submitted",
+                                                   d_976570371 == '231311385' & as.character(modules) == '1' ~ "BOH, MRE, LAW not submitted",
+                                                   d_663265240 == '231311385' & as.character(modules) == '1' ~ "BOH, SAS, MRE not submitted",
+                                                   as.character(modules) == '2' & d_949302066 == '231311385' & d_536735468 == '231311385' ~ "SAS and LAW not submitted" ,
+                                                   as.character(modules) =='2' & d_949302066 == '231311385' & d_976570371 == '231311385' ~ "MRE and LAW not submitted" , 
+                                                   as.character(modules) =='2' & d_949302066 == '231311385' & d_663265240 == '231311385' ~ "MRE and SAS not submitted" ,   
+                                                   as.character(modules) =='2' & d_536735468 == '231311385' & d_976570371 == '231311385' ~ "BOH and LAW not submitted",
+                                                   as.character(modules) =='2' & d_536735468 == '231311385' & d_663265240 == '231311385' ~ "BOH and SAS not submitted" ,
+                                                   as.character(modules) =='2' & d_976570371 == '231311385' & d_663265240 == '231311385' ~ "BOH and MRE not submitted" , 
+                                                   as.character(modules) =='3' & d_949302066 == '231311385' & d_536735468 == '231311385' & d_976570371 == '231311385' ~ "LAW not submitted" ,  
+                                                   as.character(modules) =='3' & d_949302066 == '231311385' & d_976570371 == '231311385' & d_663265240 == '231311385'~ "MRE not submitted" , 
+                                                   as.character(modules) =='3' & d_949302066 == '231311385' & d_536735468 == '231311385' & d_663265240 == '231311385' ~ "SAS not submmitted",
+                                                   as.character(modules) =='3' & d_536735468 == '231311385' & d_976570371 == '231311385' & d_663265240 == '231311385' ~ "BOH not submitted" ,
+                                                   as.character(modules) =='0' ~ "No Surveys Submitted"))  
+
+tab1(modules1$process, decimal=2,sort.group = "decreasing", cum.percent = TRUE)$output.table
+
+```
+
+```{r Modules, warning=FALSE, echo=FALSE, message=FALSE}
+modules1$process <- factor(modules1$process, levels=c("No Surveys Submitted", "MRE, SAS, LAW not submitted", "BOH, SAS, LAW not submitted", "BOH, MRE, LAW not submitted", "BOH, SAS, MRE not submitted",
+                                                      "SAS and LAW not submitted" , "MRE and LAW not submitted" , "MRE and SAS not submitted" , "BOH and LAW not submitted", "BOH and SAS not submitted" ,
+                                                      "BOH and MRE not submitted" , "BOH not submitted" , "MRE not submitted" , "SAS not submmitted" , "LAW not submitted" ))
+
+completion_summary <- modules1  %>% dplyr::group_by(process) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  dplyr::select(process, n, percentage) 
+
+completion_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  fmt_number(columns = "n", decimals = 0) %>%
+  tab_header(title = html("Surveys not Submitted")) %>% 
+  cols_label(process = md("**Modules Completed**"), n = md("**Number of participants**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage), fns = ~sum(.,na.rm = T), formatter = fmt_number, decimals=0)|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = process,
+    )
+  ) 
+```
+                                                   
+
+
+```{r Collections, warning=FALSE, echo=FALSE, message=FALSE}
+HPs$specdate <- HPs$d_556788178[!is.na(HPs$d_556788178)]
+HPs$specdate <- as.POSIXct(ymd_hms(HPs$specdate))
+
+#HPs$Monthsdiff <- difftime(Sys.Date(), HPs$specdate, units="weeks")
+
+#HPs$specdate <- ymd(HPs$specdate)
+HPs$Monthsdiff <-  as.numeric(interval(HPs$specdate, Sys.Date()) / months(1))
+HPs$Monthsdiff <- round(HPs$Monthsdiff)
+HPs$Monthsdiff <- paste0(HPs$Monthsdiff, " months ago")
+HPs$Monthsdiff[HPs$Monthsdiff < 1] <- "Less than 1 month"
+HPs$Monthsdiff[HPs$Monthsdiff == "1 months ago"] <- "1 month ago"
+
+HPs$Monthsdiff <- factor(HPs$Monthsdiff, levels=c("Less than 1 month", "1 month ago", "2 months ago", "3 months ago", "4 months ago", "5 months ago", "6 months ago", 
+                                                  "7 months ago", "8 months ago","9 months ago", "10 months ago", "11 months ago", "12 months ago", "13 months ago", 
+                                                  "14 months ago", "15 months ago"))
+
+completion_summary <- HPs %>% dplyr::group_by(Monthsdiff) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  
+  dplyr::select(Monthsdiff, n, percentage) 
+
+completion_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  fmt_number(columns = "n", decimals = 0) %>%
+  tab_header(title = html("Months Passed Since Specimen Collection")) %>% 
+  cols_label(Monthsdiff = md("**Months**"), n = md("**Number of participants**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage), fns = ~sum(.,na.rm = T), formatter = fmt_number, decimals=0)|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = Monthsdiff,
+    )
+  ) 
+
+```
+
+
+
+
+
+```{r Verif, warning=FALSE, echo=FALSE, message=FALSE}
+
+HPs$verifdate <- HPs$d_914594314[!is.na(HPs$d_914594314)]
+HPs$verifdate <- as.POSIXct(ymd_hms(HPs$verifdate))
+
+#HPs$VerMonthsdiff <- difftime(Sys.Date(), HPs$verifdate, units="weeks")
+
+#HPs$verifdate <- ymd(HPs$verifdate)
+HPs$VerMonthsdiff <-  as.numeric(interval(HPs$verifdate, Sys.Date()) / months(1))
+HPs$VerMonthsdiff <- round(HPs$VerMonthsdiff)
+HPs$VerMonthsdiff <- paste0(HPs$VerMonthsdiff, " months ago")
+HPs$VerMonthsdiff[HPs$VerMonthsdiff < 1] <- "Less than 1 month"
+HPs$VerMonthsdiff[HPs$VerMonthsdiff == "1 months ago"] <- "1 month ago"
+
+HPs$VerMonthsdiff <- factor(HPs$VerMonthsdiff, levels=c("Less than 1 month", "1 month ago", "2 months ago", "3 months ago", "4 months ago", "5 months ago", "6 months ago", 
+                                                  "7 months ago", "8 months ago","9 months ago", "10 months ago", "11 months ago", "12 months ago", "13 months ago", 
+                                                  "14 months ago", "15 months ago", "16 months ago", "17 months ago", "18 months ago", "19 months ago",
+                                                  "20 months ago", "21 months ago", "22 months ago", "23 months ago", "24 months ago"))
+
+completion_summary <- HPs %>% dplyr::group_by(VerMonthsdiff) %>%  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  
+  dplyr::select(VerMonthsdiff, n, percentage) 
+
+completion_summary %>%  gt(rowname_col = "row_lab") %>%  
+  fmt_number(columns = "percentage", decimals = 2) %>% 
+  fmt_number(columns = "n", decimals = 0) %>%
+  tab_header(title = html("Months Passed Since Verification")) %>% 
+  cols_label(VerMonthsdiff = md("**Months**"), n = md("**Number of participants**"), percentage = md("**Percentage of Participants**")) %>% 
+  grand_summary_rows(columns=c(n, percentage), fns = ~sum(.,na.rm = T), formatter = fmt_number, decimals=0)|>
+  tab_options(
+    stub.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = VerMonthsdiff,
+    )
+  ) 
+```
+
+
+
+
+
+
+
+
+
+
+
+```{r Notif, warning=FALSE, echo=FALSE, message=FALSE}
+HP_notif_summary <- HPs %>%  dplyr::group_by(notificationSpecificationsID, category, attempt) %>%  #select("notificationSpecificationsID", "category", "attempt") %>%
+  dplyr::summarize(n=n(), percentage=100*n/nrow(.))  %>% dplyr::ungroup() %>%  
+  dplyr::select(notificationSpecificationsID, category, attempt, n, percentage) 
+
+#HP_notif$notificationSpecificationsID <- factor(HP_notif$notificationSpecificationsID, levels=c("1st contact", "2nd contact", "3rd contact", "4th contact", "5th contact", "6th contact", "7th contact", "8th contact", "9th contact"))
+
+HP_notif_summary <- HP_notif_summary[order(HP_notif_summary$notificationSpecificationsID),]
+colnames(HP_notif_summary) <- c("Spec IDs", "Type of Notification", "Attemps","Number of participants", "Percentage of Participants")
+
+# knitr::kable(HP_notif_summary, col.names=c("Spec IDs", "Type of Notification", "Attemps","Number of participants", "Percentage of Participants"), 
+#                                            caption='Survey Email Reminders Sent', row.names=FALSE, align=c("l","c","c","c","c"), 
+#                                            format.args = list(big.mark = ","), booktabs = TRUE) %>%  kable_styling(latex_options = "scale_down")  
+
+desktop_path <- file.path(Sys.getenv("USERPROFILE"), "Desktop")
+csv_file_path <- file.path(desktop_path, "HP_data.csv")
+write.csv(HP_notif_summary, csv_file_path,row.names = F,na="")
+  
+HP_notif_summary %>%  gt(rowname_col = "row_lab") %>%
+  fmt_number(columns = "percentage", decimals = 2) %>%
+  fmt_number(columns = "n", decimals = 0) %>%
+  tab_header(title = html("Survey Email Reminders Sent")) %>%
+  cols_label("notificationSpecificationsID" = md("**Spec IDs**"), "category"= md("**Type of Notification**"), "attempt"= md("**Attemps**"),
+             n = md("**Number of participants**"), percentage = md("**Percentage of Participants**")) %>%
+  grand_summary_rows(columns=c(n, percentage), fns = ~sum(.,na.rm = T), formatter = fmt_number, decimals=0)|>
+  tab_options(
+    stub.font.weight = "bold"
+  )
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

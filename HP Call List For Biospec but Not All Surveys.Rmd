@@ -1,0 +1,170 @@
+---
+title: "HP Biospec No Surv Comp"
+author: "Kelsey Dowling"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+
+
+```{r library, include=FALSE}
+#d_949302066='231311385' & 
+#d_100767870='353358909' & d_878865966='353358909' & d_167958071='353358909' & d_684635302='353358909'
+
+library(bigrquery)
+library(foreach)
+library(stringr)
+library(gtsummary)
+library(rio)
+library(epiDisplay)
+library(kableExtra)
+
+
+library(ggplot2)
+library(gridExtra)
+library(scales)
+library(gt)
+library(tinytex)
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(reshape)  ###to work on transition from long to wide or wide to long data
+library(listr) ###to work on a list of vector, files or..
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(stringr)
+
+bq_auth()
+```
+
+
+
+
+```{r merge1, include=FALSE, warning=FALSE}
+project <- "nih-nci-dceg-connect-prod-6d04"
+
+# Site = HP AND
+# Verification Status = Verified AND
+# Has one or more of survey modules 1-4 not submitted AND
+# Has any baseline blood collected (let’s not take into account urine or mouthwash this time around, just blood) AND
+# Not refused baseline survey AND
+# Not refused all study activities AND
+# Not withdrawn AND
+# Not deceased
+#-- add to this file the flags (not started, started, submitted) and dates submitted of Modules 1, 2, 3, 4 
+
+
+partsHP <- "SELECT Connect_ID, token, state_studyId_string,
+d_949302066,
+d_517311251
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP`
+where Connect_ID IS NOT NULL and 
+d_827220437='531629870' and d_821247024='197316935' and d_100767870='104430631' and  
+d_685002411_d_994064239!=	'353358909' and 
+d_912301837!='458508122' and d_685002411_d_994064239!='353358909' and
+d_747006172='104430631' and d_987563196='104430631' and d_878865966='353358909' and d_517311251 <= '2023-11-14'"
+
+#, d_536735468 , d_976570371, d_663265240,
+#d_832139544, d_770257102, d_264644252 
+
+notif <- "SELECT attempt, token FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` 
+where token is not null and category LIKE '%BL Survey Reminders%'"
+
+notif_table <- bq_project_query(project, notif)
+notif_data <- bq_table_download(notif_table, bigint = "integer64")
+
+parts_tableHP <- bq_project_query(project, partsHP)
+parts_dataHP <- bq_table_download(parts_tableHP, bigint = "integer64")
+
+
+HPs <-  left_join(parts_dataHP, notif_data, by="token")
+
+
+dim(HPs)
+
+colnames(HPs) <- c("Connect_ID", "token", "StudyID", "Mod1Status",  "Mod1CompletionTime",  "Contacts")
+#head(data_tib)
+
+AfterOct <- HPs %>%  filter(Mod1CompletionTime <= as.Date('2023-10-23'))
+dim(AfterOct)
+BeforeOct <- HPs %>%  filter(Mod1CompletionTime >= as.Date('2023-10-24'))
+dim(BeforeOct)
+```
+
+
+```{r Notif_Before, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+
+HP_notif_summary <- BeforeOct %>%
+  group_by(Connect_ID, StudyID, Mod1Status,  Mod1CompletionTime, Contacts) %>%
+  #summarize(n = n(), percentage = 100 * n / nrow(.)) %>%
+  ungroup() %>%
+  #select(Connect_ID, StudyID, Contacts)
+  select(Connect_ID, StudyID, Mod1Status,  Mod1CompletionTime, Contacts)
+
+# Select unique rows based on Connect_ID
+HP_notif_unique_rows <- HP_notif_summary %>%
+  distinct(Connect_ID, .keep_all = TRUE)
+
+# Group by Connect_ID and StudyID and calculate the maximum reminder
+HP_notif_rows_amax <- HP_notif_unique_rows %>%
+  group_by(Connect_ID, StudyID, Mod1Status,  Mod1CompletionTime) %>%
+  summarize('Last Survey Reminder Sent' = max(Contacts))
+
+#colnames(HP_notif_rows_amax) <- c('Connect ID', 'Study ID',"Total Survey Reminders Received")
+
+# Print the final table
+print(HP_notif_rows_amax)
+
+
+
+
+desktop_path <- file.path(Sys.getenv("USERPROFILE"), "Desktop")
+csv_file_path <- file.path(desktop_path, "HP_Mod1Comp_Before_October24th.csv")
+write.csv(HP_notif_rows_amax, csv_file_path,row.names = F,na="")
+
+```
+
+
+
+```{r Notif_After, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+
+HP_notif_summary <- AfterOct %>%
+  group_by(Connect_ID, StudyID, Mod1Status,  Mod1CompletionTime, Contacts) %>%
+  #summarize(n = n(), percentage = 100 * n / nrow(.)) %>%
+  ungroup() %>%
+  #select(Connect_ID, StudyID, Contacts)
+  select(Connect_ID, StudyID, Mod1Status,  Mod1CompletionTime, Contacts)
+
+# Select unique rows based on Connect_ID
+HP_notif_unique_rows <- HP_notif_summary %>%
+  distinct(Connect_ID, .keep_all = TRUE)
+
+# Group by Connect_ID and StudyID and calculate the maximum reminder
+HP_notif_rows_amax <- HP_notif_unique_rows %>%
+  group_by(Connect_ID, StudyID, Mod1Status,  Mod1CompletionTime) %>%
+  summarize('Last Survey Reminder Sent' = max(Contacts))
+
+#colnames(HP_notif_rows_amax) <- c('Connect ID', 'Study ID',"Total Survey Reminders Received")
+
+# Print the final table
+print(HP_notif_rows_amax)
+
+
+
+
+desktop_path <- file.path(Sys.getenv("USERPROFILE"), "Desktop")
+csv_file_path <- file.path(desktop_path, "HP_Mod1Comp_Before_November15th.csv")
+write.csv(HP_notif_rows_amax, csv_file_path,row.names = F,na="")
+
+```
+
+
+
+
+
+
+

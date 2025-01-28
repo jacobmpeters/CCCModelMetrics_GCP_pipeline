@@ -1,0 +1,479 @@
+---
+title: "2024 Connect Experience Survey Demographics"
+author: "Kelsey Sanchez"
+date: 'Data Extracted and Report Ran: `r Sys.Date()`'
+header-includes: 
+  \usepackage[labelformat=empty]{caption} 
+  \usepackage{placeins} 
+  \usepackage{booktabs}
+  \usepackage{pdflscape}
+  
+output:
+  pdf_document:
+    latex_engine: xelatex
+    extra_dependencies: ["float"]
+    toc: no
+    keep_tex: yes
+    fig_width: 7
+    fig_height: 5
+    fig_caption: yes
+    df_print: paged
+---
+
+
+
+
+
+
+```{r libraries, include=FALSE, warning=FALSE}
+
+ # \usepackage{caption}
+ # \captionsetup[figure]{labelformat=empty}
+
+
+#old.packages()
+#update.packages("tinytex")
+
+
+library(bigrquery)
+library(dplyr)
+library(gmodels)
+library(epiDisplay)
+library(lubridate)
+library(tidyverse)
+library(knitr)
+#install_tinytex()
+#library(tinytex)
+#library(vtable)
+library(kableExtra)
+library(gtsummary)
+
+
+
+library(arsenal)
+library(rio)
+library(ggplot2)
+library(scales)
+library(gt)
+library(tinytex)
+library(data.table) ###to write or read and data management 
+library(stringr) ###to work on patterns, charaters
+options(tinytex.verbose = TRUE)
+
+bq_auth()
+
+
+# ```{r setup, include=FALSE}
+# options(width = 80)
+# options(tinytex.verbose = TRUE) --- didn't work
+# ```
+
+```
+
+
+
+```{r BQPull, include=FALSE}
+knitr::opts_chunk$set(comment = NA)
+
+project = "nih-nci-dceg-connect-prod-6d04"
+CES_elg <- "SELECT Connect_ID, d_949302066, d_536735468, d_663265240, d_976570371, d_827220437,
+d_878865966, d_167958071, d_684635302, state_d_934298480, state_d_706256705, state_d_435027713
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP`
+WHERE d_821247024 = '197316935'                             -- RcrtV_Verification_v1r0 = 1
+  AND (CAST(LEFT(d_914594314,10) as DATE))>= '2024-03-01'   -- RcrtV_VerificationTm_V1R0 >= 3/1/2024
+  AND (CAST(LEFT(d_914594314,10) as DATE))<= '2024-07-31'   -- RcrtV_VerificationTm_V1R0 <= 7/31/2024
+  AND d_747006172 = '104430631'                             -- HdWd_WdConsent_v1r0 = 0
+  AND d_906417725 = '104430631'                             -- HdWd_Activepart_v1r0 = 0
+  AND d_685002411_d_867203506 = '104430631'                 -- HdRef_Allsrv_v1r0 = 0
+  AND d_987563196 = '104430631'                             -- HdWd_Deceased_v1r0 = 0'"
+
+CES_elg_table <- bq_project_query(project, CES_elg)
+CES_df <- bq_table_download(CES_elg_table, bigint = "integer64")
+
+CES_tib= as_tibble(CES_df) 
+
+
+elig <- CES_tib %>% 
+  mutate(eligible= case_when(!is.na(Connect_ID) ~ "Eligible",
+                             TRUE~ "Not Eligible"),
+          baseMcomplt_all = case_when(d_949302066!= '231311385' ~ "None",
+                                     d_949302066 == '231311385' & d_536735468 == '231311385' & 
+                                       d_663265240 == '231311385' & d_976570371 == '231311385' ~ "All",
+                                     d_949302066 == '231311385' & d_536735468 != '231311385' & 
+                                       d_663265240 != '231311385' & d_976570371 != '231311385' ~ "BOH only",
+                                     TRUE ~ "2 or 3 Sections"),
+         baseMcomplt_all = factor(baseMcomplt_all, levels = c("All","2 or 3 Sections", "BOH only", "None")),
+         biospeDonation = case_when(d_878865966 == '104430631' & d_167958071 == '104430631' & d_684635302 == '104430631' ~ "No Sample Donations", 
+                                    d_878865966 == '353358909' & d_167958071 == '353358909' & d_684635302 == '353358909' ~ "Completed All 3 Sample Donations",
+                                    TRUE ~ "Completed Some but Not \n All 3 Sample Donations"),
+         biospeDonation= factor(biospeDonation,levels=c("Completed All 3 Sample Donations", "Completed Some but Not \n All 3 Sample Donations",
+                                                        "No Sample Donations")),
+         age = case_when(state_d_934298480 == "713781738"~ "30-34",
+                         state_d_934298480 == '631272782' ~ "35-39",
+                         state_d_934298480 == '124276120' ~ "40-45",
+                         state_d_934298480 == '450985724' ~ "46-50",
+                         state_d_934298480 == '363147933' ~ "51-55",
+                         state_d_934298480 == '636706443' ~ "56-60",
+                         state_d_934298480 == '771230670' ~ "61-65",
+                         state_d_934298480 == '722846087' ~ "66-70"),
+         sex = case_when(state_d_706256705 == '536341288' | state_d_435027713 == '536341288' ~ "Female",
+                         state_d_706256705 == '654207589' | state_d_435027713 == '654207589' ~ "Male",
+                         #state_d_706256705 == '830573274' ~ "Intersex or Other", # too small of a count for now, need to combine with unknown 
+                         state_d_706256705 == '830573274' | state_d_706256705 == '178420302' | state_d_435027713 == '178420302' ~ "Unknown"),
+         Site = case_when(d_827220437==472940358 ~ "Baylor Scott and White Health",
+                          d_827220437==125001209 ~ "KP Colorado",
+                          d_827220437==327912200 ~ "KP Georgia",
+                          d_827220437==300267574 ~ "KP Hawaii",
+                          d_827220437==452412599 ~ "KP Northwest",
+                          d_827220437==548392715 ~ "Henry Ford",
+                          d_827220437==531629870 ~ "HealthPartners",
+                          d_827220437==303349821 ~ "Marshfield",
+                          d_827220437==657167265 ~ "Sanford",
+                          d_827220437==809703864 ~ "UChicago"))
+  
+
+```
+
+
+
+
+
+
+
+```{r Overall_BySex_ByAge, echo=FALSE, warning=FALSE, message=FALSE}
+
+
+Elg_by_Sex <- elig %>% filter(eligible!="Not Eligible") %>% 
+  mutate(eligible = factor(eligible, levels="Eligible")) %>% 
+  select(sex, eligible) %>% dplyr::arrange(sex,eligible) %>% 
+  tbl_cross(
+  row = sex,
+  col = eligible,
+  label = list(eligible ~ "Eligibility",sex~"Sex"),
+  percent = "column",
+  digits=c(0,2),
+  margin_text="Total Eligible Participants") 
+
+Elg_by_Sex_table <- Elg_by_Sex %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  #modify_header(stat_0 = "Total 2024 Connect Experie Eligible \n Participants") %>%
+  modify_caption("2024 Connect Experience Survey Eligibility Rate \n by Site Defined Sex Among Eligible Participants") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+ 
+Elg_by_Sex_table %>% kable_styling(latex_options = c("scale_down","hold_position"))
+
+
+
+
+
+
+
+Elg_by_Age <- elig %>% filter(eligible!="Not Eligible") %>%  
+  mutate(eligible = factor(eligible, levels="Eligible")) %>% 
+  select(age, eligible) %>% dplyr::arrange(age,eligible) %>% 
+  tbl_cross(
+  row = age,
+  col = eligible,
+  label = list(eligible ~ "Eligibility",age~"Age"),
+  percent = "column",
+  digits=c(0,2),
+  margin_text="Total Eligible Participants") 
+
+#Elg_by_Age[["table_body"]]$stat_0 <- sapply(strsplit(Elg_by_Age[["table_body"]]$stat_0," "),"[",1)
+
+Elg_by_Age <- Elg_by_Age %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  #modify_header(stat_0 = "Total QOL Eligible \n Participants") %>%
+  modify_caption("2024 Connect Experience Survey Eligibility Rate \n by Age Group Among Eligible Participants") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+ 
+Elg_by_Age %>% kable_styling(latex_options = c("scale_down","hold_position"))
+
+
+```
+
+
+```{r BL_elg, echo=FALSE, warning=FALSE, message=FALSE}
+
+
+BL_comp <- elig %>% filter(eligible!="Not Eligible") %>% 
+  #mutate(eligible = factor(eligible, levels="Eligible")) %>% 
+  select(baseMcomplt_all,biospeDonation) %>%
+  tbl_cross(col = baseMcomplt_all,
+            row = biospeDonation,
+            label = list(baseMcomplt_all~"Completion of Baseline Surveys",
+             biospeDonation ~"Biospecimen Donation" ),
+            digits=c(0,2),
+            percent = c("cell"),
+            missing = "ifany",
+            margin_text = "Total Eligible Participants",
+            missing_text = "(Missing)") 
+
+BL_comp_table <- BL_comp %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  #modify_header(stat_0 = "Total 2024 Connect Experie Eligible \n Participants") %>%
+  modify_caption("Completion of Baseline Activities Among 2024 Connect Experience Survey Eligibility") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+BL_comp_table %>% kable_styling(latex_options = c("scale_down","hold_position"))
+
+```
+
+
+```{r By_Site, echo=FALSE, warning=FALSE, message=FALSE}
+
+
+Elg_by_Site <- elig %>% filter(eligible!="Not Eligible") %>%  
+  mutate(eligible = factor(eligible, levels="Eligible")) %>% 
+  select(Site, eligible) %>% dplyr::arrange(Site,eligible) %>% 
+  tbl_cross(
+  row = Site,
+  col = eligible,
+  label = list(eligible ~ "Eligibility",Site~"Site"),
+  percent = "column",
+  digits=c(0,2),
+  margin_text="Total Eligible Participants") 
+
+#Elg_by_Site[["table_body"]]$stat_0 <- sapply(strsplit(Elg_by_Site[["table_body"]]$stat_0," "),"[",1)
+
+Elg_by_Site <- Elg_by_Site %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  #modify_header(stat_0 = "Total QOL Eligible \n Participants") %>%
+  modify_caption("2024 Connect Experience Survey Eligibility Rate \n by Site Among Eligible Participants") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+ 
+Elg_by_Site %>% kable_styling(latex_options = c("scale_down","hold_position"))
+
+```
+
+
+
+
+
+```{r merge1, include=FALSE, warning=FALSE}
+
+dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
+dd <- dplyr::bind_rows(dictionary,.id="CID")
+dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
+dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name')
+
+dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
+dd$CID <- rownames(dd)
+#https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
+#devtools::install_github("tidyverse/reprex")
+
+
+recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
+                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935'")
+recr_m1 <- bq_table_download(recr_M1,bigint = "integer64",n_max = Inf, page_size = 10000)
+cnames <- names(recr_m1)
+# Check that it doesn't match any non-number
+numbers_only <- function(x) !grepl("\\D", x)
+# to check variables in recr_noinact_wl1
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(recr_m1,varname)
+  recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+sql_M1_1 <- bq_project_query(project, query="SELECT Connect_ID, D_384191091_D_384191091_D_583826374, D_384191091_D_384191091_D_636411467, D_384191091_D_384191091_D_458435048, D_384191091_D_384191091_D_706998638, D_384191091_D_384191091_D_973565052, D_384191091_D_384191091_D_586825330, D_384191091_D_384191091_D_412790539, D_384191091_D_384191091_D_807835037,D_384191091_D_747350323,D_384191091_D_384191091_D_746038746 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` where Connect_ID is not null")
+sql_M1_2 <- bq_project_query(project, query="SELECT Connect_ID, D_384191091_D_384191091_D_583826374 ,D_384191091_D_384191091_D_636411467, D_384191091_D_384191091_D_458435048, D_384191091_D_384191091_D_706998638, D_384191091_D_384191091_D_973565052, D_384191091_D_384191091_D_586825330,D_384191091_D_384191091_D_412790539,D_384191091_D_384191091_D_807835037,D_384191091_D_747350323,D_384191091_D_384191091_D_746038746 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` where Connect_ID is not null")
+
+
+M1_V1 <- bq_table_download(sql_M1_1,bigint = "integer64",n_max = Inf) #1436 #1436 vars: 1507 01112023 
+M1_V2 <- bq_table_download(sql_M1_2,bigint = "integer64",n_max = Inf) #2333 #3033 01112023 var:1531 #6339 obs 1893 vars 05022023
+
+mod1_v1 <- M1_V1
+cnames <- names(M1_V1)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v1,varname)
+  mod1_v1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+mod1_v2 <- M1_V2
+cnames <- names(M1_V2)
+###to check variables and convert to numeric
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(mod1_v2,varname)
+  mod1_v2[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+M1_V1.var <- colnames(M1_V1)
+M1_V2.var <- colnames(M1_V2)
+var.matched <- M1_V1.var[which(M1_V1.var %in% M1_V2.var)]
+length(var.matched)  #1275 #1278 vars 01112023 #1348 vars 05022023
+
+V1_only_vars <- colnames(M1_V1)[colnames(M1_V1) %nin% var.matched] #232 #229 01112023 #159 05022023
+V2_only_vars <- colnames(M1_V2)[colnames(M1_V2) %nin% var.matched] #253 #253 01112023 #545 05022023
+
+length(M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID])
+#[1] 59 with the completion of two versions of Module1 
+#[1] 62 with completing both versions of M1 ###double checked 03/28/2023
+#68 double checked 05/02/2023
+
+common.IDs <- M1_V1$Connect_ID[M1_V1$Connect_ID %in% M1_V2$Connect_ID]
+M1_V1_common <- mod1_v1[,var.matched]
+
+M1_V2_common <- mod1_v2[,var.matched]
+M1_V1_common$version <- 1
+M1_V2_common$version <- 2
+
+##to check the completion of M1 among these duplicates
+partM1_dups <- recr_m1[which(recr_m1$Connect_ID %in% common.IDs),]
+table(partM1_dups$d_949302066)
+
+M1_common  <- rbind(M1_V1_common, M1_V2_common) #including 136 duplicates (version 1 and version 2) from 68 participants 05022023
+#M1_response <- matrix(data=NA, nrow=118, ncol=967)
+
+m1_v1_only <- mod1_v1[,c("Connect_ID", V1_only_vars)] #230 vars 03282023 #160 vars 05/02/2023
+m1_v2_only <- mod1_v2[,c("Connect_ID", V2_only_vars)] #255 vars 03282023 #546 vars 05/02/2023
+m1_v1_only$version <- 1
+m1_v2_only$version <- 2
+#for (i in 1:length)
+##to check the completion in each version
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v1_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #1364 03282023 # 1370 05022023
+length(recr_m1$Connect_ID[which(recr_m1$Connect_ID %in% m1_v2_only$Connect_ID & recr_m1$d_949302066 ==231311385)]) #4870 03282023 # 5731 05022023
+
+#library(janitor)
+
+m1_common <- rbind(M1_V1_common,M1_V2_common)
+m1_common_v1 <- base::merge(m1_common, m1_v1_only, by=c("Connect_ID","version"),all.x=TRUE)
+m1_combined_v1v2 <- base::merge(m1_common_v1,m1_v2_only,by=c("Connect_ID","version"),all.x=TRUE)
+m1_complete <- m1_combined_v1v2[which(m1_combined_v1v2$Connect_ID %in% recr_m1$Connect_ID[which(recr_m1$d_949302066 ==231311385 )]),] #7289 including duplicates 05022023
+
+m1_complete <- m1_complete %>% arrange(desc(version)) 
+
+
+m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),] 
+table(m1_complete_nodup$version)
+
+
+
+
+elig$Connect_ID <- as.numeric(elig$Connect_ID)
+
+
+elig1_df= left_join(m1_complete_nodup, elig, by="Connect_ID")
+dim(elig1_df)
+
+
+elig1 <- as_tibble(elig1_df)
+
+
+knitr::opts_chunk$set(comment = NA)
+
+```
+
+
+
+```{r Race, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+## Multi-racial
+
+multi_race=0    
+for (i in 1:length(elig1$Connect_ID)){
+  AI=ifelse((elig1$D_384191091_D_384191091_D_583826374[[i]]==1 & (elig1$D_384191091_D_384191091_D_636411467[[i]]==1 | elig1$D_384191091_D_384191091_D_458435048[[i]]==1|
+                                               elig1$D_384191091_D_384191091_D_706998638[[i]]==1 | elig1$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                               elig1$D_384191091_D_384191091_D_586825330[[i]]==1 | elig1$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                               elig1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  As=ifelse((elig1$D_384191091_D_384191091_D_636411467[[i]]==1 & (elig1$D_384191091_D_384191091_D_583826374[[i]]==1 | elig1$D_384191091_D_384191091_D_458435048[[i]]==1|
+                                                        elig1$D_384191091_D_384191091_D_706998638[[i]]==1 | elig1$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        elig1$D_384191091_D_384191091_D_586825330[[i]]==1 | elig1$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        elig1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Bl=ifelse((elig1$D_384191091_D_384191091_D_458435048[[i]]==1 & (elig1$D_384191091_D_384191091_D_583826374[[i]]==1 | elig1$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        elig1$D_384191091_D_384191091_D_706998638[[i]]==1 | elig1$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        elig1$D_384191091_D_384191091_D_586825330[[i]]==1 | elig1$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        elig1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Hs=ifelse((elig1$D_384191091_D_384191091_D_706998638[[i]]==1 & (elig1$D_384191091_D_384191091_D_583826374[[i]]==1 | elig1$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        elig1$D_384191091_D_384191091_D_458435048[[i]]==1 | elig1$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        elig1$D_384191091_D_384191091_D_586825330[[i]]==1 | elig1$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        elig1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Me=ifelse((elig1$D_384191091_D_384191091_D_973565052[[i]]==1 & (elig1$D_384191091_D_384191091_D_583826374[[i]]==1 | elig1$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        elig1$D_384191091_D_384191091_D_458435048[[i]]==1 | elig1$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        elig1$D_384191091_D_384191091_D_586825330[[i]]==1 | elig1$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        elig1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Hw=ifelse((elig1$D_384191091_D_384191091_D_586825330[[i]]==1 & (elig1$D_384191091_D_384191091_D_583826374[[i]]==1 | elig1$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        elig1$D_384191091_D_384191091_D_458435048[[i]]==1 | elig1$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        elig1$D_384191091_D_384191091_D_973565052[[i]]==1 | elig1$D_384191091_D_384191091_D_412790539[[i]]==1 |
+                                                        elig1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Wh=ifelse((elig1$D_384191091_D_384191091_D_412790539[[i]]==1 & (elig1$D_384191091_D_384191091_D_583826374[[i]]==1 | elig1$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        elig1$D_384191091_D_384191091_D_458435048[[i]]==1 | elig1$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        elig1$D_384191091_D_384191091_D_586825330[[i]]==1 | elig1$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        elig1$D_384191091_D_384191091_D_807835037[[i]]==1)), 1, 0)
+  Ot=ifelse((elig1$D_384191091_D_384191091_D_807835037[[i]]==1 & (elig1$D_384191091_D_384191091_D_583826374[[i]]==1 | elig1$D_384191091_D_384191091_D_636411467[[i]]==1|
+                                                        elig1$D_384191091_D_384191091_D_458435048[[i]]==1 | elig1$D_384191091_D_384191091_D_706998638[[i]]==1 |
+                                                        elig1$D_384191091_D_384191091_D_586825330[[i]]==1 | elig1$D_384191091_D_384191091_D_973565052[[i]]==1 |
+                                                        elig1$D_384191091_D_384191091_D_412790539[[i]]==1)), 1, 0)
+  multi_race= multi_race + sum(AI+As+Bl+Hs+Me+Hw+Wh+Ot, na.rm=T)
+
+}
+
+#cat("Percentage of multirace participants:", (multi_race/(dim(elig1)[1]))*100)
+   
+   
+
+elig1$multi_racial <- c(rep(1, times=multi_race), rep(0, times=(dim(elig1)[1]- multi_race)))
+
+
+
+## RACE
+
+elig1 = elig1 %>%  mutate(race= case_when(multi_racial==1 ~ "Multi-Racial",
+                                                     D_384191091_D_384191091_D_583826374==1 ~ "American Indian or Native American",
+                                                     D_384191091_D_384191091_D_636411467==1 ~ "Asian/Asian American",
+                                                     D_384191091_D_384191091_D_458435048==1 ~ "Black, African American, or African",
+                                                     D_384191091_D_384191091_D_706998638==1 ~ "Hispanic, Latino, or Spanish",
+                                                     D_384191091_D_384191091_D_973565052==1 ~ "Middle Eastern or North African",
+                                                     D_384191091_D_384191091_D_586825330==1 ~ "Hawaiian or Pacific Islander",
+                                                     D_384191091_D_384191091_D_412790539==1 ~ "White",
+                                                     (D_384191091_D_384191091_D_807835037==1 | !is.na(D_384191091_D_747350323)) ~ "Other",
+                                                     D_384191091_D_384191091_D_746038746==1 ~ "Prefer Not to Answer",
+                                                     TRUE  ~ "Skipped this question"))
+
+```
+
+
+
+
+```{r By_Race, echo=FALSE, warning=FALSE, message=FALSE}
+
+
+Elg_by_race <- elig1 %>% filter(eligible!="Not Eligible") %>% 
+  mutate(eligible = factor(eligible, levels="Eligible")) %>% 
+  select(race, eligible) %>% dplyr::arrange(race,eligible) %>% 
+  tbl_cross(
+  row = race,
+  col = eligible,
+  label = list(eligible ~ "Eligibility",race~"Race"),
+  percent = "column",
+  digits=c(0,2),
+  margin_text="Total Eligible Participants") 
+
+#Elg_by_race[["table_body"]]$stat_0 <- sapply(strsplit(Elg_by_race[["table_body"]]$stat_0," "),"[",1)
+
+Elg_by_race <- Elg_by_race %>%
+  #bold_labels() %>%
+  #italicize_levels() %>% 
+  #modify_header(stat_0 = "Total Eligible \n Participants") %>%
+  modify_caption("2024 Connect Experience Survey Eligibility Rate by Race Among Eligible Participants") %>%
+  as_kable_extra(escape = FALSE, addtl_fmt = TRUE)
+
+reduced <- elig %>% filter(d_949302066 != 231311385 & eligible!="Not Eligible") # Those who are eligible for PROMIS but didn't complete mod1 yet
+#dim(reduced)[[1]] 
+
+Elg_by_race %>% kable_styling(latex_options = c("scale_down","hold_position")) %>% 
+  footnote(general = paste0('In order to determine race, Module 1 must first be completed. There are ', dim(reduced)[[1]] , ' QOL eligible participants that have either not started or not finished Module 1.'),general_title = "Note: ", footnote_as_chunk = T)
+
+
+```
+
