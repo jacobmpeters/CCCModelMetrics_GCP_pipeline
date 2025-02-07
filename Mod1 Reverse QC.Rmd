@@ -1,0 +1,242 @@
+---
+title: "Mod1 Reverse QC"
+author: "Kelsey Sanchez"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+
+```{r libraries, include=FALSE}
+
+#All libraries are listed up top; authentication for BQ will be necessary.
+#Functions used included before the start of the analysis .
+
+
+
+rm(list = ls())
+library(bigrquery)
+library(foreach)
+library(stringr)
+#library(plyr)
+#library(expss) ###to add labels
+library(epiDisplay) ##recommended applied here crosstable, tab1
+library(gmodels) ##recommended
+library(magrittr)
+library(arsenal)
+library(gtsummary)
+library(rio)
+
+
+
+library(ggplot2)
+library(gridExtra)
+library(scales)
+library(gt)
+#install(tinytex)
+library(tinytex)
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(reshape)  ###to work on transition from long to wide or wide to long data
+library(listr) ###to work on a list of vector, files or..
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(stringr) ###to work on patterns, charaters
+library(kableExtra)
+
+
+options(tinytex.verbose = TRUE)
+
+bq_auth()
+
+```
+
+
+```{r M1merge, include=FALSE}
+
+#Data Dictionary for column names
+dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
+dd <- dplyr::bind_rows(dictionary,.id="CID")
+dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
+dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name')
+dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
+dd$CID <- rownames(dd)
+#https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
+devtools::install_github("tidyverse/reprex")
+
+
+
+
+
+## BQ Pull from the participants table just to use for versioning
+project <- "nih-nci-dceg-connect-prod-6d04"
+billing <- "nih-nci-dceg-connect-prod-6d04" 
+recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
+                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935' and d_949302066 ='231311385'")
+recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
+cnames <- names(recr_m1)
+# Check that it doesn't match any non-number
+numbers_only <- function(x) !grepl("\\D", x)
+# to check variables in recr_noinact_wl1
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(recr_m1,varname)
+  recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+
+
+
+#### Handling participants that somehow completed both Mod1 version 1 and Mod1 version 2
+
+sql_M1_1 <- bq_project_query(project, query = "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` WHERE Connect_ID IS NOT NULL")
+sql_M1_2 <- bq_project_query(project, query = "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` WHERE Connect_ID IS NOT NULL")
+
+M1_V1 <- bq_table_download(sql_M1_1, bigint = "integer64")
+M1_V2 <- bq_table_download(sql_M1_2, bigint = "integer64")
+
+# Select matching column names
+M1_V1_vars <- colnames(M1_V1)
+M1_V2_vars <- colnames(M1_V2)
+common_vars <- intersect(M1_V1_vars, M1_V2_vars)
+
+# Subset to common columns
+M1_V1_common <- M1_V1[, common_vars]
+M1_V2_common <- M1_V2[, common_vars]
+
+# Add version indicator
+M1_V1_common$version <- 1
+M1_V2_common$version <- 2
+
+# Identify columns with mismatched types
+mismatched_cols <- names(M1_V1_common)[sapply(names(M1_V1_common), function(col) {
+  class(M1_V1_common[[col]]) != class(M1_V2_common[[col]])
+})]
+
+# Convert mismatched columns to character for consistency
+M1_V1_common <- M1_V1_common %>%
+  mutate(across(all_of(mismatched_cols), as.character))
+M1_V2_common <- M1_V2_common %>%
+  mutate(across(all_of(mismatched_cols), as.character))
+
+# Combine both versions for participants who completed both
+M1_common <- bind_rows(M1_V1_common, M1_V2_common) %>%
+  arrange(Connect_ID, desc(version))
+
+# For columns unique to each version
+V1_only_vars <- setdiff(M1_V1_vars, common_vars)
+V2_only_vars <- setdiff(M1_V2_vars, common_vars)
+
+# Subset each version for unique columns and add version indicator
+m1_v1_only <- M1_V1[, c("Connect_ID", V1_only_vars)] %>%
+  mutate(version = 1)
+m1_v2_only <- M1_V2[, c("Connect_ID", V2_only_vars)] %>%
+  mutate(version = 2)
+
+# Combine the unique and common data
+m1_common_v1 <- left_join(M1_common, m1_v1_only, by = c("Connect_ID", "version"))
+m1_combined_v1v2 <- left_join(m1_common_v1, m1_v2_only, by = c("Connect_ID", "version"))
+
+# Filter for complete cases where specific completion criteria are met
+m1_complete <- m1_combined_v1v2 %>%
+  filter(Connect_ID %in% recr_m1$Connect_ID[recr_m1$d_949302066 == 231311385]) %>%
+  arrange(desc(version))
+
+# Remove duplicates, keeping only the most recent version for each Connect_ID
+m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),]
+
+m1_complete_nodup$Connect_ID <- as.numeric(m1_complete_nodup$Connect_ID)
+
+
+### Define requirements of the data: active or passive,  user profile done, consented, mod1 done, verified
+parts <- "SELECT Connect_ID, token, d_564964481,d_795827569, d_544150384
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and d_821247024='197316935' and
+(d_919254129='353358909') and (d_699625233='353358909') and (d_949302066='231311385')"
+parts_table <- bq_project_query(project, parts)
+parts_data <- bq_table_download(parts_table, bigint = "integer64")
+
+parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID) ###need to convert type- m1... is double and parts is character
+
+module1= left_join(parts_data, m1_complete_nodup, by="Connect_ID") 
+dim(module1)
+
+```
+
+
+```{r counts, warning=FALSE, echo=FALSE}
+
+cat("Participants with Module 1 Completion:", dim(module1)[[1]])
+
+
+data_tib_m1 <- as_tibble(module1)
+#dim(module1)
+
+data_tib_m1_q2 <- data_tib_m1 %>%  filter(as.Date(205553981) > "2025-01-05") # specifically checking for surveys in Quest 2.0
+
+knitr::opts_chunk$set(comment = NA)
+
+
+
+```
+
+```{r Ethnicity, warning=FALSE, echo=FALSE, message=FALSE}
+
+#American Indian/Native American
+qc_am_ind_ethn= data_tib_m1_q2 %>%  filter(D_384191091_D_384191091_D_583826374!=1 &  
+                                          (D_362270886_D_362270886_D_249603425==1 | D_362270886_D_362270886_D_530063091==1 | D_362270886_D_362270886_D_643489668==1 | 
+                                             D_362270886_D_362270886_D_807835037==1 | D_362270886_D_362270886_D_746038746==1))
+
+
+#Asian/Asian American
+qc_asian= data_tib_m1_q2 %>% filter(D_384191091_D_384191091_D_636411467!=1 & 
+                                   (D_525535977_D_525535977_D_773844957==1 | D_525535977_D_525535977_D_901439277==1 | D_525535977_D_525535977_D_750168061==1 |
+                                      D_525535977_D_525535977_D_326604981==1 | D_525535977_D_525535977_D_469918550==1 | D_525535977_D_525535977_D_288079668==1 | 
+                                         D_525535977_D_525535977_D_240721579==1 | D_525535977_D_525535977_D_571633051==1 | D_525535977_D_525535977_D_964924704==1 | 
+                                         D_525535977_D_525535977_D_807835037==1 | D_525535977_D_525535977_D_746038746==1))  
+
+#Black/African/African American 
+qc_black= data_tib_m1_q2 %>% filter(D_384191091_D_384191091_D_458435048!=1 &
+                                   (D_976808005_D_976808005_D_704774349==1 |  D_976808005_D_976808005_D_240854115==1 |  D_976808005_D_976808005_D_280957170==1 |  
+                                   D_976808005_D_976808005_D_533776046==1 |  D_976808005_D_976808005_D_647105074==1 |  D_976808005_D_976808005_D_618222258==1 |  
+                                   D_976808005_D_976808005_D_487027241==1 |  D_976808005_D_976808005_D_900838463==1 |  D_976808005_D_976808005_D_379093069==1 |  
+                                   D_976808005_D_976808005_D_304643362==1 |  D_976808005_D_976808005_D_151821009==1 |  D_976808005_D_976808005_D_807835037==1 |  
+                                   D_976808005_D_976808005_D_746038746==1))  
+
+
+#Hispanic/Latino/Spanish
+qc_hisp= data_tib_m1_q2  %>% filter(D_384191091_D_384191091_D_706998638!=1 &
+                                   (D_308014437_D_308014437_D_810637250==1 | D_308014437_D_308014437_D_248444252==1 | D_308014437_D_308014437_D_764331628==1 | 
+                                      D_308014437_D_308014437_D_412757551==1 | D_308014437_D_308014437_D_981774939==1 | D_308014437_D_308014437_D_432305109==1 | 
+                                      D_308014437_D_308014437_D_862718552==1 | D_308014437_D_308014437_D_988121468==1 | D_308014437_D_308014437_D_773342525==1 | 
+                                      D_308014437_D_308014437_D_807835037==1 | D_308014437_D_308014437_D_746038746==1)) 
+
+
+
+#Middle Eastern or North African
+qc_mideast= data_tib_m1_q2 %>%  filter(D_384191091_D_384191091_D_973565052!=1 &
+                                      (D_351657815_D_351657815_D_190152384==1 | D_351657815_D_351657815_D_119632587==1 | D_351657815_D_351657815_D_578616917==1 | 
+                                         D_351657815_D_351657815_D_834030167==1 | D_351657815_D_351657815_D_680575651==1 | D_351657815_D_351657815_D_144320785==1 | 
+                                         D_351657815_D_351657815_D_214951746==1 | D_351657815_D_351657815_D_932563284==1 | D_351657815_D_351657815_D_336596477==1 | 
+                                         D_351657815_D_351657815_D_380583570==1 | D_351657815_D_351657815_D_807835037==1 | D_351657815_D_351657815_D_746038746==1))  
+
+
+#Hawaiian/ Pacific Islander
+qc_hawi= data_tib_m1_q2 %>%  filter(D_384191091_D_384191091_D_586825330!=1 &
+                                   (D_115616118_D_115616118_D_664730658==1 | D_115616118_D_115616118_D_949727109==1 | D_115616118_D_115616118_D_496132363==1 | 
+                                      D_115616118_D_115616118_D_453456270==1 | D_115616118_D_115616118_D_819018322==1 | D_115616118_D_115616118_D_685406566==1 | 
+                                      D_115616118_D_115616118_D_786290435==1 | D_115616118_D_115616118_D_167028305==1 | D_115616118_D_115616118_D_345861266==1 |  
+                                      D_115616118_D_115616118_D_807835037==1 | D_115616118_D_115616118_D_746038746==1))  
+
+
+#White
+qc_white= data_tib_m1_q2 %>% filter(D_384191091_D_384191091_D_412790539!=1 &
+                                   (D_797626610_D_797626610_D_664571574==1 | D_797626610_D_797626610_D_163149180==1 | D_797626610_D_797626610_D_192776753==1 | 
+                                      D_797626610_D_797626610_D_733789220==1 | D_797626610_D_797626610_D_418464677==1 | D_797626610_D_797626610_D_859329001==1 | 
+                                      D_797626610_D_797626610_D_267472307==1 | D_797626610_D_797626610_D_918190932==1 | D_797626610_D_797626610_D_381749264==1 | 
+                                      D_797626610_D_797626610_D_704661219==1 | D_797626610_D_797626610_D_773342525==1 |  D_797626610_D_797626610_D_807835037==1 | 
+                                      D_797626610_D_797626610_D_746038746==1)) 
+
+
+```
+

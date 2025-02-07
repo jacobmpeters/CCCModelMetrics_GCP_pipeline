@@ -1,0 +1,536 @@
+---
+title: "CSH Reverse QC"
+author: "Kelsey Sanchez"
+date: "`r Sys.Date()`"
+header-includes: 
+  \usepackage[labelformat=empty]{caption} 
+  \usepackage{placeins} 
+  \usepackage{booktabs}
+  \usepackage{pdflscape}
+  \usepackage{float}
+  
+output:
+  pdf_document:
+    latex_engine: xelatex
+    toc: yes
+    keep_tex: yes
+    fig_width: 7
+    fig_height: 5
+    fig_caption: yes
+    df_print: paged
+---
+
+\extrafloats{100}
+```{r libraries, include=FALSE}
+
+library(bigrquery)
+library(foreach)
+library(stringr)
+#library(plyr)
+#library(expss) ###to add labels
+library(epiDisplay) ##recommended applied here crosstable, tab1
+library(gmodels) ##recommended
+library(magrittr)
+library(arsenal)
+library(gtsummary)
+library(rio)
+
+
+
+library(ggplot2)
+library(gridExtra)
+library(scales)
+library(gt)
+#install(tinytex)
+library(tinytex)
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(reshape)  ###to work on transition from long to wide or wide to long data
+library(listr) ###to work on a list of vector, files or..
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(stringr) ###to work on patterns, characters
+
+
+bq_auth()
+
+```
+
+
+```{r BQ Pull, include=FALSE}
+
+project <- "nih-nci-dceg-connect-prod-6d04"
+
+
+pt_pull <- "SELECT Connect_ID,  d_827220437, d_987563196, d_821247024
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and d_821247024='197316935' and 
+(d_919254129='353358909') and (d_699625233='353358909') and 
+(d_176068627='231311385')"  
+
+CSH_pull <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.cancerScreeningHistorySurvey_JP` 
+where Connect_ID is not null" 
+
+
+pt_pull_table <- bq_project_query(project, pt_pull)
+data_pt <- bq_table_download(pt_pull_table, bigint = "integer64")
+
+CSH_pull_table <- bq_project_query(project, CSH_pull)
+data_CSH <- bq_table_download(CSH_pull_table, bigint = "integer64")
+
+screening <- left_join(data_pt, data_CSH, by="Connect_ID")
+
+
+screen= as_tibble(screening)
+
+```
+
+```{r MHGroup9Diagn, warning=FALSE, echo=FALSE, message=FALSE}
+
+qc_tonsil <- screen %>% filter((D_729984625_D_797189152 == 0 | is.na(D_729984625_D_797189152)) &
+                                 !(is.na(D_675055475_D_623218391) & is.na(D_675055475_D_802622485)))
+
+qc_gall <- screen %>% filter((D_729984625_D_633546100 == 0 | is.na(D_729984625_D_633546100)) &
+                                 !(is.na(D_250003172_D_623218391) & is.na(D_250003172_D_802622485)))
+
+qc_apdx <- screen %>% filter((D_729984625_D_866002271 == 0 | is.na(D_729984625_D_866002271)) &
+                                 !(is.na(D_341080024_D_623218391) & is.na(D_341080024_D_802622485)))
+
+qc_spln <- screen %>% filter((D_729984625_D_209101810 == 0 | is.na(D_729984625_D_209101810)) &
+                                 !(is.na(D_841573821_D_623218391) & is.na(D_841573821_D_802622485)))
+
+qc_thyr <- screen %>% filter((D_729984625_D_413734739 == 0 | is.na(D_729984625_D_413734739)) &
+                                 !(is.na(D_976626196_D_623218391) & is.na(D_976626196_D_802622485)))
+
+qc_neph <- screen %>% filter((D_729984625_D_215525943 == 0 | is.na(D_729984625_D_215525943)) &
+                                 !(is.na(D_998519118_D_623218391) & is.na(D_998519118_D_802622485)))
+
+qc_lipo <- screen %>% filter((D_729984625_D_118789503 == 0 | is.na(D_729984625_D_118789503)) &
+                                 !(is.na(D_645149364_D_623218391) & is.na(D_645149364_D_802622485)))
+
+qc_bar <- screen %>% filter((D_729984625_D_715563991 == 0 | is.na(D_729984625_D_715563991)) &
+                                 !(is.na(D_839555631_D_623218391) & is.na(D_839555631_D_802622485)))
+
+qc_hysr <- screen %>% filter((D_729984625_D_220755749 == 0 | is.na(D_729984625_D_220755749)) &
+                                 !(is.na(D_350184001_D_623218391) & is.na(D_350184001_D_802622485)))
+
+qc_tub <- screen %>% filter((D_729984625_D_465318416 == 0 | is.na(D_729984625_D_465318416)) &
+                                 !(is.na(D_522645663_D_623218391) & is.na(D_522645663_D_802622485)))
+
+qc_ooph <- screen %>% filter((D_729984625_D_630100221 == 0 | is.na(D_729984625_D_630100221)) &
+                                 !(is.na(D_787505819_D_623218391) & is.na(D_787505819_D_802622485)))
+
+qc_vas <- screen %>% filter((D_729984625_D_654450030 == 0 | is.na(D_729984625_D_654450030)) &
+                                 !(is.na(D_671670265_D_623218391) & is.na(D_671670265_D_802622485)))
+
+qc_orph <- screen %>% filter((D_729984625_D_532603425 == 0 | is.na(D_729984625_D_532603425)) &
+                                 !(is.na(D_314345103_D_623218391) & is.na(D_314345103_D_802622485)))
+
+qc_prost <- screen %>% filter((D_729984625_D_733236542 == 0 | is.na(D_729984625_D_733236542)) &
+                                 !(is.na(D_343990595_D_623218391) & is.na(D_343990595_D_802622485)))
+
+qc_penect <- screen %>% filter((D_729984625_D_961987554 == 0 | is.na(D_729984625_D_961987554)) &
+                                 !(is.na(D_203366781_D_623218391) & is.na(D_203366781_D_802622485)))
+
+```
+
+
+```{r BreastSurgYear, warning=FALSE, echo=FALSE, message=FALSE}
+
+qc_implant <- screen %>% filter((D_506456253_D_506456253_D_752953170 == 0 | is.na(D_506456253_D_506456253_D_752953170)) &
+                                 !(is.na(D_439760665_D_623218391) & is.na(D_439760665_D_802622485)))
+
+qc_mastopx <- screen %>% filter((D_506456253_D_506456253_D_325506683 == 0 | is.na(D_506456253_D_506456253_D_325506683)) &
+                                 !(is.na(D_950690103_D_623218391) & is.na(D_950690103_D_802622485)))
+
+qc_recon <- screen %>% filter((D_506456253_D_506456253_D_335563082 == 0 | is.na(D_506456253_D_506456253_D_335563082)) &
+                                 !(is.na(D_975268706_D_623218391) & is.na(D_975268706_D_802622485)))
+
+qc_reduct <- screen %>% filter((D_506456253_D_506456253_D_955881350 == 0 | is.na(D_506456253_D_506456253_D_955881350)) &
+                                 !(is.na(D_277890744_D_623218391) & is.na(D_277890744_D_802622485)))
+
+qc_prtms <- screen %>% filter((D_506456253_D_506456253_D_492902023 == 0 | is.na(D_506456253_D_506456253_D_492902023)) &
+                                 !(is.na(D_936444833_D_623218391) & is.na(D_936444833_D_802622485)))
+
+qc_mastec <- screen %>% filter((D_506456253_D_506456253_D_256196714 == 0 | is.na(D_506456253_D_506456253_D_256196714)) &
+                                 !(is.na(D_758881441_D_623218391) & is.na(D_758881441_D_802622485)))
+
+
+qc_dbmas <- screen %>% filter((D_506456253_D_506456253_D_802859122 == 0 | is.na(D_506456253_D_506456253_D_802859122) | is.na(D_765772509)) &
+                                 !(is.na(D_250353250_D_623218391) & is.na(D_250353250_D_802622485)))
+
+
+qc_abscess <- screen %>% filter((D_506456253_D_506456253_D_520432394 == 0 | is.na(D_506456253_D_506456253_D_520432394)) &
+                                 !(is.na(D_166524009_D_623218391) & is.na(D_166524009_D_802622485)))
+
+
+qc_lact <- screen %>% filter((D_506456253_D_506456253_D_667901971 == 0 | is.na(D_506456253_D_506456253_D_667901971)) &
+                                 !(is.na(D_367942006_D_623218391) & is.na(D_367942006_D_802622485)))
+
+
+# qc_lact <- screen %>% filter((D_506456253_D_506456253_D_807835037 == 0 | is.na(D_506456253_D_506456253_D_807835037)) &
+#                                  !(is.na(D_3907385951_D_623218391) & is.na(D_3907385951_D_802622485)))  ## no one answered yet
+
+
+```
+
+
+
+\newpage
+# Oral Cancer Screening
+
+```{r ORSCREEN, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+qc_ORSCREEN1_4 <- screen %>% filter(D_802157786!= "353358909" &
+                                 !(is.na(D_852697610) & is.na(D_860253133) & is.na(D_682440005) & is.na(D_339142996)))
+
+qc_ORSCREEN5_7 <- screen %>% filter(D_339142996!= "353358909" &
+                                 !(is.na(D_375662706) & is.na(D_859197222) & is.na(D_529358901)))
+
+
+```
+
+
+\newpage
+# Colon and Rectal Cancer Screening
+
+```{r COLREC, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+### Colonoscopy
+
+qc_col1_2 <- screen %>% filter((D_365148290_D_203210013 == 0 | is.na(D_365148290_D_203210013)) &
+                                 !(is.na(D_988661374) & is.na(D_619830872)))
+qc_col3 <- screen %>% filter(!(D_619830872== "506053626" | D_619830872=="462661976" | D_619830872=="178420302") &
+                                 !is.na(D_226488112))
+
+
+### CT Colonoscopy
+
+qc_colct1_2 <- screen %>% filter((D_365148290_D_219088015 == 0 | is.na(D_365148290_D_219088015)) &
+                                 !(is.na(D_884856351) & is.na(D_900561740)))
+qc_colct3 <- screen %>% filter(!(D_900561740== "506053626" | D_900561740=="462661976" | D_900561740=="178420302") &
+                                 !is.na(D_729390410))
+
+
+
+
+
+### Sigmoidoscopy
+
+qc_sig1_2 <- screen %>% filter((D_365148290_D_283265038 == 0 | is.na(D_365148290_D_283265038)) &
+                                 !(is.na(D_869938650) & is.na(D_541338917)))
+qc_sig3 <- screen %>% filter(!(D_541338917== "506053626" | D_541338917=="462661976" | D_541338917=="178420302") &
+                                 !is.na(D_833553697))
+
+
+### Proctoscopy
+
+qc_proct1_2 <- screen %>% filter((D_365148290_D_691148901 == 0 | is.na(D_365148290_D_691148901)) &
+                                 !(is.na(D_689280509) & is.na(D_108417657)))
+qc_proct3 <- screen %>% filter(!(D_108417657== "506053626" | D_108417657=="462661976" | D_108417657=="178420302") &
+                                 !is.na(D_822995885))
+
+
+
+### Stool (fecal) test
+
+qc_fec1_2 <- screen %>% filter((D_365148290_D_928432579 == 0 | is.na(D_365148290_D_928432579)) &
+                                 !(is.na(D_677043723) & is.na(D_960218176)))
+qc_fec3 <- screen %>% filter(!(D_960218176== "506053626" | D_960218176=="119809731" | D_960218176=="282580702" | D_960218176=="934779560" | D_960218176=="178420302") & 
+                                 !is.na(D_806961194))
+
+```
+
+
+
+\newpage
+# Anal Cancer Screening
+
+```{r ANALSCREEN, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+#ANALSCREEN
+
+qc_an1_2 <- screen %>% filter(D_129025755 != "353358909" &
+                                 !(is.na(D_702922820) & is.na(D_236655642)))
+qc_an3 <- screen %>% filter(!(D_236655642== "506053626" |  D_236655642=="119809731" | D_236655642=="282580702" | D_236655642=="934779560" | D_236655642=="178420302") &
+                                 !is.na(D_581174597))
+
+
+```
+
+
+
+\newpage
+# Lung Cancer Screening
+
+```{r LUNGCT, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+#LUNGCT
+
+qc_lung1_2 <- screen %>% filter(D_524918714 != "353358909" &
+                                 !(is.na(D_584375130) & is.na(D_221189280)))
+qc_lung3 <- screen %>% filter(!(D_221189280== "506053626" | D_221189280=="462661976" | D_221189280=="178420302") &
+                                 !is.na(D_737402324))
+
+
+```
+
+
+
+\newpage
+# Skin Cancer Screening
+
+```{r SkinSCREEN, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+#SkinSCREEN
+
+qc_skscr1 <- screen %>% filter(D_552399966 != "353358909" &
+                                 !(is.na(D_124071431_D_160709137) & is.na(D_124071431_D_547567441) & is.na(D_124071431_D_956827502) & is.na(D_124071431_D_178420302)))
+
+
+qc_skscr2_3 <- screen %>% filter((D_124071431_D_956827502 == 0 | is.na(D_124071431_D_956827502)) &
+                                 !(is.na(D_113343940) & is.na(D_925516907)))
+qc_skscr4 <- screen %>% filter(!(D_925516907== "506053626" | D_925516907=="119809731" | D_925516907=="282580702" | D_925516907=="934779560" | D_925516907=="178420302") & 
+                                 !is.na(D_506482920))
+
+
+```
+
+
+
+\newpage
+# Upper Endoscopy Screening
+
+```{r UPENDO, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+#UPENDO
+qc_UPENDO1_2 <- screen %>% filter(D_991871399 != "353358909" &
+                                 !(is.na(D_761831751) & is.na(D_588828383)))
+
+qc_UPENDO3 <- screen %>% filter(!(D_588828383== "506053626" | D_588828383=="462661976" | D_588828383=="178420302") & 
+                                 !is.na(D_485867936))
+
+
+```
+
+
+
+\newpage
+# Prostate Cancer Screening
+
+```{r PROSCREEN, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+qc_RECTEX1_2 <- screen %>% filter((D_465056475_D_312250694 == 0 | is.na(D_465056475_D_312250694)) &
+                                 !(is.na(D_718137053) & is.na(D_199704727)))
+qc_RECTEX3 <- screen %>% filter(!(D_199704727== "506053626" | D_199704727=="119809731" | D_199704727=="282580702" | D_199704727=="934779560" | D_199704727=="178420302") & 
+                                 !is.na(D_621714179))
+
+qc_PSA1_2 <- screen %>% filter((D_465056475_D_255054078 == 0 | is.na(D_465056475_D_255054078)) &
+                                 !(is.na(D_772645761) & is.na(D_650508014)))
+qc_PSA3 <- screen %>% filter(!(D_650508014== "506053626" | D_650508014=="119809731" | D_650508014=="282580702" | D_650508014=="934779560" | D_650508014=="178420302") & 
+                                 !is.na(D_903059223))
+
+qc_PROBIOP1_2 <- screen %>% filter((D_465056475_D_492921091 == 0 | is.na(D_465056475_D_492921091)) &
+                                 !(is.na(D_214352460) & is.na(D_770939852)))
+qc_PROBIOP3 <- screen %>% filter(!(D_770939852== "506053626" | D_770939852=="462661976" | D_770939852=="178420302") & 
+                                 !is.na(D_423202492))
+
+
+```
+
+
+
+
+\newpage
+# Breast Cancer Screening
+
+```{r BRSTSCREEN, warning=FALSE, echo=FALSE, message=FALSE}
+
+
+qc_MAMMO1_2_4 <- screen %>% filter((D_961267001_D_577887061 == 0 | is.na(D_961267001_D_577887061)) &
+                                 !(is.na(D_745742553) & is.na(D_111580947) & is.na(D_372457715)))
+qc_MAMMO3 <- screen %>% filter(!(D_111580947== "506053626" | D_111580947=="119809731" | D_111580947=="282580702" | D_111580947=="934779560" | D_111580947=="178420302") & 
+                                 !(is.na(D_709088568)))
+
+qc_BRSTMRI1_2 <- screen %>% filter((D_961267001_D_419571068 == 0 | is.na(D_961267001_D_419571068)) &
+                                 !(is.na(D_315184598) & is.na(D_560107274)))
+qc_BRSTMRI3 <- screen %>% filter(!(D_560107274== "506053626" | D_560107274=="119809731" | D_560107274=="282580702" | D_560107274=="934779560" | D_560107274=="178420302") & 
+                                 !(is.na(D_569358384)))
+
+qc_BRSTULTRA1_2 <- screen %>% filter((D_961267001_D_726183532 == 0 | is.na(D_961267001_D_726183532)) &
+                                 !(is.na(D_305769587) & is.na(D_434993234)))
+qc_BRSTULTRA3 <- screen %>% filter(!(D_434993234== "506053626" | D_434993234=="119809731" | D_434993234=="282580702" | D_434993234=="934779560" | D_434993234=="178420302") & 
+                                 !(is.na(D_846067697)))
+
+qc_BRSTBIOP1_2 <- screen %>% filter((D_961267001_D_898042848 == 0 | is.na(D_961267001_D_898042848)) &
+                                 !(is.na(D_861488320) & is.na(D_891793989)))
+qc_BRSTBIOP3 <- screen %>% filter(!(D_891793989== "506053626" | D_891793989=="119809731" | D_891793989=="282580702" | D_891793989=="934779560" | D_891793989=="178420302") & 
+                                 !(is.na(D_811848389)))
+
+
+
+```
+
+
+
+
+\newpage
+# Ovarian Cancer Screening
+
+```{r OVSCREEN, warning=FALSE, echo=FALSE, message=FALSE}
+
+##OVSCREEN
+qc_OV_grid <- screen %>% filter((D_890391968_D_434651539 == 0 | is.na(D_890391968_D_434651539)) &
+                                 !(is.na(D_957875649_D_903156464) & is.na(D_957875649_D_474921307) & is.na(D_957875649_D_535003378)))
+
+
+### Blood Test
+qc_BLDOV1_2 <- screen %>% filter((D_957875649_D_903156464 == 0 | is.na(D_957875649_D_903156464)) &
+                                 !(is.na(D_406370140) & is.na(D_951078002)))
+qc_BLDOV3 <- screen %>% filter(!(D_951078002== "506053626" | D_951078002=="119809731" | D_951078002=="282580702" | D_951078002=="934779560" | D_951078002=="178420302") & 
+                                 !(is.na(D_631089527)))
+
+
+
+### Transvaginal Ultrasound
+
+qc_OTVULTRA1_2 <- screen %>% filter((D_957875649_D_474921307 == 0 | is.na(D_957875649_D_474921307)) &
+                                 !(is.na(D_475018570) & is.na(D_227617345)))
+qc_OTVULTRA3 <- screen %>% filter(!(D_227617345== "506053626" | D_227617345=="119809731" | D_227617345=="282580702" | D_227617345=="934779560" | D_227617345=="178420302") & 
+                                 !(is.na(D_274709835)))
+
+
+
+```
+
+
+
+
+
+
+\newpage
+# Cervical Cancer Screening
+
+```{r CERVSCREEN, warning=FALSE, echo=FALSE, message=FALSE}
+
+##CERVSCREEN
+
+qc_CERV_grid <- screen %>% filter((D_890391968_D_505282171 == 0 | is.na(D_890391968_D_505282171)) &
+                                 !(is.na(D_229764995_D_405616098) & is.na(D_229764995_D_646114392) & is.na(D_229764995_D_673135412) & is.na(D_229764995_D_535003378)))
+
+### HrHPV Test
+qc_CHRHPV1_2 <- screen %>% filter((D_229764995_D_405616098 == 0 | is.na(D_229764995_D_405616098)) &
+                                 !(is.na(D_934385625) & is.na(D_393386163)))
+qc_CHRHPV3 <- screen %>% filter(!(D_393386163== "506053626" | D_393386163=="119809731" | D_393386163=="282580702" | D_393386163=="934779560" | D_393386163=="178420302") & 
+                                 !(is.na(D_856699079)))
+
+### Pap Test
+## ERROR FOUND HERE--1757693819, answered both 1 and 2 but na for cerv_grid
+qc_CPAP1_2 <- screen %>% filter((D_229764995_D_646114392 == 0 | is.na(D_229764995_D_646114392)) &
+                                 !(is.na(D_723960145) & is.na(D_353889236))) 
+
+qc_CPAP3 <- screen %>% filter(!(D_353889236== "506053626" | D_353889236=="119809731" | D_353889236=="282580702" | D_353889236=="934779560" | D_353889236=="178420302") & 
+                                 !(is.na(D_242001363)))
+
+
+### Unknown Test
+
+qc_CERVIDK1_2 <- screen %>% filter((D_229764995_D_673135412 == 0 | is.na(D_229764995_D_673135412)) &
+                                 !(is.na(D_623413449) & is.na(D_153215425)))
+qc_CERVIDK3 <- screen %>% filter(!(D_153215425== "506053626" | D_153215425=="119809731" | D_153215425=="282580702" | D_153215425=="934779560" | D_153215425=="178420302") & 
+                                 !(is.na(D_115504049)))
+
+
+
+```
+
+
+
+
+
+\newpage
+# Endometrial Cancer Screening
+
+```{r ENDOSCREEN, warning=FALSE, echo=FALSE, message=FALSE}
+
+##ENDOSCREEN
+
+
+qc_ENDO_grid <- screen %>% filter((D_890391968_D_578416151 == 0 | is.na(D_890391968_D_578416151)) &
+                                 !(is.na(D_356470898_D_687879041) & is.na(D_356470898_D_531274737) & is.na(D_356470898_D_650022485) & 
+                                     is.na(D_356470898_D_891052313) & is.na(D_356470898_D_535003378)))
+
+### Transvaginal Ultrasound
+
+qc_ETVULTRA1_2 <- screen %>% filter((D_356470898_D_687879041 == 0 | is.na(D_356470898_D_687879041)) &
+                                 !(is.na(D_947994136) & is.na(D_898341670)))
+qc_ETVULTRA3 <- screen %>% filter(!(D_898341670== "506053626" | D_898341670=="119809731" | D_898341670=="282580702" | D_898341670=="934779560" | D_898341670=="178420302") & 
+                                 !(is.na(D_913107034)))
+
+
+
+### Hysteroscopy
+
+qc_HYSTERO1_2 <- screen %>% filter((D_356470898_D_531274737 == 0 | is.na(D_356470898_D_531274737)) &
+                                 !(is.na(D_655198446) & is.na(D_809308794)))
+qc_HYSTERO3 <- screen %>% filter(!(D_809308794== "506053626" | D_809308794=="119809731" | D_809308794=="282580702" | D_809308794=="934779560" | D_809308794=="178420302") & 
+                                 !(is.na(D_766549014)))
+
+
+### Endometrial Biopsy
+qc_ENDOBIOP1_2 <- screen %>% filter((D_356470898_D_650022485 == 0 | is.na(D_356470898_D_650022485)) &
+                                 !(is.na(D_496588916) & is.na(D_104842019)))
+## error found here --9581051759, 236949684 selected for 2
+qc_ENDOBIOP3 <- screen %>% filter(!(D_104842019== "506053626" | D_104842019=="119809731" | D_104842019=="282580702" | D_104842019=="934779560" | D_104842019=="178420302") & 
+                                 !(is.na(D_315199788)))
+five_logic_funct(D_315199788, D_104842019, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last Endometrial Biopsy")
+
+### Dilation and Curettage
+
+qc_DILCUR1_2 <- screen %>% filter((D_356470898_D_891052313 == 0 | is.na(D_356470898_D_891052313)) &
+                                 !(is.na(D_249853484) & is.na(D_391300412)))
+qc_DILCUR3 <- screen %>% filter(!(D_391300412== "506053626" | D_391300412=="119809731" | D_391300412=="282580702" | D_391300412=="934779560" | D_391300412=="178420302") & 
+                                 !(is.na(D_808990505)))
+
+
+```
+
+
+
+
+
+
+
+\newpage
+# Multi-Cancer Screening
+
+```{r MULTISCREEN, warning=FALSE, echo=FALSE, message=FALSE}
+
+### MCED Test
+
+qc_MCED_1_2 <- screen %>% filter((D_219076879_D_875157431 == 0 | is.na(D_219076879_D_875157431)) &
+                                 !(is.na(D_822790675) & is.na(D_459223565)))
+qc_MCED3 <- screen %>% filter(!(D_459223565== "506053626" | D_459223565=="119809731" | D_459223565=="282580702" | D_459223565=="934779560" | D_459223565=="178420302") & 
+                                 !(is.na(D_397748152)))
+
+
+### Full body MRI or CT
+
+qc_MRI1_2 <- screen %>% filter((D_219076879_D_309925717 == 0 | is.na(D_219076879_D_309925717)) &
+                                 !(is.na(D_553034408) & is.na(D_698242759)))
+qc_MRI3 <- screen %>% filter(!(D_698242759== "506053626" | D_698242759=="119809731" | D_698242759=="282580702" | D_698242759=="934779560" | D_698242759=="178420302") & 
+                                 !(is.na(D_695772621)))
+
+
+
+```
+
+
