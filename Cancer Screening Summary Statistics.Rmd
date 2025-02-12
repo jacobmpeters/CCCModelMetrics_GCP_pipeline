@@ -1136,7 +1136,7 @@ screen$D_709088568 <- factor(screen$D_709088568, levels=c(461386928, 729845236, 
 five_logic_funct(D_709088568, D_111580947, "506053626","119809731","282580702","934779560","178420302", "Timeframe of Last Mammogram")
 
 #MAMMO4
-five_logic_funct(D_372457715, D_111580947, "506053626","119809731","282580702","934779560","178420302", "Type at Last Mammogram")
+one_logic_funct(D_372457715, D_961267001_D_577887061, "1", "Type at Last Mammogram")
 
 
 
