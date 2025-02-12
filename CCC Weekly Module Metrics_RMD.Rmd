@@ -1378,7 +1378,7 @@ knitr::kable(qol_ver_df,
 
 #BU
 trig_BU <- bq_project_query(project,
-query="SELECT distinct(token), min(notification_time) as BU_time #account for duplicate notifications
+query="SELECT distinct(token), min(notification_time) as BU_time #distinct token to account for duplicate notifications
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP`
 where (category='Baseline Clinical Blood and Urine Sample Survey Reminders' and attempt='1st contact') OR
 (category='Baseline Clinical Biospecimen Survey Reminder' and attempt='1st contact')
@@ -1388,7 +1388,7 @@ trigger_BU <- bigrquery::bq_table_download(trig_BU,bigint = "integer64")
 
 #BUM
 trig_BUM <- bq_project_query(project,
-query="SELECT distinct(token), min(notification_time) as BUM_time #account for duplicate notifications
+query="SELECT distinct(token), min(notification_time) as BUM_time #distinct token to account for duplicate notifications
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP`
 where category='Baseline Research Biospecimen Survey Reminders' and attempt='1st contact' OR 
 category='Biospecimen Survey Reminder' and attempt='1st contact'
@@ -1431,7 +1431,8 @@ BL_QOL <- trigger_time %>%
 
 ## Determine when a participant was BL survey eligible
 #MRE/SAS/LAW- once BOH completed ----   d_517311251
-#BUM/BU/MW- when notified by email 
+#BUM/BU- when notified by email 
+#MW- when notified the MW kit was shipped
 #COVID- pushed to prod on 7/5/2023 and requires biospecimen donation 
 
 
@@ -1712,13 +1713,13 @@ BL_CES <- trigger_time %>%
 #############    Denominator #################
 
 ## Determine when a person was CES eligible
-# trigger_time <- trigger_time %>%
-#   mutate(trig = case_when(d_914594314 < as.Date("2023-12-01") ~ ymd_hms(notification_time),
-#                           TRUE ~ ymd_hms(d_914594314) + days(90)))
+# all participants with a survey status not 'Not Eligible' or null, notificaton for CES was sent on 9/30/24
+
 
 ## Determine when a participant was BL survey eligible
 #MRE/SAS/LAW- once BOH completed ----   d_517311251
-#BUM/BU/MW- when notified by email 
+#BUM/BU- when notified by email 
+#MW- when notified the MW kit was shipped
 #COVID- pushed to prod on 7/5/2023 and requires biospecimen donation 
 
 
@@ -2008,8 +2009,10 @@ BL_CSH <- trigger_time %>%
 
 
 ## Determine when a participant was BL survey eligible
+## Determine when a participant was BL survey eligible
 #MRE/SAS/LAW- once BOH completed ----   d_517311251
-#BUM/BU/MW- when notified by email 
+#BUM/BU- when notified by email 
+#MW- when notified the MW kit was shipped
 #COVID- pushed to prod on 7/5/2023 and requires biospecimen donation 
 
 
