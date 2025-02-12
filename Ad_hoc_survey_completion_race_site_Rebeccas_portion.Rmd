@@ -1,0 +1,278 @@
+---
+title: "July 2024 C4CP Survey Completions by Race and Site"
+author: ""
+date: "2024-07-05"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(bigrquery)
+library(tidyverse)
+library(plyr)
+library(tidyr)
+library(kableExtra)
+library(xtable)
+
+bq_auth()
+```
+
+
+
+```{r BQ, include=FALSE}
+
+project <- "nih-nci-dceg-connect-prod-6d04"
+
+adhoc_race_data <- "SELECT Connect_ID,d_878865966,d_167958071,d_684635302, d_949302066, d_536735468, d_663265240, d_976570371, d_827220437, state_d_684926335, state_d_119643471, state_d_253532712, state_d_849518448, d_320303124 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IS NOT NULL and d_821247024='197316935' and d_747006172!='353358909' and d_831041022!='353358909'" 
+
+adhoc_race_table <- bq_project_query(project, adhoc_race_data)
+
+adhoc_race <- bq_table_download(adhoc_race_table, bigint = "integer64",n_max = Inf, page_size = 10000)
+
+adhoc_race$Connect_ID <- as.numeric(adhoc_race$Connect_ID)
+
+
+
+```
+
+
+```{r remap, eval=TRUE,echo=FALSE,include=FALSE,results='hold'}
+
+adhoc_race <- adhoc_race %>% 
+  mutate(baseMcomplt_all= case_when(
+  d_949302066 == '231311385' & d_536735468 == '231311385' & d_663265240 == '231311385' & d_976570371 == '231311385' ~ "Completed All 4 Modules",
+  d_949302066 == '231311385' & (d_536735468 != '231311385' | d_663265240 != '231311385' | d_976570371 != '231311385') ~ "Completed Some But \n Not All 4 Modules",
+  d_949302066 != '231311385' & d_536735468 != '231311385' & d_663265240 != '231311385' & d_976570371 != '231311385' ~ "Did Not Complete \n Any Modules",
+  is.na(d_949302066) & is.na(d_536735468)  & is.na(d_663265240)  & is.na(d_976570371)  ~ "Missing All Flags"),
+        biospeDonation= case_when(
+          d_878865966 == 353358909 & d_167958071 == 353358909 & d_684635302 == 353358909 ~ "Completed All 3 Sample Donations",
+          d_878865966 == 104430631 & d_167958071 == 104430631 & d_684635302 == 104430631 ~ "No Sample Donations",
+          is.na(d_878865966)  & is.na(d_167958071)  & is.na(d_684635302)  ~ "Missing All Flags",
+          TRUE ~ "Completed Some but Not \n All 3 Sample Donations"
+        ),
+        site= case_when(d_827220437 == '472940358' ~ "Baylor Scott & White Health",
+                        d_827220437 == '531629870' ~ "HealthPartners",
+                        d_827220437 == '548392715' ~ "Henry Ford Health System",
+                        d_827220437 == '303349821' ~ "Marshfield Clinic Health System",
+                        d_827220437 == '657167265' ~ "Sanford Health",
+                        d_827220437 == '809703864' ~ "University of Chicago Medicine",
+                        d_827220437 == '125001209' ~ "Kaiser Permanente Colorado",
+                        d_827220437 == '327912200' ~ "Kaiser Permanente Georgia",
+                        d_827220437 == '452412599' ~ "Kaiser Permanente Northwest",
+                        d_827220437 == '300267574' ~ "Kaiser Permanente Hawaii"),
+      race = case_when(state_d_684926335 == 635279662 |state_d_849518448 == 768826601 | state_d_119643471 == 635279662 | state_d_253532712==723775357 ~ "White" , 
+                                        state_d_684926335 %in% c(232334767, 401335456) |
+                                          state_d_849518448 == 181769837 |
+                                          state_d_253532712 %in% c(153444133,572474909,308427446,211228524,277568192,611398522,181769837) |
+                                          state_d_119643471 %in% c( 232334767 ,211228524,308427446,432722256,232663805,785578696,200929978 ,490725843,965998904) ~ "Other",
+                                        state_d_684926335 == 178420302  | 
+                                          state_d_849518448 == 178420302 | 
+                                          state_d_253532712 == 178420302 |
+                                          state_d_119643471  %in% c( 986445321,746038746,178420302) |
+                                          (is.na(state_d_119643471) & d_827220437 == 657167265) ~ "Unknown"),
+      qolcomplt= case_when(d_320303124 == 231311385 ~ "Submitted",
+                           d_320303124 == 615768760 ~ "Started",
+                           d_320303124 == 972455046 ~ "Not Started",
+                           TRUE~ "Not Eligible")) #%>% filter(qolcomplt!="Not Eligible")
+  
+
+adhoc_race$baseMcomplt_all <- factor(adhoc_race$baseMcomplt_all,levels=c("Completed All 4 Modules","Completed Some But \n Not All 4 Modules","Did Not Complete \n Any Modules", "Missing All Flags"))
+
+
+adhoc_race$biospeDonation<- factor(adhoc_race$biospeDonation,levels=c("Completed All 3 Sample Donations", "Completed Some but Not \n All 3 Sample Donations","No Sample Donations", "Missing All Flags"))
+
+adhoc_race$site <- factor(adhoc_race$site,exclude=NULL,
+                    levels=c("Baylor Scott & White Health", "HealthPartners", "Henry Ford Health System","Marshfield Clinic Health System",
+                             "Sanford Health", "University of Chicago Medicine","Kaiser Permanente Colorado",
+                             "Kaiser Permanente Georgia","Kaiser Permanente Hawaii","Kaiser Permanente Northwest"))
+
+# Create a named vector of acronyms
+site_acronyms <- c("Baylor Scott & White Health" = "BSWH", 
+                   "HealthPartners" = "HP", 
+                   "Henry Ford Health System" = "HFHS", 
+                   "Marshfield Clinic Health System" = "MCHS",
+                   "Sanford Health" = "SH", 
+                   "University of Chicago Medicine" = "UCM",
+                   "Kaiser Permanente Colorado" = "KPC",
+                   "Kaiser Permanente Georgia" = "KPG",
+                   "Kaiser Permanente Hawaii" = "KPH",
+                   "Kaiser Permanente Northwest" = "KPN")
+
+# Use the recode function to rename the sites
+adhoc_race$site <- factor(adhoc_race$site, exclude = NULL,
+                          levels = names(site_acronyms),
+                          labels = site_acronyms[names(site_acronyms)])
+
+adhoc_race$race<- factor(adhoc_race$race,levels=c("White" ,"Other", "Unknown"))
+
+```
+
+
+
+
+
+
+
+```{r modcompleteperc2 , echo=FALSE,error=FALSE,message=FALSE,results='asis', warning = FALSE}
+# Create three-way cross-tabulation
+threetab <- ftable(adhoc_race$site, adhoc_race$race, adhoc_race$baseMcomplt_all)
+
+# Convert ftable to a data frame
+df_threetab <- as.data.frame.matrix(threetab)
+
+#total
+totals <- colSums(as.matrix(df_threetab))
+
+# Access row and column variables
+row_vars <- attr(threetab, "row.vars")
+col_vars <- c("All Modules", "Some But Not All", "None", "Missing All Flags")
+
+# Prepare a detailed data frame with both row variables
+sites <- rep(row_vars[[1]], each = length(row_vars[[2]]))
+races <- rep(row_vars[[2]], times = length(row_vars[[1]]))
+
+# Combine row variables into the data frame
+df_threetab <- cbind(Site = sites, Race = races, df_threetab)
+
+# Calculate row totals
+row_totals <- rowSums(df_threetab[, -c(1, 2)], na.rm = TRUE)
+df_threetab <- cbind(df_threetab, Total = row_totals)
+
+# Calculate row percentages
+total_per_site <- rowSums(df_threetab[, -c(1, 2)], na.rm = TRUE)
+percentages <- df_threetab[, -c(1, 2)] / total_per_site * 100
+percentages <- round(percentages, 2)
+
+# Replace NaN with 0
+percentages[is.na(percentages)] <- 0
+
+# Combine counts and percentages in the same cell
+for (i in seq_along(col_vars)) {
+  df_threetab[, i + 2] <- paste(df_threetab[, i + 2], " (", percentages[, i], "%)", sep = "")
+}
+
+# Adjust column names for LaTeX compatibility if needed
+colnames(df_threetab) <- gsub("_", "\\_", c("Site", "Race", col_vars[1:3], "Total"))
+
+# Calculate overall percentages for the totals row
+total_sum <- sum(totals)
+total_percentages <- (totals / total_sum) * 100
+total_percentages <- round(total_percentages, 2)
+totals_with_percentages <- paste(totals, " (", total_percentages, "%)", sep = "")[1:3]
+totals_with_percentages <- c("Total Participants", "", totals_with_percentages, "38792 (100%)")
+
+# Add totals row to the data frame
+df_threetab <- df_threetab[,-6]
+df_threetab <- rbind(df_threetab, totals_with_percentages)
+colnames(df_threetab) <- c("Site", "Race", "All Modules", "Some But Not All",
+                           "None", "Total")
+
+# Now, calculate and append the percentage for the Total column
+total_percentages_total <- as.numeric(df_threetab$Total)[-31] / sum(as.numeric(df_threetab$Total)[-31]) * 100
+total_percentages_total <- round(total_percentages_total, 2)
+
+# Combine counts and percentages in the Total column
+df_threetab$Total <- paste(df_threetab$Total, " (", total_percentages_total, "%)", sep = "")
+
+#weird additional percentage being added into this table
+df_threetab$Total[31] <- "38792 (100%)"
+
+```
+
+
+
+```{r modcompletepercprint2, echo=FALSE,error=FALSE,message=FALSE,results='asis', warning =FALSE}
+# Print the table with xtable
+print(xtable(df_threetab, caption = 'Survey Completion by Race and Site',
+             label = 'tab:threeway'),
+      include.rownames = FALSE, comment = FALSE, caption.placement = 'top',
+      tabular.environment = 'tabular', floating = TRUE, hline.after = c(-1, 0, 3, 6, 9, 12, 15, 18, 21, 24, 27,30))
+```
+
+
+
+
+
+
+
+
+
+
+```{r prom2, echo=FALSE,error=FALSE,message=FALSE,results='asis'}
+#only use the individuals who are eligible for PROMIS
+adhoc_race <- adhoc_race %>% filter(qolcomplt!="Not Eligible")
+# Create three-way cross-tabulation
+threetab <- ftable(adhoc_race$site, adhoc_race$race, adhoc_race$qolcomplt)
+
+# Convert ftable to a data frame
+df_threetab <- as.data.frame.matrix(threetab)
+
+# Access row and column variables
+row_vars <- attr(threetab, "row.vars")
+
+# Prepare a detailed data frame with both row variables
+sites <- rep(row_vars[[1]], each = length(row_vars[[2]]))
+races <- rep(row_vars[[2]], times = length(row_vars[[1]]))
+
+# Combine row variables into the data frame
+df_threetab <- cbind(Site = sites, Race = races, df_threetab)
+
+#total
+totals <- colSums(as.matrix(df_threetab[, -c(1, 2)]))
+
+# Calculate percentages
+total_per_site <- rowSums(df_threetab[, -c(1, 2)], na.rm = TRUE)
+percentages <- df_threetab[, -c(1, 2)] / total_per_site * 100
+percentages <- round(percentages, 2)
+
+#add total column
+df_threetab$total <- total_per_site
+
+# Replace NaN with 0
+percentages[is.na(percentages)] <- 0
+
+# Combine counts and percentages in the same cell
+for (i in 1:ncol(percentages)) {
+  df_threetab[, i + 2] <- paste(df_threetab[, i + 2], " (", percentages[, i], "%)", sep = "")
+}
+
+# Calculate overall percentages for the totals row
+total_sum <- sum(totals)
+total_percentages <- (totals / total_sum) * 100
+total_percentages <- round(total_percentages, 2)
+totals_with_percentages <- paste(totals, " (", total_percentages, "%)", sep = "")
+#hard coding the sum of all participants, you get this value:
+#total = sum(total_per_site)
+totals_with_percentages <- c("Total Participants", "", totals_with_percentages, "9430 (100%)")
+
+# Add totals row to the data frame
+df_threetab <- rbind(df_threetab, totals_with_percentages)
+
+total_eligible_qol <- sum(total_per_site)
+total_percentage <- NULL
+for(i in 1:30){
+  total_percentage[i] <- (as.numeric(df_threetab$total[i])/total_eligible_qol)*100
+}
+total_percentage <- round(total_percentage, 2)
+
+df_threetab$total[1:30] <- paste(df_threetab$total[1:30], " (", total_percentage, "%)", sep = "")
+
+
+# Adjust column names for LaTeX compatibility if needed
+colnames(df_threetab) <- c("Site", "Race", "Not Started", "Started", "Submitted", "Total")
+```
+
+
+```{r prom23, echo=FALSE,error=FALSE,message=FALSE,results='asis'}
+# Define the alignment with vertical lines
+alignment <- paste(c("c", rep("|c", ncol(df_threetab))), collapse = "")
+
+# Print the table with xtable
+print(xtable(df_threetab, caption = 'PROMIS Completion by Race and Site',
+             label = 'tab:threeway'),
+      include.rownames = FALSE, comment = FALSE, caption.placement = 'top',
+      tabular.environment = 'tabular', floating = TRUE, hline.after = c(-1, 0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30))
+
+```
+

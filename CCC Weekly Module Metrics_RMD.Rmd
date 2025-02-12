@@ -80,13 +80,23 @@ d_386488297, d_452942800, d_517311251 , d_822499427, d_126331570, d_914639140, d
 d_831041022, d_255077064, d_320303124, d_684635302, d_843688458, d_870643066, d_878865966, d_167958071, token,
 state_d_934298480, state_d_706256705, state_d_435027713, d_199471989, d_956490759, d_263355177,
 state_d_684926335, state_d_849518448, state_d_119643471, state_d_253532712, d_764863765, d_195145666, 
-d_784810139, d_176068627, d_389890053, d_609630315
+d_784810139, d_176068627, d_389890053, d_609630315, d_173836415_d_266600170_d_319972665_d_661940160
 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` where Connect_ID IS NOT NULL  and (d_512820379='486306141' OR d_512820379='854703046') " 
 
 #and d_831041022='104430631'-- not needed, according to 3/12/24 decisions we'll be keeping participant journeys in overall counts
 
 rec_table_cc <- bq_project_query(project, queryreccc)
-data_c <- bq_table_download(rec_table_cc, bigint = "integer64")
+data_bw <- bq_table_download(rec_table_cc, bigint = "integer64")
+
+#select only the first collection to avoid duplicates
+bio_bqpull <-"SELECT Connect_ID, min(d_556788178) as d_556788178 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.biospecimen_JP` 
+where Connect_ID is not null
+group by Connect_ID"
+
+bio_bqpull_table <- bq_project_query(project, bio_bqpull)
+bio_bq <- bq_table_download(bio_bqpull_table, bigint = "integer64")
+
+data_c <- left_join(data_bw, bio_bq, by="Connect_ID")
 
 
 #need this separate filter to look at participants unable to be verified
@@ -183,6 +193,8 @@ all_data <- all_data %>%  mutate(Site = case_when(d_827220437==472940358 ~ "Bayl
                                                         (d_878865966=="353358909" | d_684635302=="353358909" | 
                                                            d_167958071=="353358909") ~ "Completed any baseline sample, did not complete baseline survey",
                                                         TRUE ~ "Completed neither survey or sample(s)"),
+                                 collection = ifelse((d_878865966 == 353358909 | d_167958071 == 353358909 | 
+                                                              d_684635302 == 353358909 ), "Any biospecimen Collections","No biospecimen collections"),
                                  provided4 =case_when(d_311580100==353358909 ~ "Full SSN",
                                                      d_914639140==353358909 ~ "Partial SSN",
                                                      TRUE ~ "No SSN"),
@@ -1305,12 +1317,13 @@ trigger <- bigrquery::bq_table_download(trig_qol,bigint = "integer64")
 trigger_time <- left_join(all_data, trigger, by="token")
 
 
-## Those verified after 12/1/2024 were notified
-trigger_time$trig <- ifelse(as.Date(trigger_time$d_914594314)> "2024-12-01", trigger_time$notification_time,
-                            as.Date(as.Date(trigger_time$d_914594314) + 90))
+## Those verified before 12/1/2023 were notified in batches that there's a new survey. New participants become eligible after 90 days  
+trigger_time <- trigger_time %>%
+  mutate(trig = case_when(d_914594314 <= as.Date("2023-12-01") ~ ymd_hms(notification_time),
+                          TRUE ~ ymd_hms(d_914594314) + days(90)))
 
 trig_time<- trigger_time %>%  filter(qolcomplt=="Submitted") %>%
-  mutate(trigTM_qol = as.numeric(difftime(as.POSIXct(ymd_hms(d_843688458)), as.POSIXct(ymd_hms(notification_time)), units="days")))
+  mutate(trigTM_qol = as.numeric(difftime(as.POSIXct(ymd_hms(d_843688458)), as.POSIXct(ymd_hms(trig)), units="days")))
 
 Trig_table = trig_time %>%
   dplyr::summarize('N'=n(),
@@ -1358,50 +1371,127 @@ knitr::kable(qol_ver_df,
 
 
 
-```{r BL_After_PROMIS, echo=FALSE, warning=FALSE, message=FALSE}
+```{r BL_PROMIS_timeframe, echo=FALSE, warning=FALSE, message=FALSE}
 
 
-BL_QOL <- all_data %>%  filter(qolcomplt=="Submitted") %>%
-  mutate(after_qol = case_when(as.Date(d_843688458) <= as.Date(d_517311251) ~ "BOH",
-                               as.Date(d_843688458) <= as.Date(d_832139544) ~ "MRE",
-                               as.Date(d_843688458) <= as.Date(d_770257102) ~ "SAS",
-                               as.Date(d_843688458) <= as.Date(d_264644252) ~ "LAW",
-                               as.Date(d_843688458) <= as.Date(d_222161762) ~ "BUM",
-                               as.Date(d_843688458) <= as.Date(d_764863765) ~ "BU",
-                               as.Date(d_843688458) <= as.Date(d_195145666) ~ "MW",
-                               as.Date(d_843688458) <= as.Date(d_784810139) ~ "COVID",
-                               TRUE ~ "No Survey Submitted After QOL"),
-         after_qol = factor(after_qol, levels=c("BOH","MRE","SAS", 
-                                        "LAW", "BUM", "BU", 
-                                        "MW", "COVID", "No Survey Submitted After QOL"))) %>% 
-  group_by(after_qol) %>% tally() %>% 
-  mutate(Percentage = (n / sum(n)) * 100)
-
-summary_row <- data.frame(after_qol = "Total Submitted QOL Survey",
-                          n = sum(QOL_time$n),
-                          Percentage = 100)
 
 
-BL_QOL_table <- rbind(BL_QOL, summary_row) %>%
-  mutate(N_percent = paste0(formatC(n, big.mark = ",", format = "d"), 
-                            " (", round(Percentage, digits = 1), "%)"))
+#BU
+trig_BU <- bq_project_query(project,
+query="SELECT distinct(token), min(notification_time) as BU_time #distinct token to account for duplicate notifications
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP`
+where (category='Baseline Clinical Blood and Urine Sample Survey Reminders' and attempt='1st contact') OR
+(category='Baseline Clinical Biospecimen Survey Reminder' and attempt='1st contact')
+group by token")
+trigger_BU <- bigrquery::bq_table_download(trig_BU,bigint = "integer64")
 
-BL_QOL_table <- BL_QOL_table %>% 
-  select(after_qol, N_percent) %>%
-  rename(`Survey Completed After QOL` = after_qol, `N%` = N_percent)
+
+#BUM
+trig_BUM <- bq_project_query(project,
+query="SELECT distinct(token), min(notification_time) as BUM_time #distinct token to account for duplicate notifications
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP`
+where category='Baseline Research Biospecimen Survey Reminders' and attempt='1st contact' OR 
+category='Biospecimen Survey Reminder' and attempt='1st contact'
+group by token")
+trigger_BUM <- bigrquery::bq_table_download(trig_BUM,bigint = "integer64")
 
 
-knitr::kable(BL_QOL_table,
+trigger_time <- left_join(trigger_time, trigger_BU, by="token") %>%  left_join(trigger_BUM)
+
+
+################   Numerator  ##############
+
+#Completed QOL before or on the same day as BL survey
+BL_QOL <- trigger_time %>%
+  filter(qolcomplt == "Submitted") %>%
+  mutate(BOH = as.Date(d_843688458) <= as.Date(d_517311251),
+         MRE = as.Date(d_843688458) <= as.Date(d_832139544),
+         SAS = as.Date(d_843688458) <= as.Date(d_770257102),
+         LAW = as.Date(d_843688458) <= as.Date(d_264644252),
+         BUM = (as.Date(BUM_time) < as.Date(trig) ) & (as.Date(d_843688458) <= as.Date(d_222161762)),  
+         BU = (as.Date(BU_time) < as.Date(trig) ) & (as.Date(d_843688458) <= as.Date(d_764863765)), 
+         MW = (as.Date(d_173836415_d_266600170_d_319972665_d_661940160) < as.Date(trig)) & (as.Date(d_843688458) <= as.Date(d_195145666)),
+         COVID = (as.Date(d_556788178) < as.Date(trig)) & (as.Date(d_556788178) >= as.Date("2023-07-05")) & (as.Date(d_843688458) <= as.Date(d_784810139))) %>%
+  pivot_longer(
+    cols = c(BOH, MRE, SAS, LAW, BUM, BU, MW, COVID),
+    names_to = "qol_timeframe",
+    values_to = "is_in_timeframe"
+  ) %>%
+  filter(is_in_timeframe) %>%  # Keep only TRUE rows
+  group_by(qol_timeframe) %>%
+  tally()
+
+
+#############    Denominator #################
+
+## Determine when a person was QOL eligible
+# trigger_time <- trigger_time %>%
+#   mutate(trig = case_when(d_914594314 < as.Date("2023-12-01") ~ ymd_hms(notification_time),
+#                           TRUE ~ ymd_hms(d_914594314) + days(90)))
+
+## Determine when a participant was BL survey eligible
+#MRE/SAS/LAW- once BOH completed ----   d_517311251
+#BUM/BU- when notified by email 
+#MW- when notified the MW kit was shipped
+#COVID- pushed to prod on 7/5/2023 and requires biospecimen donation 
+
+
+
+
+
+## of those that are eligible for QOL, and eligible for whichever BL module, who hadn't completed that module upon eligibility activation
+BL_time_eligible <- trigger_time %>%
+  filter(!is.na(qolcomplt) & qolcomplt != "Not Eligible") %>%
+  mutate( BOH = is.na(d_517311251) | (as.Date(trig) <= as.Date(d_517311251)),
+          MRE = !is.na(d_517311251) & (is.na(d_832139544) | as.Date(trig) <= as.Date(d_832139544)),
+          SAS = !is.na(d_517311251) & (is.na(d_770257102) | as.Date(trig) <= as.Date(d_770257102)),
+          LAW = !is.na(d_517311251) & (is.na(d_264644252) | as.Date(trig) <= as.Date(d_264644252)),
+          BUM = (as.Date(BUM_time) < as.Date(trig))  & (is.na(d_222161762) | as.Date(trig) <= as.Date(d_222161762)),
+          BU = (as.Date(BU_time) < as.Date(trig))  & (is.na(d_764863765) | as.Date(trig) <= as.Date(d_764863765)),
+          MW = (as.Date(d_173836415_d_266600170_d_319972665_d_661940160) < as.Date(trig)) &
+            (is.na(d_195145666) | as.Date(trig) <= as.Date(d_195145666)),
+          COVID = as.Date(d_556788178) < as.Date(trig) &
+            as.Date(d_556788178) >= as.Date("2023-07-05") &
+            (is.na(d_784810139) | as.Date(trig) <= as.Date(d_784810139))) %>%
+  pivot_longer(
+    cols = c(BOH, MRE, SAS, LAW, BUM, BU, MW, COVID),
+    names_to = "qol_timeframe",
+    values_to = "is_in_timeframe"
+  ) %>%
+  filter(is_in_timeframe) %>%  # Keep only rows where the condition is TRUE
+  group_by(qol_timeframe) %>%
+  tally()
+
+
+
+###############################################################################
+
+after_QOL <- cbind(BL_QOL, BL_time_eligible)
+after_QOL <- after_QOL[c(1,6,8,5,3,2,7,4), c(1,2,4)] # row order BOH, MRE, SAS, LAW, BUM, BU, MW, COVID, and remove repeated column
+colnames(after_QOL) <- c("Survey", "n", "eligible")
+
+after_QOL_table <- after_QOL %>%
+  mutate(Percentage = (n / eligible) * 100,
+         N_percent = paste0(formatC(n, big.mark = ",", format = "d"), 
+                            " (", round(Percentage, digits = 1), "%)")) %>% 
+  rename('Eligible for Survey' = eligible,
+         'N%' = N_percent) %>% 
+    select('Survey', 'N%', 'Eligible for Survey')
+
+
+knitr::kable(after_QOL_table,
              caption = 'Table 3.11. Baseline Survey Completion On Day of or After QOL Survey Completion', 
-             booktabs=T, linesep = "", row.names=FALSE, align=c("l", "c")) %>% 
-  add_indent(c(1:(nrow(BL_QOL_table)-1))) %>%  
-  kable_styling(latex_options = "scale_down") #c("scale_down","hold_position"))
+             booktabs=T, linesep = "", row.names=FALSE, align=c("l", "c", "c")) %>% 
+  kable_styling(latex_options = "scale_down") %>% 
+  footnote(general = "Note: Percentages calculated among those who were eligible but had not yet completed the survey at the time of QOL invitation.", 
+           general_title = "",
+         footnote_as_chunk = TRUE, 
+         escape = FALSE, 
+         threeparttable = TRUE)
 
 
 
 ```
-
-
 
 
 \newpage
@@ -1543,23 +1633,31 @@ knitr::kable(ces_notif_table,
 
 \newpage
 \FloatBarrier
-```{r BL_After_CES, echo=FALSE, warning=FALSE, message=FALSE}
+```{r BL_After_CES, include=FALSE}
 
 
 BL_CES <- all_data %>%  filter(CES_status=="Submitted") %>%
-  mutate(after_CES = case_when(as.Date(d_199471989) <= as.Date(d_517311251) ~ "BOH",
-                               as.Date(d_199471989) <= as.Date(d_832139544) ~ "MRE",
-                               as.Date(d_199471989) <= as.Date(d_770257102) ~ "SAS",
-                               as.Date(d_199471989) <= as.Date(d_264644252) ~ "LAW",
-                               as.Date(d_199471989) <= as.Date(d_222161762) ~ "BUM",
-                               as.Date(d_199471989) <= as.Date(d_764863765) ~ "BU",
-                               as.Date(d_199471989) <= as.Date(d_195145666) ~ "MW",
-                               as.Date(d_199471989) <= as.Date(d_784810139) ~ "COVID",
-                               TRUE ~ "No Survey Submitted After CES"),
-         after_CES = factor(after_CES, levels=c("BOH","MRE","SAS", 
-                                        "LAW", "BUM", "BU", 
-                                        "MW", "COVID", "No Survey Submitted After CES"))) %>% 
-  group_by(after_CES) %>% tally() %>% 
+  mutate(
+    BOH = as.Date(d_199471989) <= as.Date(d_517311251),
+    MRE = as.Date(d_199471989) <= as.Date(d_832139544),
+    SAS = as.Date(d_199471989) <= as.Date(d_770257102),
+    LAW = as.Date(d_199471989) <= as.Date(d_264644252),
+    BUM = as.Date(d_199471989) <= as.Date(d_222161762),
+    BU = as.Date(d_199471989) <= as.Date(d_764863765),
+    MW = as.Date(d_199471989) <= as.Date(d_195145666),
+    COVID = as.Date(d_199471989) <= as.Date(d_784810139)
+  ) %>%
+    mutate(
+        No_Survey_Submitted_After_CES = rowSums(select(., BOH:COVID)) == 0
+    ) %>%
+    pivot_longer(
+        cols = c(BOH, MRE, SAS, LAW, BUM, BU, MW, COVID, No_Survey_Submitted_After_CES),
+        names_to = "after_CES",
+        values_to = "is_in_timeframe"
+    ) %>%
+  filter(is_in_timeframe) %>%  # Keep only TRUE rows
+  group_by(after_CES) %>%
+  tally() %>%
   mutate(Percentage = (n / sum(n)) * 100)
 
 summary_row <- data.frame(after_CES = "Total Submitted CES Survey",
@@ -1576,7 +1674,7 @@ BL_CES_table <- BL_CES_table %>%
   rename(`Survey Completed After CES` = after_CES, `N%` = N_percent)
 
 
-knitr::kable(BL_CES_table,
+knitr::kable(BL_CES_table[c(1,6,8,5,3,2,7,4,9),],
              caption = 'Table 4.5. Baseline Survey Completion On Day of or After CES Survey Completion', 
              booktabs=T, linesep = "", row.names=FALSE, align=c("l", "c")) %>% 
   add_indent(c(1:(nrow(BL_CES_table)-1))) %>%  
@@ -1586,6 +1684,100 @@ knitr::kable(BL_CES_table,
 
 ```
 
+
+
+```{r BL_After_CES2, echo=FALSE, warning=FALSE, message=FALSE}
+################   Numerator  ##############
+
+#Completed CES before or on the same day as BL survey
+BL_CES <- trigger_time %>%
+  filter(CES_status == "Submitted") %>%
+  mutate(BOH = as.Date(d_199471989) <= as.Date(d_517311251),
+         MRE = as.Date(d_199471989) <= as.Date(d_832139544),
+         SAS = as.Date(d_199471989) <= as.Date(d_770257102),
+         LAW = as.Date(d_199471989) <= as.Date(d_264644252),
+         BUM = (as.Date(BUM_time) < as.Date("2024-09-30") ) & (as.Date(d_199471989) <= as.Date(d_222161762)),  
+         BU = (as.Date(BU_time) < as.Date("2024-09-30")  ) & (as.Date(d_199471989) <= as.Date(d_764863765)), 
+         MW = (as.Date(d_173836415_d_266600170_d_319972665_d_661940160) < as.Date("2024-09-30") ) & (as.Date(d_199471989) <= as.Date(d_195145666)),
+         COVID = (as.Date(d_556788178) < as.Date("2024-09-30") ) & (as.Date(d_556788178) >= as.Date("2023-07-05")) & (as.Date(d_199471989) <= as.Date(d_784810139))) %>%
+  pivot_longer(
+    cols = c(BOH, MRE, SAS, LAW, BUM, BU, MW, COVID),
+    names_to = "CES_timeframe",
+    values_to = "is_in_timeframe"
+  ) %>%
+  filter(is_in_timeframe) %>%  # Keep only TRUE rows
+  group_by(CES_timeframe) %>%
+  tally()
+
+
+#############    Denominator #################
+
+## Determine when a person was CES eligible
+# all participants with a survey status not 'Not Eligible' or null, notificaton for CES was sent on 9/30/24
+
+
+## Determine when a participant was BL survey eligible
+#MRE/SAS/LAW- once BOH completed ----   d_517311251
+#BUM/BU- when notified by email 
+#MW- when notified the MW kit was shipped
+#COVID- pushed to prod on 7/5/2023 and requires biospecimen donation 
+
+
+
+
+
+## of those that are eligible for CES, and eligible for whichever BL module, who hadn't completed that module upon eligibility activation
+BL_time_eligible3 <- trigger_time %>%
+  filter(!is.na(CES_status) & CES_status != "Not Eligible") %>%
+  mutate( BOH = is.na(d_517311251) | (as.Date("2024-09-30")  <= as.Date(d_517311251)),
+          MRE = !is.na(d_517311251) & (is.na(d_832139544) | as.Date("2024-09-30")  <= as.Date(d_832139544)),
+          SAS = !is.na(d_517311251) & (is.na(d_770257102) | as.Date("2024-09-30")  <= as.Date(d_770257102)),
+          LAW = !is.na(d_517311251) & (is.na(d_264644252) | as.Date("2024-09-30")  <= as.Date(d_264644252)),
+          BUM = (as.Date(BUM_time) < as.Date("2024-09-30") )  & (is.na(d_222161762) | as.Date("2024-09-30")  <= as.Date(d_222161762)),
+          BU = (as.Date(BU_time) < as.Date("2024-09-30") )  & (is.na(d_764863765) | as.Date("2024-09-30")  <= as.Date(d_764863765)),
+          MW = (as.Date(d_173836415_d_266600170_d_319972665_d_661940160) < as.Date("2024-09-30") ) &
+            (is.na(d_195145666) | as.Date("2024-09-30")  <= as.Date(d_195145666)),
+          COVID = as.Date(d_556788178) < as.Date("2024-09-30")  &
+            as.Date(d_556788178) >= as.Date("2023-07-05") &
+            (is.na(d_784810139) | as.Date("2024-09-30")  <= as.Date(d_784810139))) %>%
+  pivot_longer(
+    cols = c(BOH, MRE, SAS, LAW, BUM, BU, MW, COVID),
+    names_to = "CES_timeframe",
+    values_to = "is_in_timeframe"
+  ) %>%
+  filter(is_in_timeframe) %>%  # Keep only rows where the condition is TRUE
+  group_by(CES_timeframe) %>%
+  tally()
+
+
+
+###############################################################################
+
+after_CES <- cbind(BL_CES, BL_time_eligible3)
+after_CES <- after_CES[c(1,6,8,5,3,2,7,4), c(1,2,4)] # row order BOH, MRE, SAS, LAW, BUM, BU, MW, COVID, and remove repeated column
+colnames(after_CES) <- c("Survey", "n", "eligible")
+
+after_CES_table <- after_CES %>%
+  mutate(Percentage = (n / eligible) * 100,
+         N_percent = paste0(formatC(n, big.mark = ",", format = "d"), 
+                            " (", round(Percentage, digits = 1), "%)")) %>% 
+  rename('Eligible for Survey' = eligible,
+         'N%' = N_percent) %>% 
+    select('Survey', 'N%', 'Eligible for Survey')
+
+
+knitr::kable(after_CES_table,
+             caption = 'Table 4.5. Baseline Survey Completion On Day of or After CES Survey Completion', 
+             booktabs=T, linesep = "", row.names=FALSE, align=c("l", "c", "c")) %>% 
+  kable_styling(latex_options = "scale_down") %>% 
+  footnote(general = "Note: Percentages calculated among those who were eligible but had not yet completed the survey at the time of CES invitation.", 
+           general_title = "",
+         footnote_as_chunk = TRUE, 
+         escape = FALSE, 
+         threeparttable = TRUE)
+
+
+```
 
 
 \newpage
@@ -1698,20 +1890,20 @@ knitr::kable(CSH_TM,
 ## Time from CSH trigger to submission of CSH survey- "Cancer Screening History Survey"
 
 trig_csh <- bq_project_query(project,
-                             query="SELECT distinct(Connect_ID), notification_time FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` notif
+                             query="SELECT distinct(Connect_ID), notification_time as CSH_time FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.notifications_JP` notif
                              left join `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` pts
                              on notif.token=pts.token
                              where category LIKE '%Screen%' and attempt='1st contact'")
                              #query="SELECT distinct(token), notification_time FROM `nih-nci-dceg-connect-dev.FlatConnect.notifications_JP` where category LIKE '%Screen%' and attempt='1st contact'")
 
 
-trigger <- bigrquery::bq_table_download(trig_csh,bigint = "integer64")
+trigger_csh <- bigrquery::bq_table_download(trig_csh,bigint = "integer64")
 
 
-all_data$Connect_ID <- as.numeric(all_data$Connect_ID)
-trigger$Connect_ID <- as.numeric(trigger$Connect_ID)
+trigger_time$Connect_ID <- as.numeric(trigger_time$Connect_ID)
+trigger_csh$Connect_ID <- as.numeric(trigger_csh$Connect_ID)
 
-trigger_time <- left_join(all_data, trigger, by="Connect_ID")
+trigger_time <- left_join(trigger_time, trigger_csh, by="Connect_ID")
 
 
 CSH_notif_table = trigger_time %>%  
@@ -1740,7 +1932,7 @@ knitr::kable(CSH_notif_table,
 
 \newpage
 \FloatBarrier
-```{r BL_After_CSH, echo=FALSE, warning=FALSE, message=FALSE}
+```{r BL_After_CSH, include=FALSE}
 
 
 BL_CSH <- all_data %>%  filter(CSH_status=="Submitted") %>%
@@ -1782,6 +1974,106 @@ knitr::kable(BL_CSH_table,
 
 
 ```
+
+
+```{r BL_After_CSH2, echo=FALSE, warning=FALSE, message=FALSE}
+
+## Determine when a person was CSH eligible
+# time notification was sent
+
+################   Numerator  ##############
+
+#Completed CSH before or on the same day as BL survey
+BL_CSH <- trigger_time %>%
+  filter(CSH_status == "Submitted") %>%
+  mutate(BOH = as.Date(d_389890053) <= as.Date(d_517311251),
+         MRE = as.Date(d_389890053) <= as.Date(d_832139544),
+         SAS = as.Date(d_389890053) <= as.Date(d_770257102),
+         LAW = as.Date(d_389890053) <= as.Date(d_264644252),
+         BUM = (as.Date(BUM_time) < as.Date(CSH_time) ) & (as.Date(d_389890053) <= as.Date(d_222161762)),  
+         BU = (as.Date(BU_time) < as.Date(CSH_time) ) & (as.Date(d_389890053) <= as.Date(d_764863765)), 
+         MW = (as.Date(d_173836415_d_266600170_d_319972665_d_661940160) < as.Date(CSH_time)) & (as.Date(d_389890053) <= as.Date(d_195145666)),
+         COVID = (as.Date(d_556788178) < as.Date(CSH_time)) & (as.Date(d_556788178) >= as.Date("2023-07-05")) & (as.Date(d_389890053) <= as.Date(d_784810139))) %>%
+  pivot_longer(
+    cols = c(BOH, MRE, SAS, LAW, BUM, BU, MW, COVID),
+    names_to = "CSH_timeframe",
+    values_to = "is_in_timeframe"
+  ) %>%
+  filter(is_in_timeframe) %>%  # Keep only TRUE rows
+  group_by(CSH_timeframe) %>%
+  tally()
+
+
+#############    Denominator #################
+
+
+
+## Determine when a participant was BL survey eligible
+## Determine when a participant was BL survey eligible
+#MRE/SAS/LAW- once BOH completed ----   d_517311251
+#BUM/BU- when notified by email 
+#MW- when notified the MW kit was shipped
+#COVID- pushed to prod on 7/5/2023 and requires biospecimen donation 
+
+
+
+
+
+## of those that are eligible for CSH, and eligible for whichever BL module, who hadn't completed that module upon eligibility activation
+BL_time_eligible2 <- trigger_time %>%
+  filter(!is.na(CSH_status) & CSH_status != "Not Eligible") %>%
+  mutate( BOH = is.na(d_517311251) | (as.Date(CSH_time) <= as.Date(d_517311251)),
+          MRE = !is.na(d_517311251) & (is.na(d_832139544) | as.Date(CSH_time) <= as.Date(d_832139544)),
+          SAS = !is.na(d_517311251) & (is.na(d_770257102) | as.Date(CSH_time) <= as.Date(d_770257102)),
+          LAW = !is.na(d_517311251) & (is.na(d_264644252) | as.Date(CSH_time) <= as.Date(d_264644252)),
+          BUM = (as.Date(BUM_time) < as.Date(CSH_time))  & (is.na(d_222161762) | as.Date(CSH_time) <= as.Date(d_222161762)),
+          BU = (as.Date(BU_time) < as.Date(CSH_time))  & (is.na(d_764863765) | as.Date(CSH_time) <= as.Date(d_764863765)),
+          MW = (as.Date(d_173836415_d_266600170_d_319972665_d_661940160) < as.Date(CSH_time)) &
+            (is.na(d_195145666) | as.Date(CSH_time) <= as.Date(d_195145666)),
+          COVID = as.Date(d_556788178) < as.Date(CSH_time) &
+            as.Date(d_556788178) >= as.Date("2023-07-05") &
+            (is.na(d_784810139) | as.Date(CSH_time) <= as.Date(d_784810139))) %>%
+  pivot_longer(
+    cols = c(BOH, MRE, SAS, LAW, BUM, BU, MW, COVID),
+    names_to = "CSH_timeframe",
+    values_to = "is_in_timeframe"
+  ) %>%
+  filter(is_in_timeframe) %>%  # Keep only rows where the condition is TRUE
+  group_by(CSH_timeframe) %>%
+  tally()
+
+
+
+###############################################################################
+
+after_CSH <- cbind(BL_CSH, BL_time_eligible2)
+after_CSH <- after_CSH[c(1,6,8,5,3,2,7,4), c(1,2,4)] # row order BOH, MRE, SAS, LAW, BUM, BU, MW, COVID, and remove repeated column
+colnames(after_CSH) <- c("Survey", "n", "eligible")
+
+after_CSH_table <- after_CSH %>%
+  mutate(Percentage = (n / eligible) * 100,
+         N_percent = paste0(formatC(n, big.mark = ",", format = "d"), 
+                            " (", round(Percentage, digits = 1), "%)")) %>% 
+  rename('Eligible for Survey' = eligible,
+         'N%' = N_percent) %>% 
+    select('Survey', 'N%', 'Eligible for Survey')
+
+
+knitr::kable(after_CSH_table,
+             caption = 'Table 5.5. Baseline Survey Completion On Day of or After CSH Survey Completion', 
+             booktabs=T, linesep = "", row.names=FALSE, align=c("l", "c", "c")) %>% 
+  kable_styling(latex_options = "scale_down") %>% 
+  footnote(general = "Note: Percentages calculated among those who were eligible but had not yet completed the survey at the time of CSH invitation.", 
+           general_title = "",
+         footnote_as_chunk = TRUE, 
+         escape = FALSE, 
+         threeparttable = TRUE)
+
+
+
+```
+
+
 
 ```{r CSH_ver_time, echo=FALSE, warning=FALSE, message=FALSE}
 

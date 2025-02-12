@@ -1,0 +1,198 @@
+---
+title: "RMD and Kable Example"
+author: "Kelsey Sanchez"
+date: "`r Sys.Date()`"
+header-includes:
+  \usepackage[labelformat=empty]{caption}
+  
+output:
+  pdf_document:
+    latex_engine: xelatex
+    extra_dependencies: ["float"]
+    toc: yes
+
+---
+
+
+\newpage
+
+```{r ExampleChunkName, include= FALSE}
+
+print(" I can put whatever I want in here, and because include=FALSE, this will never show up in my knitted output")
+
+
+
+
+```
+
+
+```{r Libraries, include=FALSE}
+
+library(bigrquery) #allows you to authenticate your BigQuery credentials
+library(dplyr) #manipulate data: mutate, select, filter, arrange, summarise functions
+library(tidyverse) #multiple libraries including ggplot, tibble, tidyr
+library(gtsummary) #needed for crosstables- most popular request from Ops
+
+#Needed for kable tables
+library(knitr)
+library(kableExtra)
+
+
+bq_auth()
+
+```
+
+
+
+```{r BQ pull, include=FALSE}
+
+project = "nih-nci-dceg-connect-prod-6d04"
+query_ex <- "SELECT  Connect_ID, d_878865966, d_949302066, d_517311251, d_205553981, d_827220437
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP`
+where Connect_ID IS NOT NULL  and (d_512820379='486306141' OR d_512820379='854703046') " 
+
+
+run_query <- bq_project_query(project, query_ex)
+data_ex <- bq_table_download(run_query, bigint = "integer64")
+
+
+
+data_ex <- data_ex %>% mutate(mod1_status = case_when(d_949302066==972455046 ~ "Not Started",
+                                                      d_949302066==615768760 ~ "Started",
+                                                      d_949302066==231311385 ~ "Submitted"),
+                              blood_status = case_when(d_878865966==353358909 ~ "Blood Donated",
+                                                       d_878865966==104430631 ~ "No Blood Donated"),
+                              m1_comp_mins = as.numeric(difftime(as.POSIXct(ymd_hms(d_517311251)), as.POSIXct(ymd_hms(d_205553981)), units="mins")),
+                              Site = case_when(d_827220437==472940358 ~ "Baylor Scott and White Health",
+                                               d_827220437==125001209 ~ "KP Colorado",
+                                               d_827220437==327912200 ~ "KP Georgia",
+                                               d_827220437==300267574 ~ "KP Hawaii",
+                                               d_827220437==452412599 ~ "KP Northwest",
+                                               d_827220437==548392715 ~ "Henry Ford",
+                                               d_827220437==531629870 ~ "HealthPartners",
+                                               d_827220437==303349821 ~ "Marshfield",
+                                               d_827220437==657167265 ~ "Sanford",
+                                               d_827220437==809703864 ~ "UChicago"),
+                              #prefered order on tables
+                              mod1_status = factor(mod1_status, levels=c("Not Started","Started","Submitted")),
+                              blood_status = factor(blood_status, levels=c("Blood Donated","No Blood Donated")))
+
+
+```
+
+# Section New
+
+```{r M1time, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+Mod1_time = data_ex %>% filter(mod1_status=="Submitted") %>% 
+  dplyr::summarize('N'=n(),
+                   Min = min(m1_comp_mins, na.rm = TRUE),
+                   Q1 = quantile(m1_comp_mins, 0.25, na.rm = TRUE),
+                   Median = median(m1_comp_mins, na.rm = TRUE),
+                   Mean = mean(m1_comp_mins, na.rm = TRUE), 
+                   SD= sd(m1_comp_mins, na.rm = TRUE),
+                   Q3 = quantile(m1_comp_mins, 0.75, na.rm = TRUE),
+                   'Perc.85' = quantile(m1_comp_mins, 0.85, na.rm = TRUE),
+                   'Perc.90' = quantile(m1_comp_mins, 0.90, na.rm = TRUE),
+                   'Perc.95' = quantile(m1_comp_mins, 0.95, na.rm = TRUE),
+                   Max = max(m1_comp_mins, na.rm = TRUE)) 
+
+knitr::kable(Mod1_time, #select the table
+             format.args = list(big.mark = ","), # I want a comma in the thousands place
+             caption='Table 1. Time (in minutes) from Module 1 Survey Start Time to Submission Time \n Among Active and Passive Recruits', #title
+             row.names=FALSE, #my default since I've already named the rows 
+             align=c("l","c","c","c","c","c","c","c","c","c","c"), #l for left and c for center, aligns each column evenly, with the row names shifted left
+             digits=2, #rounds all numeric values
+             booktabs = TRUE) %>% #Operation's teams likes this esthetic 
+kable_styling(latex_options = "scale_down", #prevent the table from running over pdf width
+                full_width = FALSE, font_size=8)  #other ways to reduce the size of a wide table
+
+```
+
+
+# Section Two
+
+```{r Simple_CrossTable, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+#compare to:
+#table(data_ex$mod1_status, data_ex$blood_status)
+
+#published table:
+first_cross_table <- data_ex %>%  
+  tbl_cross(
+    row = mod1_status, #row variable
+    col = blood_status, #column variable
+    digits=c(0,2), #decimal rounding
+    percent = "column", #options: none, column, row, or cell. MUST be in quotation marks
+    label=list(mod1_status ~ "Mod 1 Survey Status", #Add row header
+               blood_status ~ "Blood Donation Status"), #add column header
+    missing="ifany", #options: ifany, always, and no (ifany means add if there's missing data, always means add regardless of missing data or not)
+    missing_text="Missing", #If there's missing data, how should it be labeled
+    margin_text="Total") %>%  #Total row/column label
+  modify_caption("Table 2. Blood Sample Donation Across Module 1 Completion") %>%
+  as_kable() %>%  #make this a kable table
+  kable_styling(latex_options = "scale_down") #options: scale down to prevent wide tables from running over the page, hold_position prevents the table from moving around in the pdf
+
+first_cross_table
+
+
+```
+
+```{r HiddenChunk, include= FALSE}
+
+print("Add this for next example")
+
+
+
+```
+
+
+\newpage
+# Separate Section
+
+## Sub-title name 
+
+### Comment about the section
+
+```{r Simple_CrossTable2, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+
+
+#published table:
+second_cross_table <- data_ex %>%  
+  tbl_cross(
+    row = mod1_status, 
+    col = blood_status, 
+    digits=c(0,2), 
+    percent = "column",
+    label=list(mod1_status ~ "Mod 1 Survey Status", 
+               blood_status ~ "Blood Donation Status"),
+    missing="ifany", 
+    missing_text="Missing", 
+    margin_text="Total") 
+
+
+
+## Ops doesn't like the row label on its own row
+second_cross_table_df <- as.data.frame(second_cross_table)[-1, ]
+
+#Removed row label, so I need to re-add it
+#second_cross_table_df
+
+knitr::kable(second_cross_table_df, 
+             col.names=c("Mod 1 Survey Status", "Blood Donated", "No Blood Donated", "Total Verified"), #Sometimes column Total and row Total requires different names
+             caption='Table 2.a: Restructured Blood Sample Donation Across Module 1 Completion', 
+             row.names=FALSE,align=c("l","c","c","c"), booktabs = TRUE) %>%  
+  add_indent(seq(1, nrow(second_cross_table_df) - 1)) %>%  #helps the row title AND Total stand out when the rows are indented
+  kable_styling(latex_options = c("scale_down", "hold_position"))
+
+```
+
+
+
+
+
+
+
+
+

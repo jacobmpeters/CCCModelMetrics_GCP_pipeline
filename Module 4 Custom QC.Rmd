@@ -1,0 +1,719 @@
+---
+title: "Module 4 Custom QC"
+author: "Kelsey Sanchez"
+date: "`r Sys.Date()`"
+
+  
+output:
+  pdf_document:
+    latex_engine: xelatex
+---
+
+```{r libraries, include=FALSE}
+
+##  MUST RUN FIRST BEFORE KNITTING
+
+
+library(bigrquery)
+#install_tinytex()
+library(tinytex)
+
+library(data.table) ###to write or read and data management 
+library(tidyverse) ###for data management
+library(dplyr) ###data management
+library(reshape)  ###to work on transition from long to wide or wide to long data
+library(listr) ###to work on a list of vector, files or..
+library(sqldf) ##sql
+library(lubridate) ###date time
+library(stringr) ###to work on patterns, charaters
+library(arsenal)
+library(gt)
+library(gtsummary)
+library(kableExtra)
+library(knitr)
+
+options(tinytex.verbose = TRUE)
+
+bq_auth()
+```
+
+
+```{r M1Merge, include=FALSE}
+
+#Data Dictionary for column names
+dictionary <- rio::import("https://episphere.github.io/conceptGithubActions/aggregate.json",format = "json")
+dd <- dplyr::bind_rows(dictionary,.id="CID")
+dd <-rbindlist(dictionary,fill=TRUE,use.names=TRUE,idcol="CID")
+dd$`Variable Label`[is.na(dd$`Variable Label`)] <- replace_na(dd$'Variable Name')
+dd <- as.data.frame.matrix(do.call("rbind",dictionary)) 
+dd$CID <- rownames(dd)
+#https://shaivyakodan.medium.com/7-useful-r-packages-for-analysis-7f60d28dca98
+devtools::install_github("tidyverse/reprex")
+
+
+
+
+
+## BQ Pull from the participants table just to use for versioning
+project <- "nih-nci-dceg-connect-prod-6d04"
+billing <- "nih-nci-dceg-connect-prod-6d04" 
+recr_M1 <- bq_project_query(project, query="SELECT token,Connect_ID, d_821247024, d_914594314,  d_827220437,d_512820379,
+                            d_949302066 , d_517311251  FROM  `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` WHERE  d_821247024='197316935' and d_949302066 ='231311385'")
+recr_m1 <- bq_table_download(recr_M1,bigint = "integer64")
+cnames <- names(recr_m1)
+# Check that it doesn't match any non-number
+numbers_only <- function(x) !grepl("\\D", x)
+# to check variables in recr_noinact_wl1
+for (i in 1: length(cnames)){
+  varname <- cnames[i]
+  var<-pull(recr_m1,varname)
+  recr_m1[,cnames[i]] <- ifelse(numbers_only(var), as.numeric(as.character(var)), var)
+}
+
+
+
+
+#### Handling participants that somehow completed both Mod1 version 1 and Mod1 version 2
+
+sql_M1_1 <- bq_project_query(project, query = "SELECT Connect_ID, D_784967158 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v1_JP` WHERE Connect_ID IS NOT NULL")
+sql_M1_2 <- bq_project_query(project, query = "SELECT Connect_ID, D_784967158 FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module1_v2_JP` WHERE Connect_ID IS NOT NULL")
+
+M1_V1 <- bq_table_download(sql_M1_1, bigint = "integer64")
+M1_V2 <- bq_table_download(sql_M1_2, bigint = "integer64")
+
+# Select matching column names
+M1_V1_vars <- colnames(M1_V1)
+M1_V2_vars <- colnames(M1_V2)
+common_vars <- intersect(M1_V1_vars, M1_V2_vars)
+
+# Subset to common columns
+M1_V1_common <- M1_V1[, common_vars]
+M1_V2_common <- M1_V2[, common_vars]
+
+# Add version indicator
+M1_V1_common$version <- 1
+M1_V2_common$version <- 2
+
+# Identify columns with mismatched types
+mismatched_cols <- names(M1_V1_common)[sapply(names(M1_V1_common), function(col) {
+  class(M1_V1_common[[col]]) != class(M1_V2_common[[col]])
+})]
+
+# Convert mismatched columns to character for consistency
+M1_V1_common <- M1_V1_common %>%
+  mutate(across(all_of(mismatched_cols), as.character))
+M1_V2_common <- M1_V2_common %>%
+  mutate(across(all_of(mismatched_cols), as.character))
+
+# Combine both versions for participants who completed both
+M1_common <- bind_rows(M1_V1_common, M1_V2_common) %>%
+  arrange(Connect_ID, desc(version))
+
+# For columns unique to each version
+V1_only_vars <- setdiff(M1_V1_vars, common_vars)
+V2_only_vars <- setdiff(M1_V2_vars, common_vars)
+
+# Subset each version for unique columns and add version indicator
+m1_v1_only <- M1_V1[, c("Connect_ID", V1_only_vars)] %>%
+  mutate(version = 1)
+m1_v2_only <- M1_V2[, c("Connect_ID", V2_only_vars)] %>%
+  mutate(version = 2)
+
+# Combine the unique and common data
+m1_common_v1 <- left_join(M1_common, m1_v1_only, by = c("Connect_ID", "version"))
+m1_combined_v1v2 <- left_join(m1_common_v1, m1_v2_only, by = c("Connect_ID", "version"))
+
+# Filter for complete cases where specific completion criteria are met
+m1_complete <- m1_combined_v1v2 %>%
+  filter(Connect_ID %in% recr_m1$Connect_ID[recr_m1$d_949302066 == 231311385]) %>%
+  arrange(desc(version))
+
+# Remove duplicates, keeping only the most recent version for each Connect_ID
+m1_complete_nodup <- m1_complete[!duplicated(m1_complete$Connect_ID),]
+
+m1_complete_nodup$Connect_ID <- as.numeric(m1_complete_nodup$Connect_ID)
+
+
+## Define requirements of the data: active or passive,  user profile done, consented, mod4 done, verified
+parts <- "SELECT Connect_ID, token,  d_452942800, d_264644252
+FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.participants_JP` 
+where Connect_ID IS NOT NULL and (d_512820379='486306141' OR d_512820379='854703046') and 
+d_919254129='353358909' and d_699625233='353358909' and d_663265240='231311385' and d_821247024='197316935'"
+
+querymod4 <- "SELECT * FROM `nih-nci-dceg-connect-prod-6d04.FlatConnect.module4_v1_JP` where Connect_ID IS NOT NULL"
+
+parts_table <- bq_project_query(project, parts)
+mod4_table <- bq_project_query(project, querymod4)
+
+parts_data <- bq_table_download(parts_table, bigint = "integer64")
+mod4_data <- bq_table_download(mod4_table, bigint = "integer64")
+
+parts_data$Connect_ID <- as.numeric(parts_data$Connect_ID) ###need to convert type- m1... is double and parts is character
+mod4_data$Connect_ID <- as.numeric(mod4_data$Connect_ID)
+
+module4= left_join(parts_data, m1_complete_nodup, by="Connect_ID") %>%  left_join(mod4_data, by="Connect_ID")
+dim(module4)
+
+### Issue: there are 3 people that took module 4 twice. They are somehow showing up on this report but not on the low or high priority reports
+
+knitr::opts_chunk$set(comment = NA)
+
+
+Mod4 <- as_tibble(module4)
+```
+
+
+## Only display HOMEADD2_1 if CITY = NA OR ST = NA OR ZIP = NA OR COUNTRY = NA
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+Followup1_skip= Mod4 %>%  filter(D_920576363_D_920576363=="[178420302]" & 
+                                   !(is.na(D_121490150_D_303500597) | is.na(D_121490150_D_195068098) | 
+                              is.na(D_121490150_D_202784871) |  is.na(D_121490150_D_831127170))) %>% 
+  select(Connect_ID, D_920576363_D_920576363,D_121490150_D_303500597,D_121490150_D_195068098,D_121490150_D_202784871,D_121490150_D_831127170)
+
+colnames(Followup1_skip) <- c("Connect ID", "HOMEADD2_1","CITY","ST" ,"ZIP","COUNTRY")
+if (nrow(Followup1_skip) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(Followup1_skip)
+}
+
+```
+
+
+
+## Only display HOMEADD2_1 if CITY = NA OR ST = NA OR ZIP = NA OR COUNTRY = NA
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+Followup1_skip= Mod4 %>%  filter(D_920576363_D_920576363=="[178420302]" & 
+                                   !(is.na(D_121490150_D_303500597) | is.na(D_121490150_D_195068098) | 
+                              is.na(D_121490150_D_202784871) |  is.na(D_121490150_D_831127170))) %>% 
+  select(Connect_ID, D_920576363_D_920576363,D_121490150_D_303500597,D_121490150_D_195068098,D_121490150_D_202784871,D_121490150_D_831127170, d_264644252)
+
+colnames(Followup1_skip) <- c("Connect ID", "HOMEADD2_1","CITY","ST" ,"ZIP","COUNTRY", "Date_M4_Completed")
+if (nrow(Followup1_skip) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(Followup1_skip)
+}
+
+```
+
+
+
+## Only display STRNAME1, STRTNAME1, or HOMEADD3_1 if STNUM = NA AND FULLST = NA AND ((CITY <> NA) or (ST <> NA) or (ZIP <> NA) or (COUNTRY <> NA) or (CITY_FOLLOWUP <> NA) or (ST_FOLLOWUP <> NA) or (ZIP_FOLLOWUP <> NA) or (COUNTRY_FOLLOWUP <> NA))
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+home_add3_1= Mod4 %>% 
+  filter((!is.na(D_804504024_D_105043152) | !is.na(D_804504024_D_543135391) | D_804504024_D_804504024=="[178420302]") & 
+           !( is.na(D_121490150_D_255248624) & is.na(D_121490150_D_945532934) & 
+           (!is.na(D_121490150_D_303500597) | !is.na(D_121490150_D_195068098) | !is.na(D_121490150_D_202784871) | !is.na(D_121490150_D_831127170) | 
+           !is.na(D_920576363_D_725583683) | !is.na(D_920576363_D_917021073) | !is.na(D_920576363_D_970000442) |!is.na(D_920576363_D_500100435)))) %>% 
+  select(Connect_ID,D_804504024_D_105043152,D_804504024_D_543135391,D_804504024_D_804504024,D_121490150_D_255248624,D_121490150_D_945532934,D_121490150_D_303500597,
+         D_121490150_D_195068098,D_121490150_D_202784871,D_121490150_D_831127170,D_920576363_D_725583683,D_920576363_D_917021073,D_920576363_D_970000442,
+         D_920576363_D_500100435, d_264644252) %>% 
+  arrange(desc(d_264644252))
+
+colnames(home_add3_1) <- c("Connect ID", "STRNAME1", "STRTNAME1", "HOMEADD3_1","FULLST","CITY","ST","ZIP" ,"COUNTRY","CITY_FOLLOWUP","ST_FOLLOWUP","ZIP_FOLLOWUP","COUNTRY_FOLLOWUP", "Date_M4_Completed")
+if (nrow(home_add3_1) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(home_add3_1) %>%  landscape()
+}
+
+
+#*****
+```
+
+## Only display HOMEMOVEIN1, HOMEMOVEOUT1_YEAR, or HOMEMOVEOUT1 if (STNUM <> NA) or (FULLST <> NA) or (APT <> NA) or (CITY <> NA) or (CITY_FOLLOWUP <> NA) or (ST <> NA) or (ST_FOLLOWUP <> NA) or (ZIP <> NA) or (ZIP_FOLLOWUP <> NA) or (COUNTRY <> NA) or (COUNTRY_FOLLOWUP <> NA)
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+home1_inout= Mod4 %>% 
+  filter((!is.na(D_590222838) | !is.na(D_728155643_D_943813942) | D_728155643_D_728155643_D_678602069==1) & 
+            !(!is.na(D_121490150_D_255248624) | !is.na(D_121490150_D_945532934) | !is.na(D_121490150_D_303500597) | !is.na(D_121490150_D_195068098) |
+           !is.na(D_121490150_D_202784871) | !is.na(D_121490150_D_831127170) | !is.na(D_920576363_D_725583683) | !is.na(D_920576363_D_917021073) |
+           !is.na(D_920576363_D_970000442) |!is.na(D_920576363_D_500100435))) %>% 
+  select(Connect_ID,D_590222838,D_728155643_D_943813942,D_728155643_D_728155643_D_678602069,D_121490150_D_255248624,D_121490150_D_945532934,D_121490150_D_303500597,
+         D_121490150_D_195068098,D_121490150_D_202784871,D_121490150_D_831127170,D_920576363_D_725583683,D_920576363_D_917021073,D_920576363_D_970000442,
+         D_920576363_D_500100435, d_264644252) %>% 
+  arrange(desc(d_264644252))
+
+colnames(home1_inout) <- c("Connect ID", "HOMEMOVEIN1", "HOMEMOVEOUT1_YEAR", "HOMEMOVEOUT1","FULLST","CITY","ST","ZIP" ,"COUNTRY","CITY_FOLLOWUP","ST_FOLLOWUP","ZIP_FOLLOWUP","COUNTRY_FOLLOWUP", "Date_M4_Completed")
+if (nrow(home1_inout) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(home1_inout) %>%  landscape()
+}
+
+
+
+```
+
+
+
+## Only display HOMEWTR1_1 or HOMEWTR3_1 if (STNUM <> NA) or (FULLST <> NA) or (APT <> NA) or (CITY <> NA) or (CITY_FOLLOWUP <> NA) or (ST <> NA) or (ST_FOLLOWUP <> NA) or (ZIP <> NA) or (ZIP_FOLLOWUP <> NA) or (COUNTRY <> NA) or (COUNTRY_FOLLOWUP <> NA)
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+home1_water= Mod4 %>% 
+  filter((!is.na(D_958419506_D_958419506) | !is.na(D_539909957_D_539909957)) & 
+            !(!is.na(D_121490150_D_255248624) | !is.na(D_121490150_D_945532934) | !is.na(D_121490150_D_303500597) | !is.na(D_121490150_D_195068098) | 
+           !is.na(D_121490150_D_202784871) | !is.na(D_121490150_D_831127170) | !is.na(D_920576363_D_725583683) | !is.na(D_920576363_D_917021073) |
+           !is.na(D_920576363_D_970000442) |!is.na(D_920576363_D_500100435))) %>% 
+  select(Connect_ID,D_958419506_D_958419506,D_539909957_D_539909957,D_121490150_D_255248624,D_121490150_D_945532934,D_121490150_D_303500597,
+         D_121490150_D_195068098,D_121490150_D_202784871,D_121490150_D_831127170,D_920576363_D_725583683,D_920576363_D_917021073,D_920576363_D_970000442,
+         D_920576363_D_500100435, d_264644252) %>% 
+  arrange(desc(d_264644252))
+
+colnames(home1_water) <- c("Connect ID", "HOMEWTR1_1", "HOMEWTR3_1","FULLST","CITY","ST","ZIP" ,"COUNTRY","CITY_FOLLOWUP","ST_FOLLOWUP","ZIP_FOLLOWUP","COUNTRY_FOLLOWUP", "Date_M4_Completed")
+if (nrow(home1_water) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(home1_water) %>%  landscape()
+}
+
+
+```
+
+
+
+
+## Only display SEASADD2_1 if SEACITY = NA OR SEAST = NA OR SEAZIP = NA OR SEACOUNTRY = NA
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+sea_add2_1 = Mod4 %>% filter(D_173413183_D_173413183=="[178420302]" & 
+                               !(is.na(D_376408004_D_556576930) | is.na(D_376408004_D_304326324) | is.na(D_376408004_D_812433386) | is.na(D_376408004_D_477319994))) %>% 
+  dplyr::select(Connect_ID, D_173413183_D_173413183,D_376408004_D_556576930,D_376408004_D_304326324,D_376408004_D_812433386,D_376408004_D_477319994, d_264644252) %>% 
+  arrange(desc(d_264644252))
+
+colnames(sea_add2_1) <- c("Connect ID", "SEASADD2_1","SEACITY","SEAST","SEAZIP","SEACOUNTRY", "Date_M4_Completed")
+if (nrow(sea_add2_1) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(sea_add2_1) #%>%  landscape()
+}
+
+```
+
+
+
+
+## Only display SEASTRNAME1, SEASTRTNAME1, or SEASADD3_1 if SEASTNUM = NA AND SEAFULLST = NA AND ((SEACITY <> NA) or (SEAST <> NA) or (SEAZIP <> NA) or (SEACOUNTRY <> NA) or (SEACITY_FOLLOWUP <> NA) or (SEAST_FOLLOWUP <> NA) or (SEAZIP_FOLLOWUP <> NA) or (SEACOUNTRY_FOLLOWUP <> NA))
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+seahome_add3_1= Mod4 %>% 
+  filter((!is.na(D_200086909_D_351319555) | !is.na(D_200086909_D_154163153) | D_200086909_D_200086909=="[178420302]") &
+    !(is.na(Mod4$D_376408004_D_234037089) & is.na(Mod4$D_376408004_D_416862112) & 
+           (!is.na(Mod4$D_376408004_D_556576930) | !is.na(Mod4$D_376408004_D_304326324) |!is.na(Mod4$D_376408004_D_812433386) | 
+              !is.na(Mod4$D_173413183_D_416620941) | !is.na(Mod4$D_173413183_D_915859406) |!is.na(Mod4$D_173413183_D_354833686)))) %>%  
+  dplyr::select(Connect_ID,D_200086909_D_351319555,D_200086909_D_154163153,D_200086909_D_200086909,D_376408004_D_234037089,D_376408004_D_416862112,
+         D_376408004_D_556576930,D_376408004_D_304326324,D_376408004_D_812433386, D_173413183_D_416620941,D_173413183_D_915859406,
+         D_173413183_D_354833686, d_264644252) %>% 
+  arrange(desc(d_264644252))
+
+colnames(seahome_add3_1) <- c("Connect ID", "SEASTRNAME1", "SEASTRTNAME1", "SEASADD3_1", "SEASTNUM", "SEAFULLST","SEACITY","SEAST",
+                          "SEAZIP","SEACOUNTRY","SEACITY_FOLLOWUP","SEAST_FOLLOWUP", "Date_M4_Completed")
+if (nrow(seahome_add3_1) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(seahome_add3_1) %>%  landscape()
+}
+
+
+```
+
+
+
+
+## Only display SEASWTR1_1 or SEASWTR3_1 if (SEASHOME=1) or (SEASADDSUM1 = 0) or (SEASTNUM <> NA) or (SEAFULLST <> NA) or (SEAAPT <> NA) or (SEACITY <> NA) or (SEACITY_FOLLOWUP <> NA) or (SEAST <> NA) or (SEAST_FOLLOWUP <> NA) or (SEAZIP <> NA) or (SEAZIP_FOLLOWUP <> NA) or (SEACOUNTRY <> NA) or (SEACOUNTRY_FOLLOWUP <> NA)
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+seahome_water= Mod4 %>% 
+  filter((!is.na(D_426743354_D_426743354) | !is.na(D_598478268_D_598478268)) &
+    !(D_342677547=="353358909" | D_710449106=="991158851" |
+        !is.na(Mod4$D_376408004_D_234037089) | !is.na(Mod4$D_376408004_D_416862112) | !is.na(Mod4$D_376408004_D_671149035) |
+        !is.na(Mod4$D_376408004_D_556576930) | !is.na(Mod4$D_173413183_D_416620941) | !is.na(Mod4$D_376408004_D_304326324) | 
+        !is.na(Mod4$D_173413183_D_915859406) | !is.na(Mod4$D_376408004_D_812433386) | !is.na(Mod4$D_173413183_D_354833686) | 
+        !is.na(Mod4$D_376408004_D_477319994) | !is.na(Mod4$D_173413183_D_661148931))) %>%  
+  dplyr::select(Connect_ID,D_426743354_D_426743354,D_598478268_D_598478268,D_376408004_D_234037089,D_376408004_D_416862112,
+                D_376408004_D_671149035,D_376408004_D_556576930,D_173413183_D_416620941,D_376408004_D_304326324,
+                D_173413183_D_915859406,D_376408004_D_812433386,D_173413183_D_354833686,D_376408004_D_477319994,
+                D_173413183_D_661148931, d_264644252) %>% 
+  arrange(desc(d_264644252))
+
+colnames(seahome_water) <- c("Connect ID", "SEASWTR1_1","SEASWTR3_1","SEASHOME","SEASADDSUM1","SEASTNUM","SEAFULLST","SEAAPT",
+                             "SEACITY","SEACITY_FOLLOWUP","SEAST","SEAST_FOLLOWUP","SEAZIP","SEAZIP_FOLLOWUP","SEACOUNTRY",
+                             "SEACOUNTRY_FOLLOWUP", "Date_M4_Completed")
+if (nrow(seahome_water) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(seahome_water) %>%  landscape()
+}
+
+
+```
+
+
+
+
+## Only display CHILDADD2 if (CHILDTEST = NA) and (CHILDCITY = NA OR CHILDST = NA OR CHILDZIP = NA OR CHILDCOUNTRY = NA)
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+child_home= Mod4 %>% 
+  filter(!is.na(D_264797252_D_264797252) & 
+            !(is.na(D_720221117) & (is.na(D_632533534_D_128827522) | is.na(D_632533534_D_439447560) | is.na(D_632533534_D_286781627) | is.na(D_632533534_D_733929451)))) %>%  
+  dplyr::select(Connect_ID, D_264797252_D_264797252, D_720221117, D_632533534_D_128827522, D_632533534_D_439447560, D_632533534_D_286781627, D_632533534_D_733929451, d_264644252) %>% 
+  arrange(desc(d_264644252))
+
+colnames(child_home) <- c("Connect ID", "CHILDADD2","CHILDTEST","CHILDCITY","CHILDST","CHILDZIP","CHILDCOUNTRY", "Date_M4_Completed")
+if (nrow(child_home) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(child_home) #%>%  landscape()
+}
+
+```
+
+
+
+
+## Only display FULLCHILDSTNAME1, FULLCHILDSTNAME2, or CHILDADD3 if CHILDSTNUM = NA AND CHILDFULLST = NA AND ((CHILDCITY <> NA) or (CHILDST <> NA) or (CHILDZIP <> NA) or (CHILDCOUNTRY <> NA) or (CHILDCITY_FOLLOWUP <> NA) or (CHILDST_FOLLOWUP <> NA) or (CHILDZIP_FOLLOWUP <> NA) or (CHILDCOUNTRY_FOLLOWUP <> NA))
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+child_home_st= Mod4 %>% 
+  filter((!is.na(D_469914719_D_952124199) | !is.na(D_469914719_D_204186397) | !is.na(D_469914719_D_469914719)) & 
+            !(is.na(D_632533534_D_284547539) & is.na(D_632533534_D_802585033) &
+                (!is.na(D_632533534_D_128827522) | !is.na(D_632533534_D_439447560) | !is.na(D_632533534_D_286781627) | !is.na(D_632533534_D_733929451) |
+                   !is.na(D_264797252_D_890792569) | !is.na(D_632533534_D_439447560) | !is.na(D_632533534_D_286781627) | !is.na(D_632533534_D_733929451) ))) %>%  
+  dplyr::select(Connect_ID, D_469914719_D_952124199, D_469914719_D_204186397, D_469914719_D_469914719, D_632533534_D_284547539, D_632533534_D_128827522, 
+                D_632533534_D_439447560, D_632533534_D_286781627, D_632533534_D_733929451, D_264797252_D_890792569,D_632533534_D_439447560,
+                D_632533534_D_286781627,D_632533534_D_733929451, d_264644252) %>% 
+  arrange(desc(d_264644252))
+
+colnames(child_home_st) <- c("Connect ID", "FULLCHILDSTNAME1", "FULLCHILDSTNAME2", "CHILDADD3","CHILDSTNUM","CHILDFULLST","CHILDCITY","CHILDST","CHILDZIP",
+                             "CHILDCOUNTRY", "CHILDCITY_FOLLOWUP","CHILDST_FOLLOWUP","CHILDZIP_FOLLOWUP","CHILDCOUNTRY_FOLLOWUP", "Date_M4_Completed")
+if (nrow(child_home_st) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(child_home_st) #%>%  landscape()
+}
+
+
+```
+
+
+
+
+## Only display CURWORK2 if CURWORKCITY = NA OR CURWORKST = NA OR CURWORKZIP = NA OR CURWORKCOUNTRY = NA
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+CURWORK2 = Mod4 %>%  filter((!is.na(D_263588196_D_263588196) | D_263588196_D_263588196!="[]") & ## how is this one showing an error?
+                              !(is.na(D_596318751_D_959804472) | is.na(D_596318751_D_774707280) | is.na(D_596318751_D_182144476) | is.na(D_596318751_D_294634899))) %>% 
+  dplyr::select(Connect_ID, D_263588196_D_263588196,D_596318751_D_959804472,D_596318751_D_774707280,D_596318751_D_182144476,D_596318751_D_294634899, d_264644252) %>% 
+  arrange(desc(d_264644252))
+
+colnames(CURWORK2) <- c("Connect_ID", "CURWORK2", "CURWORKCITY", "CURWORKST", "CURWORKZIP", "CURWORKCOUNTRY", "Date_M4_Completed")
+
+if (nrow(CURWORK2) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(CURWORK2) #%>%  landscape()
+}
+
+```
+
+
+
+
+## Only display FULLST1_CURWORKST, FULLST2_CURWORKST, or CURWORK3 if CURWORKSTNUM = NA AND CURWORKFULLST = NA AND ((CURWORKCITY <> NA) or (CURWORKST <> NA) or (CURWORKZIP <> NA) or (CURWORKCOUNTRY <> NA) or (CURWORKCITY_FOLLOWUP <> NA) or (CURWORKST_FOLLOWUP <> NA) or (CURWORKZIP_FOLLOWUP <> NA) or (CURWORKCOUNTRY_FOLLOWUP <> NA))
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+CURWORK3 = Mod4 %>%  filter((!is.na(D_845811202_D_510435329) | !is.na(D_845811202_D_520264332) | D_845811202_D_845811202=="[178420302]") & 
+                              !(is.na(Mod4$D_596318751_D_493984171) & is.na(Mod4$D_596318751_D_253017624) & 
+                              (!is.na(Mod4$D_596318751_D_959804472) | !is.na(Mod4$D_596318751_D_774707280) | 
+                                !is.na(Mod4$D_596318751_D_182144476) | !is.na(Mod4$D_596318751_D_294634899) | 
+                                 !is.na(Mod4$D_263588196_D_583500714) | !is.na(Mod4$D_263588196_D_742105146) |
+                                 !is.na(Mod4$D_263588196_D_101341673) |!is.na(Mod4$D_263588196_D_237204853)))) %>% 
+  dplyr::select(Connect_ID, D_845811202_D_510435329, D_845811202_D_520264332, D_845811202_D_845811202,D_596318751_D_493984171,D_596318751_D_253017624,
+                D_596318751_D_959804472,D_596318751_D_774707280,D_596318751_D_182144476,D_596318751_D_294634899,
+                D_263588196_D_583500714,D_263588196_D_742105146,D_263588196_D_101341673,D_263588196_D_237204853, d_264644252) %>% 
+  arrange(desc(d_264644252))
+
+colnames(CURWORK3) <- c("Connect_ID", "FULLST1_CURWORKST", "FULLST2_CURWORKST", "CURWORK3", "CURWORKSTNUM", "CURWORKFULLST", "CURWORKCITY", "CURWORKST", "CURWORKZIP", "CURWORKCOUNTRY",
+                        "CURWORKCITY_FOLLOWUP","CURWORKST_FOLLOWUP","CURWORKZIP_FOLLOWUP","CURWORKCOUNTRY_FOLLOWUP", "Date_M4_Completed")
+
+if (nrow(CURWORK3) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(CURWORK3) #%>%  landscape()
+}
+
+
+
+#*****
+```
+
+
+
+
+<!-- ## Only display CURWORKT3-5 if (CURWORKT2A_1 = 1) OR (CURWORKT2A_2 = 1) OR (CURWORKT2A_3 = 1) OR (CURWORKT2A_4 = 1) OR (CURWORKT2B_1 = 1) OR (CURWORKT2B_2 = 1) OR (CURWORKT2B_3 = 1) OR (CURWORKT2B_4 = 1) OR (CURWORKT2C_1 = 1) OR (CURWORKT2C_2 = 1) OR (CURWORKT2C_3 = 1) OR (CURWORKT2C_4 = 1) OR (CURWORKT2D_1 = 1) OR (CURWORKT2D_2 = 1) OR (CURWORKT2D_3 = 1) OR (CURWORKT2D_4 = 1) OR (CURWORKT2E_1 = 1) OR (CURWORKT2E_2 = 1) OR (CURWORKT2E_3 = 1) OR (CURWORKT2E_4 = 1) OR (CURWORKT2F_1 = 1) OR (CURWORKT2F_2 = 1) OR (CURWORKT2F_3 = 1) OR (CURWORKT2F_4 = 1) OR (CURWORKT2G_1 = 1) OR (CURWORKT2G_2 = 1) OR (CURWORKT2G_3 = 1) OR (CURWORKT2G_4 = 1) OR (CURWORKT2H_1 = 1) OR (CURWORKT2H_2 = 1) OR (CURWORKT2H_3 = 1) OR (CURWORKT2H_4 = 1) -->
+<!-- ```{r, message=FALSE, warning=FALSE, echo=FALSE} -->
+
+<!-- CURWORKT3_4_5 = Mod4 %>%  filter( (!is.na(Mod4$D_155199731) | !is.na(Mod4$D_181422361) | !is.na(Mod4$D_333362587)) &  -->
+<!--                                    Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) & -->
+<!--             (Mod4$D_440093675_D_593010802!=428999623 & !is.na(Mod4$D_440093675_D_593010802)) | (Mod4$D_440093675_D_453004768!=428999623 & !is.na(Mod4$D_440093675_D_453004768)) | -->
+<!--             (Mod4$D_440093675_D_511991969!=428999623 & !is.na(Mod4$D_440093675_D_511991969)) | (Mod4$D_440093675_D_546570171!=428999623 & !is.na(Mod4$D_440093675_D_546570171)) | -->
+<!--             (Mod4$D_440093675_D_242761203!=428999623 & !is.na(Mod4$D_440093675_D_242761203)) | (Mod4$D_440093675_D_587434250!=428999623 & !is.na(Mod4$D_440093675_D_587434250)) | -->
+<!--             (Mod4$D_440093675_D_569993305!=428999623 & !is.na(Mod4$D_440093675_D_569993305)) |(Mod4$D_440093675_D_662584384!=428999623 & !is.na(Mod4$D_440093675_D_662584384))) %>%  -->
+<!--   dplyr::select(,d_264644252) %>%  -->
+<!--   arrange(desc(d_264644252)) -->
+
+
+<!-- colnames(CURWORKT3_4_5) <- c("Connect ID", "FULLCHILDSTNAME1", "FULLCHILDSTNAME2", "CHILDADD3","CHILDSTNUM","CHILDFULLST","CHILDCITY","CHILDST","CHILDZIP", -->
+<!--                              "CHILDCOUNTRY", "CHILDCITY_FOLLOWUP","CHILDST_FOLLOWUP","CHILDZIP_FOLLOWUP","CHILDCOUNTRY_FOLLOWUP", "Date_M4_Completed") -->
+<!-- if (nrow(CURWORKT3_4_5) == 0) { -->
+<!--   cat("No errors") -->
+<!-- } else { -->
+<!--   knitr::kable(CURWORKT3_4_5) %>%   -->
+<!--     kable_styling(latex_options ="scale_down", font_size = 6) -->
+<!--     landscape() -->
+<!-- } -->
+
+<!-- ``` -->
+
+
+<!-- ## Only display CURWORKT11-13 if (CURWORKT2A_1 = 1) OR (CURWORKT2A_2 = 1) OR (CURWORKT2A_3 = 1) OR (CURWORKT2A_4 = 1) OR (CURWORKT2B_1 = 1) OR (CURWORKT2B_2 = 1) OR (CURWORKT2B_3 = 1) OR (CURWORKT2B_4 = 1) OR (CURWORKT2C_1 = 1) OR (CURWORKT2C_2 = 1) OR (CURWORKT2C_3 = 1) OR (CURWORKT2C_4 = 1) OR (CURWORKT2D_1 = 1) OR (CURWORKT2D_2 = 1) OR (CURWORKT2D_3 = 1) OR (CURWORKT2D_4 = 1) OR (CURWORKT2E_1 = 1) OR (CURWORKT2E_2 = 1) OR (CURWORKT2E_3 = 1) OR (CURWORKT2E_4 = 1) OR (CURWORKT2F_1 = 1) OR (CURWORKT2F_2 = 1) OR (CURWORKT2F_3 = 1) OR (CURWORKT2F_4 = 1) OR (CURWORKT2G_1 = 1) OR (CURWORKT2G_2 = 1) OR (CURWORKT2G_3 = 1) OR (CURWORKT2G_4 = 1) OR (CURWORKT2H_1 = 1) OR (CURWORKT2H_2 = 1) OR (CURWORKT2H_3 = 1) OR (CURWORKT2H_4 = 1) -->
+<!-- ```{r, message=FALSE, warning=FALSE, echo=FALSE} -->
+
+<!-- CURWORKT11_12_13 = Mod4 %>%  filter( (!is.na(Mod4$D_186636914) | !is.na(Mod4$D_936393993) | !is.na(Mod4$D_168563469)) &  -->
+<!--                                    Mod4$D_374639590!=353358909 & (Mod4$D_828801156==759356722 | Mod4$D_828801156==185036360) & -->
+<!--             (Mod4$D_440093675_D_593010802!=428999623 & !is.na(Mod4$D_440093675_D_593010802)) | (Mod4$D_440093675_D_453004768!=428999623 & !is.na(Mod4$D_440093675_D_453004768)) | -->
+<!--             (Mod4$D_440093675_D_511991969!=428999623 & !is.na(Mod4$D_440093675_D_511991969)) | (Mod4$D_440093675_D_546570171!=428999623 & !is.na(Mod4$D_440093675_D_546570171)) | -->
+<!--             (Mod4$D_440093675_D_242761203!=428999623 & !is.na(Mod4$D_440093675_D_242761203)) | (Mod4$D_440093675_D_587434250!=428999623 & !is.na(Mod4$D_440093675_D_587434250)) | -->
+<!--             (Mod4$D_440093675_D_569993305!=428999623 & !is.na(Mod4$D_440093675_D_569993305)) |(Mod4$D_440093675_D_662584384!=428999623 & !is.na(Mod4$D_440093675_D_662584384))) %>%  -->
+<!--   dplyr::select(D_186636914,D_936393993,D_168563469,d_264644252) %>%  -->
+<!--   arrange(desc(d_264644252)) -->
+
+
+<!-- colnames(CURWORKT11_12_13) <- c("Connect ID", "FULLCHILDSTNAME1", "FULLCHILDSTNAME2", "CHILDADD3","CHILDSTNUM","CHILDFULLST","CHILDCITY","CHILDST","CHILDZIP", -->
+<!--                              "CHILDCOUNTRY", "CHILDCITY_FOLLOWUP","CHILDST_FOLLOWUP","CHILDZIP_FOLLOWUP","CHILDCOUNTRY_FOLLOWUP", "Date_M4_Completed") -->
+<!-- if (nrow(CURWORKT11_12_13) == 0) { -->
+<!--   cat("No errors") -->
+<!-- } else { -->
+<!--   knitr::kable(CURWORKT11_12_13) %>%   -->
+<!--     kable_styling(latex_options ="scale_down", font_size = 6) -->
+<!--     landscape() -->
+<!-- } -->
+
+<!-- ``` -->
+
+## Only display PREWORK2_1 if PREWORKCITY = NA OR PREWORKST = NA OR PREWORKZIP = NA OR PREWORKCOUNTRY = NA
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+PREWORK2_1 = Mod4 %>%  filter(D_350394531_D_350394531=="[178420302]" &
+                                !(is.na(D_992180692_D_962868433) | is.na(D_992180692_D_108530997) | is.na(D_992180692_D_110852652) | is.na(D_992180692_D_867109611))) %>% 
+  dplyr::select(Connect_ID, D_350394531_D_350394531, D_992180692_D_962868433, D_992180692_D_108530997, D_992180692_D_110852652, D_992180692_D_867109611, d_264644252) %>% 
+  arrange(desc(d_264644252))
+
+colnames(PREWORK2_1) <- c("Connect_ID", "PREWORK2_1", "PREWORKCITY", "PREWORKST", "PREWORKZIP", "PREWORKCOUNTRY", "Date_M4_Completed")
+
+if (nrow(PREWORK2_1) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(PREWORK2_1) #%>%  landscape()
+}
+
+```
+
+
+## Only display FULLST1_PREWORKST, FULLST2_PREWORKST, or PREWORK3_1 if PREWORKSTNUM = NA AND PREWORKFULLST = NA AND ((PREWORKCITY <> NA) or (PREWORKST <> NA) or (PREWORKZIP <> NA) or (PREWORKCOUNTRY <> NA) or (PREWORKCITY_FOLLOWUP <> NA) or (PREWORKST_FOLLOWUP <> NA) or (PREWORKZIP_FOLLOWUP <> NA) or (PREWORKCOUNTRY_FOLLOWUP <> NA))
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+PREWORK3_1 = Mod4 %>%  filter((!is.na(D_733317111_D_584350267) | !is.na(D_733317111_D_840147245) | D_733317111_D_733317111=="[178420302]") &
+                                !(is.na(D_992180692_D_903896611) | is.na(D_992180692_D_855583262) &
+                                  (!is.na(D_992180692_D_962868433) | !is.na(D_992180692_D_108530997) | !is.na(D_992180692_D_110852652) | !is.na(D_992180692_D_867109611) |
+                                    !is.na(D_350394531_D_652022112) | !is.na(D_350394531_D_730666903) | !is.na(D_350394531_D_168091937) | !is.na(D_350394531_D_132779701)))) %>% 
+  dplyr::select(Connect_ID, D_733317111_D_584350267, D_733317111_D_840147245, D_733317111_D_733317111, 
+                D_992180692_D_903896611, D_992180692_D_855583262,
+                D_350394531_D_652022112,D_350394531_D_730666903,D_350394531_D_168091937,D_350394531_D_132779701,
+                D_992180692_D_962868433,  D_992180692_D_108530997, D_992180692_D_110852652, D_992180692_D_867109611, d_264644252) %>% 
+  arrange(desc(d_264644252))
+
+colnames(PREWORK3_1) <- c("Connect_ID", "FULLST1_PREWORKST", "FULLST2_PREWORKST", "PREWORK3_1", "PREWORKSTNUM", "PREWORKFULLST","PREWORKCITY","PREWORKST",
+                          "PREWORKZIP","PREWORKCOUNTRY" ,"PREWORKCITY_FOLLOWUP","PREWORKST_FOLLOWUP","PREWORKZIP_FOLLOWUP","PREWORKCOUNTRY_FOLLOWUP", 
+                          "PREWORKCITY", "PREWORKST", "PREWORKZIP", "PREWORKCOUNTRY", "Date_M4_Completed")
+
+if (nrow(PREWORK3_1) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(PREWORK3_1) %>%  
+    kable_styling(latex_options ="scale_down") %>%  #, font_size = 6) %>% 
+    landscape()
+}
+
+
+#*****
+```
+
+
+
+
+## Only display PREWORKT3 or PREWORKT4 if (PREWORKSTNUM <> NA) OR (PREWORKFULLST <> NA) OR (PREWORKAPT <> NA) OR (PREWORKCITY <> NA) or (PREWORKST <> NA) or (PREWORKZIP <> NA) or (PREWORKCOUNTRY <> NA) or (PREWORKCITY_FOLLOWUP <> NA) or (PREWORKST_FOLLOWUP <> NA) or (PREWORKZIP_FOLLOWUP <> NA) or (PREWORKCOUNTRY_FOLLOWUP <> NA)
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+PREWORKT3 = Mod4 %>%  filter((!is.na(D_335218615) | !is.na(D_564557026)) &
+                                !(!is.na(D_992180692_D_903896611) | !is.na(D_992180692_D_855583262) |
+                                  !is.na(D_992180692_D_962868433) | !is.na(D_992180692_D_108530997) | !is.na(D_992180692_D_110852652) | !is.na(D_992180692_D_867109611) |
+                                    !is.na(D_350394531_D_652022112) | !is.na(D_350394531_D_730666903) | !is.na(D_350394531_D_168091937) | !is.na(D_350394531_D_132779701))) %>% 
+  dplyr::select(Connect_ID, D_335218615, D_564557026,  
+                D_992180692_D_903896611, D_992180692_D_855583262,
+                D_350394531_D_652022112,D_350394531_D_730666903,D_350394531_D_168091937,D_350394531_D_132779701,
+                D_992180692_D_962868433,  D_992180692_D_108530997, D_992180692_D_110852652, D_992180692_D_867109611, d_264644252) %>% 
+  arrange(desc(d_264644252))
+
+colnames(PREWORKT3) <- c("Connect_ID", "PREWORKT3", "PREWORKT4",  "PREWORKSTNUM", "PREWORKFULLST","PREWORKCITY","PREWORKST",
+                          "PREWORKZIP","PREWORKCOUNTRY" ,"PREWORKCITY_FOLLOWUP","PREWORKST_FOLLOWUP","PREWORKZIP_FOLLOWUP","PREWORKCOUNTRY_FOLLOWUP", 
+                          "PREWORKCITY", "PREWORKST", "PREWORKZIP", "PREWORKCOUNTRY", "Date_M4_Completed")
+
+if (nrow(PREWORKT3) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(PREWORKT3) %>%  
+    kable_styling(latex_options ="scale_down") %>%  #, font_size = 6) %>% 
+    landscape()
+}
+
+#*****
+```
+
+
+## Only display CURSCH2 if CURSCHCITY = NA OR CURSCHST = NA OR CURSCHKZIP = NA OR CURSCHCOUNTRY = NA  
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+CURSCH2 = Mod4 %>% 
+  filter(D_668887646_D_668887646=="[178420302]" &
+           !(is.na(D_914696832_D_161170041) | is.na(D_914696832_D_660217075) | is.na(D_914696832_D_884494489) | is.na(D_914696832_D_403679963))) %>% 
+  dplyr::select(Connect_ID, D_668887646_D_668887646,D_914696832_D_161170041,D_914696832_D_660217075,D_914696832_D_884494489,D_914696832_D_403679963, d_264644252) %>% 
+  arrange(desc(d_264644252))
+
+colnames(CURSCH2) <- c("Connect_ID", "CURSCH2", "CURSCHCITY", "CURSCHST", "CURSCHKZIP", "CURSCHCOUNTRY", "Date_M4_Completed")
+
+if (nrow(CURSCH2) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(CURSCH2) %>%  
+    kable_styling(latex_options ="scale_down") %>%  #, font_size = 6) %>% 
+    landscape()
+}
+
+```
+
+
+## Only display FULLST1_CURSCHST, FULLST2_CURSCHST, or CURSCH3 if CURSCHSTNUM = NA AND CURSCHFULLST = NA AND ((CURSCHCITY <> NA) or (CURSCHST <> NA) or (CURSCHZIP <> NA) or (CURSCHCOUNTRY <> NA) or (CURSCHCITY_FOLLOWUP <> NA) or (CURSCHST_FOLLOWUP <> NA) or (CURSCHZIP_FOLLOWUP <> NA) or (CURSCHCOUNTRY_FOLLOWUP <> NA))
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+CURSCH3= Mod4 %>% 
+  filter((is.na(D_443679537_D_494271326) | is.na(D_443679537_D_952170182) | D_443679537_D_443679537=="[178420302]") &
+           !(is.na(D_914696832_D_970996351) & is.na(D_914696832_D_249657148) & 
+           (!is.na(D_914696832_D_161170041) | !is.na(D_914696832_D_660217075) | !is.na(D_914696832_D_884494489) |
+               !is.na(D_914696832_D_403679963) | !is.na(D_668887646_D_225725599) | !is.na(D_668887646_D_977086216) |
+              !is.na(D_668887646_D_997041632) |!is.na(D_668887646_D_147113671)))) %>% 
+  dplyr::select(Connect_ID, D_668887646_D_668887646,D_914696832_D_161170041,D_914696832_D_660217075,
+                D_914696832_D_884494489,D_914696832_D_403679963, d_264644252) %>% 
+  arrange(desc(d_264644252))
+
+colnames(CURSCH2) <- c("Connect_ID","FULLST1_CURSCHST", "FULLST2_CURSCHST", "CURSCH3", "CURSCHSTNUM", "CURSCHFULLST", 
+                       "CURSCHCITY", "CURSCHST", "CURSCHKZIP", "CURSCHCOUNTRY", "CURSCHCITY_FOLLOWUP","CURSCHST_FOLLOWUP",
+                       "CURSCHZIP_FOLLOWUP","CURSCHCOUNTRY_FOLLOWUP", "Date_M4_Completed")
+
+if (nrow(CURSCH2) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(CURSCH2) %>%  
+    kable_styling(latex_options ="scale_down") %>%  #, font_size = 6) %>% 
+    landscape()
+}
+
+
+```
+
+
+## Only display CURSCHT3-5 IF ANY CURSCHT2 = 1, 2, 3, OR 4
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+
+#EASIER WAY TO WRITE THIS LOGIC IS IF ANY CURSCHT2!= 0 OR !IS.NA
+
+
+# should it be and instead of or?
+
+CURSCHT3_4_5= Mod4 %>%  
+  filter( (!is.na(D_136660779) | !is.na(D_107050954) | !is.na(D_559488982)) & 
+           !((D_716117817_D_135529881_D_891237683!=428999623 & !is.na(D_716117817_D_135529881_D_891237683)) |
+           (D_716117817_D_135529881_D_980695076!=428999623 & !is.na(D_716117817_D_135529881_D_980695076)) |
+           (D_716117817_D_135529881_D_265423096!=428999623 & !is.na(D_716117817_D_135529881_D_265423096)) |
+           (D_716117817_D_135529881_D_185533250!=428999623 & !is.na(D_716117817_D_135529881_D_185533250)) |
+           (D_716117817_D_135529881_D_769785846!=428999623 & !is.na(D_716117817_D_135529881_D_769785846)) |
+           (D_716117817_D_135529881_D_330492115!=428999623 & !is.na(D_716117817_D_135529881_D_330492115)) |
+           (D_716117817_D_135529881_D_173979298!=428999623 & !is.na(D_716117817_D_135529881_D_173979298)) |
+           (D_716117817_D_135529881_D_154229258!=428999623 & !is.na(D_716117817_D_135529881_D_154229258)))) %>% 
+  dplyr::select(Connect_ID, D_136660779, D_107050954, D_559488982, D_716117817_D_135529881_D_891237683, D_716117817_D_135529881_D_980695076, 
+                D_716117817_D_135529881_D_265423096, D_716117817_D_135529881_D_185533250, D_716117817_D_135529881_D_769785846, 
+                D_716117817_D_135529881_D_330492115, D_716117817_D_135529881_D_173979298, D_716117817_D_135529881_D_154229258, d_264644252)%>% 
+  arrange(desc(d_264644252))
+
+colnames(CURSCHT3_4_5) <- c("Connect_ID", "CURSCHT3", "CURSCHT4", "CURSCHT5", "CURSCHT2A", "CURSCHT2B", "CURSCHT2C", "CURSCHT2D", 
+              "CURSCHT2E", "CURSCHT2F", "CURSCHT2G", "CURSCHT2H", "Date_M4_Completed")
+
+if (nrow(CURSCHT3_4_5) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(CURSCHT3_4_5) %>%  
+    kable_styling(latex_options ="scale_down") %>%  #, font_size = 6) %>% 
+    landscape()
+}
+
+
+
+```
+
+
+## Only display CURSCHT11-13 IF ANY CURSCHT10 = 1, 2, 3, OR 4
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+
+#EASIER WAY TO WRITE THIS LOGIC IS IF ANY CURSCHT10!= 0 OR !IS.NA
+
+
+# should it be and instead of or?
+
+CURSCHT11_12_13= Mod4 %>%  
+  filter( (!is.na(D_705673076) | !is.na(D_333852852) | !is.na(D_776580384)) & 
+           !((D_219317801_D_990162153!=428999623 & !is.na(D_219317801_D_990162153)) |
+           (D_219317801_D_576149634!=428999623 & !is.na(D_219317801_D_576149634)) |
+           (D_219317801_D_291458877!=428999623 & !is.na(D_219317801_D_291458877)) |
+           (D_219317801_D_453417964!=428999623 & !is.na(D_219317801_D_453417964)) |
+           (D_219317801_D_550646850!=428999623 & !is.na(D_219317801_D_550646850)) |
+           (D_219317801_D_949549557!=428999623 & !is.na(D_219317801_D_949549557)) |
+           (D_219317801_D_214274185!=428999623 & !is.na(D_219317801_D_214274185)) |
+           (D_219317801_D_533003859!=428999623 & !is.na(D_219317801_D_533003859)))) %>% 
+  dplyr::select(Connect_ID, D_705673076, D_333852852, D_776580384, D_219317801_D_990162153, D_219317801_D_576149634, 
+                D_219317801_D_291458877, D_219317801_D_453417964, D_219317801_D_550646850, 
+                D_219317801_D_949549557, D_219317801_D_214274185, D_219317801_D_533003859, d_264644252)%>% 
+  arrange(desc(d_264644252))
+
+colnames(CURSCHT11_12_13) <- c("Connect_ID", "CURSCHT11", "CURSCHT12", "CURSCHT13", "CURSCHT10A", "CURSCHT10B", "CURSCHT10C", "CURSCHT10D", 
+              "CURSCHT10E", "CURSCHT10F", "CURSCHT10G", "CURSCHT10H", "Date_M4_Completed")
+
+if (nrow(CURSCHT11_12_13) == 0) {
+  cat("No errors")
+} else {
+  knitr::kable(CURSCHT11_12_13) %>%  
+    kable_styling(latex_options ="scale_down") %>%  #, font_size = 6) %>% 
+    landscape()
+}
+
+
+```
+
+
+
